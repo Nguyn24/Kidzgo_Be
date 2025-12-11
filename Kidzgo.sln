@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kidzgo.API", "Kidzgo.API\Kidzgo.API.csproj", "{37357DBF-E3AE-49E5-8FF1-54404E09DD7F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B2D11F2-2DE5-46C4-8815-7ECE84CFB4DE}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kidzgo.Application", "Kidzgo.Application\Kidzgo.Application.csproj", "{FBFF6373-7229-4824-8C99-34194DC74675}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kidzgo.Domain", "Kidzgo.Domain\Kidzgo.Domain.csproj", "{F31CB856-8ACE-456A-B1A0-88ED6A3F930A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kidzgo.Infrastructure", "Kidzgo.Infrastructure\Kidzgo.Infrastructure.csproj", "{25AE7BBE-52B8-472E-B52E-80FD0281EE57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37357DBF-E3AE-49E5-8FF1-54404E09DD7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37357DBF-E3AE-49E5-8FF1-54404E09DD7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37357DBF-E3AE-49E5-8FF1-54404E09DD7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37357DBF-E3AE-49E5-8FF1-54404E09DD7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBFF6373-7229-4824-8C99-34194DC74675}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBFF6373-7229-4824-8C99-34194DC74675}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBFF6373-7229-4824-8C99-34194DC74675}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBFF6373-7229-4824-8C99-34194DC74675}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F31CB856-8ACE-456A-B1A0-88ED6A3F930A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F31CB856-8ACE-456A-B1A0-88ED6A3F930A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F31CB856-8ACE-456A-B1A0-88ED6A3F930A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F31CB856-8ACE-456A-B1A0-88ED6A3F930A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25AE7BBE-52B8-472E-B52E-80FD0281EE57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25AE7BBE-52B8-472E-B52E-80FD0281EE57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25AE7BBE-52B8-472E-B52E-80FD0281EE57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25AE7BBE-52B8-472E-B52E-80FD0281EE57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,7 @@
+﻿services:
+  kidzgo.api:
+    image: kidzgo.api
+    build:
+      context: .
+      dockerfile: Kidzgo.API/Dockerfile
+
