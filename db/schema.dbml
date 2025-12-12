@@ -29,7 +29,7 @@ Table profiles {
   user_id uuid [ref: > users.id]
   profile_type varchar(20) // PARENT/STUDENT/TEACHER/STAFF
   display_name varchar(255)
-  pin_hash text // required for TEACHER/STAFF when selected
+  pin_hash text // required when selecting PARENT profile; optional others
   branch_id uuid [ref: - branches.id] // required for staff/teacher
   is_active boolean
   created_at timestamptz

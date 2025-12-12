@@ -10,14 +10,24 @@ File sơ đồ: `db/schema.dbml` (import trực tiếp dbdiagram.io). Nội dung
 - `jsonb` dùng cho nội dung động (giáo án, AI draft, attachment list…).
 
 ## 2. Khối User/Branch/RBAC
-- `branches`: danh mục chi nhánh.
-- `users`: tài khoản đăng nhập chung.
-- `profiles`: profile cụ thể (Parent/Student/Teacher/Staff), liên kết user; `pin_hash` bắt buộc với Teacher/Staff khi chọn profile; `branch_id` bắt buộc cho Teacher/Staff.
-- `parent_student_links`: map phụ huynh ↔ học sinh; hỗ trợ 1 phụ huynh có nhiều con và (nếu cần) 1 học sinh có nhiều người giám hộ. Mỗi liên kết là một record giữa `parent_profile` (profile_type=PARENT) và `student_profile` (profile_type=STUDENT).
-- `roles`, `profile_roles`: RBAC gán theo profile (không gán trực tiếp cho user); admin có quyền toàn bộ branch, role khác bị giới hạn branch theo `profile.branch_id`.
-- Lưu ý multi-role cho cùng một user:
+- **Login**:
+  - Phụ huynh + học sinh dùng **tài khoản chung `users`** (email + mật khẩu), đăng nhập xong chọn profile.
+  - Admin, Teacher, Staff mỗi người dùng **tài khoản riêng** (không dùng chung với parent/student).
+- **Chọn profile sau login (chỉ với account parent/student)**:
+  - Luôn có 1 profile phụ huynh (PARENT) và 1-n profile học sinh (STUDENT) cùng `user_id`.
+  - Chọn PARENT → vào Parent Portal, **bắt buộc nhập PIN** (`pin_hash`).
+  - Chọn STUDENT → vào Student Portal (không dùng PIN).
+- **Teacher/Staff/Admin**: đăng nhập bằng account riêng, không chia profile parent/student; Teacher/Staff vẫn ràng buộc branch, Admin xem toàn hệ thống.
+- **Bảng chính**:
+  - `branches`: danh mục chi nhánh.
+  - `users`: tài khoản đăng nhập chung.
+  - `profiles`: profile cụ thể (Parent/Student/Teacher/Staff), liên kết `user_id`; `pin_hash` chỉ bắt buộc cho PARENT trong luồng chọn profile; `branch_id` bắt buộc cho Teacher/Staff.
+  - `parent_student_links`: map phụ huynh ↔ học sinh; hỗ trợ 1 phụ huynh nhiều con và (nếu cần) 1 học sinh nhiều người giám hộ. Mỗi liên kết là một record giữa `parent_profile` (profile_type=PARENT) và `student_profile` (profile_type=STUDENT).
+  - `roles`, `profile_roles`: RBAC gán theo profile (không gán trực tiếp cho user); admin có quyền toàn bộ branch, role khác bị giới hạn branch theo `profile.branch_id`.
+- **Multi-role cùng user**:
   - Một user có thể có nhiều profile (ví dụ vừa là Admin vừa là Teacher): tạo 2 profile cùng `user_id`, mỗi profile mang role phù hợp.
   - Vì Teacher/Staff bị khóa branch và yêu cầu PIN, còn Admin cần scope toàn hệ thống, nên tách profile giúp không bị dính ràng buộc branch/PIN khi vào vai Admin.
+- **UI & permission**: Chức năng Parent/Student tách biệt với Teacher/Staff cả về UI lẫn permission; kiểm soát theo profile + role.
 
 ## 3. Khối Chương trình/Lớp/Lịch
 - `programs`: khóa/chương trình, số buổi, giá tham chiếu.
@@ -1165,12 +1175,17 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
 ### 9.2. Lead
 - `leads`: lưu thông tin liên hệ (tên, phone, email, kênh, campaign, branch mong muốn).
 - `source` (kênh gốc): LANDING (form web), ZALO (OA/chatbot), REFERRAL (giới thiệu), OFFLINE (walk-in/sự kiện); dùng để phân tích hiệu quả kênh.
+- `contact_name`: người liên hệ chính (thường là phụ huynh).
+- `phone` / `zalo_id` / `email`: kênh liên hệ; `zalo_id` dùng khi khác số điện thoại hoặc muốn nhắn OA.
+- `branch_preference`: chi nhánh mong muốn học.
+- `program_interest`: chương trình/level quan tâm ban đầu.
+- `notes`: ghi chú tự do của sales.
 - `owner_profile_id`: staff sales chăm sóc chính; đổi owner ghi nhận vào history.
 - Trạng thái đề xuất: `NEW` → `CONTACTED` → `BOOKED_TEST` → `TEST_DONE` → `ENROLLED` / `LOST`.
-  - `NO_SHOW` là trạng thái phụ của test (vẫn có thể re-book).
+  - `NO_SHOW` dùng để đánh dấu buổi placement test mà lead/học sinh không tham dự. (vẫn có thể re-book).
   - `ENROLLED` lưu `converted_student_profile_id` để trace sang học sinh.
-- SLA gợi ý: thời gian phản hồi đầu tiên (first_response_at) và số lần chạm (touch_count).
-- Log tương tác: `lead_activities` (call/note/zalo/sms/email), kèm `next_action_at` để follow-up.
+- SLA gợi ý: thời gian phản hồi đầu tiên (`first_response_at`) và số lần chạm (`touch_count`). Luồng: khi lần chạm đầu tiên diễn ra, set `first_response_at`; mỗi lần ghi `lead_activities` thì tăng `touch_count` + cập nhật SLA/report.
+- Log tương tác: `lead_activities` (call/note/zalo/sms/email), kèm `next_action_at` để follow-up. Luồng: mỗi lần chăm sóc tạo một activity, optionally đặt `next_action_at`; màn hình worklist lấy các lead có `next_action_at` sắp tới hoặc đã quá hạn để nhắc follow-up.
 
 ### 9.3. Placement test
 - `placement_tests`: lịch test và kết quả; gắn `lead_id` (nếu chưa là học sinh) hoặc `student_profile_id` (retake/đánh giá lại).
@@ -1185,7 +1200,7 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
   - Đóng trạng thái lead (`ENROLLED`) nhưng vẫn giữ toàn bộ history để báo cáo hiệu quả kênh.
 
 ### 9.5. Báo cáo/đo lường
-- Phễu: NEW → CONTACTED → BOOKED_TEST → TEST_DONE → ENROLLED/LOST (tính conversion rate theo branch/campaign/owner).
+- : NEW → CONTACTED → BOOKED_TEST → TEST_DONE → ENROLLED/LOST (tính conversion rate theo branch/campaign/owner).
 - Tỷ lệ no-show test, lead response time, số lần chạm trước khi chốt.
 - Kênh hiệu quả: phân tích theo `source`/`campaign`/`branch`.
 
@@ -1218,27 +1233,69 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
    - Theo dõi first_response_at, touch_count, no_show_rate, conversion_rate theo source/campaign/branch/owner.
 ```
 
+--lead_activities ghi log tất cả tương tác chăm sóc lead (call/Zalo/SMS/email/note) để:
+Theo dõi lịch sử chăm sóc và người thực hiện.
+Lên nhắc việc tiếp theo qua next_action_at.
+Tính SLA và hiệu quả (số lần chạm, thời gian phản hồi).
+Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
+
+
 ## 10. Khối Media
 - `media_assets`: ảnh/video, tag branch/class/student, tháng (YYYY-MM), visibility (class/personal/public_parent).
 
+
 ## 11. Khối Tài chính/PayOS/Sổ quỹ/Lương
-- `tuition_plans`: học phí theo program/branch; unit_price_session để tính EXTRA_PAID.
-- `invoices`: hóa đơn (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE), trạng thái, PayOS link/QR.
-- `invoice_lines`: chi tiết dòng, quantity/unit_price, session_ids nếu cần trace.
-- `payments`: kết quả thanh toán (PayOS/cash/bank); webhook PayOS map vào đây và update invoice.
-- `cashbook_entries`: sổ quỹ thu/chi, liên kết INVOICE/PAYROLL/EXPENSE/ADJUSTMENT.
-- `contracts`: hợp đồng lao động (full/part-time), base_salary/hourly_rate, hiệu lực.
-- `shift_attendance`: chấm công/ca cho staff part-time.
-- `payroll_runs`: kỳ lương theo branch, status DRAFT/APPROVED/PAID.
-- `payroll_lines`: chi tiết thành phần lương (teaching/base/overtime/allowance/deduction); `source_id` trỏ đến `session_roles` (cho TEACHING/TA/CLUB/WORKSHOP) hoặc `contracts` (cho BASE) hoặc expense records (cho DEDUCTION).
-- `payroll_payments`: thanh toán lương, method, link cashbook.
+- `tuition_plans`: bảng giá học phí theo program/branch; có `unit_price_session` để tính phát sinh EXTRA_PAID (học bù/thêm).
+- `invoices`: hóa đơn (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE); lưu trạng thái và link/QR PayOS để phụ huynh tự thanh toán.
+- `invoice_lines`: dòng chi tiết (quantity/unit_price/description); `session_ids` dùng truy vết buổi học bị tính phí.
+- `payments`: kết quả thanh toán (PAYOS/CASH/BANK_TRANSFER). Webhook PayOS map vào đây, set trạng thái invoice và tạo bút toán quỹ.
+- `cashbook_entries`: sổ quỹ thu/chi; mỗi entry gắn nguồn INVOICE/PAYROLL/EXPENSE/ADJUSTMENT để đối soát và làm báo cáo quỹ.
+- `contracts`: hợp đồng lao động (full/part-time), chứa base_salary hoặc hourly_rate, thời gian hiệu lực để tính lương đúng kỳ.
+- `shift_attendance`: chấm công/ca cho staff part-time; dữ liệu gốc để tính giờ làm.
+  - Thuộc tính: `staff_profile_id`, `contract_id`, `shift_date`, `shift_hours`, `role`, `approved_by/approved_at` để khóa công sau khi duyệt.
+  
+- `payroll_runs`: kỳ lương theo branch, luồng DRAFT → APPROVED → PAID; khóa/snapshot trước khi chi trả.
+  - Thuộc tính: `period_start/period_end`, `branch_id`, `status` (DRAFT/APPROVED/PAID), `approved_by`, `paid_at`, `created_at`.
+- `payroll_lines`: chi tiết lương theo thành phần (teaching/base/overtime/allowance/deduction); `source_id` trỏ đến `session_roles` (giờ dạy), `contracts` (base) hoặc expense (deduction) để audit.
+  - Thuộc tính: `payroll_run_id`, `staff_profile_id`, `component_type` (TEACHING/TA/CLUB/WORKSHOP/BASE/OVERTIME/ALLOWANCE/DEDUCTION), `source_id`, `amount`, `description`, `is_paid`, `paid_at`.
+- `session_roles`: log phân công nhân sự cho từng buổi học (`session_id`, `staff_profile_id`, `role` MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP), kèm `payable_unit_price`, `payable_allowance` để tính lương teaching.
+  - Khác nhau:
+    - `shift_attendance`: chấm ca/giờ làm (thường part-time, không buộc gắn buổi học cụ thể), khóa bởi approved_by/approved_at.
+    - `session_roles`: gắn trực tiếp vào buổi học (session) để biết ai dạy/trợ giảng và đơn giá/allowance áp cho buổi đó.
+- `payroll_payments`: bản ghi chi lương; lưu phương thức và liên kết `cashbook_entries` để khớp quỹ chi.
+  - Thuộc tính: `payroll_run_id`, `staff_profile_id`, `amount`, `method` (BANK_TRANSFER/CASH), `paid_at`, `cashbook_entry_id` để liên kết bút toán chi.
+
+**Luồng thu học phí:**
+1) Lập hóa đơn: tạo `invoices` + `invoice_lines` (gắn `session_ids` nếu thu theo buổi), sinh link/QR PayOS.
+2) Thu tiền:
+   - Online: webhook PayOS → ghi `payments` (PAYOS) → cập nhật invoice → tạo `cashbook_entries` thu.
+   - Offline: thu tiền mặt/chuyển khoản → tạo `payments` (CASH/BANK_TRANSFER) + `cashbook_entries` thu, cập nhật invoice thủ công.
+3) Đối soát: xem `cashbook_entries` theo nguồn INVOICE, so sánh `payments` vs `invoices` để phát hiện thiếu/nhầm.
+
+**Luồng lương:**
+1) Thu thập giờ công: `shift_attendance` (part-time) + `session_roles` (giờ dạy).
+2) Tính lương: mở `payroll_runs` (DRAFT), tạo `payroll_lines` từ contracts và session_roles, bổ sung phụ cấp/khấu trừ.
+3) Phê duyệt: đổi `payroll_runs` → APPROVED để khóa dữ liệu tính.
+4) Chi trả: tạo `payroll_payments`, ghi bút toán chi vào `cashbook_entries`, set `payroll_runs` → PAID.
+
 
 ## 12. Khối Notification & Ticket
-- `notifications`: log gửi Zalo OA/push/email + deeplink target mini-app/web.
-- `notification_templates`: template nội dung theo channel/code, placeholders, hỗ trợ tái sử dụng và i18n.
-- `email_templates`: template email (subject/body, placeholders) để gửi mail giao dịch/hệ thống.
-- `tickets`: phản hồi/hỗ trợ; mở bởi phụ huynh/teacher/staff; assign người xử lý.
-- `ticket_comments`: thread trao đổi.
+- `notifications`: log gửi Zalo OA/push/email; lưu payload, trạng thái (PENDING/SENT/FAILED), response id, deeplink mở đúng màn hình (mini-app/web). Dùng để retry và audit.
+- `notification_templates`: template đa kênh theo code; có placeholders + i18n để render nội dung động, giảm lỗi gõ tay.
+- `email_templates`: template subject/body cho email giao dịch/hệ thống (nhắc học phí, biên lai, reset PIN...).
+- `tickets`: phiếu hỗ trợ do phụ huynh/teacher/staff mở; trường chính: type/category, status, priority, assignee, opened_by, closed_at; phục vụ SLA hỗ trợ.
+- `ticket_comments`: thread hội thoại/trao đổi; lưu người comment, nội dung, file đính kèm (nếu có).
+
+**Luồng gửi thông báo:**
+1) Chọn template (`notification_templates`/`email_templates`) + fill placeholders.
+2) Tạo record `notifications` (channel, target, payload, deeplink) với trạng thái PENDING.
+3) Worker gửi ra Zalo OA/push/email; cập nhật status (SENT/FAILED) và response id; có thể retry nếu FAILED.
+
+**Luồng ticket:**
+1) Người dùng mở ticket (`tickets`) với type/category + priority + mô tả; hệ thống gán assignee (hoặc hàng đợi).
+2) Trao đổi qua `ticket_comments` (text/file), cập nhật status (OPEN/IN_PROGRESS/RESOLVED/CLOSED) và assignee khi cần.
+3) Đóng ticket: set closed_at, giữ history comment để tra soát và báo cáo SLA.
+
 
 ## 13. Audit
 - `audit_logs`: trace thao tác (before/after) cho các entity quan trọng.
@@ -1249,6 +1306,22 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
   - `attendances`: (session_id, student_profile_id).
   - `homework_student`: (assignment_id, student_profile_id).
   - `mission_progress`: (mission_id, student_profile_id).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 15. Chi tiết các bảng và Attribute
 
@@ -1632,18 +1705,24 @@ Khi phụ huynh xem kết quả:
 ### 15.8. Khối CRM/Placement
 
 #### `leads` - Lead khách hàng
-- `id` (uuid, PK): Định danh lead
-- `source` (varchar(30)): Kênh gốc - LANDING (form web), ZALO (OA/chatbot), REFERRAL (giới thiệu), OFFLINE (walk-in/sự kiện)
-- `contact_name` (varchar(255)): Tên liên hệ
-- `phone` (varchar(50)): Số điện thoại
-- `zalo_id` (varchar(100), nullable): Zalo ID
-- `email` (varchar(255), nullable): Email
-- `branch_preference` (uuid, FK → branches.id, nullable): Chi nhánh quan tâm
-- `program_interest` (varchar(255)): Chương trình quan tâm
-- `notes` (text): Ghi chú
-- `status` (varchar(30)): Trạng thái - NEW/CONTACTED/TEST_SCHEDULED/PLACED/LOST
-- `owner_staff_id` (uuid, FK → profiles.id, nullable): Staff phụ trách
-- `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
+- `id` (uuid, PK): Định danh lead.
+- `source` (varchar(30)): Kênh gốc - LANDING (form web), ZALO (OA/chatbot), REFERRAL (giới thiệu), OFFLINE (walk-in/sự kiện).
+- `campaign` (varchar(100), nullable): Tag chiến dịch/quảng cáo để đo hiệu quả.
+- `contact_name` (varchar(255)): Tên liên hệ (phụ huynh hoặc người giới thiệu).
+- `phone` (varchar(50)): Số điện thoại chính.
+- `zalo_id` (varchar(100), nullable): Zalo ID (nếu khác phone).
+- `email` (varchar(255), nullable): Email liên hệ.
+- `branch_preference` (uuid, FK → branches.id, nullable): Chi nhánh mong muốn.
+- `program_interest` (varchar(255)): Chương trình quan tâm ban đầu.
+- `notes` (text): Ghi chú tự do.
+- `status` (varchar(30)): Trạng thái chăm sóc - NEW/CONTACTED/BOOKED_TEST/TEST_DONE/ENROLLED/LOST. NO_SHOW là tình huống test không tham dự (lưu trong placement_tests).
+- `owner_staff_id` (uuid, FK → profiles.id, nullable): Sales phụ trách hiện tại.
+- `first_response_at` (timestamptz, nullable): Thời điểm phản hồi đầu tiên (đo SLA).
+- `touch_count` (int, nullable): Số lần chạm đã thực hiện.
+- `next_action_at` (timestamptz, nullable): Lịch follow-up tiếp theo.
+- `converted_student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh được tạo khi ghi danh.
+- `converted_at` (timestamptz, nullable): Thời điểm chuyển trạng thái ENROLLED.
+- `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật.
 
 #### `placement_tests` - Test xếp lớp
 - `id` (uuid, PK): Định danh test
