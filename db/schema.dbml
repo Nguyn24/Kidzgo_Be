@@ -191,6 +191,10 @@ Table lesson_plans {
   teacher_notes text
   submitted_by uuid [ref: - profiles.id]
   submitted_at timestamptz
+
+  Indexes {
+    session_unique [unique] (session_id)
+  }
 }
 
 Table homework_assignments {
@@ -347,15 +351,18 @@ Table reward_redemptions {
   id uuid [pk]
   item_id uuid [ref: > reward_store_items.id]
   student_profile_id uuid [ref: > profiles.id]
-  status varchar(20) // REQUESTED/APPROVED/REDEEMED/CANCELLED
+  status varchar(20) // REQUESTED/APPROVED/DELIVERED/RECEIVED/CANCELLED
   handled_by uuid [ref: - profiles.id]
   handled_at timestamptz
+  delivered_at timestamptz // thời gian staff trao quà
+  received_at timestamptz // thời gian student xác nhận nhận (hoặc auto sau 3 ngày)
   created_at timestamptz
 }
 
 Table leads {
   id uuid [pk]
-  source varchar(30) // LANDING/ZALO/REFERRAL
+  source varchar(30) // LANDING/ZALO/REFERRAL/OFFLINE
+  campaign varchar(100) // campaign/tag để báo cáo hiệu quả
   contact_name varchar(255)
   phone varchar(50)
   zalo_id varchar(100)
@@ -363,8 +370,13 @@ Table leads {
   branch_preference uuid [ref: - branches.id]
   program_interest varchar(255)
   notes text
-  status varchar(30) // NEW/CONTACTED/TEST_SCHEDULED/PLACED/LOST
+  status varchar(30) // NEW/CONTACTED/BOOKED_TEST/TEST_DONE/ENROLLED/LOST
   owner_staff_id uuid [ref: - profiles.id]
+  first_response_at timestamptz // SLA phản hồi đầu tiên
+  touch_count int // số lần chạm
+  next_action_at timestamptz // lịch follow-up tiếp theo
+  converted_student_profile_id uuid [ref: - profiles.id] // lưu trace khi ghi danh
+  converted_at timestamptz
   created_at timestamptz
   updated_at timestamptz
 }
@@ -374,11 +386,29 @@ Table placement_tests {
   lead_id uuid [ref: - leads.id]
   student_profile_id uuid [ref: - profiles.id]
   scheduled_at timestamptz
+  status varchar(20) // SCHEDULED/NO_SHOW/COMPLETED/CANCELLED
+  room varchar(100)
+  meeting_link text
+  invigilator_profile_id uuid [ref: - profiles.id]
   result_score numeric
+  listening_score numeric
+  speaking_score numeric
+  reading_score numeric
+  writing_score numeric
   level_recommendation varchar(100)
+  program_recommendation varchar(100)
   notes text
   attachment_url text
-  conducted_by uuid [ref: - profiles.id]
+}
+
+Table lead_activities {
+  id uuid [pk]
+  lead_id uuid [ref: - leads.id]
+  activity_type varchar(20) // CALL/ZALO/SMS/EMAIL/NOTE
+  content text
+  next_action_at timestamptz
+  created_by uuid [ref: - profiles.id]
+  created_at timestamptz
 }
 
 Table media_assets {
