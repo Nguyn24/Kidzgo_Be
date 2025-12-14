@@ -1,0 +1,58 @@
+using Kidzgo.Domain.Programs;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Kidzgo.Infrastructure.Configuration;
+
+public class TuitionPlanConfiguration : IEntityTypeConfiguration<TuitionPlan>
+{
+    public void Configure(EntityTypeBuilder<TuitionPlan> builder)
+    {
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Id)
+            .IsRequired();
+
+        builder.Property(x => x.BranchId);
+
+        builder.Property(x => x.ProgramId)
+            .IsRequired();
+
+        builder.Property(x => x.TotalSessions)
+            .IsRequired();
+
+        builder.Property(x => x.TuitionAmount)
+            .HasColumnType("numeric")
+            .IsRequired();
+
+        builder.Property(x => x.UnitPriceSession)
+            .HasColumnType("numeric")
+            .IsRequired();
+
+        builder.Property(x => x.Currency)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        builder.Property(x => x.IsActive)
+            .IsRequired();
+
+        builder.Property(x => x.IsDeleted)
+            .IsRequired();
+
+        // Relationships
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Program)
+            .WithMany(x => x.TuitionPlans)
+            .HasForeignKey(x => x.ProgramId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(x => x.ClassEnrollments)
+            .WithOne(x => x.TuitionPlan)
+            .HasForeignKey(x => x.TuitionPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

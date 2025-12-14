@@ -2,32 +2,74 @@
 
 File sơ đồ: `db/schema.dbml` (import trực tiếp dbdiagram.io). Nội dung dưới đây giải thích chức năng, quan hệ chính, và cách thực thi để đáp ứng các use-case.
 
+## ⚠️ THAY ĐỔI RBAC (Updated)
+
+**Thay đổi chính về cấu trúc RBAC**:
+- `users` có thêm `role` enum: `PARENT`, `STUDENT`, `ADMIN`, `TEACHER`, `STAFF`
+- `profiles` **chỉ dùng cho PARENT/STUDENT** (bỏ TEACHER/STAFF/ADMIN)
+- ADMIN/TEACHER/STAFF dùng trực tiếp `users` với `role`, không dùng `profiles`
+- Tất cả các bảng reference ADMIN/TEACHER/STAFF: chuyển từ `profiles.id` → `users.id`
+- STUDENT vẫn dùng `profiles.id` (không thay đổi)
+
+**Chi tiết thay đổi**:
+- Xem phần **2. Khối User/Branch/RBAC** để biết chi tiết về cấu trúc mới
+- Tất cả các bảng có thay đổi đều được đánh dấu `(CHANGED: ...)` trong phần mô tả attribute
+
 ## 1. Nguyên tắc chung
-- Mọi thực thể chính gắn `branch_id` để hỗ trợ multi-branch; admin nhìn toàn bộ, giáo viên/staff bị ràng buộc branch theo `profiles`.
-- Đăng nhập dùng `users` (email/mật khẩu) + chọn `profiles` (Parent/Student/Teacher/Staff); profile nội bộ có `pin_hash`.
-- Quyền hạn qua `roles` + `profile_roles`; giáo viên/staff có branch cố định, admin không ràng buộc.
+- Mọi thực thể chính gắn `branch_id` để hỗ trợ multi-branch; admin nhìn toàn bộ, giáo viên/staff bị ràng buộc branch theo `users.branch_id`.
+- Đăng nhập dùng `users` (email/mật khẩu) với `role` enum (PARENT/STUDENT/ADMIN/TEACHER/STAFF).
+- **PARENT/STUDENT**: dùng chung account, sau login chọn profile (PARENT hoặc STUDENT).
+- **ADMIN/TEACHER/STAFF**: dùng account riêng, không dùng profile, role lưu trực tiếp trong `users.role`.
+- Quyền hạn: ADMIN/TEACHER/STAFF dùng trực tiếp `users.role`; PARENT/STUDENT có thể dùng `profile_roles` (tùy chọn).
 - Status/type dùng varchar (enum app-level) để dễ mở rộng; có thể đổi sang enum DB nếu cần.
 - `jsonb` dùng cho nội dung động (giáo án, AI draft, attachment list…).
 
 ## 2. Khối User/Branch/RBAC
-- **Login**:
-  - Phụ huynh + học sinh dùng **tài khoản chung `users`** (email + mật khẩu), đăng nhập xong chọn profile.
-  - Admin, Teacher, Staff mỗi người dùng **tài khoản riêng** (không dùng chung với parent/student).
-- **Chọn profile sau login (chỉ với account parent/student)**:
-  - Luôn có 1 profile phụ huynh (PARENT) và 1-n profile học sinh (STUDENT) cùng `user_id`.
-  - Chọn PARENT → vào Parent Portal, **bắt buộc nhập PIN** (`pin_hash`).
-  - Chọn STUDENT → vào Student Portal (không dùng PIN).
-- **Teacher/Staff/Admin**: đăng nhập bằng account riêng, không chia profile parent/student; Teacher/Staff vẫn ràng buộc branch, Admin xem toàn hệ thống.
-- **Bảng chính**:
-  - `branches`: danh mục chi nhánh.
-  - `users`: tài khoản đăng nhập chung.
-  - `profiles`: profile cụ thể (Parent/Student/Teacher/Staff), liên kết `user_id`; `pin_hash` chỉ bắt buộc cho PARENT trong luồng chọn profile; `branch_id` bắt buộc cho Teacher/Staff.
-  - `parent_student_links`: map phụ huynh ↔ học sinh; hỗ trợ 1 phụ huynh nhiều con và (nếu cần) 1 học sinh nhiều người giám hộ. Mỗi liên kết là một record giữa `parent_profile` (profile_type=PARENT) và `student_profile` (profile_type=STUDENT).
-  - `roles`, `profile_roles`: RBAC gán theo profile (không gán trực tiếp cho user); admin có quyền toàn bộ branch, role khác bị giới hạn branch theo `profile.branch_id`.
-- **Multi-role cùng user**:
-  - Một user có thể có nhiều profile (ví dụ vừa là Admin vừa là Teacher): tạo 2 profile cùng `user_id`, mỗi profile mang role phù hợp.
-  - Vì Teacher/Staff bị khóa branch và yêu cầu PIN, còn Admin cần scope toàn hệ thống, nên tách profile giúp không bị dính ràng buộc branch/PIN khi vào vai Admin.
-- **UI & permission**: Chức năng Parent/Student tách biệt với Teacher/Staff cả về UI lẫn permission; kiểm soát theo profile + role.
+
+### 2.1. Cấu trúc RBAC mới (Updated)
+
+**Thay đổi chính**:
+- `users` có `role` enum: `PARENT`, `STUDENT`, `ADMIN`, `TEACHER`, `STAFF`
+- `profiles` chỉ dùng cho **PARENT/STUDENT** (không dùng cho ADMIN/TEACHER/STAFF)
+- ADMIN/TEACHER/STAFF dùng trực tiếp `users` với `role`, không cần `profiles`
+
+**Login & Authentication**:
+- **PARENT/STUDENT**: 
+  - Dùng **tài khoản chung `users`** (email + mật khẩu) với `role = PARENT` hoặc `role = STUDENT`
+  - Sau login, chọn profile (PARENT hoặc STUDENT) từ danh sách profiles của user đó
+  - Chọn PARENT → vào Parent Portal, **bắt buộc nhập PIN** (`profiles.pin_hash`)
+  - Chọn STUDENT → vào Student Portal (không dùng PIN)
+- **ADMIN/TEACHER/STAFF**: 
+  - Mỗi người dùng **tài khoản riêng** (`users` với `role = ADMIN/TEACHER/STAFF`)
+  - Đăng nhập trực tiếp, không chọn profile
+  - `users.pin_hash` bắt buộc cho ADMIN/TEACHER/STAFF (bảo mật)
+  - `users.branch_id` bắt buộc cho TEACHER/STAFF (ràng buộc chi nhánh), null cho ADMIN (xem toàn hệ thống)
+
+**Bảng chính**:
+- `branches`: danh mục chi nhánh
+- `users`: 
+  - Tài khoản đăng nhập với `role` enum (PARENT/STUDENT/ADMIN/TEACHER/STAFF)
+  - `display_name`: bắt buộc cho ADMIN/TEACHER/STAFF, optional cho PARENT/STUDENT
+  - `pin_hash`: bắt buộc cho ADMIN/TEACHER/STAFF, optional cho PARENT/STUDENT
+  - `branch_id`: bắt buộc cho TEACHER/STAFF, null cho ADMIN/PARENT/STUDENT
+- `profiles`: 
+  - **Chỉ dùng cho PARENT/STUDENT** (`profile_type` chỉ có PARENT hoặc STUDENT)
+  - Liên kết với `users` qua `user_id`
+  - `pin_hash`: bắt buộc cho PARENT profile (khi chọn profile)
+  - Không có `branch_id` (không cần cho PARENT/STUDENT)
+- `parent_student_links`: map phụ huynh ↔ học sinh; hỗ trợ 1 phụ huynh nhiều con và (nếu cần) 1 học sinh nhiều người giám hộ
+- **Lưu ý**: Bảng `roles` và `profile_roles` đã được bỏ (REMOVED). Tất cả role được quản lý trực tiếp qua `users.role` enum.
+
+**Reference trong các bảng**:
+- **ADMIN/TEACHER/STAFF**: Tất cả các bảng reference từ `profiles.id` → chuyển sang `users.id`
+  - Ví dụ: `classes.main_teacher_id`, `sessions.planned_teacher_id`, `attendances.marked_by`, `invoices.issued_by`, `contracts.staff_user_id`, v.v.
+- **STUDENT**: Vẫn dùng `profiles.id` (vì student dùng profile)
+  - Ví dụ: `class_enrollments.student_profile_id`, `attendances.student_profile_id`, `homework_student.student_profile_id`, v.v.
+
+**UI & Permission**:
+- Chức năng Parent/Student tách biệt với Teacher/Staff cả về UI lẫn permission
+- ADMIN/TEACHER/STAFF: kiểm soát theo `users.role` và `users.branch_id`
+- PARENT/STUDENT: kiểm soát theo `profiles.profile_type`
 
 ## 3. Khối Chương trình/Lớp/Lịch
 - `programs`: khóa/chương trình, số buổi, giá tham chiếu.
@@ -1180,7 +1222,7 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
 - `branch_preference`: chi nhánh mong muốn học.
 - `program_interest`: chương trình/level quan tâm ban đầu.
 - `notes`: ghi chú tự do của sales.
-- `owner_profile_id`: staff sales chăm sóc chính; đổi owner ghi nhận vào history.
+- `owner_staff_id`: staff sales chăm sóc chính (CHANGED: từ owner_profile_id → owner_staff_id, reference users.id với role=STAFF); đổi owner ghi nhận vào history.
 - Trạng thái đề xuất: `NEW` → `CONTACTED` → `BOOKED_TEST` → `TEST_DONE` → `ENROLLED` / `LOST`.
   - `NO_SHOW` dùng để đánh dấu buổi placement test mà lead/học sinh không tham dự. (vẫn có thể re-book).
   - `ENROLLED` lưu `converted_student_profile_id` để trace sang học sinh.
@@ -1189,7 +1231,7 @@ Học sinh: Nguyễn Văn A (số dư: 50 sao)
 
 ### 9.3. Placement test
 - `placement_tests`: lịch test và kết quả; gắn `lead_id` (nếu chưa là học sinh) hoặc `student_profile_id` (retake/đánh giá lại).
-- Thuộc tính chính: thời gian test, `room` hoặc `meeting_link`, `invigilator_profile_id`, `status` (SCHEDULED/NO_SHOW/COMPLETED/CANCELLED).
+- Thuộc tính chính: thời gian test, `room` hoặc `meeting_link`, `invigilator_user_id` (CHANGED: từ invigilator_profile_id → invigilator_user_id, reference users.id với role=TEACHER/STAFF), `status` (SCHEDULED/NO_SHOW/COMPLETED/CANCELLED).
 - Kết quả: điểm từng kỹ năng (listening/speaking/reading/writing), nhận xét giáo viên, level đề xuất, program đề xuất, file đính kèm (recording/scan).
 - Sau khi COMPLETED, cập nhật lead sang `TEST_DONE`; nếu phụ huynh đồng ý học, chuyển `ENROLLED`.
 
@@ -1252,18 +1294,18 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `cashbook_entries`: sổ quỹ thu/chi; mỗi entry gắn nguồn INVOICE/PAYROLL/EXPENSE/ADJUSTMENT để đối soát và làm báo cáo quỹ.
 - `contracts`: hợp đồng lao động (full/part-time), chứa base_salary hoặc hourly_rate, thời gian hiệu lực để tính lương đúng kỳ.
 - `shift_attendance`: chấm công/ca cho staff part-time; dữ liệu gốc để tính giờ làm.
-  - Thuộc tính: `staff_profile_id`, `contract_id`, `shift_date`, `shift_hours`, `role`, `approved_by/approved_at` để khóa công sau khi duyệt.
+  - Thuộc tính: `staff_user_id` (CHANGED: từ staff_profile_id → staff_user_id, reference users.id với role=STAFF), `contract_id`, `shift_date`, `shift_hours`, `role`, `approved_by/approved_at` (reference users.id với role=ADMIN/STAFF) để khóa công sau khi duyệt.
   
 - `payroll_runs`: kỳ lương theo branch, luồng DRAFT → APPROVED → PAID; khóa/snapshot trước khi chi trả.
   - Thuộc tính: `period_start/period_end`, `branch_id`, `status` (DRAFT/APPROVED/PAID), `approved_by`, `paid_at`, `created_at`.
 - `payroll_lines`: chi tiết lương theo thành phần (teaching/base/overtime/allowance/deduction); `source_id` trỏ đến `session_roles` (giờ dạy), `contracts` (base) hoặc expense (deduction) để audit.
-  - Thuộc tính: `payroll_run_id`, `staff_profile_id`, `component_type` (TEACHING/TA/CLUB/WORKSHOP/BASE/OVERTIME/ALLOWANCE/DEDUCTION), `source_id`, `amount`, `description`, `is_paid`, `paid_at`.
-- `session_roles`: log phân công nhân sự cho từng buổi học (`session_id`, `staff_profile_id`, `role` MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP), kèm `payable_unit_price`, `payable_allowance` để tính lương teaching.
+  - Thuộc tính: `payroll_run_id`, `staff_user_id` (CHANGED: từ staff_profile_id → staff_user_id, reference users.id với role=STAFF/TEACHER), `component_type` (TEACHING/TA/CLUB/WORKSHOP/BASE/OVERTIME/ALLOWANCE/DEDUCTION), `source_id`, `amount`, `description`, `is_paid`, `paid_at`.
+- `session_roles`: log phân công nhân sự cho từng buổi học (`session_id`, `staff_user_id` (CHANGED: từ staff_profile_id → staff_user_id, reference users.id với role=TEACHER/STAFF), `role` MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP), kèm `payable_unit_price`, `payable_allowance` để tính lương teaching.
   - Khác nhau:
     - `shift_attendance`: chấm ca/giờ làm (thường part-time, không buộc gắn buổi học cụ thể), khóa bởi approved_by/approved_at.
     - `session_roles`: gắn trực tiếp vào buổi học (session) để biết ai dạy/trợ giảng và đơn giá/allowance áp cho buổi đó.
 - `payroll_payments`: bản ghi chi lương; lưu phương thức và liên kết `cashbook_entries` để khớp quỹ chi.
-  - Thuộc tính: `payroll_run_id`, `staff_profile_id`, `amount`, `method` (BANK_TRANSFER/CASH), `paid_at`, `cashbook_entry_id` để liên kết bút toán chi.
+  - Thuộc tính: `payroll_run_id`, `staff_user_id` (CHANGED: từ staff_profile_id → staff_user_id, reference users.id với role=STAFF/TEACHER), `amount`, `method` (BANK_TRANSFER/CASH), `paid_at`, `cashbook_entry_id` để liên kết bút toán chi.
 
 **Luồng thu học phí:**
 1) Lập hóa đơn: tạo `invoices` + `invoice_lines` (gắn `session_ids` nếu thu theo buổi), sinh link/QR PayOS.
@@ -1341,18 +1383,29 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `id` (uuid, PK): Định danh user
 - `email` (varchar(255), unique): Email đăng nhập (unique)
 - `password_hash` (text): Hash mật khẩu (bcrypt/argon2)
+- `role` (varchar(20)): **Role enum - PARENT/STUDENT/ADMIN/TEACHER/STAFF** (NEW)
+- `display_name` (varchar(255)): Tên hiển thị (bắt buộc cho ADMIN/TEACHER/STAFF, optional cho PARENT/STUDENT) (NEW)
+- `pin_hash` (text): Hash PIN (bắt buộc cho ADMIN/TEACHER/STAFF, optional cho PARENT/STUDENT) (NEW)
+- `branch_id` (uuid, FK → branches.id, nullable): Chi nhánh (bắt buộc cho TEACHER/STAFF, null cho ADMIN/PARENT/STUDENT) (NEW)
 - `is_active` (boolean): Trạng thái tài khoản
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
 
-#### `profiles` - Profile người dùng
+**Lưu ý**: 
+- ADMIN/TEACHER/STAFF: `role`, `display_name`, `pin_hash`, `branch_id` (cho TEACHER/STAFF) là bắt buộc
+- PARENT/STUDENT: `role` là bắt buộc, các field khác optional (có thể lưu trong profiles)
+
+#### `profiles` - Profile người dùng (CHỈ DÙNG CHO PARENT/STUDENT)
 - `id` (uuid, PK): Định danh profile
-- `user_id` (uuid, FK → users.id): Liên kết với user
-- `profile_type` (varchar(20)): Loại profile - PARENT/STUDENT/TEACHER/STAFF
+- `user_id` (uuid, FK → users.id): Liên kết với user (user phải có `role = PARENT` hoặc `role = STUDENT`)
+- `profile_type` (varchar(20)): Loại profile - **CHỈ CÓ PARENT/STUDENT** (CHANGED: bỏ TEACHER/STAFF)
 - `display_name` (varchar(255)): Tên hiển thị
-- `pin_hash` (text): Hash PIN (bắt buộc với TEACHER/STAFF khi chọn profile)
-- `branch_id` (uuid, FK → branches.id, nullable): Chi nhánh (bắt buộc với Teacher/Staff)
+- `pin_hash` (text): Hash PIN (bắt buộc cho PARENT profile khi chọn profile)
 - `is_active` (boolean): Trạng thái profile
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
+
+**Lưu ý**: 
+- `branch_id` đã bị bỏ (CHANGED: không cần cho PARENT/STUDENT)
+- Chỉ dùng cho PARENT/STUDENT, không dùng cho ADMIN/TEACHER/STAFF
 
 #### `parent_student_links` - Liên kết phụ huynh-học sinh
 - `id` (uuid, PK): Định danh liên kết
@@ -1360,15 +1413,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `student_profile_id` (uuid, FK → profiles.id): Profile học sinh (profile_type=STUDENT)
 - `created_at` (timestamptz): Thời gian tạo liên kết
 
-#### `roles` - Vai trò hệ thống
-- `id` (uuid, PK): Định danh role
-- `code` (varchar(50), unique): Mã role - ROLE_ADMIN/ROLE_TEACHER/ROLE_STAFF_OPS/ROLE_STAFF_ACC/ROLE_PARENT/ROLE_STUDENT
-- `description` (text): Mô tả role
-
-#### `profile_roles` - Gán role cho profile
-- `id` (uuid, PK): Định danh
-- `profile_id` (uuid, FK → profiles.id): Profile được gán role
-- `role_id` (uuid, FK → roles.id): Role được gán
+**Lưu ý**: Bảng `roles` và `profile_roles` đã được bỏ (REMOVED). Tất cả role được quản lý trực tiếp qua `users.role` enum (PARENT/STUDENT/ADMIN/TEACHER/STAFF).
 
 ### 15.2. Khối Chương trình/Lớp/Lịch
 
@@ -1397,8 +1442,8 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `program_id` (uuid, FK → programs.id): Chương trình học
 - `code` (varchar(50), unique): Mã lớp (ví dụ: "ENG-L1-2024-01")
 - `title` (varchar(255)): Tên lớp
-- `main_teacher_id` (uuid, FK → profiles.id, nullable): Giáo viên chính dự kiến
-- `assistant_teacher_id` (uuid, FK → profiles.id, nullable): Trợ giảng dự kiến
+- `main_teacher_id` (uuid, FK → users.id, nullable): Giáo viên chính dự kiến (CHANGED: từ profiles.id → users.id, role=TEACHER)
+- `assistant_teacher_id` (uuid, FK → users.id, nullable): Trợ giảng dự kiến (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `start_date` (date): Ngày bắt đầu lớp
 - `end_date` (date): Ngày kết thúc lớp
 - `status` (varchar(20)): Trạng thái - PLANNED/ACTIVE/CLOSED
@@ -1421,21 +1466,21 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `planned_datetime` (timestamptz): Thời gian dự kiến
 - `planned_room_id` (uuid, FK → classrooms.id, nullable): Phòng dự kiến
-- `planned_teacher_id` (uuid, FK → profiles.id, nullable): Giáo viên dự kiến
-- `planned_assistant_id` (uuid, FK → profiles.id, nullable): Trợ giảng dự kiến
+- `planned_teacher_id` (uuid, FK → users.id, nullable): Giáo viên dự kiến (CHANGED: từ profiles.id → users.id, role=TEACHER)
+- `planned_assistant_id` (uuid, FK → users.id, nullable): Trợ giảng dự kiến (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `duration_minutes` (int): Thời lượng buổi học (phút)
 - `participation_type` (varchar(20)): Loại tham gia - MAIN/MAKEUP/EXTRA_PAID/FREE/TRIAL
 - `status` (varchar(20)): Trạng thái - SCHEDULED/COMPLETED/CANCELLED
 - `actual_datetime` (timestamptz, nullable): Thời gian thực tế (nếu khác dự kiến)
 - `actual_room_id` (uuid, FK → classrooms.id, nullable): Phòng thực tế
-- `actual_teacher_id` (uuid, FK → profiles.id, nullable): Giáo viên thực tế
-- `actual_assistant_id` (uuid, FK → profiles.id, nullable): Trợ giảng thực tế
+- `actual_teacher_id` (uuid, FK → users.id, nullable): Giáo viên thực tế (CHANGED: từ profiles.id → users.id, role=TEACHER)
+- `actual_assistant_id` (uuid, FK → users.id, nullable): Trợ giảng thực tế (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
 
 #### `session_roles` - Vai trò trong buổi học
 - `id` (uuid, PK): Định danh
 - `session_id` (uuid, FK → sessions.id): Buổi học
-- `staff_profile_id` (uuid, FK → profiles.id): Staff/Teacher tham gia
+- `staff_user_id` (uuid, FK → users.id): Staff/Teacher tham gia (CHANGED: từ staff_profile_id → staff_user_id, role=TEACHER/STAFF)
 - `role` (varchar(30)): Vai trò - MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP
 - `payable_unit_price` (numeric): Đơn giá tính lương cho vai trò này
 - `payable_allowance` (numeric): Phụ cấp (nếu có)
@@ -1444,7 +1489,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 
 #### `leave_requests` - Yêu cầu nghỉ học
 - `id` (uuid, PK): Định danh yêu cầu
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh xin nghỉ
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh xin nghỉ (giữ nguyên - student dùng profile)
 - `class_id` (uuid, FK → classes.id): Lớp học
 - `session_date` (date): Ngày nghỉ (ngày đầu tiên nếu nghỉ nhiều ngày)
 - `end_date` (date, nullable): Ngày kết thúc nghỉ (null nếu nghỉ 1 ngày)
@@ -1452,16 +1497,16 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `notice_hours` (int): Số giờ báo trước (để áp dụng luật 24h)
 - `status` (varchar(20)): Trạng thái - PENDING/APPROVED/REJECTED
 - `requested_at` (timestamptz): Thời gian yêu cầu
-- `approved_by` (uuid, FK → profiles.id, nullable): Người duyệt
+- `approved_by` (uuid, FK → users.id, nullable): Người duyệt (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `approved_at` (timestamptz, nullable): Thời gian duyệt
 
 #### `attendances` - Điểm danh
 - `id` (uuid, PK): Định danh điểm danh
 - `session_id` (uuid, FK → sessions.id): Buổi học
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `attendance_status` (varchar(20)): Trạng thái - PRESENT/ABSENT/MAKEUP
 - `absence_type` (varchar(30)): Loại vắng - WITH_NOTICE_24H/UNDER_24H/NO_NOTICE/LONG_TERM
-- `marked_by` (uuid, FK → profiles.id): Giáo viên điểm danh
+- `marked_by` (uuid, FK → users.id): Giáo viên điểm danh (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `marked_at` (timestamptz): Thời gian điểm danh
 - **Unique constraint**: (session_id, student_profile_id)
 
@@ -1484,7 +1529,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `id` (uuid, PK): Định danh
 - `makeup_credit_id` (uuid, FK → makeup_credits.id): Credit được phân bổ
 - `target_session_id` (uuid, FK → sessions.id): Buổi học bù được gán
-- `assigned_by` (uuid, FK → profiles.id): Staff gán
+- `assigned_by` (uuid, FK → users.id): Staff gán (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `assigned_at` (timestamptz): Thời gian gán
 
 ### 15.4. Khối Giáo án/Bài tập
@@ -1497,7 +1542,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `structure_json` (jsonb): Cấu trúc giáo án (JSON)
 - `is_active` (boolean): Trạng thái hoạt động
 - `is_deleted` (boolean): Đánh dấu xóa mềm
-- `created_by` (uuid, FK → profiles.id): Người tạo
+- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=ADMIN/STAFF)
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `lesson_plans` - Giáo án buổi học
@@ -1508,7 +1553,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `actual_content` (jsonb): Nội dung thực tế đã dạy
 - `actual_homework` (text): Bài tập về nhà thực tế
 - `teacher_notes` (text): Ghi chú của giáo viên
-- `submitted_by` (uuid, FK → profiles.id): Giáo viên nộp
+- `submitted_by` (uuid, FK → users.id): Giáo viên nộp (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `submitted_at` (timestamptz): Thời gian nộp
 
 #### `homework_assignments` - Bài tập
@@ -1525,7 +1570,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `max_score` (numeric): Điểm tối đa
 - `reward_stars` (int): Số sao thưởng khi hoàn thành
 - `mission_id` (uuid, FK → missions.id, nullable): Liên kết với mission (nếu có)
-- `created_by` (uuid, FK → profiles.id): Người tạo
+- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `homework_student` - Bài tập của học sinh
@@ -1550,12 +1595,12 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `date` (date): Ngày kiểm tra
 - `max_score` (numeric): Điểm tối đa
 - `description` (text): Mô tả
-- `created_by` (uuid, FK → profiles.id): Người tạo
+- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER)
 
 #### `exam_results` - Kết quả kiểm tra
 - `id` (uuid, PK): Định danh kết quả
 - `exam_id` (uuid, FK → exams.id): Kỳ kiểm tra
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `score` (numeric): Điểm số
 - `comment` (text): Nhận xét
 - `attachment_url` (text, nullable): **Link file scan bài làm** - URL đến file ảnh/PDF scan bài kiểm tra của học sinh. Dùng để:
@@ -1564,7 +1609,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
   - Lưu trữ bằng chứng điểm số (backup, audit)
   - Hỗ trợ review lại khi có khiếu nại về điểm số
   - Lưu trữ bài làm quan trọng (midterm, final) để tham khảo sau này
-- `graded_by` (uuid, FK → profiles.id): Người chấm
+- `graded_by` (uuid, FK → users.id): Người chấm (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `graded_at` (timestamptz): Thời gian chấm
 
 **Mục đích sử dụng `attachment_url`**:
@@ -1612,22 +1657,22 @@ Khi phụ huynh xem kết quả:
 
 #### `student_monthly_reports` - Báo cáo tháng của học sinh
 - `id` (uuid, PK): Định danh báo cáo
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `month` (int): Tháng (1-12)
 - `year` (int): Năm
 - `draft_content` (jsonb): Nội dung draft từ AI
 - `final_content` (jsonb): Nội dung cuối cùng (sau khi review/chỉnh sửa)
 - `status` (varchar(20)): Trạng thái - DRAFT/REVIEW/APPROVED/REJECTED
 - `ai_version` (varchar(50)): Phiên bản AI model đã dùng
-- `submitted_by` (uuid, FK → profiles.id, nullable): Người submit
-- `reviewed_by` (uuid, FK → profiles.id, nullable): Người review
+- `submitted_by` (uuid, FK → users.id, nullable): Người submit (CHANGED: từ profiles.id → users.id, role=TEACHER)
+- `reviewed_by` (uuid, FK → users.id, nullable): Người review (CHANGED: từ profiles.id → users.id, role=STAFF/ADMIN)
 - `reviewed_at` (timestamptz, nullable): Thời gian review
 - `published_at` (timestamptz, nullable): Thời gian publish
 
 #### `report_comments` - Comment review báo cáo
 - `id` (uuid, PK): Định danh comment
 - `report_id` (uuid, FK → student_monthly_reports.id): Báo cáo
-- `commenter_id` (uuid, FK → profiles.id): Người comment
+- `commenter_id` (uuid, FK → users.id): Người comment (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF/ADMIN)
 - `content` (text): Nội dung comment
 - `created_at` (timestamptz): Thời gian comment
 
@@ -1644,28 +1689,28 @@ Khi phụ huynh xem kết quả:
 - `start_at` (timestamptz): Thời gian bắt đầu
 - `end_at` (timestamptz): Thời gian kết thúc
 - `reward_stars` (int): Số sao thưởng khi hoàn thành
-- `created_by` (uuid, FK → profiles.id): Người tạo
+- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF)
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `mission_progress` - Tiến độ nhiệm vụ
 - `id` (uuid, PK): Định danh
 - `mission_id` (uuid, FK → missions.id): Nhiệm vụ
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `status` (varchar(20)): Trạng thái - ASSIGNED/IN_PROGRESS/COMPLETED/EXPIRED
 - `progress_value` (numeric): Giá trị tiến độ (ví dụ: số ngày streak)
 - `completed_at` (timestamptz, nullable): Thời gian hoàn thành
-- `verified_by` (uuid, FK → profiles.id, nullable): Người xác nhận
+- `verified_by` (uuid, FK → users.id, nullable): Người xác nhận (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF)
 - **Unique constraint**: (mission_id, student_profile_id)
 
 #### `star_transactions` - Giao dịch sao
 - `id` (uuid, PK): Định danh giao dịch
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `amount` (int): Số lượng sao (+ hoặc -)
 - `reason` (varchar(100)): Lý do (ví dụ: "Hoàn thành bài tập", "Đổi quà")
 - `source_type` (varchar(30)): Nguồn - MISSION/MANUAL/HOMEWORK/TEST/ADJUSTMENT
 - `source_id` (uuid, nullable): ID của nguồn (mission_id, homework_id...)
 - `balance_after` (int): Số dư sau giao dịch (để audit)
-- `created_by` (uuid, FK → profiles.id): Người tạo giao dịch
+- `created_by` (uuid, FK → users.id): Người tạo giao dịch (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF hoặc system)
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `student_levels` - Level học sinh
@@ -1688,9 +1733,9 @@ Khi phụ huynh xem kết quả:
 #### `reward_redemptions` - Đổi quà
 - `id` (uuid, PK): Định danh
 - `item_id` (uuid, FK → reward_store_items.id): Item được đổi
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh đổi
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh đổi (giữ nguyên - student dùng profile)
 - `status` (varchar(20)): Trạng thái - REQUESTED/APPROVED/DELIVERED/RECEIVED/CANCELLED
-- `handled_by` (uuid, FK → profiles.id, nullable): Staff xử lý (duyệt)
+- `handled_by` (uuid, FK → users.id, nullable): Staff xử lý (duyệt) (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `handled_at` (timestamptz, nullable): Thời gian duyệt (APPROVED)
 - `delivered_at` (timestamptz, nullable): Thời gian staff trao quà (DELIVERED) - dùng để tính 3 ngày auto confirm
 - `received_at` (timestamptz, nullable): Thời gian học sinh xác nhận nhận quà hoặc auto confirm (RECEIVED)
@@ -1716,33 +1761,33 @@ Khi phụ huynh xem kết quả:
 - `program_interest` (varchar(255)): Chương trình quan tâm ban đầu.
 - `notes` (text): Ghi chú tự do.
 - `status` (varchar(30)): Trạng thái chăm sóc - NEW/CONTACTED/BOOKED_TEST/TEST_DONE/ENROLLED/LOST. NO_SHOW là tình huống test không tham dự (lưu trong placement_tests).
-- `owner_staff_id` (uuid, FK → profiles.id, nullable): Sales phụ trách hiện tại.
+- `owner_staff_id` (uuid, FK → users.id, nullable): Sales phụ trách hiện tại (CHANGED: từ profiles.id → users.id, role=STAFF).
 - `first_response_at` (timestamptz, nullable): Thời điểm phản hồi đầu tiên (đo SLA).
 - `touch_count` (int, nullable): Số lần chạm đã thực hiện.
 - `next_action_at` (timestamptz, nullable): Lịch follow-up tiếp theo.
-- `converted_student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh được tạo khi ghi danh.
+- `converted_student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh được tạo khi ghi danh (giữ nguyên - student dùng profile).
 - `converted_at` (timestamptz, nullable): Thời điểm chuyển trạng thái ENROLLED.
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật.
 
 #### `placement_tests` - Test xếp lớp
 - `id` (uuid, PK): Định danh test
 - `lead_id` (uuid, FK → leads.id, nullable): Lead (nếu chưa là học sinh)
-- `student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh (nếu đã ghi danh)
+- `student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh (nếu đã ghi danh) (giữ nguyên - student dùng profile)
 - `scheduled_at` (timestamptz): Thời gian hẹn test
 - `result_score` (numeric, nullable): Điểm số
 - `level_recommendation` (varchar(100), nullable): Cấp độ đề xuất
 - `notes` (text): Ghi chú
 - `attachment_url` (text, nullable): Link file kết quả
-- `conducted_by` (uuid, FK → profiles.id, nullable): Người thực hiện test
+- `invigilator_user_id` (uuid, FK → users.id, nullable): Người thực hiện test (CHANGED: từ invigilator_profile_id → invigilator_user_id, role=TEACHER/STAFF)
 
 ### 15.9. Khối Media
 
 #### `media_assets` - Tài nguyên media
 - `id` (uuid, PK): Định danh media
-- `uploader_id` (uuid, FK → profiles.id): Người upload
+- `uploader_id` (uuid, FK → users.id): Người upload (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF)
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `class_id` (uuid, FK → classes.id, nullable): Lớp học (nếu liên quan)
-- `student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh (nếu liên quan)
+- `student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh (nếu liên quan) (giữ nguyên - student dùng profile)
 - `month_tag` (varchar(7)): Tháng (format YYYY-MM, ví dụ: "2024-03")
 - `type` (varchar(10)): Loại - PHOTO/VIDEO
 - `url` (text): URL file (S3/CDN)
@@ -1766,7 +1811,7 @@ Khi phụ huynh xem kết quả:
 #### `invoices` - Hóa đơn
 - `id` (uuid, PK): Định danh hóa đơn
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
-- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `class_id` (uuid, FK → classes.id, nullable): Lớp học (nếu liên quan)
 - `type` (varchar(30)): Loại - MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE
 - `amount` (numeric): Tổng tiền
@@ -1777,7 +1822,7 @@ Khi phụ huynh xem kết quả:
 - `payos_payment_link` (text, nullable): Link thanh toán PayOS
 - `payos_qr` (text, nullable): QR code PayOS
 - `issued_at` (timestamptz): Thời gian phát hành
-- `issued_by` (uuid, FK → profiles.id): Người phát hành
+- `issued_by` (uuid, FK → users.id): Người phát hành (CHANGED: từ profiles.id → users.id, role=STAFF)
 
 #### `invoice_lines` - Chi tiết hóa đơn
 - `id` (uuid, PK): Định danh dòng
@@ -1795,7 +1840,7 @@ Khi phụ huynh xem kết quả:
 - `amount` (numeric): Số tiền thanh toán
 - `paid_at` (timestamptz): Thời gian thanh toán
 - `reference_code` (varchar(100), nullable): Mã tham chiếu (PayOS transaction code)
-- `confirmed_by` (uuid, FK → profiles.id, nullable): Người xác nhận (với CASH/BANK_TRANSFER)
+- `confirmed_by` (uuid, FK → users.id, nullable): Người xác nhận (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `evidence_url` (text, nullable): Link chứng từ (với BANK_TRANSFER)
 
 #### `cashbook_entries` - Sổ quỹ
@@ -1808,13 +1853,13 @@ Khi phụ huynh xem kết quả:
 - `related_type` (varchar(30)): Loại liên quan - INVOICE/PAYROLL/EXPENSE/ADJUSTMENT
 - `related_id` (uuid, nullable): ID của bảng liên quan
 - `entry_date` (date): Ngày giao dịch
-- `created_by` (uuid, FK → profiles.id): Người tạo
+- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `attachment_url` (text, nullable): Link chứng từ
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `contracts` - Hợp đồng lao động
 - `id` (uuid, PK): Định danh hợp đồng
-- `staff_profile_id` (uuid, FK → profiles.id): Staff
+- `staff_user_id` (uuid, FK → users.id): Staff (CHANGED: từ staff_profile_id → staff_user_id, role=STAFF/TEACHER)
 - `contract_type` (varchar(20)): Loại - PROBATION/FIXED_TERM/INDEFINITE/PART_TIME
 - `start_date` (date): Ngày bắt đầu
 - `end_date` (date, nullable): Ngày kết thúc (null nếu INDEFINITE)
@@ -1826,12 +1871,12 @@ Khi phụ huynh xem kết quả:
 
 #### `shift_attendance` - Chấm công ca làm việc
 - `id` (uuid, PK): Định danh ca
-- `staff_profile_id` (uuid, FK → profiles.id): Staff
+- `staff_user_id` (uuid, FK → users.id): Staff (CHANGED: từ staff_profile_id → staff_user_id, role=STAFF)
 - `contract_id` (uuid, FK → contracts.id, nullable): Hợp đồng
 - `shift_date` (date): Ngày ca
 - `shift_hours` (numeric): Số giờ làm việc
 - `role` (varchar(50)): Vai trò trong ca
-- `approved_by` (uuid, FK → profiles.id, nullable): Người duyệt
+- `approved_by` (uuid, FK → users.id, nullable): Người duyệt (CHANGED: từ profiles.id → users.id, role=ADMIN/STAFF)
 - `approved_at` (timestamptz, nullable): Thời gian duyệt
 
 #### `payroll_runs` - Kỳ lương
@@ -1840,14 +1885,14 @@ Khi phụ huynh xem kết quả:
 - `period_end` (date): Ngày kết thúc kỳ
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `status` (varchar(20)): Trạng thái - DRAFT/APPROVED/PAID
-- `approved_by` (uuid, FK → profiles.id, nullable): Người duyệt
+- `approved_by` (uuid, FK → users.id, nullable): Người duyệt (CHANGED: từ profiles.id → users.id, role=ADMIN/STAFF)
 - `paid_at` (timestamptz, nullable): Thời gian thanh toán
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `payroll_lines` - Chi tiết lương
 - `id` (uuid, PK): Định danh dòng lương
 - `payroll_run_id` (uuid, FK → payroll_runs.id): Kỳ lương
-- `staff_profile_id` (uuid, FK → profiles.id): Staff
+- `staff_user_id` (uuid, FK → users.id): Staff (CHANGED: từ staff_profile_id → staff_user_id, role=STAFF/TEACHER)
 - `component_type` (varchar(30)): Thành phần - TEACHING/TA/CLUB/WORKSHOP/BASE/OVERTIME/ALLOWANCE/DEDUCTION
 - `source_id` (uuid, nullable): ID nguồn (session_roles.id cho TEACHING/TA/CLUB/WORKSHOP, contracts.id cho BASE)
 - `amount` (numeric): Số tiền
@@ -1858,7 +1903,7 @@ Khi phụ huynh xem kết quả:
 #### `payroll_payments` - Thanh toán lương
 - `id` (uuid, PK): Định danh thanh toán
 - `payroll_run_id` (uuid, FK → payroll_runs.id): Kỳ lương
-- `staff_profile_id` (uuid, FK → profiles.id): Staff
+- `staff_user_id` (uuid, FK → users.id): Staff (CHANGED: từ staff_profile_id → staff_user_id, role=STAFF/TEACHER)
 - `amount` (numeric): Số tiền thanh toán
 - `method` (varchar(20)): Phương thức - BANK_TRANSFER/CASH
 - `paid_at` (timestamptz): Thời gian thanh toán
@@ -1868,7 +1913,8 @@ Khi phụ huynh xem kết quả:
 
 #### `notifications` - Thông báo
 - `id` (uuid, PK): Định danh thông báo
-- `recipient_profile_id` (uuid, FK → profiles.id): Người nhận
+- `recipient_user_id` (uuid, FK → users.id): Người nhận (CHANGED: thêm field mới, có thể là bất kỳ role nào)
+- `recipient_profile_id` (uuid, FK → profiles.id, nullable): Profile người nhận (optional, cho PARENT/STUDENT) (CHANGED: từ required → optional)
 - `channel` (varchar(20)): Kênh - ZALO_OA/PUSH/EMAIL
 - `title` (varchar(255)): Tiêu đề
 - `content` (text): Nội dung
@@ -1901,19 +1947,21 @@ Khi phụ huynh xem kết quả:
 
 #### `tickets` - Ticket hỗ trợ
 - `id` (uuid, PK): Định danh ticket
-- `opened_by_profile_id` (uuid, FK → profiles.id): Người mở ticket
+- `opened_by_user_id` (uuid, FK → users.id): Người mở ticket (CHANGED: thêm field mới, có thể là bất kỳ role nào)
+- `opened_by_profile_id` (uuid, FK → profiles.id, nullable): Profile người mở (optional, cho PARENT/STUDENT) (CHANGED: từ required → optional)
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `class_id` (uuid, FK → classes.id, nullable): Lớp học (nếu liên quan)
 - `category` (varchar(30)): Danh mục - HOMEWORK/FINANCE/SCHEDULE/TECH
 - `message` (text): Nội dung ticket
 - `status` (varchar(20)): Trạng thái - OPEN/IN_PROGRESS/RESOLVED/CLOSED
-- `assigned_to_profile_id` (uuid, FK → profiles.id, nullable): Người được gán xử lý
+- `assigned_to_user_id` (uuid, FK → users.id, nullable): Người được gán xử lý (CHANGED: từ assigned_to_profile_id → assigned_to_user_id, role=STAFF)
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
 
 #### `ticket_comments` - Comment ticket
 - `id` (uuid, PK): Định danh comment
 - `ticket_id` (uuid, FK → tickets.id): Ticket
-- `commenter_id` (uuid, FK → profiles.id): Người comment
+- `commenter_user_id` (uuid, FK → users.id): Người comment (CHANGED: từ commenter_id → commenter_user_id, có thể là bất kỳ role nào)
+- `commenter_profile_id` (uuid, FK → profiles.id, nullable): Profile người comment (optional, cho PARENT/STUDENT) (CHANGED: thêm field mới)
 - `message` (text): Nội dung comment
 - `attachment_url` (text, nullable): Link file đính kèm
 - `created_at` (timestamptz): Thời gian comment
@@ -1922,7 +1970,8 @@ Khi phụ huynh xem kết quả:
 
 #### `audit_logs` - Log audit
 - `id` (uuid, PK): Định danh log
-- `actor_id` (uuid, FK → profiles.id, nullable): Người thực hiện
+- `actor_user_id` (uuid, FK → users.id, nullable): Người thực hiện (CHANGED: từ actor_id → actor_user_id, có thể là bất kỳ role nào)
+- `actor_profile_id` (uuid, FK → profiles.id, nullable): Profile người thực hiện (optional, cho PARENT/STUDENT) (CHANGED: thêm field mới)
 - `action` (varchar(100)): Hành động (ví dụ: "CREATE_CLASS", "UPDATE_INVOICE")
 - `entity_type` (varchar(100)): Loại entity (ví dụ: "classes", "invoices")
 - `entity_id` (uuid): ID của entity
@@ -1932,11 +1981,13 @@ Khi phụ huynh xem kết quả:
 
 ## 16. Quan hệ giữa các bảng (Entity Relationships)
 
-### 1. Quan hệ User/Branch/RBAC
-- `users` → `profiles` (1:N): Một user có thể có nhiều profile (Parent/Student/Teacher/Staff).
-- `profiles` → `branches` (N:1): Mỗi profile thuộc một branch (bắt buộc với Teacher/Staff).
-- `profiles` → `profile_roles` → `roles` (N:M): Một profile có thể có nhiều role, một role có thể gán cho nhiều profile.
+### 1. Quan hệ User/Branch/RBAC (UPDATED)
+- `users` → `profiles` (1:N): Một user có thể có nhiều profile (CHỈ PARENT/STUDENT, không có TEACHER/STAFF/ADMIN).
+- `users` → `branches` (N:1): Mỗi user TEACHER/STAFF thuộc một branch (qua `users.branch_id`), ADMIN không ràng buộc branch.
 - `profiles` → `parent_student_links` (N:M): Phụ huynh và học sinh liên kết qua bảng trung gian.
+- **Lưu ý**: Bảng `roles` và `profile_roles` đã được bỏ (REMOVED). Role được quản lý trực tiếp qua `users.role` enum.
+- **ADMIN/TEACHER/STAFF**: Tất cả các bảng reference từ `profiles.id` → chuyển sang `users.id` (ví dụ: `classes.main_teacher_id`, `sessions.planned_teacher_id`, `invoices.issued_by`, v.v.).
+- **STUDENT**: Vẫn dùng `profiles.id` (ví dụ: `class_enrollments.student_profile_id`, `attendances.student_profile_id`, v.v.).
 
 ### 2. Quan hệ Chương trình/Lớp/Session
 - `branches` → `programs`: Chương trình có thể dùng chung hoặc riêng theo branch (không có FK trực tiếp, quản lý qua `tuition_plans`).
@@ -1947,9 +1998,9 @@ Khi phụ huynh xem kết quả:
 - `profiles` → `class_enrollments` (1:N): Một học sinh có thể ghi danh nhiều lớp.
 - `classes` → `sessions` (1:N): Một lớp có nhiều buổi học.
 - `classrooms` → `sessions` (1:N): Một phòng có thể được dùng cho nhiều buổi học (qua `planned_room_id` và `actual_room_id`).
-- `profiles` → `sessions` (1:N): Giáo viên có thể dạy nhiều buổi (qua `planned_teacher_id`, `actual_teacher_id`, `planned_assistant_id`, `actual_assistant_id`).
+- `users` → `sessions` (1:N): Giáo viên có thể dạy nhiều buổi (qua `planned_teacher_id`, `actual_teacher_id`, `planned_assistant_id`, `actual_assistant_id`, reference users.id với role=TEACHER) (CHANGED: từ profiles → users).
 - `sessions` → `session_roles` (1:N): Một buổi học có thể có nhiều người tham gia với vai trò khác nhau (giáo viên chính, trợ giảng, club teacher...).
-- `profiles` → `session_roles` (1:N): Một staff/teacher có thể tham gia nhiều buổi với vai trò khác nhau.
+- `users` → `session_roles` (1:N): Một staff/teacher có thể tham gia nhiều buổi với vai trò khác nhau (CHANGED: từ profiles → users).
 
 **Lưu ý về `sessions` vs `session_roles`:**
 - `sessions.planned_teacher_id` / `actual_teacher_id`: Thông tin giáo viên dự kiến/thực tế (đơn giản, 1 giáo viên chính, 1 trợ giảng).
@@ -1991,7 +2042,7 @@ Khi phụ huynh xem kết quả:
 
 ### 7. Quan hệ CRM/Placement
 - `branches` → `leads` (1:N): Một branch có nhiều lead.
-- `profiles` → `leads.owner_staff_id` (1:N): Một staff có thể quản lý nhiều lead.
+- `users` → `leads.owner_staff_id` (1:N): Một staff có thể quản lý nhiều lead (CHANGED: từ profiles → users, role=STAFF).
 - `leads` → `placement_tests` (1:N): Một lead có thể có nhiều lần test.
 - `profiles` → `placement_tests` (1:N): Một học sinh có thể có nhiều lần test.
 
@@ -2009,7 +2060,7 @@ Khi phụ huynh xem kết quả:
 - `invoices` → `invoice_lines` (1:N): Một hóa đơn có nhiều dòng chi tiết.
 - `invoices` → `payments` (1:N): Một hóa đơn có thể thanh toán nhiều lần (partial payment).
 - `branches` → `cashbook_entries` (1:N): Một branch có nhiều giao dịch sổ quỹ.
-- `profiles` → `contracts` (1:N): Một staff có thể có nhiều hợp đồng (theo thời gian).
+- `users` → `contracts` (1:N): Một staff có thể có nhiều hợp đồng (theo thời gian) (CHANGED: từ profiles → users, role=STAFF/TEACHER).
 - `branches` → `contracts` (1:N): Một branch có nhiều hợp đồng lao động.
 - `contracts` → `shift_attendance` (1:N): Một hợp đồng có nhiều ca làm việc.
 - `sessions` → `session_roles` (1:N): Một buổi học có nhiều vai trò (đã giải thích ở trên).
@@ -2017,24 +2068,29 @@ Khi phụ huynh xem kết quả:
 - `contracts` → `payroll_lines` (1:N): Một hợp đồng có thể tạo nhiều dòng lương (BASE salary).
 - `branches` → `payroll_runs` (1:N): Một branch có nhiều kỳ lương.
 - `payroll_runs` → `payroll_lines` (1:N): Một kỳ lương có nhiều dòng chi tiết.
-- `profiles` → `payroll_lines` (1:N): Một staff có nhiều dòng lương.
+- `users` → `payroll_lines` (1:N): Một staff có nhiều dòng lương (CHANGED: từ profiles → users, role=STAFF/TEACHER).
 - `payroll_runs` → `payroll_payments` (1:N): Một kỳ lương có thể thanh toán nhiều lần.
 - `cashbook_entries` → `payroll_payments` (1:1): Mỗi thanh toán lương ghi một dòng sổ quỹ.
 
 ### 10. Quan hệ Notification/Ticket
-- `profiles` → `notifications` (1:N): Một profile nhận nhiều thông báo.
+- `users` → `notifications` (1:N): Một user nhận nhiều thông báo (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
+- `profiles` → `notifications` (1:N): Một profile nhận nhiều thông báo (optional, cho PARENT/STUDENT).
 - `notification_templates` → `notifications` (1:N): Một template có thể dùng cho nhiều thông báo.
-- `profiles` → `tickets` (1:N): Một profile có thể mở nhiều ticket.
+- `users` → `tickets` (1:N): Một user có thể mở nhiều ticket (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
+- `profiles` → `tickets` (1:N): Một profile có thể mở nhiều ticket (optional, cho PARENT/STUDENT).
 - `branches` → `tickets` (1:N): Một branch có nhiều ticket.
 - `classes` → `tickets` (1:N): Một lớp có thể có nhiều ticket.
 - `tickets` → `ticket_comments` (1:N): Một ticket có nhiều comment.
 
 ### 11. Quan hệ Audit
-- `profiles` → `audit_logs` (1:N): Một profile thực hiện nhiều thao tác được audit.
+- `users` → `audit_logs` (1:N): Một user thực hiện nhiều thao tác được audit (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
+- `profiles` → `audit_logs` (1:N): Một profile thực hiện nhiều thao tác được audit (optional, cho PARENT/STUDENT).
 
 ## 17. Gợi ý thực thi & mapping use-case
-- Multi-branch: mọi bảng nghiệp vụ có `branch_id`; truy vấn luôn kèm filter branch dựa trên profile (trừ admin).
-- Login + profile + PIN: auth trả về danh sách profiles; khi chọn Teacher/Staff yêu cầu PIN; set context branch = profile.branch_id.
+- Multi-branch: mọi bảng nghiệp vụ có `branch_id`; truy vấn luôn kèm filter branch dựa trên `users.branch_id` (trừ admin).
+- Login + profile + PIN: 
+  - **PARENT/STUDENT**: auth trả về danh sách profiles; khi chọn PARENT yêu cầu PIN (`profiles.pin_hash`); set context từ profile.
+  - **ADMIN/TEACHER/STAFF**: auth trực tiếp, yêu cầu PIN (`users.pin_hash`); set context branch = `users.branch_id` (null cho admin).
 - Điểm danh + MakeUp: teacher chỉ mark Present/Absent; service dựa `leave_requests` + `notice_hours` + `absence_type` để tạo `makeup_credits`; staff gán qua `makeup_allocations`.
 - Giáo án/bài tập: tạo template theo `program`, sinh `lesson_plans` khi tạo sessions; homework gán class/buổi, auto tạo `homework_student`.
 - Kiểm tra + báo cáo tháng: `exams` + `exam_results` cấp dữ liệu; `student_monthly_reports` chứa draft/final; comment/approve/publish.
@@ -2043,14 +2099,4 @@ Khi phụ huynh xem kết quả:
 - Tính lương: Khi session COMPLETED, tạo `session_roles` cho mỗi người tham gia (MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP) với `payable_unit_price` và `payable_allowance`. Khi chạy payroll, query `session_roles` trong kỳ → tạo `payroll_lines` với `component_type`=TEACHING/TA/CLUB/WORKSHOP và `source_id`=session_roles.id. BASE salary lấy từ `contracts`, OVERTIME/ALLOWANCE/DEDUCTION từ các nguồn khác.
 - Media: upload kèm tag class/student/month để render album theo tháng cho phụ huynh.
 - Notification: `notifications` lưu deeplink tới màn hình mini app/web (TKB, invoice, report, mission, media…).
-
-## 18. Import dbdiagram.io
-1) Mở dbdiagram.io → Import → dán nội dung `db/schema.dbml`.
-2) Chọn DBML. Các comment enum dùng cho app layer; có thể chuyển sang enum DB nếu muốn.
-
-## 19. Điều chỉnh/Tuỳ chọn
-- Có thể tách bảng lookup cho enum (attendance_status, absence_type, mission_type…) nếu muốn khóa cứng.
-- Nếu cần audit file/media lưu S3, thêm trường metadata (size, mime).
-- Nếu dùng Postgres: nên thêm partial index trên (profile_type, branch_id), (student_profile_id, status) cho bảng lớn như `homework_student`, `attendances`.
-- Với PayOS webhook: lưu thêm bảng `webhook_events` nếu cần idempotency.‬‬
 
