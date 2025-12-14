@@ -19,6 +19,9 @@ Table users {
   id uuid [pk]
   email varchar(255) [unique]
   password_hash text
+  role varchar(20) // PARENT/STUDENT/ADMIN/TEACHER/STAFF
+  display_name varchar(255) // required for ADMIN/TEACHER/STAFF; optional for PARENT/STUDENT
+  branch_id uuid [ref: - branches.id] // required for TEACHER/STAFF; null for ADMIN/PARENT/STUDENT
   is_active boolean
   created_at timestamptz
   updated_at timestamptz
@@ -27,10 +30,9 @@ Table users {
 Table profiles {
   id uuid [pk]
   user_id uuid [ref: > users.id]
-  profile_type varchar(20) // PARENT/STUDENT/TEACHER/STAFF
+  profile_type varchar(20) // PARENT/STUDENT only
   display_name varchar(255)
-  pin_hash text // required when selecting PARENT profile; optional others
-  branch_id uuid [ref: - branches.id] // required for staff/teacher
+  pin_hash text // required when selecting PARENT profile
   is_active boolean
   created_at timestamptz
   updated_at timestamptz
@@ -43,17 +45,6 @@ Table parent_student_links {
   created_at timestamptz
 }
 
-Table roles {
-  id uuid [pk]
-  code varchar(50) [unique] // ROLE_ADMIN/ROLE_TEACHER/ROLE_STAFF_OPS/ROLE_STAFF_ACC/ROLE_PARENT/ROLE_STUDENT
-  description text
-}
-
-Table profile_roles {
-  id uuid [pk]
-  profile_id uuid [ref: > profiles.id]
-  role_id uuid [ref: > roles.id]
-}
 
 Table programs {
   id uuid [pk]
@@ -82,8 +73,8 @@ Table classes {
   program_id uuid [ref: > programs.id]
   code varchar(50) [unique]
   title varchar(255)
-  main_teacher_id uuid [ref: - profiles.id] // teacher profile
-  assistant_teacher_id uuid [ref: - profiles.id]
+  main_teacher_id uuid [ref: - users.id] // teacher user (role=TEACHER)
+  assistant_teacher_id uuid [ref: - users.id] // assistant teacher user (role=TEACHER)
   start_date date
   end_date date
   status varchar(20) // PLANNED/ACTIVE/CLOSED
@@ -109,15 +100,15 @@ Table sessions {
   branch_id uuid [ref: > branches.id]
   planned_datetime timestamptz
   planned_room_id uuid [ref: - classrooms.id]
-  planned_teacher_id uuid [ref: - profiles.id]
-  planned_assistant_id uuid [ref: - profiles.id]
+  planned_teacher_id uuid [ref: - users.id] // teacher user (role=TEACHER)
+  planned_assistant_id uuid [ref: - users.id] // assistant teacher user (role=TEACHER)
   duration_minutes int
   participation_type varchar(20) // MAIN/MAKEUP/EXTRA_PAID/FREE/TRIAL
   status varchar(20) // SCHEDULED/COMPLETED/CANCELLED
   actual_datetime timestamptz
   actual_room_id uuid [ref: - classrooms.id]
-  actual_teacher_id uuid [ref: - profiles.id]
-  actual_assistant_id uuid [ref: - profiles.id]
+  actual_teacher_id uuid [ref: - users.id] // teacher user (role=TEACHER)
+  actual_assistant_id uuid [ref: - users.id] // assistant teacher user (role=TEACHER)
   created_at timestamptz
   updated_at timestamptz
 }
@@ -132,7 +123,7 @@ Table leave_requests {
   notice_hours int // hours before planned session
   status varchar(20) // PENDING/APPROVED/REJECTED
   requested_at timestamptz
-  approved_by uuid [ref: - profiles.id]
+  approved_by uuid [ref: - users.id] // staff user (role=STAFF)
   approved_at timestamptz
 }
 
@@ -142,7 +133,7 @@ Table attendances {
   student_profile_id uuid [ref: > profiles.id]
   attendance_status varchar(20) // PRESENT/ABSENT/MAKEUP
   absence_type varchar(30) // WITH_NOTICE_24H/UNDER_24H/NO_NOTICE/LONG_TERM
-  marked_by uuid [ref: - profiles.id] // teacher
+  marked_by uuid [ref: - users.id] // teacher user (role=TEACHER)
   marked_at timestamptz
 
   Indexes {
@@ -165,7 +156,7 @@ Table makeup_allocations {
   id uuid [pk]
   makeup_credit_id uuid [ref: > makeup_credits.id]
   target_session_id uuid [ref: > sessions.id]
-  assigned_by uuid [ref: - profiles.id]
+  assigned_by uuid [ref: - users.id] // staff user (role=STAFF)
   assigned_at timestamptz
 }
 
@@ -177,7 +168,7 @@ Table lesson_plan_templates {
   structure_json jsonb
   is_active boolean
   is_deleted boolean
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // admin/staff user (role=ADMIN/STAFF)
   created_at timestamptz
 }
 
@@ -189,7 +180,7 @@ Table lesson_plans {
   actual_content jsonb
   actual_homework text
   teacher_notes text
-  submitted_by uuid [ref: - profiles.id]
+  submitted_by uuid [ref: - users.id] // teacher user (role=TEACHER)
   submitted_at timestamptz
 
   Indexes {
@@ -211,7 +202,7 @@ Table homework_assignments {
   max_score numeric
   reward_stars int
   mission_id uuid [ref: - missions.id]
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // teacher user (role=TEACHER)
   created_at timestamptz
 }
 
@@ -239,7 +230,7 @@ Table exams {
   date date
   max_score numeric
   description text
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // teacher user (role=TEACHER)
 }
 
 Table exam_results {
@@ -249,7 +240,7 @@ Table exam_results {
   score numeric
   comment text
   attachment_url text
-  graded_by uuid [ref: - profiles.id]
+  graded_by uuid [ref: - users.id] // teacher user (role=TEACHER)
   graded_at timestamptz
 }
 
@@ -273,8 +264,8 @@ Table student_monthly_reports {
   final_content jsonb
   status varchar(20) // DRAFT/REVIEW/APPROVED/REJECTED
   ai_version varchar(50)
-  submitted_by uuid [ref: - profiles.id]
-  reviewed_by uuid [ref: - profiles.id]
+  submitted_by uuid [ref: - users.id] // teacher user (role=TEACHER)
+  reviewed_by uuid [ref: - users.id] // staff/admin user (role=STAFF/ADMIN)
   reviewed_at timestamptz
   published_at timestamptz
 }
@@ -282,7 +273,7 @@ Table student_monthly_reports {
 Table report_comments {
   id uuid [pk]
   report_id uuid [ref: > student_monthly_reports.id]
-  commenter_id uuid [ref: > profiles.id]
+  commenter_id uuid [ref: > users.id] // teacher/staff/admin user
   content text
   created_at timestamptz
 }
@@ -298,18 +289,18 @@ Table missions {
   start_at timestamptz
   end_at timestamptz
   reward_stars int
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // teacher/staff user (role=TEACHER/STAFF)
   created_at timestamptz
 }
 
-Table mission_progress {
+Table mission_progress {  
   id uuid [pk]
   mission_id uuid [ref: > missions.id]
   student_profile_id uuid [ref: > profiles.id]
   status varchar(20) // ASSIGNED/IN_PROGRESS/COMPLETED/EXPIRED
   progress_value numeric
   completed_at timestamptz
-  verified_by uuid [ref: - profiles.id]
+  verified_by uuid [ref: - users.id] // teacher/staff user (role=TEACHER/STAFF)
 
   Indexes {
     mission_progress_unique [unique] (mission_id, student_profile_id)
@@ -324,7 +315,7 @@ Table star_transactions {
   source_type varchar(30) // MISSION/MANUAL/HOMEWORK/TEST/ADJUSTMENT
   source_id uuid
   balance_after int
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // teacher/staff user (role=TEACHER/STAFF) or system
   created_at timestamptz
 }
 
@@ -352,7 +343,7 @@ Table reward_redemptions {
   item_id uuid [ref: > reward_store_items.id]
   student_profile_id uuid [ref: > profiles.id]
   status varchar(20) // REQUESTED/APPROVED/DELIVERED/RECEIVED/CANCELLED
-  handled_by uuid [ref: - profiles.id]
+  handled_by uuid [ref: - users.id] // staff user (role=STAFF)
   handled_at timestamptz
   delivered_at timestamptz // thời gian staff trao quà
   received_at timestamptz // thời gian student xác nhận nhận (hoặc auto sau 3 ngày)
@@ -371,7 +362,7 @@ Table leads {
   program_interest varchar(255)
   notes text
   status varchar(30) // NEW/CONTACTED/BOOKED_TEST/TEST_DONE/ENROLLED/LOST
-  owner_staff_id uuid [ref: - profiles.id]
+  owner_staff_id uuid [ref: - users.id] // staff user (role=STAFF)
   first_response_at timestamptz // SLA phản hồi đầu tiên
   touch_count int // số lần chạm
   next_action_at timestamptz // lịch follow-up tiếp theo
@@ -389,7 +380,7 @@ Table placement_tests {
   status varchar(20) // SCHEDULED/NO_SHOW/COMPLETED/CANCELLED
   room varchar(100)
   meeting_link text
-  invigilator_profile_id uuid [ref: - profiles.id]
+  invigilator_user_id uuid [ref: - users.id] // teacher/staff user (role=TEACHER/STAFF)
   result_score numeric
   listening_score numeric
   speaking_score numeric
@@ -407,13 +398,13 @@ Table lead_activities {
   activity_type varchar(20) // CALL/ZALO/SMS/EMAIL/NOTE
   content text
   next_action_at timestamptz
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // staff user (role=STAFF)
   created_at timestamptz
 }
 
 Table media_assets {
   id uuid [pk]
-  uploader_id uuid [ref: > profiles.id]
+  uploader_id uuid [ref: > users.id] // teacher/staff user (role=TEACHER/STAFF)
   branch_id uuid [ref: > branches.id]
   class_id uuid [ref: - classes.id]
   student_profile_id uuid [ref: - profiles.id]
@@ -451,7 +442,7 @@ Table invoices {
   payos_payment_link text
   payos_qr text
   issued_at timestamptz
-  issued_by uuid [ref: - profiles.id]
+  issued_by uuid [ref: - users.id] // accountant/staff user (role=STAFF)
 }
 
 Table invoice_lines {
@@ -471,7 +462,7 @@ Table payments {
   amount numeric
   paid_at timestamptz
   reference_code varchar(100)
-  confirmed_by uuid [ref: - profiles.id]
+  confirmed_by uuid [ref: - users.id] // accountant/staff user (role=STAFF)
   evidence_url text
 }
 
@@ -485,14 +476,14 @@ Table cashbook_entries {
   related_type varchar(30) // INVOICE/PAYROLL/EXPENSE/ADJUSTMENT
   related_id uuid
   entry_date date
-  created_by uuid [ref: - profiles.id]
+  created_by uuid [ref: - users.id] // accountant/staff user (role=STAFF)
   attachment_url text
   created_at timestamptz
 }
 
 Table contracts {
   id uuid [pk]
-  staff_profile_id uuid [ref: > profiles.id]
+  staff_user_id uuid [ref: > users.id] // staff/teacher user (role=STAFF/TEACHER)
   contract_type varchar(20) // PROBATION/FIXED_TERM/INDEFINITE/PART_TIME
   start_date date
   end_date date
@@ -505,19 +496,19 @@ Table contracts {
 
 Table shift_attendance {
   id uuid [pk]
-  staff_profile_id uuid [ref: > profiles.id]
+  staff_user_id uuid [ref: > users.id] // staff user (role=STAFF)
   contract_id uuid [ref: - contracts.id]
   shift_date date
   shift_hours numeric
   role varchar(50)
-  approved_by uuid [ref: - profiles.id]
+  approved_by uuid [ref: - users.id] // admin/staff user (role=ADMIN/STAFF)
   approved_at timestamptz
 }
 
 Table session_roles {
   id uuid [pk]
   session_id uuid [ref: > sessions.id]
-  staff_profile_id uuid [ref: > profiles.id]
+  staff_user_id uuid [ref: > users.id] // teacher/staff user (role=TEACHER/STAFF)
   role varchar(30) // MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP
   payable_unit_price numeric
   payable_allowance numeric
@@ -529,7 +520,7 @@ Table payroll_runs {
   period_end date
   branch_id uuid [ref: > branches.id]
   status varchar(20) // DRAFT/APPROVED/PAID
-  approved_by uuid [ref: - profiles.id]
+  approved_by uuid [ref: - users.id] // admin/staff user (role=ADMIN/STAFF)
   paid_at timestamptz
   created_at timestamptz
 }
@@ -537,7 +528,7 @@ Table payroll_runs {
 Table payroll_lines {
   id uuid [pk]
   payroll_run_id uuid [ref: > payroll_runs.id]
-  staff_profile_id uuid [ref: > profiles.id]
+  staff_user_id uuid [ref: > users.id] // staff/teacher user (role=STAFF/TEACHER)
   component_type varchar(30) // TEACHING/TA/CLUB/WORKSHOP/BASE/OVERTIME/ALLOWANCE/DEDUCTION
   source_id uuid // session_roles/contract/expense
   amount numeric
@@ -549,7 +540,7 @@ Table payroll_lines {
 Table payroll_payments {
   id uuid [pk]
   payroll_run_id uuid [ref: > payroll_runs.id]
-  staff_profile_id uuid [ref: > profiles.id]
+  staff_user_id uuid [ref: > users.id] // staff/teacher user (role=STAFF/TEACHER)
   amount numeric
   method varchar(20) // BANK_TRANSFER/CASH
   paid_at timestamptz
@@ -558,7 +549,8 @@ Table payroll_payments {
 
 Table notifications {
   id uuid [pk]
-  recipient_profile_id uuid [ref: > profiles.id]
+  recipient_user_id uuid [ref: > users.id] // user (can be any role)
+  recipient_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
   channel varchar(20) // ZALO_OA/PUSH/EMAIL
   title varchar(255)
   content text
@@ -596,13 +588,14 @@ Table email_templates {
 
 Table tickets {
   id uuid [pk]
-  opened_by_profile_id uuid [ref: > profiles.id]
+  opened_by_user_id uuid [ref: > users.id] // user (can be any role)
+  opened_by_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
   branch_id uuid [ref: > branches.id]
   class_id uuid [ref: - classes.id]
   category varchar(30) // HOMEWORK/FINANCE/SCHEDULE/TECH
   message text
   status varchar(20) // OPEN/IN_PROGRESS/RESOLVED/CLOSED
-  assigned_to_profile_id uuid [ref: - profiles.id]
+  assigned_to_user_id uuid [ref: - users.id] // staff user (role=STAFF)
   created_at timestamptz
   updated_at timestamptz
 }
@@ -610,7 +603,8 @@ Table tickets {
 Table ticket_comments {
   id uuid [pk]
   ticket_id uuid [ref: > tickets.id]
-  commenter_id uuid [ref: > profiles.id]
+  commenter_user_id uuid [ref: > users.id] // user (can be any role)
+  commenter_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
   message text
   attachment_url text
   created_at timestamptz
@@ -618,7 +612,8 @@ Table ticket_comments {
 
 Table audit_logs {
   id uuid [pk]
-  actor_id uuid [ref: - profiles.id]
+  actor_user_id uuid [ref: - users.id] // user (can be any role)
+  actor_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
   action varchar(100)
   entity_type varchar(100)
   entity_id uuid

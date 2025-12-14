@@ -1,41 +1,58 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Text.Json.Serialization;
+using HealthChecks.UI.Client;
+using Kidzgo.API.Extensions;
+using Kidzgo.Application;
+using Kidzgo.Infrastructure;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+namespace Kidzgo.API;
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+public class Program
 {
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    public static void Main(string[] args)
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        
+        builder.Configuration.AddEnvironmentVariables();
+        
+        builder.Services.AddSwaggerGenWithAuth(); 
+        
+        builder.Services
+            .AddApplication()
+            .AddPresentation()
+            .AddInfrastructure(builder.Configuration);
+        
+        builder.Services
+            .AddControllers(options =>
+            {
+                options.ModelBinderProviders.Insert(0, new ModelBinding.DateOnlyModelBinderProvider());
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                options.JsonSerializerOptions.Converters.Add(new Extensions.DateTimeJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Extensions.NullableDateTimeJsonConverter());
+            });
+        
+        var app = builder.Build();
 
-app.Run();
+        app.UseSwaggerWithUi();  
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        app.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+        });
+
+        app.UseCors("AllowLocalAndProdFE");
+        app.UseRequestContextLogging();
+        app.UseExceptionHandler();
+        app.UseHttpsRedirection();
+        
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.ApplyMigrations();  // chạy EF Core migration khi khởi động
+        app.MapControllers();
+
+        app.Run();
+    }
 }
