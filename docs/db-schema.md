@@ -1866,6 +1866,7 @@ Khi phụ huynh xem kết quả:
 - `base_salary` (numeric, nullable): Lương cơ bản (với full-time)
 - `hourly_rate` (numeric, nullable): Lương theo giờ (với part-time)
 - `allowance_fixed` (numeric, nullable): Phụ cấp cố định
+- `social_insurance_salary` (numeric, nullable): Mức lương làm căn cứ đóng BHXH
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `is_active` (boolean): Trạng thái hiệu lực
 

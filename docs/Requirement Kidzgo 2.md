@@ -66,7 +66,10 @@ Lead & Tư vấn → Kiểm tra xếp lớp (thực hiện thủ công, nhập �
 
 KidzGo được đề xuất dưới dạng **nền tảng web** kết hợp với **Zalo Mini App** dành cho phụ huynh và học viên, tích hợp chặt chẽ với Zalo OA, PayOS, dịch vụ AI và tài khoản ngân hàng.
 
-### **0\. Có 2 trang login, 1 trang login là cho students/parent, 1 trang login cho admin/staff/teacher**
+### **0\. Hai cổng đăng nhập tách biệt (Parent/Student vs Nội bộ Admin/Staff/Teacher)**
+
+- Cổng **Parent/Student** (web & Zalo Mini App): Login Account (Email + Mật khẩu) → hiển thị danh sách Profile PARENT/STUDENT của tài khoản → chọn Profile; khi chọn **Parent** phải nhập **PIN** của Profile Parent.
+- Cổng **Nội bộ** (Admin/Staff/Teacher): Login Account riêng (Email + Mật khẩu); vào thẳng portal nội bộ (Teacher/Staff/Admin), Teacher/Staff có thể yêu cầu nhập PIN (user-level) để tăng bảo mật. Profile Teacher/Staff **không xuất hiện** ở cổng Parent/Student.
 
 ### **1\. Kiến trúc multi-branch & phân quyền**
 
@@ -80,21 +83,15 @@ KidzGo được đề xuất dưới dạng **nền tảng web** kết hợp v�
 
 ### **2\. Tài khoản đăng nhập chung, chọn profile Parent/Student với PIN**
 
-* Người dùng đăng nhập bằng **tài khoản đăng nhập chung** (email \+ mật khẩu, ví dụ Gmail).
+* Cổng Parent/Student: đăng nhập bằng **tài khoản chung** (email \+ mật khẩu, hoặc qua Zalo Mini App đã liên kết). Sau login hiển thị danh sách **profile** PARENT/STUDENT thuộc tài khoản đó:
 
-* Sau khi login, hệ thống hiển thị danh sách **profile** thuộc tài khoản đó:
-
-  * 1 profile phụ huynh (Parent). ( phải có mã pin thì mới vào trang được)
+  * 1 profile phụ huynh (Parent) – khi chọn **bắt buộc nhập PIN** của profile Parent.
 
   * 1 hoặc nhiều profile học sinh (Student).
 
-* Người dùng chọn profile để vào **portal tương ứng**:
+* Cổng nội bộ: Admin/Staff/Teacher login bằng tài khoản riêng (không qua danh sách profile Parent/Student).
 
-  * Chọn **Student** → vào Student Portal.
-
-  * Chọn **Parent** → vào Parent Portal. ( có mã pin)
-
-* Chức năng của Student/Parent và Teacher/Staff được tách **rõ ràng về UI và permission**.
+* Chức năng Parent/Student tách biệt hoàn toàn với Teacher/Staff/Admin về UI và permission.
 
 ### **3\. Giao tiếp “Zalo-first” (Zalo Official Account doanh nghiệp)**
 
@@ -142,25 +139,21 @@ Zalo Mini App là **kênh chính** cho phụ huynh/học viên:
 
 * **Điểm danh & học bù với MakeUpCredit và luật 24h**:
 
-  * Giáo viên chỉ cần đánh dấu **Present/Absent** cho từng học sinh và bấm **“Nộp điểm danh”**.
+  * Giáo viên chỉ cần đánh dấu **Present/Absent** và bấm **“Nộp điểm danh”** (set ActualTeacher, không phải nhớ luật).
 
-  * Phụ huynh xin nghỉ được xử lý qua module **Leave Requests** của staff.
+  * **Leave Request**:
+    - Parent có thể tự tạo đơn nghỉ 1 ngày hoặc dài ngày (Staff cũng có thể tạo dùm).
+    - Đơn nghỉ **trước ≥24h** → hệ thống **auto-approve** và tạo MakeUpCredit.
+    - Đơn nghỉ **sau 24h** hoặc nghỉ dài ngày → chờ Staff duyệt (Approve/Reject).
 
-  * Hệ thống tự kết hợp:
+  * Hệ thống tự kết hợp đơn nghỉ + điểm danh:
+    - Gán loại vắng: WITH_NOTICE_24H / UNDER_24H / NO_NOTICE / LONG_TERM.
+    - Tự tạo **MakeUpCredit** khi đủ điều kiện (≥24h hoặc nghỉ dài đã duyệt).
+    - Trên bảng điểm danh, học sinh nghỉ có phép hiển thị cờ/label “MakeUp”.
 
-    * Thông tin xin nghỉ (có phép ≥/≤24h, nghỉ dài ngày).
-
-    * Kết quả điểm danh (Absent).
-
-    * → Tự gán loại vắng (có phép ≥24h, \<24h, không phép, nghỉ dài ngày).
-
-    * Tự động tạo **MakeUpCredit** nếu đủ điều kiện (≥24h hoặc nghỉ dài đã chấp thuận).
-
-  * Staff dùng module **Học bù** để:
-
-    * Dựa trên MakeUpCredit, tìm lớp tương đương.
-
-    * Xếp học bù công bằng, nhất quán (Participation type \= MAKEUP).
+  * **Xếp học bù**:
+    - Staff đề xuất danh sách buổi bù phù hợp; **Parent chọn buổi bù**, hệ thống tự trừ 1 MakeUpCredit.
+    - Buổi bù được điểm danh với `Participation type = MAKEUP` (không yêu cầu Present/Absent, hiển thị “Buổi bù” trong list GV).
 
 * **Giáo án chuẩn hóa theo từng buổi**:
 
@@ -272,15 +265,11 @@ Zalo Mini App là **kênh chính** cho phụ huynh/học viên:
 
 * Khi học sinh hoàn thành:
 
-  * Tự cộng **sao (star points)**.
+  * Tự cộng **Sao (Star Points)** để đổi quà.
 
-  * Sao tích lũy dùng để:
+  * Tự cộng **XP (Experience Points)** để tăng **Level**.
 
-    * Tăng **level** học viên.
-
-    * Đổi quà trong **“Cửa hàng phần thưởng”** (voucher, quà, ưu đãi do trung tâm định nghĩa).
-
-* Teacher/Staff có thể cộng/trừ sao thủ công với lý do (thưởng/phạt đặc biệt).
+* Teacher/Staff có thể cộng/trừ **Sao** và **XP** thủ công với lý do (thưởng/phạt đặc biệt).
 
 ### **9\. Quản lý tài chính, PayOS, sổ quỹ & lương**
 
@@ -356,7 +345,7 @@ Zalo Mini App là **kênh chính** cho phụ huynh/học viên:
 
     * Loại hợp đồng (thử việc, thời vụ, có thời hạn, không thời hạn).
 
-    * Ngày hiệu lực (từ–đến), lương cơ bản, đơn giá giờ/ca, phụ cấp cố định.
+    * Ngày hiệu lực (từ–đến), lương cơ bản, **mức lương đóng BHXH**, đơn giá giờ/ca, phụ cấp cố định.
 
   * Với staff full-time: lương tháng dựa trên lương cơ bản ± điều chỉnh (chấm công, nghỉ phép không lương, thưởng/phạt).
 
@@ -422,15 +411,15 @@ Zalo Mini App là **kênh chính** cho phụ huynh/học viên:
 
 **2.1. Đăng nhập & chọn profile**
 
-* Đăng nhập bằng email \+ mật khẩu (Login Account).
+* Cổng Parent/Student (web hoặc Zalo Mini App): Đăng nhập bằng Email \+ Mật khẩu (hoặc qua Mini App đã liên kết).
 
-* Chọn profile sau khi login:
+* Sau login, hiển thị danh sách Profile của tài khoản:
 
-  * Parent profile hoặc Student profile tương ứng.
+  * Parent profile (khi chọn phải nhập **PIN của Parent**).
 
-* Nếu tài khoản có profile Teacher/Staff:
+  * Student profile (chọn xong vào thẳng Student Portal).
 
-  * Khi chọn Teacher/Staff, hệ thống yêu cầu nhập PIN.
+* Profile Teacher/Staff **không xuất hiện** ở cổng này; Teacher/Staff dùng cổng nội bộ riêng.
 
 **2.2. Thời khóa biểu & điểm danh**
 
@@ -645,6 +634,13 @@ Zalo Mini App là **kênh chính** cho phụ huynh/học viên:
   * Ví dụ: phụ huynh hỏi về homework, xin hỗ trợ thêm tài liệu.
 
 * Trả lời hoặc phối hợp với staff/manager để giải quyết.
+
+**3.10. Quản lý media/tài liệu cá nhân & tương tác cá nhân hóa**
+
+* Upload media lớp/cá nhân, gắn thẻ Lớp/Học sinh/Tháng, chờ staff/admin duyệt để publish cho phụ huynh/học viên.
+* Truy cập thư viện giáo án khung và lưu tài liệu cá nhân (giáo viên + admin/staff được xem).
+* Xem tóm tắt hồ sơ học viên trong lớp: thông tin cơ bản, điểm placement, lịch sử Attendance/MakeUpCredit, ghi chú quan trọng.
+* Gửi thông báo cá nhân/nhóm nhỏ qua Zalo OA/Mini App (nhắc bài tập, khen thưởng, đề nghị trao đổi).
 
 ---
 
