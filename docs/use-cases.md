@@ -23,8 +23,7 @@ Tóm tắt các luồng chính để dev bám vào chia task. Nếu nghiệp v�
 - Kênh: Web nội bộ.
 - Bước:
   1) Đăng nhập Email + Mật khẩu (tài khoản role TEACHER/STAFF/ADMIN).  
-  2) Có thể yêu cầu PIN (user-level) tăng bảo mật.  
-  3) Vào portal nội bộ đúng role; Teacher/Staff bị ràng buộc branch.
+  2) Vào portal nội bộ đúng role; Teacher/Staff bị ràng buộc branch.
 
 ---
 
