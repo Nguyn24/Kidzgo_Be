@@ -490,6 +490,7 @@ Table contracts {
   base_salary numeric
   hourly_rate numeric
   allowance_fixed numeric
+  social_insurance_salary numeric // mức lương đóng BHXH (nullable)
   branch_id uuid [ref: > branches.id]
   is_active boolean
 }
