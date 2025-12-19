@@ -27,8 +27,6 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.Property(x => x.Room)
             .HasMaxLength(100);
 
-        builder.Property(x => x.MeetingLink);
-
         builder.Property(x => x.InvigilatorUserId);
 
         builder.Property(x => x.ResultScore)

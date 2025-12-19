@@ -1399,13 +1399,14 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `user_id` (uuid, FK → users.id): Liên kết với user (user phải có `role = PARENT` hoặc `role = STUDENT`)
 - `profile_type` (varchar(20)): Loại profile - **CHỈ CÓ PARENT/STUDENT** (CHANGED: bỏ TEACHER/STAFF)
 - `display_name` (varchar(255)): Tên hiển thị
-- `pin_hash` (text): Hash PIN (bắt buộc cho PARENT profile khi chọn profile)
+- `pin_hash` (varchar(97)): Hash PIN (bắt buộc cho PARENT profile khi chọn profile) (CHANGED: max length 97 - PBKDF2-SHA512 format: 64-char hash + '-' + 32-char salt, validate PIN < 10 số trước khi hash)
 - `is_active` (boolean): Trạng thái profile
 - `created_at`, `updated_at` (timestamptz): Thời gian tạo/cập nhật
 
 **Lưu ý**: 
 - `branch_id` đã bị bỏ (CHANGED: không cần cho PARENT/STUDENT)
 - Chỉ dùng cho PARENT/STUDENT, không dùng cho ADMIN/TEACHER/STAFF
+- PIN phải được validate < 10 số trước khi hash
 
 #### `parent_student_links` - Liên kết phụ huynh-học sinh
 - `id` (uuid, PK): Định danh liên kết
@@ -1419,6 +1420,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 
 #### `programs` - Chương trình học
 - `id` (uuid, PK): Định danh chương trình
+- `branch_id` (uuid, FK → branches.id): Chi nhánh (NEW: các chi nhánh không dùng chung program)
 - `name` (varchar(255)): Tên chương trình (ví dụ: "Tiếng Anh Level 1")
 - `level` (varchar(100)): Cấp độ (ví dụ: "Beginner", "Intermediate")
 - `total_sessions` (int): Tổng số buổi học
@@ -1457,7 +1459,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `student_profile_id` (uuid, FK → profiles.id): Học sinh
 - `enroll_date` (date): Ngày ghi danh
 - `status` (varchar(20)): Trạng thái - ACTIVE/PAUSED/DROPPED
-- `is_main` (boolean): Lớp chính (true) hay lớp bổ trợ (false)
+- (REMOVED: `is_main` - đã bỏ field này)
 - `tuition_plan_id` (uuid, FK → tuition_plans.id, nullable): Gói học phí áp dụng
 
 #### `sessions` - Buổi học
@@ -1482,8 +1484,10 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `session_id` (uuid, FK → sessions.id): Buổi học
 - `staff_user_id` (uuid, FK → users.id): Staff/Teacher tham gia (CHANGED: từ staff_profile_id → staff_user_id, role=TEACHER/STAFF)
 - `role` (varchar(30)): Vai trò - MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP
-- `payable_unit_price` (numeric): Đơn giá tính lương cho vai trò này
-- `payable_allowance` (numeric): Phụ cấp (nếu có)
+- `payable_unit_price` (numeric, nullable): Đơn giá tính lương cho vai trò này
+- `payable_allowance` (numeric, nullable): Phụ cấp (nếu có)
+
+**Lưu ý**: SessionRole lưu thông tin payroll riêng (payable_unit_price, payable_allowance) khác với Session (planned_teacher_id, actual_teacher_id). Có thể giữ lại để linh hoạt tính lương, nhưng đang cân nhắc xem có thừa không.
 
 ### 15.3. Khối Nghỉ/Điểm danh/Học bù
 
@@ -1593,9 +1597,55 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `class_id` (uuid, FK → classes.id): Lớp học
 - `exam_type` (varchar(30)): Loại kiểm tra - PLACEMENT/PROGRESS/MIDTERM/FINAL/SPEAKING
 - `date` (date): Ngày kiểm tra
-- `max_score` (numeric): Điểm tối đa
-- `description` (text): Mô tả
-- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER)
+- `max_score` (numeric, nullable): Điểm tối đa
+- `description` (text, nullable): Mô tả
+- `created_by` (uuid, FK → users.id, nullable): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER)
+
+#### `exercises` - Bài tập/Quiz (NEW)
+- `id` (uuid, PK): Định danh bài tập
+- `class_id` (uuid, FK → classes.id, nullable): Lớp học (optional, có thể gán cho lớp cụ thể)
+- `title` (varchar(255)): Tiêu đề bài tập
+- `description` (text, nullable): Mô tả
+- `exercise_type` (varchar(20)): Loại - READING/LISTENING/WRITING
+- `created_by` (uuid, FK → users.id): Người tạo (TEACHER/ADMIN)
+- `is_active` (boolean): Trạng thái hoạt động
+- `is_deleted` (boolean): Đánh dấu xóa mềm
+- `created_at` (timestamptz): Thời gian tạo
+- `updated_at` (timestamptz): Thời gian cập nhật
+
+**Mục đích**: Tạo bài tập dạng quiz như Google Forms, hỗ trợ multiple choice cho reading/listening, text input cho writing.
+
+#### `exercise_questions` - Câu hỏi trong bài tập (NEW)
+- `id` (uuid, PK): Định danh câu hỏi
+- `exercise_id` (uuid, FK → exercises.id): Bài tập
+- `order_index` (int): Thứ tự câu hỏi
+- `question_text` (text): Nội dung câu hỏi
+- `question_type` (varchar(20)): Loại - MULTIPLE_CHOICE/TEXT_INPUT
+- `options` (jsonb, nullable): Danh sách lựa chọn (JSON array, cho multiple choice)
+- `correct_answer` (text, nullable): Đáp án đúng
+- `points` (int): Điểm số cho câu hỏi này
+- `explanation` (text, nullable): Giải thích đáp án
+
+#### `exercise_submissions` - Bài làm của học sinh (NEW)
+- `id` (uuid, PK): Định danh bài làm
+- `exercise_id` (uuid, FK → exercises.id): Bài tập
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `answers` (jsonb, nullable): Đáp án của học sinh (JSON object: {questionId: answer})
+- `score` (numeric, nullable): Tổng điểm
+- `submitted_at` (timestamptz): Thời gian nộp bài
+- `graded_at` (timestamptz, nullable): Thời gian chấm (cho writing exercises)
+- `graded_by` (uuid, FK → users.id, nullable): Giáo viên chấm (cho writing exercises)
+- **Unique constraint**: (exercise_id, student_profile_id)
+
+#### `exercise_submission_answers` - Đáp án từng câu hỏi (NEW)
+- `id` (uuid, PK): Định danh
+- `submission_id` (uuid, FK → exercise_submissions.id): Bài làm
+- `question_id` (uuid, FK → exercise_questions.id): Câu hỏi
+- `answer` (text): Đáp án của học sinh
+- `is_correct` (boolean): Đúng hay sai (auto-graded cho multiple choice)
+- `points_awarded` (numeric, nullable): Điểm được cộng
+- `teacher_feedback` (text, nullable): Nhận xét của giáo viên (cho writing questions)
+- **Unique constraint**: (submission_id, question_id)
 
 #### `exam_results` - Kết quả kiểm tra
 - `id` (uuid, PK): Định danh kết quả
@@ -1603,7 +1653,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `score` (numeric): Điểm số
 - `comment` (text): Nhận xét
-- `attachment_url` (text, nullable): **Link file scan bài làm** - URL đến file ảnh/PDF scan bài kiểm tra của học sinh. Dùng để:
+- `attachment_urls` (jsonb, nullable): **Danh sách URL file scan bài làm** - JSON array chứa nhiều URL đến file ảnh/PDF scan bài kiểm tra của học sinh (CHANGED: từ attachment_url string → attachment_urls jsonb để hỗ trợ nhiều ảnh). Dùng để:
   - Lưu trữ bản scan bài làm trên giấy (nếu kiểm tra viết tay)
   - Phụ huynh/học sinh có thể xem lại bài làm đã chấm
   - Lưu trữ bằng chứng điểm số (backup, audit)
@@ -1612,13 +1662,13 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `graded_by` (uuid, FK → users.id): Người chấm (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `graded_at` (timestamptz): Thời gian chấm
 
-**Mục đích sử dụng `attachment_url`**:
+**Mục đích sử dụng `attachment_urls`**:
 
-1. **Lưu trữ bài làm scan**: Khi học sinh làm bài trên giấy, giáo viên scan và upload lên hệ thống (S3/CDN), lưu URL vào `attachment_url`
+1. **Lưu trữ bài làm scan**: Khi học sinh làm bài trên giấy, giáo viên scan và upload lên hệ thống (S3/CDN), lưu danh sách URL vào `attachment_urls` (JSON array)
 
 2. **Minh chứng điểm số**: File scan là bằng chứng về bài làm và điểm số đã chấm, hỗ trợ giải quyết tranh chấp
 
-3. **Xem lại bài làm**: Phụ huynh và học sinh có thể xem lại bài làm đã chấm qua link này
+3. **Xem lại bài làm**: Phụ huynh và học sinh có thể xem lại bài làm đã chấm qua danh sách link này
 
 4. **Lưu trữ lâu dài**: Bài kiểm tra quan trọng (midterm, final) được lưu trữ để tham khảo sau này
 
@@ -1629,21 +1679,39 @@ Học sinh: Nguyễn Văn A
 Điểm: 8.5/10
 
 Giáo viên chấm bài trên giấy, scan bài làm và upload lên S3:
-→ attachment_url: "https://s3.amazonaws.com/kidzgo/exams/2024/midterm/student_A_scan.pdf"
+→ attachment_urls: [
+    "https://s3.amazonaws.com/kidzgo/exams/2024/midterm/student_A_page1.pdf",
+    "https://s3.amazonaws.com/kidzgo/exams/2024/midterm/student_A_page2.pdf"
+  ]
 
 Khi phụ huynh xem kết quả:
 - Thấy điểm: 8.5/10
 - Thấy nhận xét: "Bài làm tốt, cần luyện thêm phần ngữ pháp"
-- Click vào attachment_url để xem scan bài làm đã chấm
+- Click vào attachment_urls để xem danh sách scan bài làm đã chấm
 ```
 
 **Lưu ý**:
-- `attachment_url` là nullable - không phải tất cả bài kiểm tra đều cần scan (ví dụ: quiz online không cần)
+- `attachment_urls` là nullable - không phải tất cả bài kiểm tra đều cần scan (ví dụ: quiz online không cần)
 - File thường lưu trên S3/CDN, không lưu trực tiếp trong database
 - Format file: PDF hoặc ảnh (JPG, PNG)
-- Có thể có nhiều trang (scan nhiều trang thành 1 file PDF)
+- Có thể có nhiều trang (mỗi trang một URL trong JSON array)
 
 ### 15.6. Khối Báo cáo tháng + AI
+
+#### `session_reports` - Báo cáo buổi học (NEW)
+- `id` (uuid, PK): Định danh báo cáo
+- `session_id` (uuid, FK → sessions.id): Buổi học
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `teacher_user_id` (uuid, FK → users.id): Giáo viên tạo báo cáo
+- `report_date` (date): Ngày buổi học (để filter theo khoảng thời gian)
+- `feedback` (text): Nhận xét/feedback của giáo viên cho học sinh
+- `ai_generated_summary` (text, nullable): Tóm tắt do AI tạo (cho tổng hợp báo cáo tháng)
+- `is_monthly_compiled` (boolean): Đã được tổng hợp vào báo cáo tháng chưa
+- `created_at` (timestamptz): Thời gian tạo
+- `updated_at` (timestamptz): Thời gian cập nhật
+- **Unique constraint**: (session_id, student_profile_id)
+
+**Mục đích**: Giáo viên ghi nhận feedback cho từng học sinh sau mỗi buổi học. Cuối tháng có thể chọn khoảng thời gian để xem lại và tổng hợp báo cáo tháng. AI có thể hỗ trợ tổng hợp dữ liệu.
 
 #### `monthly_report_jobs` - Job tạo báo cáo tháng
 - `id` (uuid, PK): Định danh job
@@ -1686,10 +1754,13 @@ Khi phụ huynh xem kết quả:
 - `target_class_id` (uuid, FK → classes.id, nullable): Lớp mục tiêu (nếu scope=CLASS)
 - `target_group` (jsonb, nullable): Nhóm học sinh cụ thể (nếu scope=GROUP)
 - `mission_type` (varchar(50)): Loại nhiệm vụ - HOMEWORK_STREAK/READING_STREAK/NO_UNEXCUSED_ABSENCE/CUSTOM
-- `start_at` (timestamptz): Thời gian bắt đầu
-- `end_at` (timestamptz): Thời gian kết thúc
-- `reward_stars` (int): Số sao thưởng khi hoàn thành
-- `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF)
+- `start_at` (timestamptz, nullable): Thời gian bắt đầu
+- `end_at` (timestamptz, nullable): Thời gian kết thúc
+- `reward_stars` (int, nullable): Số sao thưởng khi hoàn thành
+- `reward_exp` (int, nullable): Số exp thưởng khi hoàn thành (NEW)
+- `total_questions` (int, nullable): Tổng số câu hỏi (cho nhiệm vụ dạng quiz) (NEW)
+- `progress_per_question` (numeric, nullable): Phần trăm tiến độ mỗi câu hỏi (ví dụ: 10% nếu 10 câu) (NEW)
+- `created_by` (uuid, FK → users.id, nullable): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF)
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `mission_progress` - Tiến độ nhiệm vụ
@@ -1707,11 +1778,23 @@ Khi phụ huynh xem kết quả:
 - `student_profile_id` (uuid, FK → profiles.id): Học sinh (giữ nguyên - student dùng profile)
 - `amount` (int): Số lượng sao (+ hoặc -)
 - `reason` (varchar(100)): Lý do (ví dụ: "Hoàn thành bài tập", "Đổi quà")
-- `source_type` (varchar(30)): Nguồn - MISSION/MANUAL/HOMEWORK/TEST/ADJUSTMENT
+- `source_type` (varchar(30)): Nguồn - MISSION/MANUAL/HOMEWORK/TEST/ADJUSTMENT/ATTENDANCE
 - `source_id` (uuid, nullable): ID của nguồn (mission_id, homework_id...)
 - `balance_after` (int): Số dư sau giao dịch (để audit)
-- `created_by` (uuid, FK → users.id): Người tạo giao dịch (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF hoặc system)
+- `created_by` (uuid, FK → users.id, nullable): Người tạo giao dịch (CHANGED: từ profiles.id → users.id, role=TEACHER/STAFF hoặc system)
 - `created_at` (timestamptz): Thời gian tạo
+
+#### `attendance_streaks` - Điểm danh hàng ngày (NEW)
+- `id` (uuid, PK): Định danh
+- `student_profile_id` (uuid, FK → profiles.id): Học sinh
+- `attendance_date` (date): Ngày điểm danh
+- `current_streak` (int): Số ngày streak hiện tại (consecutive days)
+- `reward_stars` (int): Số sao thưởng (ví dụ: 1 sao mỗi lần điểm danh)
+- `reward_exp` (int): Số exp thưởng (ví dụ: 5 exp mỗi lần điểm danh)
+- `created_at` (timestamptz): Thời gian tạo
+- **Unique constraint**: (student_profile_id, attendance_date)
+
+**Mục đích**: Theo dõi streak điểm danh hàng ngày. Mỗi khi học sinh vào web/app sẽ được tính là 1 lần điểm danh, nhận sao và exp. Hỗ trợ gamification và khuyến khích học sinh tham gia thường xuyên.
 
 #### `student_levels` - Level học sinh
 - `id` (uuid, PK): Định danh
@@ -1733,6 +1816,7 @@ Khi phụ huynh xem kết quả:
 #### `reward_redemptions` - Đổi quà
 - `id` (uuid, PK): Định danh
 - `item_id` (uuid, FK → reward_store_items.id): Item được đổi
+- `item_name` (varchar(255)): Tên item tại thời điểm đổi (NEW: lưu lại tên item để tránh mất dữ liệu khi item bị xóa/sửa)
 - `student_profile_id` (uuid, FK → profiles.id): Học sinh đổi (giữ nguyên - student dùng profile)
 - `status` (varchar(20)): Trạng thái - REQUESTED/APPROVED/DELIVERED/RECEIVED/CANCELLED
 - `handled_by` (uuid, FK → users.id, nullable): Staff xử lý (duyệt) (CHANGED: từ profiles.id → users.id, role=STAFF)
@@ -1773,12 +1857,21 @@ Khi phụ huynh xem kết quả:
 - `id` (uuid, PK): Định danh test
 - `lead_id` (uuid, FK → leads.id, nullable): Lead (nếu chưa là học sinh)
 - `student_profile_id` (uuid, FK → profiles.id, nullable): Học sinh (nếu đã ghi danh) (giữ nguyên - student dùng profile)
-- `scheduled_at` (timestamptz): Thời gian hẹn test
-- `result_score` (numeric, nullable): Điểm số
-- `level_recommendation` (varchar(100), nullable): Cấp độ đề xuất
-- `notes` (text): Ghi chú
-- `attachment_url` (text, nullable): Link file kết quả
+- `class_id` (uuid, FK → classes.id, nullable): Lớp học (nếu liên quan)
+- `scheduled_at` (timestamptz, nullable): Thời gian hẹn test
+- `status` (varchar(20)): Trạng thái - SCHEDULED/NO_SHOW/COMPLETED/CANCELLED
+- `room` (varchar(100), nullable): Phòng test
 - `invigilator_user_id` (uuid, FK → users.id, nullable): Người thực hiện test (CHANGED: từ invigilator_profile_id → invigilator_user_id, role=TEACHER/STAFF)
+- `result_score` (numeric, nullable): Điểm tổng
+- `listening_score` (numeric, nullable): Điểm nghe
+- `speaking_score` (numeric, nullable): Điểm nói
+- `reading_score` (numeric, nullable): Điểm đọc
+- `writing_score` (numeric, nullable): Điểm viết
+- `level_recommendation` (varchar(100), nullable): Cấp độ đề xuất
+- `program_recommendation` (varchar(100), nullable): Chương trình đề xuất
+- `notes` (text, nullable): Ghi chú
+- `attachment_url` (text, nullable): Link file kết quả
+- (REMOVED: `meeting_link` - đã bỏ field này)
 
 ### 15.9. Khối Media
 
@@ -1794,6 +1887,21 @@ Khi phụ huynh xem kết quả:
 - `caption` (text, nullable): Chú thích
 - `visibility` (varchar(20)): Quyền xem - CLASS_ONLY/PERSONAL/PUBLIC_PARENT
 - `created_at` (timestamptz): Thời gian upload
+
+#### `blogs` - Blog posts (NEW)
+- `id` (uuid, PK): Định danh blog
+- `title` (varchar(255)): Tiêu đề blog
+- `summary` (varchar(500), nullable): Tóm tắt ngắn (cho preview)
+- `content` (text): Nội dung blog đầy đủ (có thể HTML/Markdown)
+- `featured_image_url` (varchar(500), nullable): URL ảnh đại diện
+- `created_by` (uuid, FK → users.id): Người tạo (ADMIN/STAFF)
+- `is_published` (boolean): Đã publish lên landing page chưa
+- `is_deleted` (boolean): Đánh dấu xóa mềm
+- `published_at` (timestamptz, nullable): Thời gian publish
+- `created_at` (timestamptz): Thời gian tạo
+- `updated_at` (timestamptz): Thời gian cập nhật
+
+**Mục đích**: Admin/Staff tạo blog posts để hiển thị trên landing page, chia sẻ thông tin, tin tức, hoạt động của trung tâm.
 
 ### 15.10. Khối Tài chính/PayOS/Sổ quỹ/Lương
 
@@ -1866,6 +1974,8 @@ Khi phụ huynh xem kết quả:
 - `base_salary` (numeric, nullable): Lương cơ bản (với full-time)
 - `hourly_rate` (numeric, nullable): Lương theo giờ (với part-time)
 - `allowance_fixed` (numeric, nullable): Phụ cấp cố định
+- `minimum_monthly_hours` (numeric, nullable): Số giờ làm tối thiểu mỗi tháng để nhận lương (NEW)
+- `overtime_rate_multiplier` (numeric, nullable): Hệ số nhân lương overtime (ví dụ: 1.5x, 2x) (NEW)
 - `social_insurance_salary` (numeric, nullable): Mức lương làm căn cứ đóng BHXH
 - `branch_id` (uuid, FK → branches.id): Chi nhánh
 - `is_active` (boolean): Trạng thái hiệu lực
@@ -1909,6 +2019,23 @@ Khi phụ huynh xem kết quả:
 - `method` (varchar(20)): Phương thức - BANK_TRANSFER/CASH
 - `paid_at` (timestamptz): Thời gian thanh toán
 - `cashbook_entry_id` (uuid, FK → cashbook_entries.id, nullable): Liên kết với sổ quỹ
+
+#### `monthly_work_hours` - Giờ làm việc theo tháng (NEW)
+- `id` (uuid, PK): Định danh
+- `staff_user_id` (uuid, FK → users.id): Staff/Teacher
+- `contract_id` (uuid, FK → contracts.id): Hợp đồng
+- `branch_id` (uuid, FK → branches.id): Chi nhánh
+- `year` (int): Năm
+- `month` (int): Tháng (1-12)
+- `total_hours` (numeric): Tổng số giờ làm trong tháng
+- `teaching_hours` (numeric): Số giờ dạy (từ sessions, cho giáo viên)
+- `regular_hours` (numeric): Số giờ làm thường (từ shift_attendance)
+- `overtime_hours` (numeric): Số giờ làm thêm (vượt quá minimum_monthly_hours)
+- `teaching_sessions` (int): Số buổi dạy (cho giáo viên)
+- `is_locked` (boolean): Đã khóa chưa (để tính lương, không cho sửa)
+- **Unique constraint**: (staff_user_id, contract_id, year, month)
+
+**Mục đích**: Theo dõi giờ làm việc hàng tháng của staff/teacher để tính lương. Giờ dạy của giáo viên được tính từ số buổi dạy và thời lượng buổi học.
 
 ### 15.11. Khối Notification & Ticket
 
@@ -1991,7 +2118,7 @@ Khi phụ huynh xem kết quả:
 - **STUDENT**: Vẫn dùng `profiles.id` (ví dụ: `class_enrollments.student_profile_id`, `attendances.student_profile_id`, v.v.).
 
 ### 2. Quan hệ Chương trình/Lớp/Session
-- `branches` → `programs`: Chương trình có thể dùng chung hoặc riêng theo branch (không có FK trực tiếp, quản lý qua `tuition_plans`).
+- `branches` → `programs` (1:N): Mỗi chương trình thuộc một branch (NEW: các chi nhánh không dùng chung program).
 - `branches` → `classrooms` (1:N): Mỗi phòng thuộc một branch.
 - `branches` → `classes` (1:N): Mỗi lớp thuộc một branch.
 - `programs` → `classes` (1:N): Mỗi lớp thuộc một chương trình.
@@ -2029,6 +2156,14 @@ Khi phụ huynh xem kết quả:
 - `classes` → `exams` (1:N): Một lớp có nhiều kỳ kiểm tra.
 - `exams` → `exam_results` (1:N): Một kỳ kiểm tra có nhiều kết quả (mỗi học sinh một record).
 - `profiles` → `exam_results` (1:N): Một học sinh có nhiều kết quả kiểm tra.
+- `classes` → `exercises` (1:N): Một lớp có thể có nhiều bài tập/quiz (NEW).
+- `exercises` → `exercise_questions` (1:N): Một bài tập có nhiều câu hỏi (NEW).
+- `exercises` → `exercise_submissions` (1:N): Một bài tập có nhiều bài làm (mỗi học sinh một record) (NEW).
+- `exercise_submissions` → `exercise_submission_answers` (1:N): Một bài làm có nhiều đáp án (mỗi câu hỏi một đáp án) (NEW).
+- `profiles` → `exercise_submissions` (1:N): Một học sinh có nhiều bài làm (NEW).
+- `sessions` → `session_reports` (1:N): Một buổi học có nhiều báo cáo (mỗi học sinh một báo cáo) (NEW).
+- `profiles` → `session_reports` (1:N): Một học sinh có nhiều báo cáo buổi học (NEW).
+- `users` → `session_reports` (1:N): Một giáo viên tạo nhiều báo cáo (NEW).
 - `profiles` → `student_monthly_reports` (1:N): Một học sinh có nhiều báo cáo tháng.
 - `student_monthly_reports` → `report_comments` (1:N): Một báo cáo có nhiều comment review.
 
@@ -2040,6 +2175,7 @@ Khi phụ huynh xem kết quả:
 - `profiles` → `student_levels` (1:1): Mỗi học sinh có một level hiện tại.
 - `reward_store_items` → `reward_redemptions` (1:N): Một item có thể được đổi nhiều lần.
 - `profiles` → `reward_redemptions` (1:N): Một học sinh có thể đổi nhiều quà.
+- `profiles` → `attendance_streaks` (1:N): Một học sinh có nhiều lần điểm danh (NEW).
 
 ### 7. Quan hệ CRM/Placement
 - `branches` → `leads` (1:N): Một branch có nhiều lead.
@@ -2051,6 +2187,7 @@ Khi phụ huynh xem kết quả:
 - `branches` → `media_assets` (1:N): Một branch có nhiều media.
 - `classes` → `media_assets` (1:N): Một lớp có nhiều media.
 - `profiles` → `media_assets` (1:N): Một học sinh/giáo viên có nhiều media.
+- `users` → `blogs` (1:N): Một admin/staff có thể tạo nhiều blog posts (NEW).
 
 ### 9. Quan hệ Tài chính/Lương
 - `branches` → `tuition_plans` (1:N): Một branch có nhiều gói học phí.
@@ -2064,6 +2201,9 @@ Khi phụ huynh xem kết quả:
 - `users` → `contracts` (1:N): Một staff có thể có nhiều hợp đồng (theo thời gian) (CHANGED: từ profiles → users, role=STAFF/TEACHER).
 - `branches` → `contracts` (1:N): Một branch có nhiều hợp đồng lao động.
 - `contracts` → `shift_attendance` (1:N): Một hợp đồng có nhiều ca làm việc.
+- `contracts` → `monthly_work_hours` (1:N): Một hợp đồng có nhiều bản ghi giờ làm theo tháng (NEW).
+- `users` → `monthly_work_hours` (1:N): Một staff có nhiều bản ghi giờ làm theo tháng (NEW).
+- `branches` → `monthly_work_hours` (1:N): Một branch có nhiều bản ghi giờ làm (NEW).
 - `sessions` → `session_roles` (1:N): Một buổi học có nhiều vai trò (đã giải thích ở trên).
 - `session_roles` → `payroll_lines` (1:N): Một session_role có thể tạo nhiều dòng lương (nếu tính theo nhiều kỳ).
 - `contracts` → `payroll_lines` (1:N): Một hợp đồng có thể tạo nhiều dòng lương (BASE salary).

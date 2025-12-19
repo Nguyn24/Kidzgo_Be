@@ -17,6 +17,9 @@ public class Mission : Entity
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
     public int? RewardStars { get; set; }
+    public int? RewardExp { get; set; } // Experience points reward
+    public int? TotalQuestions { get; set; } // Total number of questions for question-based missions
+    public decimal? ProgressPerQuestion { get; set; } // Percentage progress per question (e.g., 10% per question if 10 questions)
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 

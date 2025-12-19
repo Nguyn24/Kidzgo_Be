@@ -1,12 +1,14 @@
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
+using Kidzgo.Domain.Schools;
 
 namespace Kidzgo.Domain.Programs;
 
 public class Program : Entity
 {
     public Guid Id { get; set; }
+    public Guid BranchId { get; set; }
     public string Name { get; set; } = null!;
     public string? Level { get; set; }
     public int TotalSessions { get; set; }
@@ -17,6 +19,7 @@ public class Program : Entity
     public bool IsDeleted { get; set; }
 
     // Navigation properties
+    public Branch Branch { get; set; } = null!;
     public ICollection<Class> Classes { get; set; } = new List<Class>();
     public ICollection<TuitionPlan> TuitionPlans { get; set; } = new List<TuitionPlan>();
     public ICollection<LessonPlanTemplate> LessonPlanTemplates { get; set; } = new List<LessonPlanTemplate>();

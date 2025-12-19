@@ -13,7 +13,6 @@ public class PlacementTest : Entity
     public DateTime? ScheduledAt { get; set; }
     public PlacementTestStatus Status { get; set; }
     public string? Room { get; set; }
-    public string? MeetingLink { get; set; }
     public Guid? InvigilatorUserId { get; set; }
     public decimal? ResultScore { get; set; }
     public decimal? ListeningScore { get; set; }

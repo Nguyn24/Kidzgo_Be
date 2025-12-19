@@ -10,7 +10,7 @@ public class ExamResult : Entity
     public Guid StudentProfileId { get; set; }
     public decimal? Score { get; set; }
     public string? Comment { get; set; }
-    public string? AttachmentUrl { get; set; }
+    public string? AttachmentUrls { get; set; } // JSON array of image URLs
     public Guid? GradedBy { get; set; }
     public DateTime? GradedAt { get; set; }
 
