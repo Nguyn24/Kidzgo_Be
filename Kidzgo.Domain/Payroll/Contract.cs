@@ -14,6 +14,8 @@ public class Contract : Entity
     public decimal? BaseSalary { get; set; }
     public decimal? HourlyRate { get; set; }
     public decimal? AllowanceFixed { get; set; }
+    public decimal? MinimumMonthlyHours { get; set; } // Minimum hours required per month to receive salary
+    public decimal? OvertimeRateMultiplier { get; set; } // Multiplier for overtime (e.g., 1.5x, 2x)
     public Guid BranchId { get; set; }
     public bool IsActive { get; set; }
 

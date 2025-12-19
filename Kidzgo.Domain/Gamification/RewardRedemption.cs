@@ -7,6 +7,7 @@ public class RewardRedemption : Entity
 {
     public Guid Id { get; set; }
     public Guid ItemId { get; set; }
+    public string ItemName { get; set; } = null!; // Store item name at redemption time
     public Guid StudentProfileId { get; set; }
     public RedemptionStatus Status { get; set; }
     public Guid? HandledBy { get; set; }

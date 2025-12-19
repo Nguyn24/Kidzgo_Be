@@ -40,6 +40,13 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
 
         builder.Property(x => x.RewardStars);
 
+        builder.Property(x => x.RewardExp);
+
+        builder.Property(x => x.TotalQuestions);
+
+        builder.Property(x => x.ProgressPerQuestion)
+            .HasColumnType("numeric");
+
         builder.Property(x => x.CreatedBy);
 
         builder.Property(x => x.CreatedAt)

@@ -48,6 +48,10 @@ public sealed class ApplicationDbContext(
     // Exams
     public DbSet<Exam> Exams => Set<Exam>();
     public DbSet<ExamResult> ExamResults => Set<ExamResult>();
+    public DbSet<Exercise> Exercises => Set<Exercise>();
+    public DbSet<ExerciseQuestion> ExerciseQuestions => Set<ExerciseQuestion>();
+    public DbSet<ExerciseSubmission> ExerciseSubmissions => Set<ExerciseSubmission>();
+    public DbSet<ExerciseSubmissionAnswer> ExerciseSubmissionAnswers => Set<ExerciseSubmissionAnswer>();
 
     // Finance
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -62,6 +66,7 @@ public sealed class ApplicationDbContext(
     public DbSet<RewardStoreItem> RewardStoreItems => Set<RewardStoreItem>();
     public DbSet<StarTransaction> StarTransactions => Set<StarTransaction>();
     public DbSet<StudentLevel> StudentLevels => Set<StudentLevel>();
+    public DbSet<AttendanceStreak> AttendanceStreaks => Set<AttendanceStreak>();
 
     // Lesson Plans
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();
@@ -71,6 +76,7 @@ public sealed class ApplicationDbContext(
 
     // Media
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+    public DbSet<Blog> Blogs => Set<Blog>();
 
     // Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -84,6 +90,7 @@ public sealed class ApplicationDbContext(
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<SessionRole> SessionRoles => Set<SessionRole>();
     public DbSet<ShiftAttendance> ShiftAttendances => Set<ShiftAttendance>();
+    public DbSet<MonthlyWorkHours> MonthlyWorkHours => Set<MonthlyWorkHours>();
 
     // Programs
     public DbSet<Program> Programs => Set<Program>();
@@ -93,6 +100,7 @@ public sealed class ApplicationDbContext(
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
     public DbSet<StudentMonthlyReport> StudentMonthlyReports => Set<StudentMonthlyReport>();
+    public DbSet<SessionReport> SessionReports => Set<SessionReport>();
 
     // Sessions
     public DbSet<Attendance> Attendances => Set<Attendance>();

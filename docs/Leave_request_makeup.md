@@ -1,6 +1,0 @@
-- leaveRequest ngắn ( phụ Huynh tự tạo đơn, staff tạo dùm nếu phụ Huynh không biết làm), leaveRequest auto duyệt(Approved) nếu trước 24h( nghỉ 1 ngày),trường hợp ( có đơn leaveRequest sau 24h ) gì phải đợi staff duyệt approve hay reject tùy lý do chính đáng. 
-- leaveRequest dài staff phải duyệt (tức là chọn nghỉ nhiều ngày thay vì làm đơn chỉ nghỉ 1 ngày duy nhất)
-- parent có chức năng tạo don xin nghỉ 1 ngày hay dài ngày
-- staff có chức năng tạo don xin nghỉ dùm
-- sau khi he thống auto duyệt don 24h thì hsinh do sẽ hiện lên bang diem danh của teacher là xin nghỉ trước có phép van la absent (tức là trên Fe sẽ hiện 1 chữ đỏ là Makeup giống như miễn điểm danh ở trên fap để giáo viên dạy buổi đó sẽ biết)
-- staff liệt kê buổi bù tương ung với trình độ và cho parent chọn (vừa chọn được ngày xong thì hệ thống tự động -1 makeup) ⇒ hsinh buổi bù đó không cần hiện present/absent, hiện là học sinh buoi bù trong  list điểm danh giáo viên (tức là học sinh đó chỉ cần hiện chữ buổi bù(makeup)  trong list điểm danh).

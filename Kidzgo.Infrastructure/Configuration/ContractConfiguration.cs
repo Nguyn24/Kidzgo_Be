@@ -35,6 +35,12 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
         builder.Property(x => x.AllowanceFixed)
             .HasColumnType("numeric");
 
+        builder.Property(x => x.MinimumMonthlyHours)
+            .HasColumnType("numeric");
+
+        builder.Property(x => x.OvertimeRateMultiplier)
+            .HasColumnType("numeric");
+
         builder.Property(x => x.BranchId)
             .IsRequired();
 

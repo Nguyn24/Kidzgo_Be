@@ -27,9 +27,6 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.Property(x => x.IsMain)
-            .IsRequired();
-
         builder.Property(x => x.TuitionPlanId);
 
         // Relationships

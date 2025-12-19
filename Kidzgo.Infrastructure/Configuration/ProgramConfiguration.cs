@@ -13,6 +13,9 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.Property(x => x.Id)
             .IsRequired();
 
+        builder.Property(x => x.BranchId)
+            .IsRequired();
+
         builder.Property(x => x.Name)
             .HasMaxLength(255)
             .IsRequired();
@@ -40,6 +43,11 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
             .IsRequired();
 
         // Relationships
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(x => x.Classes)
             .WithOne(x => x.Program)
             .HasForeignKey(x => x.ProgramId)

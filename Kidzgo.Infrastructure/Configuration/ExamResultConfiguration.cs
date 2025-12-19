@@ -24,7 +24,8 @@ public class ExamResultConfiguration : IEntityTypeConfiguration<ExamResult>
 
         builder.Property(x => x.Comment);
 
-        builder.Property(x => x.AttachmentUrl);
+        builder.Property(x => x.AttachmentUrls)
+            .HasColumnType("jsonb"); // Store as JSON array for multiple image URLs
 
         builder.Property(x => x.GradedBy);
 

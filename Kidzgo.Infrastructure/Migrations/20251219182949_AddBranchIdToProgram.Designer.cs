@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251219182949_AddBranchIdToProgram")]
+    partial class AddBranchIdToProgram
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,6 +211,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<decimal?>("ListeningScore")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("MeetingLink")
+                        .HasColumnType("text");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -334,6 +340,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateOnly>("EnrollDate")
                         .HasColumnType("date");
 
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -397,8 +406,8 @@ namespace Kidzgo.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AttachmentUrls")
-                        .HasColumnType("jsonb");
+                    b.Property<string>("AttachmentUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("Comment")
                         .HasColumnType("text");
@@ -427,168 +436,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("StudentProfileId");
 
                     b.ToTable("ExamResults", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExerciseType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.ToTable("Exercises", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CorrectAnswer")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Explanation")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Options")
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("QuestionText")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("QuestionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.ToTable("ExerciseQuestions", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseSubmission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Answers")
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("GradedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("GradedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("Score")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("StudentProfileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GradedBy");
-
-                    b.HasIndex("StudentProfileId");
-
-                    b.HasIndex("ExerciseId", "StudentProfileId")
-                        .IsUnique()
-                        .HasDatabaseName("exercise_submission_unique");
-
-                    b.ToTable("ExerciseSubmissions", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseSubmissionAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Answer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal?>("PointsAwarded")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SubmissionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TeacherFeedback")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("SubmissionId", "QuestionId")
-                        .IsUnique()
-                        .HasDatabaseName("exercise_submission_answer_unique");
-
-                    b.ToTable("ExerciseSubmissionAnswers", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Finance.CashbookEntry", b =>
@@ -780,39 +627,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("Payments", "public");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.Gamification.AttendanceStreak", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateOnly>("AttendanceDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CurrentStreak")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RewardExp")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RewardStars")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("StudentProfileId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentProfileId", "AttendanceDate")
-                        .IsUnique()
-                        .HasDatabaseName("attendance_streak_unique");
-
-                    b.ToTable("AttendanceStreaks", "public");
-                });
-
             modelBuilder.Entity("Kidzgo.Domain.Gamification.Mission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -836,12 +650,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<decimal?>("ProgressPerQuestion")
-                        .HasColumnType("numeric");
-
-                    b.Property<int?>("RewardExp")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("RewardStars")
                         .HasColumnType("integer");
 
@@ -863,9 +671,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<int?>("TotalQuestions")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -935,11 +740,6 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("ReceivedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1264,57 +1064,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("LessonPlanTemplates", "public");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.Media.Blog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("FeaturedImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("PublishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Summary")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("IsPublished", "PublishedAt")
-                        .HasDatabaseName("blog_published_idx");
-
-                    b.ToTable("Blogs", "public");
-                });
-
             modelBuilder.Entity("Kidzgo.Domain.Media.MediaAsset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1540,12 +1289,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<decimal?>("MinimumMonthlyHours")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("OvertimeRateMultiplier")
-                        .HasColumnType("numeric");
-
                     b.Property<Guid>("StaffUserId")
                         .HasColumnType("uuid");
 
@@ -1559,59 +1302,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("StaffUserId");
 
                     b.ToTable("Contracts", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Payroll.MonthlyWorkHours", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BranchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ContractId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsLocked")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("OvertimeHours")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("RegularHours")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("StaffUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("TeachingHours")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("TeachingSessions")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("TotalHours")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.HasIndex("BranchId", "Year", "Month", "IsLocked")
-                        .HasDatabaseName("monthly_work_hours_payroll_idx");
-
-                    b.HasIndex("StaffUserId", "ContractId", "Year", "Month")
-                        .IsUnique()
-                        .HasDatabaseName("monthly_work_hours_unique");
-
-                    b.ToTable("MonthlyWorkHours", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Payroll.PayrollLine", b =>
@@ -1947,54 +1637,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ReportId");
 
                     b.ToTable("ReportComments", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Reports.SessionReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AiGeneratedSummary")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Feedback")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsMonthlyCompiled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateOnly>("ReportDate")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("StudentProfileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TeacherUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentProfileId");
-
-                    b.HasIndex("SessionId", "StudentProfileId")
-                        .IsUnique()
-                        .HasDatabaseName("session_report_unique");
-
-                    b.HasIndex("TeacherUserId", "ReportDate")
-                        .HasDatabaseName("session_report_teacher_date_idx");
-
-                    b.ToTable("SessionReports", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.StudentMonthlyReport", b =>
@@ -2497,8 +2139,8 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("PinHash")
-                        .HasMaxLength(97)
-                        .HasColumnType("character varying(97)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("ProfileType")
                         .IsRequired()
@@ -2787,80 +2429,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("StudentProfile");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Kidzgo.Domain.Users.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("CreatedByUser");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseQuestion", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Exams.Exercise", "Exercise")
-                        .WithMany("Questions")
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseSubmission", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Exams.Exercise", "Exercise")
-                        .WithMany("Submissions")
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Users.User", "GradedByUser")
-                        .WithMany()
-                        .HasForeignKey("GradedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
-                        .WithMany()
-                        .HasForeignKey("StudentProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-
-                    b.Navigation("GradedByUser");
-
-                    b.Navigation("StudentProfile");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseSubmissionAnswer", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Exams.ExerciseQuestion", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Exams.ExerciseSubmission", "Submission")
-                        .WithMany("SubmissionAnswers")
-                        .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Question");
-
-                    b.Navigation("Submission");
-                });
-
             modelBuilder.Entity("Kidzgo.Domain.Finance.CashbookEntry", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
@@ -2939,17 +2507,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("ConfirmedByUser");
 
                     b.Navigation("Invoice");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Gamification.AttendanceStreak", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
-                        .WithMany()
-                        .HasForeignKey("StudentProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StudentProfile");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Gamification.Mission", b =>
@@ -3144,17 +2701,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Program");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.Media.Blog", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Users.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedByUser");
-                });
-
             modelBuilder.Entity("Kidzgo.Domain.Media.MediaAsset", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
@@ -3221,33 +2767,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
-
-                    b.Navigation("StaffUser");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Payroll.MonthlyWorkHours", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Payroll.Contract", "Contract")
-                        .WithMany()
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Users.User", "StaffUser")
-                        .WithMany()
-                        .HasForeignKey("StaffUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Branch");
-
-                    b.Navigation("Contract");
 
                     b.Navigation("StaffUser");
                 });
@@ -3416,33 +2935,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("CommenterUser");
 
                     b.Navigation("Report");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Reports.SessionReport", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
-                        .WithMany()
-                        .HasForeignKey("StudentProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Users.User", "TeacherUser")
-                        .WithMany()
-                        .HasForeignKey("TeacherUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Session");
-
-                    b.Navigation("StudentProfile");
-
-                    b.Navigation("TeacherUser");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.StudentMonthlyReport", b =>
@@ -3796,18 +3288,6 @@ namespace Kidzgo.Infrastructure.Migrations
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>
                 {
                     b.Navigation("ExamResults");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
-                {
-                    b.Navigation("Questions");
-
-                    b.Navigation("Submissions");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseSubmission", b =>
-                {
-                    b.Navigation("SubmissionAnswers");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Finance.CashbookEntry", b =>
