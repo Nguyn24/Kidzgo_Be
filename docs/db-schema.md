@@ -1588,6 +1588,7 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `teacher_feedback` (text): Nhận xét của giáo viên
 - `ai_feedback` (jsonb): Feedback từ AI (nếu có)
 - `attachments` (jsonb): Danh sách file đính kèm (JSON array)
+- `ai_version` (varchar(50), nullable): Phiên bản AI model đã dùng để chấm (A3/A8) – phục vụ audit/A-B test
 - **Unique constraint**: (assignment_id, student_profile_id)
 
 ### 15.5. Khối Kiểm tra định kỳ
@@ -1963,6 +1964,7 @@ Khi phụ huynh xem kết quả:
 - `entry_date` (date): Ngày giao dịch
 - `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=STAFF)
 - `attachment_url` (text, nullable): Link chứng từ
+- `ocr_metadata` (jsonb, nullable): Metadata OCR từ A7 (fields, confidence, raw_text, warnings) để debug/audit
 - `created_at` (timestamptz): Thời gian tạo
 
 #### `contracts` - Hợp đồng lao động
