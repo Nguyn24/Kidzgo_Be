@@ -240,6 +240,7 @@ Table homework_student {
   score numeric
   teacher_feedback text
   ai_feedback jsonb
+  ai_version varchar(50) // optional: phiên bản AI dùng để chấm (A3/A8)
   attachments jsonb
 
  
@@ -602,6 +603,7 @@ Table cashbook_entries {
   entry_date date // là ngày hạch toán của bút toán quỹ (cashbook_entries) — dùng để sắp xếp/khóa sổ theo ngày phát sinh thu/chi (có thể khác created_at nếu ghi nhận muộn).
   created_by uuid [ref: - users.id]
   attachment_url text
+  ocr_metadata jsonb // optional: log raw kết quả OCR từ A7 (fields/confidence/raw_text/warnings)
   created_at timestamptz
 }
 
