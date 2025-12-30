@@ -29,6 +29,7 @@ public sealed class ApplicationDbContext(
     // Users
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ParentStudentLink> ParentStudentLinks => Set<ParentStudentLink>();
 
