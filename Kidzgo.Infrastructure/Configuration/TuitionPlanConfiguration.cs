@@ -18,6 +18,10 @@ public class TuitionPlanConfiguration : IEntityTypeConfiguration<TuitionPlan>
         builder.Property(x => x.ProgramId)
             .IsRequired();
 
+        builder.Property(x => x.Name)
+            .HasMaxLength(255)
+            .IsRequired();
+
         builder.Property(x => x.TotalSessions)
             .IsRequired();
 
@@ -39,9 +43,15 @@ public class TuitionPlanConfiguration : IEntityTypeConfiguration<TuitionPlan>
         builder.Property(x => x.IsDeleted)
             .IsRequired();
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Relationships
         builder.HasOne(x => x.Branch)
-            .WithMany()
+            .WithMany(x => x.TuitionPlans)
             .HasForeignKey(x => x.BranchId)
             .OnDelete(DeleteBehavior.Restrict);
 

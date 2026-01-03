@@ -9,6 +9,10 @@
       - "7165:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=kidzgo;Username=postgres;Password=1234;Include Error Detail=true
+    depends_on:
+      - postgres
+    restart: unless-stopped
   
   postgres:
     image: postgres:15
