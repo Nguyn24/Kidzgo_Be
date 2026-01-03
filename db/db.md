@@ -33,8 +33,10 @@ Table users {
   password_hash text
   role varchar(20) // PARENT/STUDENT/ADMIN/TEACHER/STAFF
   username varchar(255) // required for ADMIN/TEACHER/STAFF; optional for PARENT/STUDENT
+  name varchar(255) // display name for users (optional)
   branch_id uuid [ref: - branches.id] // required for TEACHER/STAFF; null for ADMIN/PARENT/STUDENT
   is_active boolean
+  is_deleted boolean
   image_url text
   created_at timestamptz
   updated_at timestamptz
@@ -543,14 +545,17 @@ Table blogs {
 
 Table tuition_plans {
   id uuid [pk]
-  branch_id uuid [ref: - branches.id]
+  branch_id uuid [ref: - branches.id] // nullable: null = applies to all branches
   program_id uuid [ref: > programs.id]
+  name varchar(255) // name of the tuition plan (e.g., "Gói 3 tháng - Ưu đãi")
   total_sessions int
   tuition_amount numeric
   unit_price_session numeric
   currency varchar(10)
   is_active boolean
   is_deleted boolean
+  created_at timestamptz
+  updated_at timestamptz
 }
 
 Table invoices {

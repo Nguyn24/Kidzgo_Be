@@ -1410,6 +1410,20 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("EmailTemplates", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+                            Body = "<p>Xin chào {{user_name}},</p>\r\n<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>\r\n<p>Vui lòng bấm vào đường dẫn sau để đặt lại mật khẩu:</p>\r\n<p><a href=\"{{reset_link}}\">Đặt lại mật khẩu</a></p>\r\n<p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>\r\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            Code = "FORGOT_PASSWORD",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"user_name\",\"reset_link\"]",
+                            Subject = "Kidzgo - Đặt lại mật khẩu của bạn",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Notifications.Notification", b =>
@@ -1810,6 +1824,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid>("BranchId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal>("DefaultTuitionAmount")
                         .HasColumnType("numeric");
 
@@ -1837,11 +1854,91 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<decimal>("UnitPriceSession")
                         .HasColumnType("numeric");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
 
                     b.ToTable("Programs", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultTuitionAmount = 5000000m,
+                            Description = "Khóa học tiếng Anh cho trẻ em mới bắt đầu, tập trung vào phát âm và từ vựng cơ bản.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Level = "Beginner",
+                            Name = "English for Kids - Beginner",
+                            TotalSessions = 30,
+                            UnitPriceSession = 166667m,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultTuitionAmount = 6000000m,
+                            Description = "Khóa học tiếng Anh nâng cao cho trẻ em, phát triển kỹ năng giao tiếp và ngữ pháp.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Level = "Intermediate",
+                            Name = "English for Kids - Intermediate",
+                            TotalSessions = 36,
+                            UnitPriceSession = 166667m,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
+                            BranchId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultTuitionAmount = 5000000m,
+                            Description = "Khóa học tiếng Anh cho trẻ em mới bắt đầu, tập trung vào phát âm và từ vựng cơ bản.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Level = "Beginner",
+                            Name = "English for Kids - Beginner",
+                            TotalSessions = 30,
+                            UnitPriceSession = 166667m,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000004"),
+                            BranchId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultTuitionAmount = 8000000m,
+                            Description = "Khóa học tiếng Anh nâng cao cho thanh thiếu niên, chuẩn bị cho các kỳ thi quốc tế.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Level = "Advanced",
+                            Name = "English for Teens - Advanced",
+                            TotalSessions = 40,
+                            UnitPriceSession = 200000m,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000005"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultTuitionAmount = 8000000m,
+                            Description = "Khóa học đã tạm ngưng.",
+                            IsActive = false,
+                            IsDeleted = false,
+                            Level = "Advanced",
+                            Name = "English for Kids - Advanced (Inactive)",
+                            TotalSessions = 40,
+                            UnitPriceSession = 200000m,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Programs.TuitionPlan", b =>
@@ -1852,6 +1949,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Currency")
                         .IsRequired()
@@ -1864,6 +1964,11 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<Guid>("ProgramId")
                         .HasColumnType("uuid");
 
@@ -1875,6 +1980,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<decimal>("UnitPriceSession")
                         .HasColumnType("numeric");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -2092,6 +2200,32 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Branches", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Address = "123 Đường ABC, Quận XYZ, Hà Nội",
+                            Code = "HN001",
+                            ContactEmail = "hanoi@kidzgo.vn",
+                            ContactPhone = "02412345678",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Chi nhánh Hà Nội",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Address = "456 Đường DEF, Quận UVW, TP.HCM",
+                            Code = "HCM001",
+                            ContactEmail = "hcm@kidzgo.vn",
+                            ContactPhone = "02898765432",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Chi nhánh TP. Hồ Chí Minh",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Schools.Classroom", b =>
@@ -2122,6 +2256,53 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("BranchId");
 
                     b.ToTable("Classrooms", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000001"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Capacity = 15,
+                            IsActive = true,
+                            Name = "Phòng A101",
+                            Note = "Có máy chiếu, điều hòa"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000002"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Capacity = 20,
+                            IsActive = true,
+                            Name = "Phòng A102",
+                            Note = "Phòng lớn, có bảng tương tác"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000003"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Capacity = 12,
+                            IsActive = true,
+                            Name = "Phòng B201",
+                            Note = "Phòng nhỏ, phù hợp lớp ít học sinh"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000004"),
+                            BranchId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Capacity = 18,
+                            IsActive = true,
+                            Name = "Phòng C101",
+                            Note = "Có máy chiếu, điều hòa"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000005"),
+                            BranchId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Capacity = 25,
+                            IsActive = true,
+                            Name = "Phòng C102",
+                            Note = "Phòng lớn nhất, có bảng tương tác và hệ thống âm thanh"
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Sessions.Attendance", b =>
@@ -2476,6 +2657,33 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("ParentStudentLinks", "public");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Users.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens", "public");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Users.Profile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2567,6 +2775,10 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Name")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -2592,6 +2804,77 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@kidzgo.vn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Admin User",
+                            PasswordHash = "DE479F92E6B1E906ECE5CBB756062EDC6F680786DF32A1BE3551E1499DEBABD9-0123456789ABCDEF0123456789ABCDEF",
+                            Role = "Admin",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Username = "admin"
+                        },
+                        new
+                        {
+                            Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "staff@kidzgo.vn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Staff User",
+                            PasswordHash = "DE479F92E6B1E906ECE5CBB756062EDC6F680786DF32A1BE3551E1499DEBABD9-0123456789ABCDEF0123456789ABCDEF",
+                            Role = "Staff",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Username = "staff"
+                        },
+                        new
+                        {
+                            Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "teacher1@kidzgo.vn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Cô Lan",
+                            PasswordHash = "DE479F92E6B1E906ECE5CBB756062EDC6F680786DF32A1BE3551E1499DEBABD9-0123456789ABCDEF0123456789ABCDEF",
+                            Role = "Teacher",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Username = "teacher1"
+                        },
+                        new
+                        {
+                            Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            BranchId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "teacher2@kidzgo.vn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Cô Hoa",
+                            PasswordHash = "DE479F92E6B1E906ECE5CBB756062EDC6F680786DF32A1BE3551E1499DEBABD9-0123456789ABCDEF0123456789ABCDEF",
+                            Role = "Teacher",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Username = "teacher2"
+                        },
+                        new
+                        {
+                            Id = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                            BranchId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "teacher3@kidzgo.vn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Thầy Nam",
+                            PasswordHash = "DE479F92E6B1E906ECE5CBB756062EDC6F680786DF32A1BE3551E1499DEBABD9-0123456789ABCDEF0123456789ABCDEF",
+                            Role = "Teacher",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Username = "teacher3"
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Audit.AuditLog", b =>
@@ -3373,7 +3656,7 @@ namespace Kidzgo.Infrastructure.Migrations
             modelBuilder.Entity("Kidzgo.Domain.Programs.TuitionPlan", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
-                        .WithMany()
+                        .WithMany("TuitionPlans")
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -3731,6 +4014,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("StudentProfile");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Users.PasswordResetToken", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Users.Profile", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Users.User", "User")
@@ -3898,6 +4192,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Sessions");
 
                     b.Navigation("Tickets");
+
+                    b.Navigation("TuitionPlans");
 
                     b.Navigation("Users");
                 });
