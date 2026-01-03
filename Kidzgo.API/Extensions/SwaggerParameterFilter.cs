@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -30,9 +31,35 @@ public class SwaggerParameterFilter : IParameterFilter
                     parameter.Description = "Search by username, email, or transaction code";
                 break;
             case "status":
-                parameter.Example = new OpenApiInteger(2);
-                if (string.IsNullOrEmpty(parameter.Description))
+                // Check if this is for Class status by checking controller name and XML comment description
+                var isClassController = false;
+                if (context.ParameterInfo?.Member?.DeclaringType != null)
+                {
+                    var controllerName = context.ParameterInfo.Member.DeclaringType.Name;
+                    isClassController = controllerName.Contains("ClassController", StringComparison.OrdinalIgnoreCase);
+                }
+                
+                // Also check XML comment description as fallback
+                var hasClassStatusDescription = parameter.Description?.Contains("Class status", StringComparison.OrdinalIgnoreCase) == true ||
+                                                parameter.Description?.Contains("Planned", StringComparison.OrdinalIgnoreCase) == true ||
+                                                parameter.Description?.Contains("Active", StringComparison.OrdinalIgnoreCase) == true ||
+                                                parameter.Description?.Contains("Closed", StringComparison.OrdinalIgnoreCase) == true;
+                
+                if (isClassController || hasClassStatusDescription)
+                {
+                    // This is ClassStatus enum - use string example
+                    parameter.Example = new OpenApiString("Active");
+                    // Don't override description if XML comment already set it
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Class status: Planned, Active, or Closed";
+                }
+                else if (string.IsNullOrEmpty(parameter.Description))
+                {
+                    // Only set default description if no XML comment description exists
+                    // Default status (for other controllers like Payment, etc.)
+                    parameter.Example = new OpenApiInteger(2);
                     parameter.Description = "Status: 1=Pending, 2=Success, 3=Failed";
+                }
                 break;
             case "createdfrom":
             case "createdto":

@@ -32,6 +32,7 @@ public class Program
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 options.JsonSerializerOptions.Converters.Add(new Extensions.DateTimeJsonConverter());
                 options.JsonSerializerOptions.Converters.Add(new Extensions.NullableDateTimeJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Extensions.NullableGuidJsonConverterFactory());
             });
         
         var app = builder.Build();

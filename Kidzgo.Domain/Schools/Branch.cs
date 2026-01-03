@@ -8,6 +8,7 @@ using Kidzgo.Domain.Media;
 using Kidzgo.Domain.Finance;
 using Kidzgo.Domain.Payroll;
 using Kidzgo.Domain.Tickets;
+using Kidzgo.Domain.Programs;
 
 namespace Kidzgo.Domain.Schools;
 
@@ -36,4 +37,5 @@ public class Branch : Entity
     public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
     public ICollection<PayrollRun> PayrollRuns { get; set; } = new List<PayrollRun>();
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    public ICollection<TuitionPlan> TuitionPlans { get; set; } = new List<TuitionPlan>();
 }
