@@ -1,0 +1,78 @@
+using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Domain.Common;
+using Microsoft.EntityFrameworkCore;
+
+namespace Kidzgo.Application.TuitionPlans.GetTuitionPlans;
+
+public sealed class GetTuitionPlansQueryHandler(
+    IDbContext context
+) : IQueryHandler<GetTuitionPlansQuery, GetTuitionPlansResponse>
+{
+    public async Task<Result<GetTuitionPlansResponse>> Handle(GetTuitionPlansQuery query, CancellationToken cancellationToken)
+    {
+        var tuitionPlansQuery = context.TuitionPlans
+            .Include(t => t.Branch)
+            .Include(t => t.Program)
+            .Where(t => !t.IsDeleted);
+
+        // Filter by branch
+        // If branchId is provided, get tuition plans for that branch OR plans with branchId = null (applies to all branches)
+        if (query.BranchId.HasValue)
+        {
+            tuitionPlansQuery = tuitionPlansQuery.Where(t => t.BranchId == query.BranchId.Value || t.BranchId == null);
+        }
+
+        // Filter by program
+        if (query.ProgramId.HasValue)
+        {
+            tuitionPlansQuery = tuitionPlansQuery.Where(t => t.ProgramId == query.ProgramId.Value);
+        }
+
+        // Filter by IsActive
+        if (query.IsActive.HasValue)
+        {
+            tuitionPlansQuery = tuitionPlansQuery.Where(t => t.IsActive == query.IsActive.Value);
+        }
+
+        // Get total count
+        int totalCount = await tuitionPlansQuery.CountAsync(cancellationToken);
+
+        // Apply pagination
+        var tuitionPlans = await tuitionPlansQuery
+            .OrderByDescending(t => t.CreatedAt)
+            .ThenBy(t => t.Name)
+            .Skip((query.PageNumber - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(t => new TuitionPlanDto
+            {
+                Id = t.Id,
+                BranchId = t.BranchId,
+                BranchName = t.Branch != null ? t.Branch.Name : null,
+                ProgramId = t.ProgramId,
+                ProgramName = t.Program.Name,
+                Name = t.Name,
+                TotalSessions = t.TotalSessions,
+                TuitionAmount = t.TuitionAmount,
+                UnitPriceSession = t.UnitPriceSession,
+                Currency = t.Currency,
+                IsActive = t.IsActive,
+                CreatedAt = t.CreatedAt,
+                UpdatedAt = t.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var page = new Page<TuitionPlanDto>(
+            tuitionPlans,
+            query.PageNumber,
+            query.PageSize,
+            totalCount);
+
+        return new GetTuitionPlansResponse
+        {
+            TuitionPlans = page
+        };
+    }
+}
+

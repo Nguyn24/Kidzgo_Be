@@ -102,5 +102,35 @@ public class BranchConfiguration : IEntityTypeConfiguration<Branch>
             .WithOne(x => x.Branch)
             .HasForeignKey(x => x.BranchId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Seed data for testing
+        var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        builder.HasData(
+            new Branch
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Code = "HN001",
+                Name = "Chi nhánh Hà Nội",
+                Address = "123 Đường ABC, Quận XYZ, Hà Nội",
+                ContactPhone = "02412345678",
+                ContactEmail = "hanoi@kidzgo.vn",
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new Branch
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Code = "HCM001",
+                Name = "Chi nhánh TP. Hồ Chí Minh",
+                Address = "456 Đường DEF, Quận UVW, TP.HCM",
+                ContactPhone = "02898765432",
+                ContactEmail = "hcm@kidzgo.vn",
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            }
+        );
     }
 }
