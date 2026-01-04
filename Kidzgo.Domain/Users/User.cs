@@ -23,6 +23,7 @@ public class User : Entity
     public string PasswordHash { get; set; } = null!;
     public UserRole Role { get; set; }
     public string? Username  { get; set; }
+    public string? PinHash { get; set; }
     public Guid? BranchId { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
