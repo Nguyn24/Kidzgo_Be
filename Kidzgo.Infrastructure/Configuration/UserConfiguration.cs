@@ -1,4 +1,4 @@
-﻿using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +23,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.PasswordHash)
             .HasMaxLength(255)
             .IsRequired();
+
+        builder.Property(x => x.PinHash)
+            .HasMaxLength(255);
 
         builder.Property(x => x.Username)
             .HasMaxLength(100);

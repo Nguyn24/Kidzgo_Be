@@ -42,7 +42,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
             .IsRequired();
 
         // Seed một template mẫu cho quên mật khẩu
-        var now = DateTime.UtcNow;
+        var seedTime = new DateTime(2025, 12, 30, 9, 23, 14, 264, DateTimeKind.Utc).AddTicks(6162);
 
         builder.HasData(new EmailTemplate
         {
@@ -60,8 +60,8 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
             Placeholders = """["user_name","reset_link"]""",
             IsActive = true,
             IsDeleted = false,
-            CreatedAt = now,
-            UpdatedAt = now
+            CreatedAt = seedTime,
+            UpdatedAt = seedTime
         });
     }
 }
