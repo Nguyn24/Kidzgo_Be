@@ -20,7 +20,7 @@
     container_name: postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeThisPassword123!}
+      POSTGRES_PASSWORD: kidzgo
       POSTGRES_DB: kidzgo
     ports:
       - "5432:5432"  # Chỉ expose nếu cần truy cập từ bên ngoài, nếu không thì bỏ dòng này
