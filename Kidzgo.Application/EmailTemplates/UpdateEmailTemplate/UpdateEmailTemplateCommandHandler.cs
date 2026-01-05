@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Kidzgo.Domain.Notifications;
+using Kidzgo.Domain.Notifications.Errors;
 
 namespace Kidzgo.Application.EmailTemplates.UpdateEmailTemplate;
 
@@ -15,8 +16,7 @@ public class UpdateEmailTemplateCommandHandler(IDbContext context) : ICommandHan
 
         if (template is null)
         {
-            return Result.Failure<UpdateEmailTemplateResponse>(
-                Error.NotFound("EmailTemplate.NotFound", "Email template was not found"));
+            return Result.Failure<UpdateEmailTemplateResponse>(EmailTemplateErrors.NotFound);
         }
 
         template.Subject = command.Header;
