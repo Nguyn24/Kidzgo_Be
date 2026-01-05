@@ -72,12 +72,423 @@ File sơ đồ: `db/schema.dbml` (import trực tiếp dbdiagram.io). Nội dung
 - PARENT/STUDENT: kiểm soát theo `profiles.profile_type`
 
 ## 3. Khối Chương trình/Lớp/Lịch
-- `programs`: khóa/chương trình, số buổi, giá tham chiếu.
-- `classrooms`: phòng học theo branch, có capacity/note để tránh trùng phòng.
-- `classes`: lớp thuộc branch + program; lưu giáo viên chính/trợ giảng dự kiến, lịch pattern (RRULE/JSON); trạng thái PLANNED/ACTIVE/CLOSED; `capacity` để kiểm soát sĩ số.
-- `class_enrollments`: ghi danh học sinh vào lớp; `is_main` phân biệt lớp chính hay bổ trợ; `tuition_plan_id` cho phép tùy biến học phí theo lớp/học sinh.
-- `sessions`: từng buổi học (instance) sinh ra từ lớp/lịch; chứa giáo viên/phòng dự kiến và thực tế, thời lượng; `participation_type` MAIN/MAKEUP/EXTRA_PAID/FREE/TRIAL để tính tiền/MakeUp; trạng thái SCHEDULED/COMPLETED/CANCELLED.
-- `session_roles`: chi tiết ai dạy buổi nào với vai trò cụ thể (MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP); lưu `payable_unit_price` và `payable_allowance` để tính lương. Một session có thể có nhiều `session_roles` (ví dụ: 1 giáo viên chính + 1 trợ giảng + 1 giáo viên club). Bảng này là nguồn dữ liệu để tính lương trong `payroll_lines` (component_type=TEACHING/TA/CLUB/WORKSHOP).
+
+Khối này quản lý chương trình học, lớp học, lịch học và phân công giáo viên. Luồng hoạt động: **Tạo chương trình** → **Mở lớp** → **Sinh lịch buổi học** → **Ghi danh học sinh** → **Phân công giáo viên** → **Điểm danh & Tính lương**.
+
+### 3.1. `programs` - Chương trình học
+
+**Mục đích**: Lưu trữ các chương trình/khoá học của trung tâm. Mỗi chương trình định nghĩa cấu trúc, số buổi học và giá tham chiếu.
+
+**Các attribute quan trọng**:
+- `branch_id`: Chi nhánh (mỗi chi nhánh có thể có chương trình riêng)
+- `name`: Tên chương trình (ví dụ: "Tiếng Anh Level 1", "Toán nâng cao")
+- `level`: Cấp độ (ví dụ: "Beginner", "Intermediate", "Advanced")
+- `total_sessions`: Tổng số buổi học trong chương trình
+- `default_tuition_amount`: Học phí mặc định
+- `unit_price_session`: Giá mỗi buổi học (dùng cho EXTRA_PAID - học thêm buổi)
+
+**Ví dụ**:
+```
+Chương trình: "Tiếng Anh Level 1"
+- branch_id: Chi nhánh Hà Nội
+- name: "Tiếng Anh Level 1"
+- level: "Beginner"
+- total_sessions: 30
+- default_tuition_amount: 3,000,000 VND
+- unit_price_session: 100,000 VND (cho học thêm buổi)
+```
+
+### 3.2. `tuition_plans` - Gói học phí
+
+**Mục đích**: Lưu trữ các gói học phí cụ thể cho từng chương trình. Một chương trình có thể có nhiều gói học phí khác nhau (ví dụ: gói 3 tháng, 6 tháng, 1 năm) với giá cả và số buổi khác nhau.
+
+**Sự khác biệt giữa `programs` và `tuition_plans`**:
+
+| Khía cạnh | `programs` (Chương trình học) | `tuition_plans` (Gói học phí) |
+|-----------|-------------------------------|-------------------------------|
+| **Mục đích** | Định nghĩa **nội dung/chương trình học** (curriculum) | Định nghĩa **giá cả/gói học phí** (pricing) |
+| **Chứa gì** | Tên, level, mô tả, số buổi, giá tham chiếu | Giá thực tế, số buổi trong gói, đơn vị tiền tệ |
+| `total_sessions` | Tổng số buổi của **toàn bộ chương trình** | Số buổi trong **gói cụ thể** (có thể khác) |
+| `tuition_amount` | `default_tuition_amount` - Giá **tham chiếu/mặc định** | `tuition_amount` - Giá **thực tế của gói** |
+| `unit_price_session` | Giá mỗi buổi **tham chiếu** | Giá mỗi buổi **của gói** (có thể khác do ưu đãi) |
+| **Quan hệ** | 1 Program | N Tuition Plans (1:N) |
+| **Sử dụng** | Dùng để tạo lớp học (`classes.program_id`) | Dùng khi ghi danh (`class_enrollments.tuition_plan_id`) |
+
+**Tại sao cần cả hai bảng?**:
+
+1. **Tách biệt nội dung và giá cả**: 
+   - `programs` định nghĩa **chương trình học** (nội dung, cấu trúc) - ít thay đổi
+   - `tuition_plans` định nghĩa **giá cả** - thay đổi thường xuyên (khuyến mãi, giảm giá, tăng giá)
+
+2. **Linh hoạt trong pricing**:
+   - Một program có thể có nhiều gói học phí khác nhau
+   - Ví dụ: "Tiếng Anh Level 1" có thể có:
+     - Gói 3 tháng: 1,200,000 VND (10 buổi)
+     - Gói 6 tháng: 2,200,000 VND (20 buổi) - ưu đãi 10%
+     - Gói 1 năm: 3,000,000 VND (30 buổi) - giá gốc
+
+3. **Học sinh chọn gói khi ghi danh**:
+   - Mỗi học sinh có thể chọn gói khác nhau cho cùng một program
+   - Lưu trong `class_enrollments.tuition_plan_id`
+
+4. **Quản lý giá theo thời gian**:
+   - Có thể tạo gói mới với giá mới (khuyến mãi)
+   - Có thể vô hiệu hóa gói cũ (`is_active = false`)
+   - Giữ lại lịch sử giá (`is_deleted` thay vì xóa)
+
+**Các attribute quan trọng**:
+- `program_id`: Chương trình học (bắt buộc)
+- `branch_id`: Chi nhánh (nullable - null nếu dùng chung cho tất cả chi nhánh)
+- `name`: Tên gói học phí (ví dụ: "Gói 3 tháng - Ưu đãi", "Gói 6 tháng - Khuyến mãi")
+- `total_sessions`: Số buổi trong gói (có thể khác với `programs.total_sessions`)
+- `tuition_amount`: Tổng học phí của gói (giá thực tế, có thể khác `programs.default_tuition_amount`)
+- `unit_price_session`: Giá mỗi buổi học (dùng cho EXTRA_PAID - học thêm buổi)
+- `currency`: Đơn vị tiền tệ (VND/USD)
+- `is_active`: Trạng thái hoạt động (có thể đăng ký không)
+- `is_deleted`: Đánh dấu xóa mềm (ẩn khỏi danh sách nhưng giữ lịch sử)
+- `created_at`: Thời gian tạo gói học phí
+- `updated_at`: Thời gian cập nhật gói học phí
+
+**Ví dụ cụ thể**:
+
+```
+Program: "Tiếng Anh Level 1"
+- name: "Tiếng Anh Level 1"
+- level: "Beginner"
+- total_sessions: 30 buổi
+- default_tuition_amount: 3,000,000 VND (giá tham chiếu)
+- unit_price_session: 100,000 VND
+
+→ Tạo 3 Tuition Plans cho program này:
+
+Tuition Plan 1: "Gói 3 tháng - Ưu đãi"
+- program_id: "Tiếng Anh Level 1"
+- branch_id: NULL (dùng chung cho tất cả chi nhánh)
+- name: "Gói 3 tháng - Ưu đãi"
+- total_sessions: 10 buổi
+- tuition_amount: 1,200,000 VND (giá ưu đãi: 120k/buổi)
+- unit_price_session: 100,000 VND
+- currency: "VND"
+- is_active: true
+- created_at: 2024-01-15 10:00:00
+- updated_at: 2024-01-15 10:00:00
+
+Tuition Plan 2: "Gói 6 tháng - Khuyến mãi"
+- program_id: "Tiếng Anh Level 1"
+- branch_id: NULL
+- name: "Gói 6 tháng - Khuyến mãi"
+- total_sessions: 20 buổi
+- tuition_amount: 2,200,000 VND (giá ưu đãi: 110k/buổi, giảm 10%)
+- unit_price_session: 100,000 VND
+- currency: "VND"
+- is_active: true
+- created_at: 2024-01-15 10:00:00
+- updated_at: 2024-01-15 10:00:00
+
+Tuition Plan 3: "Gói 1 năm - Giá gốc"
+- program_id: "Tiếng Anh Level 1"
+- branch_id: NULL
+- name: "Gói 1 năm - Giá gốc"
+- total_sessions: 30 buổi
+- tuition_amount: 3,000,000 VND (giá gốc: 100k/buổi)
+- unit_price_session: 100,000 VND
+- currency: "VND"
+- is_active: true
+- created_at: 2024-01-15 10:00:00
+- updated_at: 2024-01-15 10:00:00
+
+→ Khi học sinh ghi danh:
+- Học sinh A chọn "Gói 3 tháng" → class_enrollments.tuition_plan_id = Tuition Plan 1
+- Học sinh B chọn "Gói 1 năm" → class_enrollments.tuition_plan_id = Tuition Plan 3
+```
+
+**Luồng sử dụng**:
+1. Admin tạo Program với `default_tuition_amount` (giá tham chiếu)
+2. Admin tạo nhiều Tuition Plans cho Program đó với các mức giá khác nhau
+3. Khi học sinh ghi danh, Staff chọn Tuition Plan phù hợp
+4. Hệ thống tạo Invoice dựa trên `tuition_plan.tuition_amount`
+5. Nếu học sinh học thêm buổi (EXTRA_PAID), tính theo `tuition_plan.unit_price_session`
+
+**Lưu ý về attribute trùng lặp**:
+- `total_sessions` trong `tuition_plans` có thể khác `programs.total_sessions` (ví dụ: gói 3 tháng chỉ 10 buổi, nhưng program có 30 buổi)
+- `unit_price_session` trong `tuition_plans` thường giống `programs.unit_price_session`, nhưng có thể khác nếu có ưu đãi đặc biệt
+- Nếu business logic đảm bảo các giá trị này luôn giống nhau, có thể bỏ và lấy từ `programs` để tránh trùng lặp
+
+### 3.3. `classrooms` - Phòng học
+
+**Mục đích**: Quản lý phòng học theo chi nhánh, có capacity để kiểm tra trùng phòng khi sinh lịch.
+
+**Các attribute quan trọng**:
+- `branch_id`: Chi nhánh
+- `name`: Tên phòng (ví dụ: "Phòng A101", "Phòng B205")
+- `capacity`: Sức chứa tối đa (số học sinh)
+- `note`: Ghi chú về phòng (thiết bị, đặc điểm)
+
+**Ví dụ**:
+```
+Phòng: "Phòng A101"
+- branch_id: Chi nhánh Hà Nội
+- name: "Phòng A101"
+- capacity: 15 học sinh
+- note: "Có máy chiếu, điều hòa"
+```
+
+### 3.4. `classes` - Lớp học
+
+**Mục đích**: Lưu trữ thông tin lớp học cụ thể, gắn với chương trình và chi nhánh. Lớp học có giáo viên chính/trợ giảng dự kiến, lịch học pattern và trạng thái.
+
+**Các attribute quan trọng**:
+- `branch_id`: Chi nhánh
+- `program_id`: Chương trình học
+- `code`: Mã lớp (unique, ví dụ: "ENG-L1-2024-01")
+- `title`: Tên lớp (ví dụ: "Tiếng Anh Level 1 - Khóa 1/2024")
+- `main_teacher_id`: Giáo viên chính dự kiến (reference users.id với role=TEACHER)
+- `assistant_teacher_id`: Trợ giảng dự kiến (reference users.id với role=TEACHER)
+- `start_date` / `end_date`: Ngày bắt đầu/kết thúc lớp
+- `status`: Trạng thái - PLANNED (đang lên kế hoạch) / ACTIVE (đang học) / CLOSED (đã kết thúc)
+- `capacity`: Sĩ số tối đa
+- `schedule_pattern`: Lịch học dạng RRULE hoặc JSON (ví dụ: "Thứ 2,4,6 lúc 18:00-19:30")
+
+**Luồng tạo lớp**:
+1. Admin/Operations tạo lớp với thông tin cơ bản (program, branch, schedule_pattern)
+2. Gán giáo viên chính/trợ giảng dự kiến
+3. Set status = PLANNED
+4. Hệ thống sinh lịch buổi học (`sessions`) từ `schedule_pattern` và `start_date`/`end_date`
+5. Khi bắt đầu học: status = ACTIVE
+6. Khi kết thúc: status = CLOSED
+
+**Ví dụ**:
+```
+Lớp: "Tiếng Anh Level 1 - Khóa 1/2024"
+- branch_id: Chi nhánh Hà Nội
+- program_id: "Tiếng Anh Level 1"
+- code: "ENG-L1-2024-01"
+- title: "Tiếng Anh Level 1 - Khóa 1/2024"
+- main_teacher_id: Cô Lan (teacher user)
+- assistant_teacher_id: Cô Hoa (teacher user)
+- start_date: 2024-03-01
+- end_date: 2024-05-31
+- status: ACTIVE
+- capacity: 15
+- schedule_pattern: "Thứ 2,4,6 lúc 18:00-19:30"
+→ Hệ thống tự động sinh 30 buổi học (sessions) từ 01/03 đến 31/05
+```
+
+### 3.5. `sessions` - Buổi học
+
+**Mục đích**: Lưu trữ từng buổi học cụ thể được sinh ra từ lớp và lịch pattern. Mỗi buổi học có thời gian, phòng, giáo viên dự kiến và thực tế.
+
+**Các attribute quan trọng**:
+- `class_id`: Lớp học
+- `branch_id`: Chi nhánh
+- `planned_datetime`: Thời gian dự kiến (từ schedule_pattern)
+- `planned_room_id`: Phòng dự kiến
+- `planned_teacher_id`: Giáo viên dự kiến (từ classes.main_teacher_id)
+- `planned_assistant_id`: Trợ giảng dự kiến (từ classes.assistant_teacher_id)
+- `duration_minutes`: Thời lượng buổi học (phút)
+- `participation_type`: Loại tham gia - MAIN (buổi chính) / MAKEUP (học bù) / EXTRA_PAID (học thêm có phí) / FREE (miễn phí) / TRIAL (học thử)
+- `status`: Trạng thái - SCHEDULED (đã lên lịch) / COMPLETED (đã hoàn thành) / CANCELLED (đã hủy)
+- `actual_datetime`: Thời gian thực tế (nếu đổi lịch)
+- `actual_room_id`: Phòng thực tế (nếu đổi phòng)
+- `actual_teacher_id`: Giáo viên thực tế (nếu đổi giáo viên)
+- `actual_assistant_id`: Trợ giảng thực tế (nếu đổi)
+
+**Luồng sinh lịch buổi học**:
+1. Khi tạo lớp với `schedule_pattern` và `start_date`/`end_date`
+2. Hệ thống parse `schedule_pattern` (ví dụ: "Thứ 2,4,6 lúc 18:00")
+3. Sinh các buổi học từ `start_date` đến `end_date` theo pattern
+4. Mỗi buổi học:
+   - `planned_datetime`: Thời gian từ pattern
+   - `planned_room_id`: NULL (chưa gán, staff sẽ gán sau)
+   - `planned_teacher_id`: Copy từ `classes.main_teacher_id`
+   - `planned_assistant_id`: Copy từ `classes.assistant_teacher_id`
+   - `status`: SCHEDULED
+   - `participation_type`: MAIN
+
+**Kiểm tra xung đột**:
+- Khi gán phòng: Kiểm tra xem phòng đã được dùng trong khoảng thời gian đó chưa
+- Khi gán giáo viên: Kiểm tra xem giáo viên đã có buổi học khác trong khoảng thời gian đó chưa
+- Nếu có xung đột: Báo lỗi, không cho gán
+
+**Ví dụ**:
+```
+Lớp: "Tiếng Anh Level 1 - Khóa 1/2024"
+Schedule: Thứ 2,4,6 lúc 18:00-19:30 (90 phút)
+Start: 01/03/2024, End: 31/05/2024
+
+→ Hệ thống sinh 30 buổi học:
+
+Buổi 1 (01/03/2024, Thứ 6):
+- planned_datetime: 2024-03-01 18:00
+- planned_room_id: NULL (chưa gán)
+- planned_teacher_id: Cô Lan
+- planned_assistant_id: Cô Hoa
+- duration_minutes: 90
+- participation_type: MAIN
+- status: SCHEDULED
+
+Buổi 2 (04/03/2024, Thứ 2):
+- planned_datetime: 2024-03-04 18:00
+- ...
+
+Buổi 3 (06/03/2024, Thứ 4):
+- planned_datetime: 2024-03-06 18:00
+- ...
+
+... (tổng cộng 30 buổi)
+```
+
+**Đổi lịch buổi học**:
+```
+Buổi học 15/03 bị đổi lịch:
+- planned_datetime: 2024-03-15 18:00 (giữ nguyên để so sánh)
+- actual_datetime: 2024-03-16 18:00 (đổi sang ngày 16/03)
+- actual_room_id: Phòng B205 (đổi phòng)
+- actual_teacher_id: Cô Mai (đổi giáo viên do Cô Lan bận)
+→ Gửi notification cho phụ huynh về thay đổi lịch
+```
+
+### 3.6. `session_roles` - Vai trò trong buổi học
+
+**Mục đích**: Lưu trữ chi tiết ai dạy buổi nào với vai trò cụ thể và đơn giá tính lương. Một buổi học có thể có nhiều người tham gia với vai trò khác nhau.
+
+**Các attribute quan trọng**:
+- `session_id`: Buổi học
+- `staff_user_id`: Staff/Teacher tham gia (reference users.id với role=TEACHER/STAFF)
+- `role`: Vai trò - MAIN_TEACHER (giáo viên chính) / ASSISTANT (trợ giảng) / CLUB (giáo viên club) / WORKSHOP (giáo viên workshop)
+- `payable_unit_price`: Đơn giá tính lương cho vai trò này (ví dụ: 500,000 VND/buổi cho MAIN_TEACHER)
+- `payable_allowance`: Phụ cấp (nếu có, ví dụ: 50,000 VND cho đi xa)
+
+**Sự khác biệt giữa `sessions` và `session_roles`**:
+- `sessions.planned_teacher_id` / `actual_teacher_id`: Thông tin giáo viên dự kiến/thực tế (đơn giản, 1 giáo viên chính, 1 trợ giảng)
+- `session_roles`: Chi tiết hơn, hỗ trợ nhiều người tham gia với vai trò khác nhau và lưu đơn giá để tính lương
+
+**Luồng tạo session_roles**:
+1. Khi buổi học COMPLETED, hệ thống tự động tạo `session_roles` dựa trên:
+   - `sessions.actual_teacher_id` → `session_roles` với role=MAIN_TEACHER
+   - `sessions.actual_assistant_id` → `session_roles` với role=ASSISTANT
+2. Staff có thể thêm `session_roles` khác (ví dụ: CLUB teacher, WORKSHOP teacher)
+3. Mỗi `session_role` lưu `payable_unit_price` và `payable_allowance` từ contract hoặc quy định
+4. Khi tính lương, query `session_roles` trong kỳ → tạo `payroll_lines` với `component_type`=TEACHING/TA/CLUB/WORKSHOP
+
+**Ví dụ**:
+```
+Buổi học: 15/03/2024, 18:00-19:30
+Lớp: "Tiếng Anh Level 1 - Khóa 1/2024"
+
+Sau khi buổi học COMPLETED, tạo session_roles:
+
+SessionRole 1:
+- session_id: session_15_03
+- staff_user_id: Cô Lan (main teacher)
+- role: MAIN_TEACHER
+- payable_unit_price: 500,000 VND
+- payable_allowance: 0
+
+SessionRole 2:
+- session_id: session_15_03
+- staff_user_id: Cô Hoa (assistant)
+- role: ASSISTANT
+- payable_unit_price: 200,000 VND
+- payable_allowance: 0
+
+SessionRole 3:
+- session_id: session_15_03
+- staff_user_id: Thầy Nam (club teacher - dạy thêm 30 phút club)
+- role: CLUB
+- payable_unit_price: 300,000 VND
+- payable_allowance: 50,000 VND (đi xa)
+
+→ Tổng lương cho buổi học này:
+  - Cô Lan: 500,000 VND
+  - Cô Hoa: 200,000 VND
+  - Thầy Nam: 350,000 VND (300,000 + 50,000)
+```
+
+### 3.7. `class_enrollments` - Ghi danh học sinh
+
+**Mục đích**: Lưu trữ việc ghi danh học sinh vào lớp. Một học sinh có thể ghi danh nhiều lớp (lớp chính và lớp bổ trợ).
+
+**Các attribute quan trọng**:
+- `class_id`: Lớp học
+- `student_profile_id`: Học sinh (reference profiles.id với profile_type=STUDENT)
+- `enroll_date`: Ngày ghi danh
+- `status`: Trạng thái - ACTIVE (đang học) / PAUSED (tạm nghỉ) / DROPPED (bỏ học)
+- `tuition_plan_id`: Gói học phí áp dụng (cho phép tùy biến học phí theo học sinh)
+
+**Luồng ghi danh**:
+1. Staff tạo `class_enrollment` cho học sinh vào lớp
+2. Hệ thống tự động tạo `attendances` cho tất cả buổi học đã SCHEDULED (status = NULL, chưa điểm danh)
+3. Hệ thống tự động tạo `homework_student` cho tất cả bài tập đã được giao (status = ASSIGNED)
+4. Gửi notification cho phụ huynh về việc ghi danh
+
+**Ví dụ**:
+```
+Học sinh: Nguyễn Văn A (student_profile_id)
+Lớp: "Tiếng Anh Level 1 - Khóa 1/2024"
+
+Ghi danh (01/03/2024):
+- class_id: "ENG-L1-2024-01"
+- student_profile_id: Nguyễn Văn A
+- enroll_date: 2024-03-01
+- status: ACTIVE
+- tuition_plan_id: Gói học phí 3 tháng
+
+→ Hệ thống tự động:
+  - Tạo 30 attendances (cho 30 buổi học) với status = NULL
+  - Tạo homework_student cho tất cả bài tập đã được giao
+  - Gửi notification cho phụ huynh
+```
+
+### 3.8. Quan hệ giữa các bảng
+
+**Luồng hoàn chỉnh**:
+
+```
+1. programs (Tạo chương trình)
+   ↓
+2. tuition_plans (Tạo các gói học phí cho program - ví dụ: gói 3 tháng, 6 tháng, 1 năm)
+   ↓
+3. classrooms (Tạo phòng học)
+   ↓
+4. classes (Mở lớp - gắn với program, gán giáo viên, set schedule_pattern)
+   ↓ (Hệ thống tự động sinh lịch)
+5. sessions (Sinh các buổi học từ schedule_pattern)
+   ↓ (Staff gán phòng, kiểm tra xung đột)
+6. sessions (Cập nhật planned_room_id, actual_room_id nếu đổi)
+   ↓ (Ghi danh học sinh - chọn tuition_plan)
+7. class_enrollments (Học sinh ghi danh vào lớp, gán tuition_plan_id)
+   ↓ (Hệ thống tự động tạo attendances)
+8. attendances (Tạo điểm danh cho tất cả buổi học)
+   ↓ (Sau buổi học COMPLETED)
+9. session_roles (Tạo vai trò giáo viên để tính lương)
+   ↓ (Khi tính lương)
+10. payroll_lines (Tạo dòng lương từ session_roles)
+```
+
+**Quan hệ chi tiết**:
+- `branches` → `programs` (1:N): Mỗi chi nhánh có nhiều chương trình
+- `programs` → `tuition_plans` (1:N): Mỗi chương trình có nhiều gói học phí (ví dụ: gói 3 tháng, 6 tháng, 1 năm)
+- `branches` → `tuition_plans` (1:N): Mỗi chi nhánh có nhiều gói học phí (hoặc null nếu dùng chung)
+- `tuition_plans` → `class_enrollments` (1:N): Mỗi gói học phí được áp dụng cho nhiều học sinh ghi danh
+- `branches` → `classrooms` (1:N): Mỗi chi nhánh có nhiều phòng học
+- `branches` → `classes` (1:N): Mỗi chi nhánh có nhiều lớp
+- `programs` → `classes` (1:N): Mỗi chương trình có nhiều lớp
+- `classes` → `sessions` (1:N): Mỗi lớp có nhiều buổi học
+- `classes` → `class_enrollments` (1:N): Mỗi lớp có nhiều học sinh ghi danh
+- `profiles` → `class_enrollments` (1:N): Mỗi học sinh có thể ghi danh nhiều lớp
+- `sessions` → `session_roles` (1:N): Mỗi buổi học có nhiều vai trò (giáo viên chính, trợ giảng, club...)
+- `users` → `session_roles` (1:N): Mỗi giáo viên có thể tham gia nhiều buổi với vai trò khác nhau
+- `session_roles` → `payroll_lines` (1:N): Mỗi session_role có thể tạo nhiều dòng lương (nếu tính theo nhiều kỳ)
+
+**Lưu ý quan trọng**:
+- `programs` định nghĩa **nội dung/chương trình học**, `tuition_plans` định nghĩa **giá cả/gói học phí**. Một program có thể có nhiều tuition plans với giá khác nhau.
+- `schedule_pattern` có thể là RRULE (RFC 5545) hoặc JSON tùy chỉnh để linh hoạt
+- Khi đổi lịch buổi học, cần gửi notification cho phụ huynh và kiểm tra xung đột phòng/giáo viên
+- `session_roles` là nguồn dữ liệu chính để tính lương teaching, khác với `sessions` chỉ lưu thông tin dự kiến/thực tế
+- Một học sinh có thể ghi danh nhiều lớp (lớp chính và lớp bổ trợ), mỗi lớp có `tuition_plan_id` riêng để áp dụng giá khác nhau
+- Khi ghi danh, hệ thống tự động tạo `attendances` và `homework_student` để sẵn sàng cho điểm danh và giao bài tập
+- Khi tạo Invoice, sử dụng `tuition_plan.tuition_amount` thay vì `program.default_tuition_amount` để đảm bảo tính đúng giá gói học sinh đã chọn
 
 ## 4. Khối Nghỉ/Điểm danh/Học bù
 
@@ -1910,12 +2321,15 @@ Khi phụ huynh xem kết quả:
 - `id` (uuid, PK): Định danh gói
 - `branch_id` (uuid, FK → branches.id, nullable): Chi nhánh (null nếu dùng chung)
 - `program_id` (uuid, FK → programs.id): Chương trình
+- `name` (varchar(255)): Tên gói học phí (ví dụ: "Gói 3 tháng - Ưu đãi")
 - `total_sessions` (int): Tổng số buổi
 - `tuition_amount` (numeric): Tổng học phí
 - `unit_price_session` (numeric): Giá mỗi buổi (dùng cho EXTRA_PAID)
 - `currency` (varchar(10)): Đơn vị tiền tệ (VND/USD)
 - `is_active` (boolean): Trạng thái hoạt động
 - `is_deleted` (boolean): Đánh dấu xóa mềm
+- `created_at` (timestamptz): Thời gian tạo
+- `updated_at` (timestamptz): Thời gian cập nhật
 
 #### `invoices` - Hóa đơn
 - `id` (uuid, PK): Định danh hóa đơn
