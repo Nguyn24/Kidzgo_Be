@@ -30,6 +30,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Username)
             .HasMaxLength(100);
 
+        builder.Property(x => x.Name)
+            .HasMaxLength(255);
+
         builder.Property(x => x.Role)
             .HasConversion<string>()   
             .HasMaxLength(20)
@@ -259,5 +262,90 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(x => x.ActorUser)
             .HasForeignKey(x => x.ActorUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Seed data for testing
+        // Password: Password123!
+        // Hash generated with fixed salt for consistency using PasswordHashGenerator
+        var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        // Hash for "Password123!" with fixed salt "0123456789ABCDEF0123456789ABCDEF"
+        // Generated using: PasswordHashGenerator.GenerateSeedPasswordHash()
+        var passwordHash = Helpers.PasswordHashGenerator.GenerateSeedPasswordHash();
+
+        var branchHnId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var branchHcmId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+        builder.HasData(
+            new User
+            {
+                Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                Email = "admin@kidzgo.vn",
+                PasswordHash = passwordHash, // Password: Password123!
+                Role = UserRole.Admin,
+                Username = "admin",
+                Name = "Admin User",
+                BranchId = null, // Admin không thuộc branch
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new User
+            {
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                Email = "staff@kidzgo.vn",
+                PasswordHash = passwordHash, // Password: Password123!
+                Role = UserRole.Staff,
+                Username = "staff",
+                Name = "Staff User",
+                BranchId = branchHnId, // Chi nhánh Hà Nội
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            // Teachers for testing Class API
+            new User
+            {
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                Email = "teacher1@kidzgo.vn",
+                PasswordHash = passwordHash, // Password: Password123!
+                Role = UserRole.Teacher,
+                Username = "teacher1",
+                Name = "Cô Lan",
+                BranchId = branchHnId, // Chi nhánh Hà Nội
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new User
+            {
+                Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                Email = "teacher2@kidzgo.vn",
+                PasswordHash = passwordHash, // Password: Password123!
+                Role = UserRole.Teacher,
+                Username = "teacher2",
+                Name = "Cô Hoa",
+                BranchId = branchHnId, // Chi nhánh Hà Nội
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new User
+            {
+                Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                Email = "teacher3@kidzgo.vn",
+                PasswordHash = passwordHash, // Password: Password123!
+                Role = UserRole.Teacher,
+                Username = "teacher3",
+                Name = "Thầy Nam",
+                BranchId = branchHcmId, // Chi nhánh TP.HCM
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            }
+        );
     }
 }
