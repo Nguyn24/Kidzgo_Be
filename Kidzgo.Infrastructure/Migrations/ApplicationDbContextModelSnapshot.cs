@@ -331,6 +331,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateOnly>("EnrollDate")
                         .HasColumnType("date");
 
@@ -344,6 +347,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<Guid?>("TuitionPlanId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

@@ -29,6 +29,12 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
 
         builder.Property(x => x.TuitionPlanId);
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Relationships
         builder.HasOne(x => x.Class)
             .WithMany(x => x.ClassEnrollments)

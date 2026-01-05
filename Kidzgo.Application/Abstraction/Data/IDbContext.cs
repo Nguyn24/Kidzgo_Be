@@ -66,6 +66,7 @@ public interface IDbContext
 
     // Media
     DbSet<MediaAsset> MediaAssets { get; }
+    DbSet<Blog> Blogs { get; }
 
     // Notifications
     DbSet<Notification> Notifications { get; }

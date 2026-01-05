@@ -1,0 +1,75 @@
+using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Classes;
+using Microsoft.EntityFrameworkCore;
+
+namespace Kidzgo.Application.Enrollments.ReactivateEnrollment;
+
+public sealed class ReactivateEnrollmentCommandHandler(
+    IDbContext context
+) : ICommandHandler<ReactivateEnrollmentCommand, ReactivateEnrollmentResponse>
+{
+    public async Task<Result<ReactivateEnrollmentResponse>> Handle(ReactivateEnrollmentCommand command, CancellationToken cancellationToken)
+    {
+        var enrollment = await context.ClassEnrollments
+            .Include(e => e.Class)
+            .Include(e => e.StudentProfile)
+            .Include(e => e.TuitionPlan)
+            .FirstOrDefaultAsync(e => e.Id == command.Id, cancellationToken);
+
+        if (enrollment is null)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+        }
+
+        if (enrollment.Status == EnrollmentStatus.Active)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                Error.Conflict("Enrollment.AlreadyActive", "Enrollment is already active"));
+        }
+
+        if (enrollment.Status == EnrollmentStatus.Dropped)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                Error.Conflict("Enrollment.CannotReactivateDropped", "Cannot reactivate a dropped enrollment"));
+        }
+
+        // Check if class is still available
+        if (enrollment.Class.Status != ClassStatus.Active && enrollment.Class.Status != ClassStatus.Planned)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                Error.Conflict("Enrollment.ClassNotAvailable", "Class is not available for enrollment"));
+        }
+
+        // Check class capacity
+        int currentEnrollmentCount = await context.ClassEnrollments
+            .CountAsync(ce => ce.ClassId == enrollment.ClassId && ce.Status == EnrollmentStatus.Active, cancellationToken);
+
+        if (currentEnrollmentCount >= enrollment.Class.Capacity)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                Error.Conflict("Enrollment.ClassFull", "Class has reached its capacity"));
+        }
+
+        enrollment.Status = EnrollmentStatus.Active;
+        enrollment.UpdatedAt = DateTime.UtcNow;
+        await context.SaveChangesAsync(cancellationToken);
+
+        return new ReactivateEnrollmentResponse
+        {
+            Id = enrollment.Id,
+            ClassId = enrollment.ClassId,
+            ClassCode = enrollment.Class.Code,
+            ClassTitle = enrollment.Class.Title,
+            StudentProfileId = enrollment.StudentProfileId,
+            StudentName = enrollment.StudentProfile.DisplayName,
+            EnrollDate = enrollment.EnrollDate,
+            Status = enrollment.Status,
+            TuitionPlanId = enrollment.TuitionPlanId,
+            TuitionPlanName = enrollment.TuitionPlan?.Name
+        };
+    }
+}
+
