@@ -130,21 +130,8 @@ public class AuthenticateController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-
-    [Authorize(Roles = "Admin,Teacher,Staff")]
-    [HttpPost("verify-pin")]
-    public async Task<IResult> VerifyUserPin([FromBody] VerifyUserPinRequest request, CancellationToken cancellationToken)
-    {
-        var command = new VerifyUserPinCommand
-        {
-            Pin = request.Pin
-        };
-
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchOk();
-    }
-
-    [Authorize(Roles = "Admin,Teacher,Staff")]
+    
+    [Authorize]
     [HttpPut("change-pin")]
     public async Task<IResult> ChangeUserPin([FromBody] ChangeUserPinRequest request, CancellationToken cancellationToken)
     {
