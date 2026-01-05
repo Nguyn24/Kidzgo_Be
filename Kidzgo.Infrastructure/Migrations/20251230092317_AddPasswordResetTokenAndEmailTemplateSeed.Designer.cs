@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230092317_AddPasswordResetTokenAndEmailTemplateSeed")]
+    partial class AddPasswordResetTokenAndEmailTemplateSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1415,14 +1418,14 @@ namespace Kidzgo.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
-                            Body = "<p>Xin chào {{user_name}},</p>\r\n<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>\r\n<p>Vui lòng bấm vào đường dẫn sau để đặt lại mật khẩu:</p>\r\n<p><a href=\"{{reset_link}}\">Đặt lại mật khẩu</a></p>\r\n<p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>\r\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            Body = "<p>Xin chào {{user_name}},</p>\n<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>\n<p>Vui lòng bấm vào đường dẫn sau để đặt lại mật khẩu:</p>\n<p><a href=\"{{reset_link}}\">Đặt lại mật khẩu</a></p>\n<p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
                             Code = "FORGOT_PASSWORD",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 12, 30, 9, 23, 14, 264, DateTimeKind.Utc).AddTicks(6162),
                             IsActive = true,
                             IsDeleted = false,
                             Placeholders = "[\"user_name\",\"reset_link\"]",
                             Subject = "Kidzgo - Đặt lại mật khẩu của bạn",
-                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 12, 30, 9, 23, 14, 264, DateTimeKind.Utc).AddTicks(6162)
                         });
                 });
 
@@ -2610,10 +2613,6 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PinHash")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
