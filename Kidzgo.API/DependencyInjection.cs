@@ -16,11 +16,13 @@ public static class DependencyInjection
         services.AddCors(options =>
         {
             options.AddPolicy("AllowLocalAndProdFE", policy =>
-                policy.WithOrigins("http://localhost:5173", "")
+                policy.WithOrigins(
+                        "http://localhost:5173",
+                        "https://kidzgo-centre-pvjj.vercel.app"
+                    )
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    .AllowCredentials()
-                    .SetIsOriginAllowedToAllowWildcardSubdomains());
+                    .AllowCredentials());
         });
         return services;
     }
