@@ -1,0 +1,109 @@
+using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets;
+using Microsoft.EntityFrameworkCore;
+
+namespace Kidzgo.Application.Tickets.CreateTicket;
+
+public sealed class CreateTicketCommandHandler(
+    IDbContext context
+) : ICommandHandler<CreateTicketCommand, CreateTicketResponse>
+{
+    public async Task<Result<CreateTicketResponse>> Handle(CreateTicketCommand command, CancellationToken cancellationToken)
+    {
+        // Check if user exists
+        var user = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == command.OpenedByUserId, cancellationToken);
+
+        if (user is null)
+        {
+            return Result.Failure<CreateTicketResponse>(
+                Error.NotFound("Ticket.UserNotFound", "User not found"));
+        }
+
+        // Check if branch exists
+        var branch = await context.Branches
+            .FirstOrDefaultAsync(b => b.Id == command.BranchId && b.IsActive, cancellationToken);
+
+        if (branch is null)
+        {
+            return Result.Failure<CreateTicketResponse>(
+                Error.NotFound("Ticket.BranchNotFound", "Branch not found or inactive"));
+        }
+
+        // Check if class exists (if provided)
+        if (command.ClassId.HasValue)
+        {
+            var classExists = await context.Classes
+                .AnyAsync(c => c.Id == command.ClassId.Value, cancellationToken);
+
+            if (!classExists)
+            {
+                return Result.Failure<CreateTicketResponse>(
+                    Error.NotFound("Ticket.ClassNotFound", "Class not found"));
+            }
+        }
+
+        // Check if profile exists (if provided)
+        if (command.OpenedByProfileId.HasValue)
+        {
+            var profile = await context.Profiles
+                .FirstOrDefaultAsync(p => p.Id == command.OpenedByProfileId.Value && p.UserId == command.OpenedByUserId, cancellationToken);
+
+            if (profile is null)
+            {
+                return Result.Failure<CreateTicketResponse>(
+                    Error.NotFound("Ticket.ProfileNotFound", "Profile not found or does not belong to the user"));
+            }
+        }
+
+        var now = DateTime.UtcNow;
+        var ticket = new Ticket
+        {
+            Id = Guid.NewGuid(),
+            OpenedByUserId = command.OpenedByUserId,
+            OpenedByProfileId = command.OpenedByProfileId,
+            BranchId = command.BranchId,
+            ClassId = command.ClassId,
+            Category = command.Category,
+            Message = command.Message,
+            Status = TicketStatus.Open,
+            AssignedToUserId = null,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        context.Tickets.Add(ticket);
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Query ticket with navigation properties for response
+        var ticketWithNav = await context.Tickets
+            .Include(t => t.OpenedByUser)
+            .Include(t => t.OpenedByProfile)
+            .Include(t => t.Branch)
+            .Include(t => t.Class)
+            .FirstOrDefaultAsync(t => t.Id == ticket.Id, cancellationToken);
+
+        return new CreateTicketResponse
+        {
+            Id = ticketWithNav!.Id,
+            OpenedByUserId = ticketWithNav.OpenedByUserId,
+            OpenedByUserName = ticketWithNav.OpenedByUser.Name,
+            OpenedByProfileId = ticketWithNav.OpenedByProfileId,
+            OpenedByProfileName = ticketWithNav.OpenedByProfile?.DisplayName,
+            BranchId = ticketWithNav.BranchId,
+            BranchName = ticketWithNav.Branch.Name,
+            ClassId = ticketWithNav.ClassId,
+            ClassCode = ticketWithNav.Class?.Code,
+            ClassTitle = ticketWithNav.Class?.Title,
+            Category = ticketWithNav.Category,
+            Message = ticketWithNav.Message,
+            Status = ticketWithNav.Status,
+            AssignedToUserId = ticketWithNav.AssignedToUserId,
+            CreatedAt = ticketWithNav.CreatedAt,
+            UpdatedAt = ticketWithNav.UpdatedAt
+        };
+    }
+}
+
