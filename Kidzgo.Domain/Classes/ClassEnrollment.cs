@@ -12,6 +12,8 @@ public class ClassEnrollment : Entity
     public DateOnly EnrollDate { get; set; }
     public EnrollmentStatus Status { get; set; }
     public Guid? TuitionPlanId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public Class Class { get; set; } = null!;

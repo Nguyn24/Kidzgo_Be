@@ -97,6 +97,7 @@ public static class DependencyInjection
         services.AddSingleton<IPayload, Payload>();
         services.AddScoped<ITemplateRenderer, TemplateRenderer>();
         services.AddScoped<IImageUploader, ImageUploader>();
+        services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
         return services;
     }
 
