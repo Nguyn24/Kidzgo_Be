@@ -1,49 +1,49 @@
-name: Deploy to VPS
+# name: Deploy to VPS
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: # Cho phép chạy thủ công
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch: # Cho phép chạy thủ công
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
       
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -e
-            PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
-            if [ -z "$PROJECT_PATH" ]; then
-              PROJECT_PATH="$HOME/projects/kidzgo"
-            fi
-            echo "🚀 Deploying to: $PROJECT_PATH"
-            cd "$PROJECT_PATH" || { echo "❌ Project path not found: $PROJECT_PATH"; exit 1; }
-            echo "📥 Pulling latest code..."
-            git pull origin main
-            echo "🔨 Building Docker images..."
-            docker-compose build --no-cache kidzgo.api
-            echo "▶️  Starting containers..."
-            docker-compose up -d
-            echo "⏳ Waiting for services to start..."
-            sleep 15
-            echo "🗄️  Running database migrations..."
-            docker-compose exec -T kidzgo.api dotnet ef database update --project Kidzgo.Infrastructure || echo "⚠️  Migration skipped or no new migrations"
-            echo "📊 Container status:"
-            docker-compose ps
-            echo "📝 Recent logs:"
-            docker-compose logs --tail=50 kidzgo.api
-            echo "✅ Deploy completed!"
+#       - name: Deploy to VPS via SSH
+#         uses: appleboy/ssh-action@v1.0.0
+#         with:
+#           host: ${{ secrets.VPS_HOST }}
+#           username: ${{ secrets.VPS_USERNAME }}
+#           password: ${{ secrets.VPS_PASSWORD }}
+#           port: ${{ secrets.VPS_PORT }}
+#           script: |
+#             set -e
+#             PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
+#             if [ -z "$PROJECT_PATH" ]; then
+#               PROJECT_PATH="$HOME/projects/kidzgo"
+#             fi
+#             echo "🚀 Deploying to: $PROJECT_PATH"
+#             cd "$PROJECT_PATH" || { echo "❌ Project path not found: $PROJECT_PATH"; exit 1; }
+#             echo "📥 Pulling latest code..."
+#             git pull origin main
+#             echo "🔨 Building Docker images..."
+#             docker-compose build --no-cache kidzgo.api
+#             echo "▶️  Starting containers..."
+#             docker-compose up -d
+#             echo "⏳ Waiting for services to start..."
+#             sleep 15
+#             echo "🗄️  Running database migrations..."
+#             docker-compose exec -T kidzgo.api dotnet ef database update --project Kidzgo.Infrastructure || echo "⚠️  Migration skipped or no new migrations"
+#             echo "📊 Container status:"
+#             docker-compose ps
+#             echo "📝 Recent logs:"
+#             docker-compose logs --tail=50 kidzgo.api
+#             echo "✅ Deploy completed!"
 
 
 
