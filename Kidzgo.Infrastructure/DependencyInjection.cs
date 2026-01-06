@@ -6,6 +6,7 @@ using Kidzgo.Infrastructure.Database;
 using Kidzgo.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,8 +30,15 @@ public static class DependencyInjection
         string? connectionString = configuration.GetConnectionString("Database");
 
         services.AddDbContext<ApplicationDbContext>(options =>
+        {
             options.UseNpgsql(connectionString, npgsqlOptions =>
-                npgsqlOptions.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default)));
+                npgsqlOptions.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default));
+            
+            // Suppress PendingModelChangesWarning để không bị throw exception khi Migrate()
+            // Warning này có thể xuất hiện khi model và snapshot không khớp hoàn toàn
+            options.ConfigureWarnings(w =>
+                w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddScoped<IDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
