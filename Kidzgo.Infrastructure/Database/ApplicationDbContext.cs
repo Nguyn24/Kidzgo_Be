@@ -30,6 +30,7 @@ public sealed class ApplicationDbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<ParentPinResetToken> ParentPinResetTokens => Set<ParentPinResetToken>();
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ParentStudentLink> ParentStudentLinks => Set<ParentStudentLink>();
 
