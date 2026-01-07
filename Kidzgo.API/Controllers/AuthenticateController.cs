@@ -6,6 +6,7 @@ using Kidzgo.Application.Authentication.ForgetPassword;
 using Kidzgo.Application.Authentication.Login;
 using Kidzgo.Application.Authentication.ResetPassword;
 using Kidzgo.Application.Authentication.VerifyUserPin;
+using Kidzgo.Application.Authentication.Profiles.RequestParentPinReset;
 using Kidzgo.Application.Profiles.GetProfiles;
 using Kidzgo.Application.Profiles.SelectStudentProfile;
 using Kidzgo.Application.Profiles.VerifyParentPin;
@@ -139,6 +140,22 @@ public class AuthenticateController : ControllerBase
         {
             CurrentPin = request.CurrentPin,
             NewPin = request.NewPin
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Request PIN reset for Parent profile (nếu có email flow)
+    /// </summary>
+    [Authorize]
+    [HttpPost("profiles/request-pin-reset")]
+    public async Task<IResult> RequestParentPinReset([FromBody] RequestParentPinResetRequest request, CancellationToken cancellationToken)
+    {
+        var command = new RequestParentPinResetCommand
+        {
+            ProfileId = request.ProfileId
         };
 
         var result = await _mediator.Send(command, cancellationToken);

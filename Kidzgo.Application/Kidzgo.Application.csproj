@@ -32,6 +32,7 @@
     <ItemGroup>
       <Folder Include="Abstraction\Services\" />
       <Folder Include="Authentication\" />
+      <Folder Include="Users\Admin\" />
     </ItemGroup>
 
 </Project>

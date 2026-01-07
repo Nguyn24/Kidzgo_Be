@@ -24,6 +24,8 @@ public interface IDbContext
     DbSet<User> Users { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<PasswordResetToken> PasswordResetTokens { get; }
+    DbSet<ParentPinResetToken> ParentPinResetTokens { get; }
+
     DbSet<Profile> Profiles { get; }
     DbSet<ParentStudentLink> ParentStudentLinks { get; }
 

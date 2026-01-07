@@ -1,19 +1,7 @@
 namespace Kidzgo.API.Requests;
 
-public sealed class SelectStudentProfileRequest
+public sealed class RequestParentPinResetRequest
 {
     public Guid ProfileId { get; set; }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
