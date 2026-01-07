@@ -23,14 +23,23 @@ public sealed class GetTeacherTimetableQueryHandler(
                      && s.Status != SessionStatus.Cancelled);
 
         // Filter by date range
+        // Convert to UTC if DateTime is Unspecified (from query string)
         if (query.From.HasValue)
         {
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= query.From.Value);
+            var fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(query.From.Value, DateTimeKind.Utc)
+                : query.From.Value.ToUniversalTime();
+            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= fromUtc);
         }
 
         if (query.To.HasValue)
         {
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= query.To.Value);
+            var toUtc = query.To.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(query.To.Value, DateTimeKind.Utc)
+                : query.To.Value.ToUniversalTime();
+            // Add one day to include the entire "to" date
+            toUtc = toUtc.Date.AddDays(1).AddTicks(-1);
+            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= toUtc);
         }
 
         var sessions = await sessionsQuery
