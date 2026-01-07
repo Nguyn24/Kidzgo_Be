@@ -43,8 +43,10 @@ public class CreateUserCommandHandler(
             Email = command.Email,
             PasswordHash = hashedPassword,
             Role = command.Role,
+            IsActive = true,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
-           
+            UpdatedAt = DateTime.UtcNow
         };
 
         

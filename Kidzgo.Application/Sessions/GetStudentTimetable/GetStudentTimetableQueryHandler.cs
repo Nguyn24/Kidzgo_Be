@@ -13,32 +13,53 @@ public sealed class GetStudentTimetableQueryHandler(
 {
     public async Task<Result<GetStudentTimetableResponse>> Handle(GetStudentTimetableQuery query, CancellationToken cancellationToken)
     {
-        // Verify student exists
-        var studentExists = await context.Profiles
-            .AnyAsync(p => p.Id == query.StudentId && p.ProfileType == Domain.Users.ProfileType.Student, cancellationToken);
+        // Verify student exists and is active
+        var profile = await context.Profiles
+            .FirstOrDefaultAsync(p => p.Id == query.StudentId, cancellationToken);
 
-        if (!studentExists)
+        if (profile == null)
         {
             return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Student not found"));
+                Error.NotFound("Student.NotFound", "Student profile not found"));
         }
 
-        // Get sessions from classes where student is enrolled (Active status)
-        // Note: When using Select projection, Include is not needed as EF Core will only load what's referenced
+        if (profile.ProfileType != Domain.Users.ProfileType.Student)
+        {
+            return Result.Failure<GetStudentTimetableResponse>(
+                Error.NotFound("Student.NotFound", "Profile is not a student"));
+        }
+
+        if (!profile.IsActive || profile.IsDeleted)
+        {
+            return Result.Failure<GetStudentTimetableResponse>(
+                Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
+        }
+
+        // Get sessions from classes where student is enrolled (Status = 0 = Active)
+        // Use explicit value 0 instead of enum to avoid mapping issues
         var sessionsQuery = context.Sessions
             .Where(s => s.Class.ClassEnrollments
-                .Any(ce => ce.StudentProfileId == query.StudentId && ce.Status == EnrollmentStatus.Active))
+                .Any(ce => ce.StudentProfileId == query.StudentId && (int)ce.Status == 0))
             .Where(s => s.Status != SessionStatus.Cancelled);
 
         // Filter by date range
+        // Convert to UTC if DateTime is Unspecified (from query string)
         if (query.From.HasValue)
         {
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= query.From.Value);
+            var fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(query.From.Value, DateTimeKind.Utc)
+                : query.From.Value.ToUniversalTime();
+            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= fromUtc);
         }
 
         if (query.To.HasValue)
         {
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= query.To.Value);
+            var toUtc = query.To.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(query.To.Value, DateTimeKind.Utc)
+                : query.To.Value.ToUniversalTime();
+            // Add one day to include the entire "to" date
+            toUtc = toUtc.Date.AddDays(1).AddTicks(-1);
+            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= toUtc);
         }
 
         var sessions = await sessionsQuery
