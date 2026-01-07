@@ -14,6 +14,10 @@ Tài liệu này mô tả chi tiết cách sử dụng tất cả các API endpo
 8. [Ticket APIs](#8-ticket-apis)
 9. [Blog APIs](#9-blog-apis)
 10. [File Upload APIs](#10-file-upload-apis)
+11. [Master Data APIs](#11-master-data-apis)
+12. [Teacher APIs](#12-teacher-apis)
+13. [Student APIs](#13-student-apis)
+14. [Session APIs](#14-session-apis)
 
 ---
 
@@ -2483,5 +2487,493 @@ Trong Swagger UI, bạn có thể:
 
 ---
 
-*Tài liệu này được cập nhật lần cuối: 2025-01-05*
+---
+
+## 11. Master Data APIs
+
+Base URL: `/api/`
+
+### 11.1. Get Branches
+
+**Endpoint:** `GET /api/branches`
+
+**Mô tả:** Lấy danh sách Branches. Admin thấy tất cả branches, Staff/Teacher chỉ thấy branch được gán.
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "branches": [
+      {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "code": "HN001",
+        "name": "Chi nhánh Hà Nội",
+        "address": "123 Đường ABC, Quận 1",
+        "contactPhone": "0123456789",
+        "contactEmail": "hanoi@kidzgo.com",
+        "isActive": true
+      }
+    ]
+  }
+}
+```
+
+**Lưu ý:**
+- Admin: Trả về tất cả branches đang active
+- Staff/Teacher: Chỉ trả về branch được gán (BranchId) nếu có, nếu không có thì trả về mảng rỗng
+
+---
+
+### 11.2. Get Levels
+
+**Endpoint:** `GET /api/levels`
+
+**Mô tả:** Lấy danh sách các level từ Programs (distinct, active programs).
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "levels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ]
+  }
+}
+```
+
+---
+
+### 11.3. Get Roles
+
+**Endpoint:** `GET /api/roles`
+
+**Mô tả:** Lấy danh sách SessionRoleType enum values.
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "roles": [
+      {
+        "value": "MainTeacher",
+        "displayName": "Main Teacher"
+      },
+      {
+        "value": "AssistantTeacher",
+        "displayName": "Assistant Teacher"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 11.4. Get Lookups
+
+**Endpoint:** `GET /api/lookups`
+
+**Mô tả:** Lấy tất cả enum values cho các lookups (attendanceStatus, sessionStatus, classStatus, enrollmentStatus, etc.).
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "lookups": {
+      "attendanceStatus": [
+        {
+          "value": "Present",
+          "displayName": "Present"
+        },
+        {
+          "value": "Absent",
+          "displayName": "Absent"
+        },
+        {
+          "value": "Makeup",
+          "displayName": "Makeup"
+        }
+      ],
+      "sessionStatus": [
+        {
+          "value": "Planned",
+          "displayName": "Planned"
+        },
+        {
+          "value": "Completed",
+          "displayName": "Completed"
+        },
+        {
+          "value": "Cancelled",
+          "displayName": "Cancelled"
+        }
+      ],
+      "classStatus": [
+        {
+          "value": "Planned",
+          "displayName": "Planned"
+        },
+        {
+          "value": "Active",
+          "displayName": "Active"
+        },
+        {
+          "value": "Closed",
+          "displayName": "Closed"
+        }
+      ],
+      "enrollmentStatus": [
+        {
+          "value": "Active",
+          "displayName": "Active"
+        },
+        {
+          "value": "Paused",
+          "displayName": "Paused"
+        },
+        {
+          "value": "Dropped",
+          "displayName": "Dropped"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## 12. Teacher APIs
+
+Base URL: `/api/teacher`
+
+### 12.1. Get Teacher Classes
+
+**Endpoint:** `GET /api/teacher/classes`
+
+**Mô tả:** Lấy danh sách lớp của Teacher (lớp mà teacher là Main Teacher hoặc Assistant Teacher).
+
+**Authorization:** Required (Role: Teacher)
+
+**Query Parameters:**
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "classes": {
+      "items": [
+        {
+          "id": "guid",
+          "branchId": "11111111-1111-1111-1111-111111111111",
+          "branchName": "Chi nhánh Hà Nội",
+          "programId": "12345678-1234-1234-1234-123456789012",
+          "programName": "Tiếng Anh Trẻ Em",
+          "code": "ENG2-2024",
+          "title": "Tiếng Anh Lớp 2 - 2024",
+          "mainTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "mainTeacherName": "Nguyễn Văn A",
+          "assistantTeacherId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+          "assistantTeacherName": "Trần Thị B",
+          "startDate": "2024-01-15",
+          "endDate": "2024-04-15",
+          "status": "Active",
+          "capacity": 15,
+          "currentEnrollmentCount": 10,
+          "schedulePattern": "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=18;BYMINUTE=0",
+          "role": "MainTeacher"
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1,
+      "hasPreviousPage": false,
+      "hasNextPage": false
+    }
+  }
+}
+```
+
+**Lưu ý:** Field `role` sẽ là `"MainTeacher"` hoặc `"AssistantTeacher"` tùy theo vai trò của teacher trong lớp.
+
+---
+
+### 12.2. Get Teacher Timetable
+
+**Endpoint:** `GET /api/teacher/timetable`
+
+**Mô tả:** Lấy thời khóa biểu của Teacher trong khoảng thời gian từ `from` đến `to`.
+
+**Authorization:** Required (Role: Teacher)
+
+**Query Parameters:**
+- `from` (DateTime?, optional): Ngày bắt đầu (format: `YYYY-MM-DD` hoặc `YYYY-MM-DDTHH:mm:ssZ`)
+- `to` (DateTime?, optional): Ngày kết thúc (format: `YYYY-MM-DD` hoặc `YYYY-MM-DDTHH:mm:ssZ`)
+
+**Example Request:**
+```
+GET /api/teacher/timetable?from=2025-01-01&to=2025-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "sessions": [
+      {
+        "id": "guid",
+        "classId": "guid",
+        "classCode": "ENG2-2024",
+        "classTitle": "Tiếng Anh Lớp 2 - 2024",
+        "plannedDatetime": "2025-01-15T18:00:00Z",
+        "actualDatetime": null,
+        "durationMinutes": 90,
+        "participationType": "InPerson",
+        "status": "Planned",
+        "plannedRoomId": "guid",
+        "plannedRoomName": "Phòng học A1",
+        "actualRoomId": null,
+        "actualRoomName": null,
+        "plannedTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "plannedTeacherName": "Nguyễn Văn A",
+        "actualTeacherId": null,
+        "actualTeacherName": null,
+        "plannedAssistantId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "plannedAssistantName": "Trần Thị B",
+        "lessonPlanId": null,
+        "lessonPlanLink": null
+      }
+    ]
+  }
+}
+```
+
+**Lưu ý:**
+- Nếu không có `from` và `to`, sẽ trả về tất cả sessions
+- Chỉ trả về sessions mà teacher là PlannedTeacher hoặc ActualTeacher
+- Không bao gồm sessions có status = Cancelled
+- `lessonPlanLink` sẽ là URL dạng `/api/lesson-plans/{lessonPlanId}` nếu có lesson plan
+
+---
+
+## 13. Student APIs
+
+Base URL: `/api/students`
+
+### 13.1. Get Student Classes
+
+**Endpoint:** `GET /api/students/{studentId}/classes`
+
+**Mô tả:** Lấy danh sách lớp mà Student đang tham gia (enrolled với status = Active).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `studentId` (Guid): ID của Student Profile
+
+**Query Parameters:**
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "classes": {
+      "items": [
+        {
+          "id": "guid",
+          "branchId": "11111111-1111-1111-1111-111111111111",
+          "branchName": "Chi nhánh Hà Nội",
+          "programId": "12345678-1234-1234-1234-123456789012",
+          "programName": "Tiếng Anh Trẻ Em",
+          "code": "ENG2-2024",
+          "title": "Tiếng Anh Lớp 2 - 2024",
+          "mainTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "mainTeacherName": "Nguyễn Văn A",
+          "assistantTeacherId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+          "assistantTeacherName": "Trần Thị B",
+          "startDate": "2024-01-15",
+          "endDate": "2024-04-15",
+          "status": "Active",
+          "capacity": 15,
+          "currentEnrollmentCount": 10,
+          "schedulePattern": "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=18;BYMINUTE=0",
+          "enrollDate": "2024-01-15",
+          "enrollmentStatus": "Active"
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1,
+      "hasPreviousPage": false,
+      "hasNextPage": false
+    }
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Student profile không tồn tại, không phải student, hoặc đã inactive/deleted
+
+---
+
+### 13.2. Get Student Timetable
+
+**Endpoint:** `GET /api/students/{studentId}/timetable`
+
+**Mô tả:** Lấy thời khóa biểu của Student trong khoảng thời gian từ `from` đến `to`.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `studentId` (Guid): ID của Student Profile
+
+**Query Parameters:**
+- `from` (DateTime?, optional): Ngày bắt đầu (format: `YYYY-MM-DD` hoặc `YYYY-MM-DDTHH:mm:ssZ`)
+- `to` (DateTime?, optional): Ngày kết thúc (format: `YYYY-MM-DD` hoặc `YYYY-MM-DDTHH:mm:ssZ`)
+
+**Example Request:**
+```
+GET /api/students/11111111-1111-1111-1111-111111111100/timetable?from=2025-01-01&to=2025-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "sessions": [
+      {
+        "id": "guid",
+        "classId": "guid",
+        "classCode": "ENG2-2024",
+        "classTitle": "Tiếng Anh Lớp 2 - 2024",
+        "plannedDatetime": "2025-01-15T18:00:00Z",
+        "actualDatetime": null,
+        "durationMinutes": 90,
+        "participationType": "InPerson",
+        "status": "Planned",
+        "plannedRoomId": "guid",
+        "plannedRoomName": "Phòng học A1",
+        "actualRoomId": null,
+        "actualRoomName": null,
+        "plannedTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "plannedTeacherName": "Nguyễn Văn A",
+        "actualTeacherId": null,
+        "actualTeacherName": null,
+        "plannedAssistantId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "plannedAssistantName": "Trần Thị B",
+        "lessonPlanId": null,
+        "lessonPlanLink": null
+      }
+    ]
+  }
+}
+```
+
+**Lưu ý:**
+- Chỉ trả về sessions từ các lớp mà student đang enrolled (status = Active)
+- Không bao gồm sessions có status = Cancelled
+- Nếu không có `from` và `to`, sẽ trả về tất cả sessions
+- `lessonPlanLink` sẽ là URL dạng `/api/lesson-plans/{lessonPlanId}` nếu có lesson plan
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Student profile không tồn tại, không phải student, hoặc đã inactive/deleted
+
+---
+
+## 14. Session APIs
+
+Base URL: `/api/sessions`
+
+### 14.1. Get Session By ID
+
+**Endpoint:** `GET /api/sessions/{sessionId}`
+
+**Mô tả:** UC-078: Xem chi tiết Session bao gồm attendance summary.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `sessionId` (Guid): ID của Session
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "session": {
+      "id": "guid",
+      "classId": "guid",
+      "classCode": "ENG2-2024",
+      "classTitle": "Tiếng Anh Lớp 2 - 2024",
+      "branchId": "11111111-1111-1111-1111-111111111111",
+      "branchName": "Chi nhánh Hà Nội",
+      "plannedDatetime": "2025-01-15T18:00:00Z",
+      "actualDatetime": "2025-01-15T18:05:00Z",
+      "durationMinutes": 90,
+      "participationType": "InPerson",
+      "status": "Completed",
+      "plannedRoomId": "guid",
+      "plannedRoomName": "Phòng học A1",
+      "actualRoomId": "guid",
+      "actualRoomName": "Phòng học A1",
+      "plannedTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "plannedTeacherName": "Nguyễn Văn A",
+      "actualTeacherId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "actualTeacherName": "Nguyễn Văn A",
+      "plannedAssistantId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "plannedAssistantName": "Trần Thị B",
+      "actualAssistantId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "actualAssistantName": "Trần Thị B",
+      "lessonPlanId": "guid",
+      "lessonPlanLink": "/api/lesson-plans/guid",
+      "attendanceSummary": {
+        "totalStudents": 10,
+        "presentCount": 8,
+        "absentCount": 1,
+        "makeupCount": 0,
+        "notMarkedCount": 1
+      }
+    }
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Session không tồn tại
+
+**Lưu ý:**
+- `attendanceSummary.totalStudents`: Tổng số học sinh trong lớp (từ ClassEnrollments với status = Active)
+- `attendanceSummary.presentCount`: Số học sinh có mặt
+- `attendanceSummary.absentCount`: Số học sinh vắng
+- `attendanceSummary.makeupCount`: Số học sinh makeup
+- `attendanceSummary.notMarkedCount`: Số học sinh chưa được đánh dấu điểm danh
+- `lessonPlanLink` sẽ là URL dạng `/api/lesson-plans/{lessonPlanId}` nếu có lesson plan
+
+---
+
+*Tài liệu này được cập nhật lần cuối: 2025-01-08*
 
