@@ -60,9 +60,9 @@ public sealed class GetEnrollmentsQueryHandler(
 
         var page = new Page<EnrollmentDto>(
             enrollments,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetEnrollmentsResponse
         {

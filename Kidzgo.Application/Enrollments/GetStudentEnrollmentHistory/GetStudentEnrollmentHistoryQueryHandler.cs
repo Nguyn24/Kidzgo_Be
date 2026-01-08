@@ -59,9 +59,9 @@ public sealed class GetStudentEnrollmentHistoryQueryHandler(
 
         var page = new Page<EnrollmentHistoryDto>(
             enrollments,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetStudentEnrollmentHistoryResponse
         {
