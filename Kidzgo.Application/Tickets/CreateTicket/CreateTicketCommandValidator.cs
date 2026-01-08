@@ -6,9 +6,6 @@ public sealed class CreateTicketCommandValidator : AbstractValidator<CreateTicke
 {
     public CreateTicketCommandValidator()
     {
-        RuleFor(command => command.OpenedByUserId)
-            .NotEmpty().WithMessage("Opened By User ID is required");
-
         RuleFor(command => command.BranchId)
             .NotEmpty().WithMessage("Branch ID is required");
 
@@ -20,4 +17,3 @@ public sealed class CreateTicketCommandValidator : AbstractValidator<CreateTicke
             .MaximumLength(2000).WithMessage("Message must not exceed 2000 characters");
     }
 }
-

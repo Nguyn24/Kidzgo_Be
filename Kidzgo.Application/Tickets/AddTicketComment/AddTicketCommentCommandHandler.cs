@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Tickets.AddTicketComment;
 
 public sealed class AddTicketCommentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<AddTicketCommentCommand, AddTicketCommentResponse>
 {
     public async Task<Result<AddTicketCommentResponse>> Handle(AddTicketCommentCommand command, CancellationToken cancellationToken)
@@ -29,9 +31,11 @@ public sealed class AddTicketCommentCommandHandler(
                 Error.Conflict("TicketComment.TicketClosed", "Cannot add comment to a closed ticket"));
         }
 
+        var commenterUserId = userContext.UserId;
+
         // Check if user exists
         var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Id == command.CommenterUserId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == commenterUserId, cancellationToken);
 
         if (user is null)
         {
@@ -43,7 +47,7 @@ public sealed class AddTicketCommentCommandHandler(
         if (command.CommenterProfileId.HasValue)
         {
             var profile = await context.Profiles
-                .FirstOrDefaultAsync(p => p.Id == command.CommenterProfileId.Value && p.UserId == command.CommenterUserId, cancellationToken);
+                .FirstOrDefaultAsync(p => p.Id == command.CommenterProfileId.Value && p.UserId == commenterUserId, cancellationToken);
 
             if (profile is null)
             {
@@ -57,7 +61,7 @@ public sealed class AddTicketCommentCommandHandler(
         {
             Id = Guid.NewGuid(),
             TicketId = command.TicketId,
-            CommenterUserId = command.CommenterUserId,
+            CommenterUserId = commenterUserId,
             CommenterProfileId = command.CommenterProfileId,
             Message = command.Message,
             AttachmentUrl = command.AttachmentUrl,
@@ -100,4 +104,3 @@ public sealed class AddTicketCommentCommandHandler(
         };
     }
 }
-

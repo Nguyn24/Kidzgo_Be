@@ -39,9 +39,9 @@ public sealed class GetPublishedBlogsQueryHandler(
 
         var page = new Page<PublishedBlogDto>(
             blogs,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetPublishedBlogsResponse
         {

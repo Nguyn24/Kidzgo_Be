@@ -65,9 +65,9 @@ public sealed class GetTuitionPlansQueryHandler(
 
         var page = new Page<TuitionPlanDto>(
             tuitionPlans,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetTuitionPlansResponse
         {

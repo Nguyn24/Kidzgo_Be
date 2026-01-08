@@ -35,11 +35,10 @@ public sealed class GetStudentTimetableQueryHandler(
                 Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
         }
 
-        // Get sessions from classes where student is enrolled (Status = 0 = Active)
-        // Use explicit value 0 instead of enum to avoid mapping issues
+        // Get sessions from classes where student is enrolled (Status = Active)
         var sessionsQuery = context.Sessions
             .Where(s => s.Class.ClassEnrollments
-                .Any(ce => ce.StudentProfileId == query.StudentId && (int)ce.Status == 0))
+                .Any(ce => ce.StudentProfileId == query.StudentId && ce.Status == EnrollmentStatus.Active))
             .Where(s => s.Status != SessionStatus.Cancelled);
 
         // Filter by date range

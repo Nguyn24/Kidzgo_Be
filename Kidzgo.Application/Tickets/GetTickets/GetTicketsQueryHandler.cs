@@ -89,9 +89,9 @@ public sealed class GetTicketsQueryHandler(
 
         var page = new Page<TicketDto>(
             tickets,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetTicketsResponse
         {

@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -7,14 +8,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Tickets.CreateTicket;
 
 public sealed class CreateTicketCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<CreateTicketCommand, CreateTicketResponse>
 {
     public async Task<Result<CreateTicketResponse>> Handle(CreateTicketCommand command, CancellationToken cancellationToken)
     {
+        var openedByUserId = userContext.UserId;
+
         // Check if user exists
         var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Id == command.OpenedByUserId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == openedByUserId, cancellationToken);
 
         if (user is null)
         {
@@ -49,7 +53,7 @@ public sealed class CreateTicketCommandHandler(
         if (command.OpenedByProfileId.HasValue)
         {
             var profile = await context.Profiles
-                .FirstOrDefaultAsync(p => p.Id == command.OpenedByProfileId.Value && p.UserId == command.OpenedByUserId, cancellationToken);
+                .FirstOrDefaultAsync(p => p.Id == command.OpenedByProfileId.Value && p.UserId == openedByUserId, cancellationToken);
 
             if (profile is null)
             {
@@ -62,7 +66,7 @@ public sealed class CreateTicketCommandHandler(
         var ticket = new Ticket
         {
             Id = Guid.NewGuid(),
-            OpenedByUserId = command.OpenedByUserId,
+            OpenedByUserId = openedByUserId,
             OpenedByProfileId = command.OpenedByProfileId,
             BranchId = command.BranchId,
             ClassId = command.ClassId,
@@ -106,4 +110,3 @@ public sealed class CreateTicketCommandHandler(
         };
     }
 }
-
