@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Tickets.AddTicketComment;
 using Kidzgo.Application.Tickets.AssignTicket;
 using Kidzgo.Application.Tickets.CreateTicket;
@@ -20,12 +21,10 @@ namespace Kidzgo.API.Controllers;
 public class TicketController : ControllerBase
 {
     private readonly ISender _mediator;
-
     public TicketController(ISender mediator)
     {
         _mediator = mediator;
     }
-
     /// <summary>
     /// UC-340: Parent/Student tạo Ticket
     /// </summary>
@@ -37,7 +36,6 @@ public class TicketController : ControllerBase
     {
         var command = new CreateTicketCommand
         {
-            OpenedByUserId = request.OpenedByUserId,
             OpenedByProfileId = request.OpenedByProfileId,
             BranchId = request.BranchId,
             ClassId = request.ClassId,
@@ -172,7 +170,6 @@ public class TicketController : ControllerBase
         var command = new AddTicketCommentCommand
         {
             TicketId = id,
-            CommenterUserId = request.CommenterUserId,
             CommenterProfileId = request.CommenterProfileId,
             Message = request.Message,
             AttachmentUrl = request.AttachmentUrl
@@ -218,4 +215,3 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 }
-
