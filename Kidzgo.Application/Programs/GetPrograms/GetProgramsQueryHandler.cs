@@ -64,9 +64,9 @@ public sealed class GetProgramsQueryHandler(
 
         var page = new Page<ProgramDto>(
             programs,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetProgramsResponse
         {

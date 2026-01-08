@@ -9,12 +9,8 @@ public sealed class AddTicketCommentCommandValidator : AbstractValidator<AddTick
         RuleFor(command => command.TicketId)
             .NotEmpty().WithMessage("Ticket ID is required");
 
-        RuleFor(command => command.CommenterUserId)
-            .NotEmpty().WithMessage("Commenter User ID is required");
-
         RuleFor(command => command.Message)
             .NotEmpty().WithMessage("Message is required")
             .MaximumLength(2000).WithMessage("Message must not exceed 2000 characters");
     }
 }
-

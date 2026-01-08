@@ -60,9 +60,9 @@ public sealed class GetBlogsQueryHandler(
 
         var page = new Page<BlogDto>(
             blogs,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetBlogsResponse
         {

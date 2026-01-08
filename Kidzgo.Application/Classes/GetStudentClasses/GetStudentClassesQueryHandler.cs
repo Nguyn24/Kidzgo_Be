@@ -34,38 +34,33 @@ public sealed class GetStudentClassesQueryHandler(
                 Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
         }
 
-        // Get enrollments where student is enrolled (Status = 0 = Active)
-        // Use explicit value 0 instead of enum to avoid mapping issues
+        // Get enrollments where student is enrolled (Status = Active) and Class exists
         var enrollmentsQuery = context.ClassEnrollments
-            .Where(ce => ce.StudentProfileId == query.StudentId && (int)ce.Status == 0);
+            .Where(ce => ce.StudentProfileId == query.StudentId && ce.Status == EnrollmentStatus.Active)
+            .Where(ce => ce.Class != null);
 
         // Get total count
         int totalCount = await enrollmentsQuery.CountAsync(cancellationToken);
 
-        // Load enrollments with all related data
+        // Load enrollments with all related data, order and paginate
         var enrollments = await enrollmentsQuery
-            .Include(ce => ce.Class)
+            .Include(ce => ce.Class!)
                 .ThenInclude(c => c.Branch)
-            .Include(ce => ce.Class)
+            .Include(ce => ce.Class!)
                 .ThenInclude(c => c.Program)
-            .Include(ce => ce.Class)
+            .Include(ce => ce.Class!)
                 .ThenInclude(c => c.MainTeacher)
-            .Include(ce => ce.Class)
+            .Include(ce => ce.Class!)
                 .ThenInclude(c => c.AssistantTeacher)
-            .Include(ce => ce.Class)
+            .Include(ce => ce.Class!)
                 .ThenInclude(c => c.ClassEnrollments)
-            .ToListAsync(cancellationToken);
-
-        // Filter out enrollments with null Class and order in memory
-        var validEnrollments = enrollments
-            .Where(ce => ce.Class != null)
             .OrderByDescending(ce => ce.Class!.CreatedAt)
             .ThenBy(ce => ce.Class!.Title)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
-        var classDtos = validEnrollments.Select(ce => new StudentClassDto
+        var classDtos = enrollments.Select(ce => new StudentClassDto
         {
             Id = ce.Class.Id,
             BranchId = ce.Class.BranchId,
@@ -82,7 +77,7 @@ public sealed class GetStudentClassesQueryHandler(
             EndDate = ce.Class.EndDate,
             Status = ce.Class.Status,
             Capacity = ce.Class.Capacity,
-            CurrentEnrollmentCount = ce.Class.ClassEnrollments.Count(e => (int)e.Status == 0),
+            CurrentEnrollmentCount = ce.Class.ClassEnrollments.Count(e => e.Status == EnrollmentStatus.Active),
             SchedulePattern = ce.Class.SchedulePattern,
             EnrollDate = ce.EnrollDate,
             EnrollmentStatus = ce.Status

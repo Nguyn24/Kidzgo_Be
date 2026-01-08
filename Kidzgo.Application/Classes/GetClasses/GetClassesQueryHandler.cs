@@ -78,9 +78,9 @@ public sealed class GetClassesQueryHandler(
 
         var page = new Page<ClassDto>(
             classes,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            totalCount);
+            query.PageSize);
 
         return new GetClassesResponse
         {

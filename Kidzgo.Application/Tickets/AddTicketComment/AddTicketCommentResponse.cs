@@ -12,4 +12,3 @@ public sealed class AddTicketCommentResponse
     public string? AttachmentUrl { get; init; }
     public DateTime CreatedAt { get; init; }
 }
-
