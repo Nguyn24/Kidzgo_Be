@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ public sealed class AssignTuitionPlanCommandHandler(
         if (enrollment is null)
         {
             return Result.Failure<AssignTuitionPlanResponse>(
-                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+                EnrollmentErrors.NotFound(command.Id));
         }
 
         var tuitionPlan = await context.TuitionPlans
@@ -29,20 +30,20 @@ public sealed class AssignTuitionPlanCommandHandler(
         if (tuitionPlan is null)
         {
             return Result.Failure<AssignTuitionPlanResponse>(
-                Error.NotFound("Enrollment.TuitionPlanNotFound", "Tuition plan not found"));
+                EnrollmentErrors.TuitionPlanNotFound);
         }
 
         if (!tuitionPlan.IsActive || tuitionPlan.IsDeleted)
         {
             return Result.Failure<AssignTuitionPlanResponse>(
-                Error.Conflict("Enrollment.TuitionPlanNotAvailable", "Tuition plan is not available"));
+                EnrollmentErrors.TuitionPlanNotAvailable);
         }
 
         // Check if tuition plan belongs to the same program as the class
         if (tuitionPlan.ProgramId != enrollment.Class.ProgramId)
         {
             return Result.Failure<AssignTuitionPlanResponse>(
-                Error.Conflict("Enrollment.TuitionPlanProgramMismatch", "Tuition plan must belong to the same program as the class"));
+                EnrollmentErrors.TuitionPlanProgramMismatch);
         }
 
         enrollment.TuitionPlanId = command.TuitionPlanId;
