@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,7 @@ public sealed class GetClassByIdQueryHandler(
         if (classEntity is null)
         {
             return Result.Failure<GetClassByIdResponse>(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(query.Id));
         }
 
         return classEntity;

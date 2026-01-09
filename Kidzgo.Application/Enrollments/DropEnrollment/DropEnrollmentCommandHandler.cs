@@ -1,7 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Classes.Errors;
+using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Enrollments.DropEnrollment;
@@ -21,13 +22,13 @@ public sealed class DropEnrollmentCommandHandler(
         if (enrollment is null)
         {
             return Result.Failure<DropEnrollmentResponse>(
-                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+                EnrollmentErrors.NotFound(command.Id));
         }
 
         if (enrollment.Status == EnrollmentStatus.Dropped)
         {
             return Result.Failure<DropEnrollmentResponse>(
-                Error.Conflict("Enrollment.AlreadyDropped", "Enrollment is already dropped"));
+                EnrollmentErrors.AlreadyDropped);
         }
 
         enrollment.Status = EnrollmentStatus.Dropped;

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public sealed class DeleteClassCommandHandler(
         if (classEntity is null)
         {
             return Result.Failure(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(command.Id));
         }
 
         // Check if class has active enrollments
@@ -28,7 +29,7 @@ public sealed class DeleteClassCommandHandler(
         if (hasActiveEnrollments)
         {
             return Result.Failure(
-                Error.Conflict("Class.HasActiveEnrollments", "Cannot delete class with active enrollments"));
+                ClassErrors.HasActiveEnrollments);
         }
 
         // Soft delete: Set status to Closed

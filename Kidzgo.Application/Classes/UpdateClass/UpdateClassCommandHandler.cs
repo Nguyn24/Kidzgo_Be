@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,7 @@ public sealed class UpdateClassCommandHandler(
         if (classEntity is null)
         {
             return Result.Failure<UpdateClassResponse>(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(command.Id));
         }
 
         // Check if branch exists
@@ -27,7 +28,7 @@ public sealed class UpdateClassCommandHandler(
         if (!branchExists)
         {
             return Result.Failure<UpdateClassResponse>(
-                Error.NotFound("Class.BranchNotFound", "Branch not found or inactive"));
+                ClassErrors.BranchNotFound);
         }
 
         // Check if program exists
@@ -37,7 +38,7 @@ public sealed class UpdateClassCommandHandler(
         if (!programExists)
         {
             return Result.Failure<UpdateClassResponse>(
-                Error.NotFound("Class.ProgramNotFound", "Program not found, deleted, or inactive"));
+                ClassErrors.ProgramNotFound);
         }
 
         // Check if code is unique (excluding current class)
@@ -47,7 +48,7 @@ public sealed class UpdateClassCommandHandler(
         if (codeExists)
         {
             return Result.Failure<UpdateClassResponse>(
-                Error.Conflict("Class.CodeExists", "Class code already exists"));
+                ClassErrors.CodeExists);
         }
 
         // Check if teachers exist, are TEACHER role, and belong to the same branch
@@ -59,14 +60,14 @@ public sealed class UpdateClassCommandHandler(
             if (mainTeacher is null)
             {
                 return Result.Failure<UpdateClassResponse>(
-                    Error.NotFound("Class.MainTeacherNotFound", "Main teacher not found or is not a teacher"));
+                    ClassErrors.MainTeacherNotFound);
             }
 
             // Check if teacher belongs to the same branch as the class
             if (mainTeacher.BranchId != command.BranchId)
             {
                 return Result.Failure<UpdateClassResponse>(
-                    Error.Conflict("Class.MainTeacherBranchMismatch", "Main teacher must belong to the same branch as the class"));
+                    ClassErrors.MainTeacherBranchMismatch);
             }
         }
 
@@ -78,14 +79,14 @@ public sealed class UpdateClassCommandHandler(
             if (assistantTeacher is null)
             {
                 return Result.Failure<UpdateClassResponse>(
-                    Error.NotFound("Class.AssistantTeacherNotFound", "Assistant teacher not found or is not a teacher"));
+                    ClassErrors.AssistantTeacherNotFound);
             }
 
             // Check if teacher belongs to the same branch as the class
             if (assistantTeacher.BranchId != command.BranchId)
             {
                 return Result.Failure<UpdateClassResponse>(
-                    Error.Conflict("Class.AssistantTeacherBranchMismatch", "Assistant teacher must belong to the same branch as the class"));
+                    ClassErrors.AssistantTeacherBranchMismatch);
             }
         }
 
