@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,8 +37,7 @@ public sealed class GetStudentEnrollmentHistoryQueryHandler(
         // Apply pagination - order by enroll date descending (most recent first)
         var enrollments = await enrollmentsQuery
             .OrderByDescending(e => e.EnrollDate)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(e => new EnrollmentHistoryDto
             {
                 Id = e.Id,

@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,8 +43,7 @@ public sealed class GetClassroomsQueryHandler(
         // Sắp xếp theo Name để dễ tìm
         var classrooms = await classroomsQuery
             .OrderBy(c => c.Name)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(c => new ClassroomDto
             {
                 Id = c.Id,

@@ -45,8 +45,7 @@ public sealed class GetProgramsQueryHandler(
         var programs = await programsQuery
             .OrderByDescending(p => p.CreatedAt)
             .ThenBy(p => p.Name) // Nếu có nhiều Program cùng thời điểm, sắp xếp theo tên
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(p => new ProgramDto
             {
                 Id = p.Id,

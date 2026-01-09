@@ -53,5 +53,11 @@ public static class UserErrors
         "User.MemberCannotUpdateOthers",
         "You are only allowed to update your own donor information.");
     
+    public static Error InvalidRole(string? role) => Error.Validation(
+        "Users.InvalidRole",
+        $"Invalid role value: '{role}'. Valid values: Admin, Staff, Teacher, Student, Parent");
     
+    public static readonly Error RoleRequired = Error.Validation(
+        "Users.RoleRequired",
+        "Role is required. Valid values: Admin, Staff, Teacher, Student, Parent");
 }
