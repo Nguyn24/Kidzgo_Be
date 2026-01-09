@@ -1,7 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Classes.Errors;
+using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Enrollments.CreateEnrollment;
@@ -20,13 +21,13 @@ public sealed class CreateEnrollmentCommandHandler(
         if (classEntity is null)
         {
             return Result.Failure<CreateEnrollmentResponse>(
-                Error.NotFound("Enrollment.ClassNotFound", "Class not found"));
+                EnrollmentErrors.ClassNotFound);
         }
 
         if (classEntity.Status != ClassStatus.Active && classEntity.Status != ClassStatus.Planned)
         {
             return Result.Failure<CreateEnrollmentResponse>(
-                Error.Conflict("Enrollment.ClassNotAvailable", "Class is not available for enrollment"));
+                EnrollmentErrors.ClassNotAvailable);
         }
 
         // Check if student profile exists and is a student
@@ -36,7 +37,7 @@ public sealed class CreateEnrollmentCommandHandler(
         if (studentProfile is null)
         {
             return Result.Failure<CreateEnrollmentResponse>(
-                Error.NotFound("Enrollment.StudentNotFound", "Student profile not found or is not a student"));
+                EnrollmentErrors.StudentNotFound);
         }
 
         // Check if student is already enrolled in this class with Active status
@@ -48,7 +49,7 @@ public sealed class CreateEnrollmentCommandHandler(
         if (alreadyEnrolled)
         {
             return Result.Failure<CreateEnrollmentResponse>(
-                Error.Conflict("Enrollment.AlreadyEnrolled", "Student is already enrolled in this class"));
+                EnrollmentErrors.AlreadyEnrolled);
         }
 
         // Check class capacity
@@ -58,7 +59,7 @@ public sealed class CreateEnrollmentCommandHandler(
         if (currentEnrollmentCount >= classEntity.Capacity)
         {
             return Result.Failure<CreateEnrollmentResponse>(
-                Error.Conflict("Enrollment.ClassFull", "Class has reached its capacity"));
+                EnrollmentErrors.ClassFull);
         }
 
         // Check if tuition plan exists and is active (if provided)
@@ -70,20 +71,20 @@ public sealed class CreateEnrollmentCommandHandler(
             if (tuitionPlan is null)
             {
                 return Result.Failure<CreateEnrollmentResponse>(
-                    Error.NotFound("Enrollment.TuitionPlanNotFound", "Tuition plan not found"));
+                    EnrollmentErrors.TuitionPlanNotFound);
             }
 
             if (!tuitionPlan.IsActive || tuitionPlan.IsDeleted)
             {
                 return Result.Failure<CreateEnrollmentResponse>(
-                    Error.Conflict("Enrollment.TuitionPlanNotAvailable", "Tuition plan is not available"));
+                    EnrollmentErrors.TuitionPlanNotAvailable);
             }
 
             // Check if tuition plan belongs to the same program as the class
             if (tuitionPlan.ProgramId != classEntity.ProgramId)
             {
                 return Result.Failure<CreateEnrollmentResponse>(
-                    Error.Conflict("Enrollment.TuitionPlanProgramMismatch", "Tuition plan must belong to the same program as the class"));
+                    EnrollmentErrors.TuitionPlanProgramMismatch);
             }
         }
 

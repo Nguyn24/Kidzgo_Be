@@ -355,15 +355,18 @@
 
 ### 13.1. Upload và quản lý Media
 - UC-238: Teacher/Staff upload ảnh/video
+- UC-238a: Generate presigned URL for upload (S3/Cloud Storage)
 - UC-239: Gắn tag Class cho Media
 - UC-240: Gắn tag Student cho Media
 - UC-241: Gắn tag Tháng (YYYY-MM) cho Media
+- UC-241a: Gắn tag Type cho Media (HOMEWORK/REPORT/TEST/ALBUM/CLASS_PHOTO)
 - UC-242: Thiết lập visibility (CLASS_ONLY/PERSONAL/PUBLIC_PARENT)
 - UC-243: Xem danh sách Media
 - UC-244: Xem chi tiết Media
 - UC-245: Cập nhật Media
 - UC-246: Xóa Media
-- UC-247: Staff/Admin duyệt Media
+- UC-247: Staff/Admin approve Media
+- UC-247a: Staff/Admin reject Media
 - UC-248: Publish Media lên gallery
 
 ### 13.2. Xem Media
@@ -575,7 +578,7 @@
 
 ## Tổng kết
 
-**Tổng số Use Cases**: 389
+**Tổng số Use Cases**: 392
 
 **Phân bổ theo nhóm và độ khó**:
 
@@ -584,11 +587,11 @@
 - Enrollment: 9
 - Exams & Test Results: 11
 - Session Reports: 11
-- Media Management: 15
+- Media Management: 18
 - Tickets & Support: 9
 - Blog Management: 9
 - System Administration: 20
-**Tổng**: 112 use cases
+**Tổng**: 115 use cases
 
 ### 🟡 Trung bình (Logic nghiệp vụ phức tạp, tích hợp hệ thống, AI đã có người cover)
 - Authentication & Authorization: 12
@@ -608,5 +611,5 @@
 - Payroll Management: 41
 **Tổng**: 87 use cases
 
-**Tỷ lệ**: Dễ 29% | Trung bình 49% | Khó 22%
+**Tỷ lệ**: Dễ 29% | Trung bình 48% | Khó 22%
 

@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public sealed class CheckClassCapacityQueryHandler(
         if (classEntity is null)
         {
             return Result.Failure<CheckClassCapacityResponse>(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(query.ClassId));
         }
 
         int currentEnrollmentCount = classEntity.ClassEnrollments

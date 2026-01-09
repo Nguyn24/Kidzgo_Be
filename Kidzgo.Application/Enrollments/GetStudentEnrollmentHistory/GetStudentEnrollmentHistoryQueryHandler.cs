@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,7 @@ public sealed class GetStudentEnrollmentHistoryQueryHandler(
         if (studentProfile is null)
         {
             return Result.Failure<GetStudentEnrollmentHistoryResponse>(
-                Error.NotFound("Enrollment.StudentNotFound", "Student profile not found or is not a student"));
+                EnrollmentErrors.StudentNotFound);
         }
 
         var enrollmentsQuery = context.ClassEnrollments

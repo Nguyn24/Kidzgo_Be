@@ -31,6 +31,11 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
             .HasMaxLength(10)
             .IsRequired();
 
+        builder.Property(x => x.ContentType)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.Property(x => x.Url)
             .IsRequired();
 
@@ -41,13 +46,36 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(x => x.ApprovalStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.ApprovedById);
+
+        builder.Property(x => x.ApprovedAt);
+
+        builder.Property(x => x.IsPublished)
+            .IsRequired();
+
+        builder.Property(x => x.IsDeleted)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
         // Relationships
         builder.HasOne(x => x.UploaderUser)
             .WithMany(x => x.UploadedMediaAssets)
             .HasForeignKey(x => x.UploaderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.ApprovedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ApprovedById)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Branch)

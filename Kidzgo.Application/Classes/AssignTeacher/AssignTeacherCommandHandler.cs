@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,7 @@ public sealed class AssignTeacherCommandHandler(
         if (classEntity is null)
         {
             return Result.Failure<AssignTeacherResponse>(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(command.ClassId));
         }
 
         // Check if main teacher exists, is TEACHER role, and belongs to the same branch
@@ -31,14 +32,14 @@ public sealed class AssignTeacherCommandHandler(
             if (mainTeacher is null)
             {
                 return Result.Failure<AssignTeacherResponse>(
-                    Error.NotFound("Class.MainTeacherNotFound", "Main teacher not found or is not a teacher"));
+                    ClassErrors.MainTeacherNotFound);
             }
 
             // Check if teacher belongs to the same branch as the class
             if (mainTeacher.BranchId != classEntity.BranchId)
             {
                 return Result.Failure<AssignTeacherResponse>(
-                    Error.Conflict("Class.MainTeacherBranchMismatch", "Main teacher must belong to the same branch as the class"));
+                    ClassErrors.MainTeacherBranchMismatch);
             }
 
             classEntity.MainTeacherId = command.MainTeacherId.Value;
@@ -57,14 +58,14 @@ public sealed class AssignTeacherCommandHandler(
             if (assistantTeacher is null)
             {
                 return Result.Failure<AssignTeacherResponse>(
-                    Error.NotFound("Class.AssistantTeacherNotFound", "Assistant teacher not found or is not a teacher"));
+                    ClassErrors.AssistantTeacherNotFound);
             }
 
             // Check if teacher belongs to the same branch as the class
             if (assistantTeacher.BranchId != classEntity.BranchId)
             {
                 return Result.Failure<AssignTeacherResponse>(
-                    Error.Conflict("Class.AssistantTeacherBranchMismatch", "Assistant teacher must belong to the same branch as the class"));
+                    ClassErrors.AssistantTeacherBranchMismatch);
             }
 
             classEntity.AssistantTeacherId = command.AssistantTeacherId.Value;

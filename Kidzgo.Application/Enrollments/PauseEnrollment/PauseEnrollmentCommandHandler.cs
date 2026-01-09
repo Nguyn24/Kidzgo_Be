@@ -1,7 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Classes.Errors;
+using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Enrollments.PauseEnrollment;
@@ -21,13 +22,13 @@ public sealed class PauseEnrollmentCommandHandler(
         if (enrollment is null)
         {
             return Result.Failure<PauseEnrollmentResponse>(
-                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+                EnrollmentErrors.NotFound(command.Id));
         }
 
         if (enrollment.Status != EnrollmentStatus.Active)
         {
             return Result.Failure<PauseEnrollmentResponse>(
-                Error.Conflict("Enrollment.InvalidStatus", "Only active enrollments can be paused"));
+                EnrollmentErrors.InvalidStatus);
         }
 
         enrollment.Status = EnrollmentStatus.Paused;

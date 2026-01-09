@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +24,7 @@ public sealed class GetEnrollmentByIdQueryHandler(
         if (enrollment is null)
         {
             return Result.Failure<GetEnrollmentByIdResponse>(
-                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+                EnrollmentErrors.NotFound(query.Id));
         }
 
         return new GetEnrollmentByIdResponse
