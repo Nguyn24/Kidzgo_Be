@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Microsoft.EntityFrameworkCore;
@@ -56,8 +57,7 @@ public sealed class GetStudentClassesQueryHandler(
                 .ThenInclude(c => c.ClassEnrollments)
             .OrderByDescending(ce => ce.Class!.CreatedAt)
             .ThenBy(ce => ce.Class!.Title)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .ToListAsync(cancellationToken);
 
         var classDtos = enrollments.Select(ce => new StudentClassDto

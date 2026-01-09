@@ -11,7 +11,9 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(command => command.Email).NotNull().NotEmpty().EmailAddress();
         RuleFor(command => command.Password).NotNull().NotEmpty().MinimumLength(6);
         RuleFor(command => command.Role)
-            .IsInEnum()
+            .NotNull()
+            .NotEmpty()
+            .Must(role => Enum.TryParse<UserRole>(role, true, out _))
             .WithMessage("Role must be a valid value: Admin, Staff, Teacher, Student, or Parent");
     }
 }

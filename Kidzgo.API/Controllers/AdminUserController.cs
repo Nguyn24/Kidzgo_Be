@@ -75,29 +75,12 @@ public class AdminUserController : ControllerBase
         [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
     {
-        // Validate request
-        if (request == null)
-        {
-            return Results.BadRequest(new { error = "Request body is required" });
-        }
-
-        // Parse Role from string
-        if (string.IsNullOrWhiteSpace(request.Role))
-        {
-            return Results.BadRequest(new { error = "Role is required. Valid values: Admin, Staff, Teacher, Student, Parent" });
-        }
-
-        if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
-        {
-            return Results.BadRequest(new { error = $"Invalid role value: '{request.Role}'. Valid values: Admin, Staff, Teacher, Student, Parent" });
-        }
-
         var command = new CreateUserCommand
         {
             Name = request.Name,
             Email = request.Email,
             Password = request.Password,
-            Role = role
+            Role = request.Role
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -110,23 +93,12 @@ public class AdminUserController : ControllerBase
         [FromBody] UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
-        // Parse Role from string if provided
-        UserRole? role = null;
-        if (!string.IsNullOrWhiteSpace(request.Role))
-        {
-            if (!Enum.TryParse<UserRole>(request.Role, true, out var parsedRole))
-            {
-                return Results.BadRequest(new { error = "Invalid role value. Valid values: Admin, Staff, Teacher, Student, Parent" });
-            }
-            role = parsedRole;
-        }
-
         var command = new UpdateUserCommand
         {
             UserId = id,
             FullName = request.FullName,
             Email = request.Email,
-            Role = role,
+            Role = request.Role,
             isDeleted = request.IsDeleted
         };
 

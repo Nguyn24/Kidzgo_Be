@@ -43,8 +43,7 @@ public sealed class GetTuitionPlansQueryHandler(
         var tuitionPlans = await tuitionPlansQuery
             .OrderByDescending(t => t.CreatedAt)
             .ThenBy(t => t.Name)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(t => new TuitionPlanDto
             {
                 Id = t.Id,

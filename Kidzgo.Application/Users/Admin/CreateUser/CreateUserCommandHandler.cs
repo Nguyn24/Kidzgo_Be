@@ -16,13 +16,24 @@ public class CreateUserCommandHandler(
     public async Task<Result<CreateUserCommandResponse>> Handle(CreateUserCommand command,
         CancellationToken cancellationToken)
     {
+        // Parse and validate role
+        if (string.IsNullOrWhiteSpace(command.Role))
+        {
+            return Result.Failure<CreateUserCommandResponse>(UserErrors.RoleRequired);
+        }
+
+        if (!Enum.TryParse<UserRole>(command.Role, true, out var role))
+        {
+            return Result.Failure<CreateUserCommandResponse>(UserErrors.InvalidRole(command.Role));
+        }
+
         if (await context.Users.AnyAsync(u => u.Email.Trim().ToLower() == command.Email.Trim().ToLower(),
                 cancellationToken))
         {
             return Result.Failure<CreateUserCommandResponse>(UserErrors.EmailNotUnique);
         }
 
-        if (command.Role == UserRole.Admin)
+        if (role == UserRole.Admin)
         {
             bool adminExists = await context.Users
                 .AnyAsync(u => u.Role == UserRole.Admin, cancellationToken);
@@ -42,7 +53,7 @@ public class CreateUserCommandHandler(
             Username = command.Name,
             Email = command.Email,
             PasswordHash = hashedPassword,
-            Role = command.Role,
+            Role = role,
             IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
