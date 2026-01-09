@@ -1,7 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Classes.Errors;
+using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Enrollments.ReactivateEnrollment;
@@ -21,26 +22,26 @@ public sealed class ReactivateEnrollmentCommandHandler(
         if (enrollment is null)
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
-                Error.NotFound("Enrollment.NotFound", "Enrollment not found"));
+                EnrollmentErrors.NotFound(command.Id));
         }
 
         if (enrollment.Status == EnrollmentStatus.Active)
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
-                Error.Conflict("Enrollment.AlreadyActive", "Enrollment is already active"));
+                EnrollmentErrors.AlreadyActive);
         }
 
         if (enrollment.Status == EnrollmentStatus.Dropped)
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
-                Error.Conflict("Enrollment.CannotReactivateDropped", "Cannot reactivate a dropped enrollment"));
+                EnrollmentErrors.CannotReactivateDropped);
         }
 
         // Check if class is still available
         if (enrollment.Class.Status != ClassStatus.Active && enrollment.Class.Status != ClassStatus.Planned)
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
-                Error.Conflict("Enrollment.ClassNotAvailable", "Class is not available for enrollment"));
+                EnrollmentErrors.ClassNotAvailable);
         }
 
         // Check class capacity
@@ -50,7 +51,7 @@ public sealed class ReactivateEnrollmentCommandHandler(
         if (currentEnrollmentCount >= enrollment.Class.Capacity)
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
-                Error.Conflict("Enrollment.ClassFull", "Class has reached its capacity"));
+                EnrollmentErrors.ClassFull);
         }
 
         enrollment.Status = EnrollmentStatus.Active;

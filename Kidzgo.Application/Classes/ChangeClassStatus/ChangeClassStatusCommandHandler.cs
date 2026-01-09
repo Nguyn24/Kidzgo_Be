@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,14 +18,14 @@ public sealed class ChangeClassStatusCommandHandler(
         if (classEntity is null)
         {
             return Result.Failure<ChangeClassStatusResponse>(
-                Error.NotFound("Class.NotFound", "Class not found"));
+                ClassErrors.NotFound(command.Id));
         }
 
         // Validate status transition
         if (classEntity.Status == command.Status)
         {
             return Result.Failure<ChangeClassStatusResponse>(
-                Error.Validation("Class.StatusUnchanged", "Class status is already set to the requested status"));
+                ClassErrors.StatusUnchanged);
         }
 
         // Business rules for status transitions
@@ -35,7 +36,7 @@ public sealed class ChangeClassStatusCommandHandler(
         if (classEntity.Status == Domain.Classes.ClassStatus.Closed && command.Status == Domain.Classes.ClassStatus.Planned)
         {
             return Result.Failure<ChangeClassStatusResponse>(
-                Error.Validation("Class.InvalidStatusTransition", "Cannot change status from Closed to Planned"));
+                ClassErrors.InvalidStatusTransition);
         }
 
         classEntity.Status = command.Status;
