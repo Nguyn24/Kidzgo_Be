@@ -2,6 +2,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,19 +21,19 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
             return Result.Failure<UpdateUserResponse>(UserErrors.NotFound(request.UserId));
         }
         
-        // var currentUserResult = await sender.Send(new GetCurrentUserQuery(), cancellationToken);
-        // var currentUser = currentUserResult.Value;
-        // bool isStaff = currentUser.Role == UserRole.Staff.ToString();
-        
+        // Parse and validate role if provided
+        if (!string.IsNullOrWhiteSpace(request.Role))
+        {
+            if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
+            {
+                return Result.Failure<UpdateUserResponse>(UserErrors.InvalidRole(request.Role));
+            }
+            user.Role = role;
+        }
 
         user.Username = request.FullName ?? user.Username;
         user.Email = request.Email ?? user.Email;
-
-        // if (isStaff)
-        // 
-            user.Role = request.Role ?? user.Role;
-            user.IsDeleted = request.isDeleted ?? user.IsDeleted;
-        // }
+        user.IsDeleted = request.isDeleted ?? user.IsDeleted;
 
         await context.SaveChangesAsync(cancellationToken);
 

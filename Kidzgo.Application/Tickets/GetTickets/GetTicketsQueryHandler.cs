@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,8 +63,7 @@ public sealed class GetTicketsQueryHandler(
         // Apply pagination
         var tickets = await ticketsQuery
             .OrderByDescending(t => t.CreatedAt)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(t => new TicketDto
             {
                 Id = t.Id,

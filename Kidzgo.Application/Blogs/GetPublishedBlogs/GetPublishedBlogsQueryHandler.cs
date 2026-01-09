@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,8 +23,7 @@ public sealed class GetPublishedBlogsQueryHandler(
         // Apply pagination
         var blogs = await blogsQuery
             .OrderByDescending(b => b.PublishedAt ?? b.CreatedAt)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(b => new PublishedBlogDto
             {
                 Id = b.Id,

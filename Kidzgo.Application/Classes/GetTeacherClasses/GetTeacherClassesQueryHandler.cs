@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Microsoft.EntityFrameworkCore;
@@ -31,8 +32,7 @@ public sealed class GetTeacherClassesQueryHandler(
         var classes = await classesQuery
             .OrderByDescending(c => c.CreatedAt)
             .ThenBy(c => c.Title)
-            .Skip((query.PageNumber - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(c => new TeacherClassDto
             {
                 Id = c.Id,
