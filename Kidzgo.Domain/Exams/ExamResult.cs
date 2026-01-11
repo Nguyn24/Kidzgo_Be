@@ -13,6 +13,8 @@ public class ExamResult : Entity
     public string? AttachmentUrls { get; set; } // JSON array of image URLs
     public Guid? GradedBy { get; set; }
     public DateTime? GradedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public Exam Exam { get; set; } = null!;

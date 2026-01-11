@@ -40,6 +40,7 @@ public class TicketController : ControllerBase
             BranchId = request.BranchId,
             ClassId = request.ClassId,
             Category = request.Category,
+            Subject = request.Subject,
             Message = request.Message
         };
 
@@ -61,6 +62,7 @@ public class TicketController : ControllerBase
     [HttpGet]
     [Authorize]
     public async Task<IResult> GetTickets(
+        [FromQuery] bool? mine,
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? openedByUserId,
         [FromQuery] Guid? assignedToUserId,
@@ -85,6 +87,7 @@ public class TicketController : ControllerBase
 
         var query = new GetTicketsQuery
         {
+            Mine = mine,
             BranchId = branchId,
             OpenedByUserId = openedByUserId,
             AssignedToUserId = assignedToUserId,

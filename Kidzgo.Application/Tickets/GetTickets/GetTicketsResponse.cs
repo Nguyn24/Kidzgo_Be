@@ -21,6 +21,7 @@ public sealed class TicketDto
     public string? ClassCode { get; init; }
     public string? ClassTitle { get; init; }
     public TicketCategory Category { get; init; }
+    public string Subject { get; init; } = null!;
     public string Message { get; init; } = null!;
     public TicketStatus Status { get; init; }
     public Guid? AssignedToUserId { get; init; }

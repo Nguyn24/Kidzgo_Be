@@ -50,6 +50,9 @@ public sealed class ApplicationDbContext(
     // Exams
     public DbSet<Exam> Exams => Set<Exam>();
     public DbSet<ExamResult> ExamResults => Set<ExamResult>();
+    public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();
+    public DbSet<ExamSubmission> ExamSubmissions => Set<ExamSubmission>();
+    public DbSet<ExamSubmissionAnswer> ExamSubmissionAnswers => Set<ExamSubmissionAnswer>();
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<ExerciseQuestion> ExerciseQuestions => Set<ExerciseQuestion>();
     public DbSet<ExerciseSubmission> ExerciseSubmissions => Set<ExerciseSubmission>();
@@ -100,6 +103,7 @@ public sealed class ApplicationDbContext(
 
     // Reports
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
+    public DbSet<MonthlyReportData> MonthlyReportData => Set<MonthlyReportData>();
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
     public DbSet<StudentMonthlyReport> StudentMonthlyReports => Set<StudentMonthlyReport>();
     public DbSet<SessionReport> SessionReports => Set<SessionReport>();

@@ -11,13 +11,17 @@ Tài liệu này mô tả chi tiết cách sử dụng tất cả các API endpo
 5. [Classroom APIs](#5-classroom-apis)
 6. [Class APIs](#6-class-apis)
 7. [Enrollment APIs](#7-enrollment-apis)
-8. [Ticket APIs](#8-ticket-apis)
-9. [Blog APIs](#9-blog-apis)
-10. [File Upload APIs](#10-file-upload-apis)
-11. [Master Data APIs](#11-master-data-apis)
-12. [Teacher APIs](#12-teacher-apis)
-13. [Student APIs](#13-student-apis)
-14. [Session APIs](#14-session-apis)
+8. [Exam APIs](#8-exam-apis)
+9. [Ticket APIs](#9-ticket-apis)
+10. [Notification APIs](#10-notification-apis)
+11. [Blog APIs](#11-blog-apis)
+12. [File Upload APIs](#12-file-upload-apis)
+13. [Master Data APIs](#13-master-data-apis)
+14. [Teacher APIs](#14-teacher-apis)
+15. [Student APIs](#15-student-apis)
+16. [Session APIs](#16-session-apis)
+17. [Media APIs](#17-media-apis)
+18. [User Management APIs](#18-user-management-apis)
 
 ---
 
@@ -167,6 +171,215 @@ Base URL: `/api/auth/`
 
 **Lỗi có thể xảy ra:**
 - `400 Bad Request`: Token không hợp lệ hoặc đã hết hạn
+
+---
+
+### 1.6. Change PIN
+
+**Endpoint:** `PUT /api/auth/change-pin`
+
+**Mô tả:** Đổi PIN cho user đang đăng nhập (Admin/Teacher/Staff).
+
+**Authorization:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "currentPin": "1234",
+  "newPin": "5678"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: PIN hiện tại không đúng
+- `401 Unauthorized`: Chưa đăng nhập
+
+---
+
+### 1.7. Get Profiles
+
+**Endpoint:** `GET /api/auth/profiles`
+
+**Mô tả:** Lấy danh sách Profiles của user đang đăng nhập (Parent/Student profiles).
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": [
+    {
+      "id": "guid",
+      "displayName": "Test Student 01",
+      "profileType": "Student"
+    },
+    {
+      "id": "guid",
+      "displayName": "Test Parent 01",
+      "profileType": "Parent"
+    }
+  ]
+}
+```
+
+---
+
+### 1.8. Verify Parent PIN
+
+**Endpoint:** `POST /api/auth/profiles/verify-parent-pin`
+
+**Mô tả:** Xác thực PIN cho Parent Profile.
+
+**Authorization:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "profileId": "guid",
+  "pin": "1234"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: PIN không đúng hoặc Profile không hợp lệ
+- `404 Not Found`: Profile không tồn tại hoặc không phải Parent
+
+---
+
+### 1.9. Select Student Profile
+
+**Endpoint:** `POST /api/auth/profiles/select-student`
+
+**Mô tả:** Chọn Student Profile để xem dữ liệu (không cần PIN).
+
+**Authorization:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "profileId": "guid"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Profile không tồn tại hoặc không phải Student
+
+---
+
+### 1.10. Request Parent PIN Reset
+
+**Endpoint:** `POST /api/auth/profiles/request-pin-reset`
+
+**Mô tả:** Yêu cầu reset PIN cho Parent Profile (gửi email reset link).
+
+**Authorization:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "profileId": "guid"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Profile không hợp lệ hoặc không có email
+- `404 Not Found`: Profile không tồn tại hoặc không phải Parent
+
+---
+
+### 1.11. Get Current User
+
+**Endpoint:** `GET /api/me`
+
+**Mô tả:** Lấy thông tin user hiện tại bao gồm role, branchId, và danh sách profiles.
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "userName": "admin@kidzgo.com",
+    "fullName": "Admin User",
+    "email": "admin@kidzgo.com",
+    "role": "Admin",
+    "branchId": "guid",
+    "branch": {
+      "id": "guid",
+      "code": "HN001",
+      "name": "Chi nhánh Hà Nội",
+      "address": "123 Đường ABC",
+      "contactPhone": "0123456789",
+      "contactEmail": "hanoi@kidzgo.com",
+      "isActive": true
+    },
+    "profiles": [
+      {
+        "id": "guid",
+        "displayName": "Test Student 01",
+        "profileType": "Student"
+      }
+    ],
+    "selectedProfileId": null,
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+---
+
+### 1.12. Logout
+
+**Endpoint:** `POST /api/me/logout`
+
+**Mô tả:** Đăng xuất - xóa tất cả refresh tokens của user.
+
+**Authorization:** Required (Bearer Token)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
 
 ---
 
@@ -1591,7 +1804,817 @@ GET /api/enrollments?classId=guid&status=Active&pageNumber=1&pageSize=10
 
 ---
 
-## 8. Ticket APIs
+## 8. Exam APIs
+
+Base URL: `/api/exams`
+
+### 8.1. Create Exam
+
+**Endpoint:** `POST /api/exams`
+
+**Mô tả:** UC-152: Tạo Exam cho Class. UC-152a: Thiết lập thời gian thi. UC-152b: Thiết lập settings.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Request Body:**
+```json
+{
+  "classId": "guid",
+  "examType": "Midterm",
+  "date": "2024-01-15",
+  "maxScore": 100,
+  "description": "Bài thi giữa kỳ",
+  "scheduledStartTime": "2024-01-15T14:00:00Z",
+  "timeLimitMinutes": 90,
+  "allowLateStart": true,
+  "lateStartToleranceMinutes": 15,
+  "autoSubmitOnTimeLimit": true,
+  "preventCopyPaste": true,
+  "preventNavigation": true,
+  "showResultsImmediately": false
+}
+```
+
+**ExamType Values:**
+- `"Placement"`: Bài thi xếp lớp
+- `"Progress"`: Bài kiểm tra tiến độ
+- `"Midterm"`: Bài thi giữa kỳ
+- `"Final"`: Bài thi cuối kỳ
+- `"Speaking"`: Bài thi nói
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "classId": "guid",
+    "classCode": "ENG2-2024",
+    "classTitle": "Tiếng Anh Lớp 2 - 2024",
+    "examType": "Midterm",
+    "date": "2024-01-15",
+    "maxScore": 100,
+    "description": "Bài thi giữa kỳ",
+    "scheduledStartTime": "2024-01-15T14:00:00Z",
+    "timeLimitMinutes": 90,
+    "allowLateStart": true,
+    "lateStartToleranceMinutes": 15,
+    "autoSubmitOnTimeLimit": true,
+    "preventCopyPaste": true,
+    "preventNavigation": true,
+    "showResultsImmediately": false,
+    "createdBy": "guid",
+    "createdByName": "Teacher Nguyễn Văn A",
+    "createdAt": "2024-01-10T10:00:00Z"
+  }
+}
+```
+
+**Headers:**
+- `Location: /api/exams/{id}`
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `404 Not Found`: Class không tồn tại hoặc không active
+
+---
+
+### 8.2. Get Exams
+
+**Endpoint:** `GET /api/exams`
+
+**Mô tả:** UC-153: Xem danh sách Exams của Class (filter theo classId).
+
+**Authorization:** Required (Bearer Token)
+
+**Query Parameters:**
+- `classId` (Guid?, optional): Lọc theo Class ID
+- `examType` (ExamType?, optional): Lọc theo exam type
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "classId": "guid",
+        "classCode": "ENG2-2024",
+        "classTitle": "Tiếng Anh Lớp 2 - 2024",
+        "examType": "Midterm",
+        "date": "2024-01-15",
+        "maxScore": 100,
+        "description": "Bài thi giữa kỳ",
+        "scheduledStartTime": "2024-01-15T14:00:00Z",
+        "timeLimitMinutes": 90,
+        "allowLateStart": true,
+        "lateStartToleranceMinutes": 15,
+        "autoSubmitOnTimeLimit": true,
+        "preventCopyPaste": true,
+        "preventNavigation": true,
+        "showResultsImmediately": false,
+        "createdBy": "guid",
+        "createdByName": "Teacher Nguyễn Văn A",
+        "createdAt": "2024-01-10T10:00:00Z",
+        "resultCount": 0
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 8.3. Get Exam By ID
+
+**Endpoint:** `GET /api/exams/{id}`
+
+**Mô tả:** UC-154: Xem chi tiết Exam.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `id` (Guid): ID của Exam
+
+**Response (200 OK):** Tương tự như Get Exams, nhưng chỉ trả về 1 exam
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Exam không tồn tại
+
+---
+
+### 8.4. Update Exam
+
+**Endpoint:** `PUT /api/exams/{id}`
+
+**Mô tả:** UC-155: Cập nhật Exam.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Exam
+
+**Request Body:** Tương tự như Create Exam, nhưng tất cả fields đều optional
+
+**Response (200 OK):** Tương tự như Get Exam By ID
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Exam không tồn tại
+
+---
+
+### 8.5. Delete Exam
+
+**Endpoint:** `DELETE /api/exams/{id}`
+
+**Mô tả:** UC-156: Xóa Exam.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Exam
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Exam không tồn tại
+
+---
+
+### 8.6. Create Exam Question
+
+**Endpoint:** `POST /api/exams/{examId}/questions`
+
+**Mô tả:** UC-163: Tạo Exam Question.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Request Body:**
+```json
+{
+  "questionText": "What is the capital of France?",
+  "questionType": "MultipleChoice",
+  "options": "[\"Paris\", \"London\", \"Berlin\", \"Madrid\"]",
+  "correctAnswer": "Paris",
+  "points": 10,
+  "orderIndex": 1
+}
+```
+
+**QuestionType Values:**
+- `"MultipleChoice"`: Câu hỏi trắc nghiệm
+- `"TextInput"`: Câu hỏi tự luận
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "questionText": "What is the capital of France?",
+    "questionType": "MultipleChoice",
+    "options": "[\"Paris\", \"London\", \"Berlin\", \"Madrid\"]",
+    "correctAnswer": "Paris",
+    "points": 10,
+    "orderIndex": 1,
+    "createdAt": "2024-01-10T10:00:00Z",
+    "updatedAt": "2024-01-10T10:00:00Z"
+  }
+}
+```
+
+---
+
+### 8.7. Get Exam Questions
+
+**Endpoint:** `GET /api/exams/{examId}/questions`
+
+**Mô tả:** UC-164: Xem danh sách Exam Questions của Exam.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "examId": "guid",
+        "questionText": "What is the capital of France?",
+        "questionType": "MultipleChoice",
+        "options": "[\"Paris\", \"London\", \"Berlin\", \"Madrid\"]",
+        "correctAnswer": "Paris",
+        "points": 10,
+        "orderIndex": 1,
+        "createdAt": "2024-01-10T10:00:00Z",
+        "updatedAt": "2024-01-10T10:00:00Z"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 8.8. Get Exam Question By ID
+
+**Endpoint:** `GET /api/exams/{examId}/questions/{questionId}`
+
+**Mô tả:** UC-165: Xem chi tiết Exam Question.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `questionId` (Guid): ID của Question
+
+**Response (200 OK):** Tương tự như Get Exam Questions, nhưng chỉ trả về 1 question
+
+---
+
+### 8.9. Update Exam Question
+
+**Endpoint:** `PUT /api/exams/{examId}/questions/{questionId}`
+
+**Mô tả:** UC-166: Cập nhật Exam Question.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `questionId` (Guid): ID của Question
+
+**Request Body:** Tương tự như Create Exam Question, nhưng tất cả fields đều optional
+
+**Response (200 OK):** Tương tự như Get Exam Question By ID
+
+---
+
+### 8.10. Delete Exam Question
+
+**Endpoint:** `DELETE /api/exams/{examId}/questions/{questionId}`
+
+**Mô tả:** UC-167: Xóa Exam Question.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `questionId` (Guid): ID của Question
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+---
+
+### 8.11. Start Exam Submission
+
+**Endpoint:** `POST /api/exams/{examId}/submissions/start`
+
+**Mô tả:** UC-169: Học sinh bắt đầu làm bài thi (tạo ExamSubmission, check ScheduledStartTime).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Request Body:**
+```json
+{
+  "studentProfileId": "guid"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "studentProfileId": "guid",
+    "actualStartTime": "2024-01-15T14:00:00Z",
+    "status": "InProgress",
+    "scheduledStartTime": "2024-01-15T14:00:00Z",
+    "timeLimitMinutes": 90
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Exam chưa bắt đầu hoặc đã quá thời gian cho phép
+- `404 Not Found`: Exam hoặc Student Profile không tồn tại
+- `409 Conflict`: Đã có submission cho exam này
+
+---
+
+### 8.12. Save Exam Submission Answer
+
+**Endpoint:** `POST /api/exams/{examId}/submissions/{submissionId}/answers`
+
+**Mô tả:** UC-170: Học sinh lưu câu trả lời (ExamSubmissionAnswer).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `submissionId` (Guid): ID của Submission
+
+**Request Body:**
+```json
+{
+  "questionId": "guid",
+  "answer": "Paris"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "submissionId": "guid",
+    "questionId": "guid",
+    "answer": "Paris",
+    "answeredAt": "2024-01-15T14:05:00Z"
+  }
+}
+```
+
+**Lưu ý:** Với Multiple Choice, hệ thống sẽ tự động chấm và set `isCorrect` và `pointsAwarded`.
+
+---
+
+### 8.13. Submit Exam Submission
+
+**Endpoint:** `POST /api/exams/{examId}/submissions/{submissionId}/submit`
+
+**Mô tả:** UC-171: Học sinh nộp bài thi. UC-172: Tự động nộp bài khi hết giờ (AutoSubmitOnTimeLimit).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `submissionId` (Guid): ID của Submission
+
+**Request Body:**
+```json
+{
+  "isAutoSubmit": false
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "studentProfileId": "guid",
+    "submittedAt": "2024-01-15T15:30:00Z",
+    "autoSubmittedAt": null,
+    "status": "Submitted",
+    "autoScore": 80
+  }
+}
+```
+
+**Lưu ý:** 
+- `autoScore` được tính tự động cho Multiple Choice questions
+- Nếu `isAutoSubmit = true`, status sẽ là `AutoSubmitted`
+
+---
+
+### 8.14. Get Exam Submissions
+
+**Endpoint:** `GET /api/exams/{examId}/submissions`
+
+**Mô tả:** Xem danh sách Exam Submissions.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Query Parameters:**
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile ID
+- `status` (ExamSubmissionStatus?, optional): Lọc theo status
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "examId": "guid",
+        "studentProfileId": "guid",
+        "studentName": "Nguyễn Văn A",
+        "actualStartTime": "2024-01-15T14:00:00Z",
+        "submittedAt": "2024-01-15T15:30:00Z",
+        "timeSpentMinutes": 90,
+        "autoScore": 80,
+        "finalScore": null,
+        "status": "Submitted"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 8.15. Get Exam Submission
+
+**Endpoint:** `GET /api/exams/{examId}/submissions/{submissionId}`
+
+**Mô tả:** UC-174: Xem bài làm của học sinh (ExamSubmission với answers).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `submissionId` (Guid): ID của Submission
+
+**Query Parameters:**
+- `includeAnswers` (bool, default: false): Bao gồm answers
+- `showCorrectAnswers` (bool, default: false): Hiển thị đáp án đúng (chỉ Teacher/Staff/Admin)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "studentProfileId": "guid",
+    "studentName": "Nguyễn Văn A",
+    "actualStartTime": "2024-01-15T14:00:00Z",
+    "submittedAt": "2024-01-15T15:30:00Z",
+    "timeSpentMinutes": 90,
+    "autoScore": 80,
+    "finalScore": null,
+    "gradedBy": null,
+    "gradedByName": null,
+    "gradedAt": null,
+    "teacherComment": null,
+    "status": "Submitted",
+    "answers": [
+      {
+        "id": "guid",
+        "questionId": "guid",
+        "questionOrderIndex": 1,
+        "questionText": "What is the capital of France?",
+        "questionType": "MultipleChoice",
+        "questionOptions": "[\"Paris\", \"London\", \"Berlin\", \"Madrid\"]",
+        "questionCorrectAnswer": "Paris",
+        "questionPoints": 10,
+        "answer": "Paris",
+        "isCorrect": true,
+        "pointsAwarded": 10,
+        "teacherFeedback": null,
+        "answeredAt": "2024-01-15T14:05:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 8.16. Grade Exam Submission
+
+**Endpoint:** `POST /api/exams/{examId}/submissions/{submissionId}/grade`
+
+**Mô tả:** UC-175: Teacher chấm bài thi (text input, cập nhật FinalScore).
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `submissionId` (Guid): ID của Submission
+
+**Request Body:**
+```json
+{
+  "finalScore": 85,
+  "teacherComment": "Làm bài tốt, cần cải thiện phần writing",
+  "answerGrades": [
+    {
+      "questionId": "guid",
+      "pointsAwarded": 8,
+      "teacherFeedback": "Good answer, but could be more detailed"
+    }
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "studentProfileId": "guid",
+    "finalScore": 85,
+    "gradedBy": "guid",
+    "gradedByName": "Teacher Nguyễn Văn A",
+    "gradedAt": "2024-01-16T10:00:00Z",
+    "teacherComment": "Làm bài tốt, cần cải thiện phần writing"
+  }
+}
+```
+
+---
+
+### 8.17. Create Exam Result
+
+**Endpoint:** `POST /api/exams/{examId}/results`
+
+**Mô tả:** UC-157: Nhập Exam Result cho 1 học sinh (single: studentId, score, comment, attachments?).
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Request Body:**
+```json
+{
+  "studentProfileId": "guid",
+  "score": 85,
+  "comment": "Làm bài tốt",
+  "attachmentUrls": [
+    "https://res.cloudinary.com/.../exam-result-1.jpg",
+    "https://res.cloudinary.com/.../exam-result-2.jpg"
+  ]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "examId": "guid",
+    "studentProfileId": "guid",
+    "studentName": "Nguyễn Văn A",
+    "score": 85,
+    "comment": "Làm bài tốt",
+    "attachmentUrls": [
+      "https://res.cloudinary.com/.../exam-result-1.jpg",
+      "https://res.cloudinary.com/.../exam-result-2.jpg"
+    ],
+    "gradedBy": "guid",
+    "gradedByName": "Teacher Nguyễn Văn A",
+    "createdAt": "2024-01-16T10:00:00Z",
+    "updatedAt": "2024-01-16T10:00:00Z"
+  }
+}
+```
+
+---
+
+### 8.18. Create Exam Results Bulk
+
+**Endpoint:** `POST /api/exams/{examId}/results/bulk`
+
+**Mô tả:** UC-157a: Nhập Exam Results cho nhiều học sinh cùng lúc (bulk).
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Request Body:**
+```json
+{
+  "results": [
+    {
+      "studentProfileId": "guid",
+      "score": 85,
+      "comment": "Làm bài tốt",
+      "attachmentUrls": ["https://res.cloudinary.com/.../exam-result-1.jpg"]
+    },
+    {
+      "studentProfileId": "guid",
+      "score": 90,
+      "comment": "Xuất sắc",
+      "attachmentUrls": []
+    }
+  ]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "createdCount": 2,
+    "results": [
+      {
+        "id": "guid",
+        "studentProfileId": "guid",
+        "score": 85
+      },
+      {
+        "id": "guid",
+        "studentProfileId": "guid",
+        "score": 90
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 8.19. Get Exam Results
+
+**Endpoint:** `GET /api/exams/{examId}/results`
+
+**Mô tả:** UC-158: Xem danh sách Exam Results.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+
+**Query Parameters:**
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile ID
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):** Tương tự như Create Exam Result, nhưng trả về danh sách
+
+---
+
+### 8.20. Get Exam Result By ID
+
+**Endpoint:** `GET /api/exams/{examId}/results/{resultId}`
+
+**Mô tả:** UC-159: Xem chi tiết Exam Result.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `resultId` (Guid): ID của Result
+
+**Response (200 OK):** Tương tự như Create Exam Result
+
+---
+
+### 8.21. Update Exam Result
+
+**Endpoint:** `PUT /api/exams/{examId}/results/{resultId}`
+
+**Mô tả:** UC-160: Cập nhật Exam Result.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `examId` (Guid): ID của Exam
+- `resultId` (Guid): ID của Result
+
+**Request Body:** Tương tự như Create Exam Result, nhưng tất cả fields đều optional
+
+**Response (200 OK):** Tương tự như Get Exam Result By ID
+
+---
+
+### 8.22. Get Student Exam Results
+
+**Endpoint:** `GET /api/students/{studentProfileId}/exam-results`
+
+**Mô tả:** UC-162: Parent/Student xem lịch sử Exam Results của học sinh (filter theo type).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `studentProfileId` (Guid): ID của Student Profile
+
+**Query Parameters:**
+- `examType` (ExamType?, optional): Lọc theo exam type
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "examId": "guid",
+        "examType": "Midterm",
+        "examDate": "2024-01-15",
+        "classId": "guid",
+        "classCode": "ENG2-2024",
+        "classTitle": "Tiếng Anh Lớp 2 - 2024",
+        "score": 85,
+        "comment": "Làm bài tốt",
+        "attachmentUrls": ["https://res.cloudinary.com/.../exam-result-1.jpg"],
+        "gradedBy": "guid",
+        "gradedByName": "Teacher Nguyễn Văn A",
+        "createdAt": "2024-01-16T10:00:00Z"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+## 9. Ticket APIs
 
 Base URL: `/api/tickets`
 
@@ -1606,11 +2629,11 @@ Base URL: `/api/tickets`
 **Request Body:**
 ```json
 {
-  "openedByUserId": "guid",
   "openedByProfileId": "guid",
   "branchId": "guid",
   "classId": "guid",
   "category": "Homework",
+  "subject": "Vấn đề về bài tập về nhà",
   "message": "Tôi cần hỗ trợ về bài tập về nhà"
 }
 ```
@@ -1670,6 +2693,7 @@ Base URL: `/api/tickets`
 - `status` (string?, optional): Lọc theo status (Open, InProgress, Resolved, Closed)
 - `category` (string?, optional): Lọc theo category (Homework, Finance, Schedule, Tech)
 - `classId` (Guid?, optional): Lọc theo Class ID
+- `mine` (bool?, optional): Lọc tickets của user hiện tại (opened by hoặc assigned to)
 - `pageNumber` (int, default: 1): Số trang
 - `pageSize` (int, default: 10): Số lượng items mỗi trang
 
@@ -1696,6 +2720,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
         "classCode": "ENG2-2024",
         "classTitle": "Tiếng Anh Lớp 2 - 2024",
         "category": "Homework",
+        "subject": "Vấn đề về bài tập về nhà",
         "message": "Tôi cần hỗ trợ về bài tập về nhà",
         "status": "Open",
         "assignedToUserId": null,
@@ -1742,6 +2767,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
     "classCode": "ENG2-2024",
     "classTitle": "Tiếng Anh Lớp 2 - 2024",
     "category": "Homework",
+    "subject": "Vấn đề về bài tập về nhà",
     "message": "Tôi cần hỗ trợ về bài tập về nhà",
     "status": "InProgress",
     "assignedToUserId": "guid",
@@ -1971,7 +2997,142 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-## 9. Blog APIs
+## 10. Notification APIs
+
+Base URL: `/api/notifications`
+
+### 10.1. Get Notifications
+
+**Endpoint:** `GET /api/notifications`
+
+**Mô tả:** UC-325-339: Xem danh sách Notifications.
+
+**Authorization:** Required (Bearer Token)
+
+**Query Parameters:**
+- `profileId` (Guid?, optional): Lọc theo Profile ID
+- `unreadOnly` (bool?, optional): Chỉ lấy notifications chưa đọc
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Example Request:**
+```
+GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "title": "Thông báo mới",
+        "content": "Bạn có bài tập mới cần hoàn thành",
+        "deeplink": "/homework/123",
+        "channel": "InApp",
+        "profileId": "guid",
+        "profileName": "Nguyễn Văn A",
+        "readAt": null,
+        "createdAt": "2024-01-15T10:00:00Z"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+**Channel Values:**
+- `"InApp"`: Thông báo trong app
+- `"Email"`: Thông báo qua email
+- `"ZaloOA"`: Thông báo qua Zalo OA
+- `"Push"`: Push notification
+
+---
+
+### 10.2. Broadcast Notification
+
+**Endpoint:** `POST /api/notifications/broadcast`
+
+**Mô tả:** UC-325-339: Admin/Staff broadcast notification.
+
+**Authorization:** Required (Roles: Admin, Staff)
+
+**Request Body:**
+```json
+{
+  "title": "Thông báo mới",
+  "content": "Bạn có bài tập mới cần hoàn thành",
+  "deeplink": "/homework/123",
+  "channel": "InApp",
+  "role": "Student",
+  "branchId": "guid",
+  "classId": "guid",
+  "studentProfileId": "guid",
+  "userIds": ["guid1", "guid2"],
+  "profileIds": ["guid1", "guid2"]
+}
+```
+
+**Lưu ý:** Filters được áp dụng theo thứ tự ưu tiên:
+1. Nếu có `ProfileIds` → gửi cho các profiles đó
+2. Nếu có `UserIds` → gửi cho các users đó
+3. Nếu có `StudentProfileId` → gửi cho profile đó
+4. Nếu có `ClassId` → gửi cho tất cả students trong class
+5. Nếu có `BranchId` → gửi cho tất cả users trong branch
+6. Nếu có `Role` → gửi cho tất cả users có role đó
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "createdCount": 10
+  }
+}
+```
+
+**Headers:**
+- `Location: /api/notifications/broadcast/{createdCount}`
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `404 Not Found`: Branch, Class, hoặc Profile không tồn tại
+
+---
+
+### 10.3. Mark Notification As Read
+
+**Endpoint:** `PATCH /api/notifications/{id}/read`
+
+**Mô tả:** Đánh dấu notification là đã đọc.
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `id` (Guid): ID của Notification
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "readAt": "2024-01-15T10:05:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Notification không tồn tại
+
+---
+
+## 11. Blog APIs
 
 Base URL: `/api/blogs`
 
@@ -2276,7 +3437,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-## 10. File Upload APIs
+## 12. File Upload APIs
 
 Base URL: `/api/files`
 
@@ -2489,7 +3650,7 @@ Trong Swagger UI, bạn có thể:
 
 ---
 
-## 11. Master Data APIs
+## 13. Master Data APIs
 
 Base URL: `/api/`
 
@@ -2657,7 +3818,7 @@ Base URL: `/api/`
 
 ---
 
-## 12. Teacher APIs
+## 14. Teacher APIs
 
 Base URL: `/api/teacher`
 
@@ -2775,7 +3936,7 @@ GET /api/teacher/timetable?from=2025-01-01&to=2025-01-31
 
 ---
 
-## 13. Student APIs
+## 15. Student APIs
 
 Base URL: `/api/students`
 
@@ -2904,7 +4065,7 @@ GET /api/students/11111111-1111-1111-1111-111111111100/timetable?from=2025-01-01
 
 ---
 
-## 14. Session APIs
+## 16. Session APIs
 
 Base URL: `/api/sessions`
 
@@ -2975,5 +4136,564 @@ Base URL: `/api/sessions`
 
 ---
 
-*Tài liệu này được cập nhật lần cuối: 2025-01-08*
+## 17. Media APIs
+
+Base URL: `/api/media`
+
+### 15.1. Create Media
+
+**Endpoint:** `POST /api/media`
+
+**Mô tả:** UC-238: Teacher/Staff upload ảnh/video. UC-239-242: Gắn tag (Class, Student, Month, Type, Visibility). Media mới tạo sẽ có `ApprovalStatus = Pending` và `IsPublished = false` mặc định.
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Request Body:**
+```json
+{
+  "branchId": "11111111-1111-1111-1111-111111111111",
+  "classId": "guid",
+  "studentProfileId": "guid",
+  "monthTag": "2025-01",
+  "type": "Photo",
+  "contentType": "Album",
+  "url": "https://res.cloudinary.com/.../media/image.jpg",
+  "caption": "Ảnh lớp học",
+  "visibility": "ClassOnly"
+}
+```
+
+**Type Values:**
+- `"Photo"`: Ảnh
+- `"Video"`: Video
+
+**ContentType Values:**
+- `"Homework"`: Bài tập về nhà
+- `"Report"`: Báo cáo
+- `"Test"`: Bài kiểm tra
+- `"Album"`: Album ảnh
+- `"ClassPhoto"`: Ảnh lớp học
+
+**Visibility Values:**
+- `"ClassOnly"`: Chỉ lớp học
+- `"Personal"`: Cá nhân
+- `"PublicParent"`: Công khai cho phụ huynh
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "uploaderId": "guid",
+    "uploaderName": "Teacher Nguyễn Văn A",
+    "branchId": "11111111-1111-1111-1111-111111111111",
+    "branchName": "Chi nhánh Hà Nội",
+    "classId": "guid",
+    "className": "Tiếng Anh Lớp 2 - 2024",
+    "studentProfileId": "guid",
+    "studentName": "Nguyễn Văn B",
+    "monthTag": "2025-01",
+    "type": "Photo",
+    "contentType": "Album",
+    "url": "https://res.cloudinary.com/.../media/image.jpg",
+    "caption": "Ảnh lớp học",
+    "visibility": "ClassOnly",
+    "approvalStatus": "Pending",
+    "isPublished": false,
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+}
+```
+
+**Headers:**
+- `Location: /api/media/{id}`
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `404 Not Found`: Branch, Class, hoặc Student Profile không tồn tại
+
+---
+
+### 15.2. Get Media
+
+**Endpoint:** `GET /api/media`
+
+**Mô tả:** UC-243: Xem danh sách Media. UC-249: Parent/Student xem album lớp. UC-250: Parent/Student xem album cá nhân. UC-251: Filter Media theo tháng.
+
+**Authorization:** Required (Bearer Token)
+
+**Query Parameters:**
+- `branchId` (Guid?, optional): Lọc theo Branch ID
+- `classId` (Guid?, optional): Lọc theo Class ID
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile ID
+- `monthTag` (string?, optional): Lọc theo tháng (format: YYYY-MM)
+- `type` (MediaType?, optional): Lọc theo type (Photo, Video)
+- `contentType` (MediaContentType?, optional): Lọc theo contentType (Homework, Report, Test, Album, ClassPhoto)
+- `visibility` (Visibility?, optional): Lọc theo visibility (ClassOnly, Personal, PublicParent)
+- `approvalStatus` (ApprovalStatus?, optional): Lọc theo approval status (Pending, Approved, Rejected)
+- `isPublished` (bool?, optional): Lọc theo published status
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 20): Số lượng items mỗi trang
+
+**Example Request:**
+```
+GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "uploaderId": "guid",
+        "uploaderName": "Teacher Nguyễn Văn A",
+        "branchId": "11111111-1111-1111-1111-111111111111",
+        "branchName": "Chi nhánh Hà Nội",
+        "classId": "guid",
+        "className": "Tiếng Anh Lớp 2 - 2024",
+        "studentProfileId": "guid",
+        "studentName": "Nguyễn Văn B",
+        "monthTag": "2025-01",
+        "type": "Photo",
+        "contentType": "Album",
+        "url": "https://res.cloudinary.com/.../media/image.jpg",
+        "caption": "Ảnh lớp học",
+        "visibility": "ClassOnly",
+        "approvalStatus": "Approved",
+        "approvedById": "guid",
+        "approvedByName": "Staff Nguyễn Thị C",
+        "approvedAt": "2025-01-15T11:00:00Z",
+        "isPublished": true,
+        "createdAt": "2025-01-15T10:00:00Z",
+        "updatedAt": "2025-01-15T11:00:00Z"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 20,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 15.3. Get Media By ID
+
+**Endpoint:** `GET /api/media/{id}`
+
+**Mô tả:** UC-244: Xem chi tiết Media. UC-252: Download Media (FE sẽ dùng Url từ response).
+
+**Authorization:** Required (Bearer Token)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "uploaderId": "guid",
+    "uploaderName": "Teacher Nguyễn Văn A",
+    "branchId": "11111111-1111-1111-1111-111111111111",
+    "branchName": "Chi nhánh Hà Nội",
+    "classId": "guid",
+    "className": "Tiếng Anh Lớp 2 - 2024",
+    "studentProfileId": "guid",
+    "studentName": "Nguyễn Văn B",
+    "monthTag": "2025-01",
+    "type": "Photo",
+    "contentType": "Album",
+    "url": "https://res.cloudinary.com/.../media/image.jpg",
+    "caption": "Ảnh lớp học",
+    "visibility": "ClassOnly",
+    "approvalStatus": "Approved",
+    "approvedById": "guid",
+    "approvedByName": "Staff Nguyễn Thị C",
+    "approvedAt": "2025-01-15T11:00:00Z",
+    "isPublished": true,
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T11:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại hoặc đã bị xóa
+
+---
+
+### 15.4. Update Media
+
+**Endpoint:** `PUT /api/media/{id}`
+
+**Mô tả:** UC-245: Cập nhật Media (tags, caption, visibility).
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Request Body:**
+```json
+{
+  "classId": "guid",
+  "studentProfileId": "guid",
+  "monthTag": "2025-02",
+  "contentType": "ClassPhoto",
+  "caption": "Ảnh lớp học - Updated",
+  "visibility": "PublicParent"
+}
+```
+
+**Lưu ý:** Tất cả các fields đều optional. Chỉ cần gửi các fields muốn cập nhật.
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "classId": "guid",
+    "studentProfileId": "guid",
+    "monthTag": "2025-02",
+    "contentType": "ClassPhoto",
+    "caption": "Ảnh lớp học - Updated",
+    "visibility": "PublicParent",
+    "updatedAt": "2025-01-16T10:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại hoặc đã bị xóa
+
+---
+
+### 15.5. Delete Media
+
+**Endpoint:** `DELETE /api/media/{id}`
+
+**Mô tả:** UC-246: Xóa mềm Media (set IsDeleted = true).
+
+**Authorization:** Required (Roles: Teacher, Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại
+
+---
+
+### 15.6. Approve Media
+
+**Endpoint:** `POST /api/media/{id}/approve`
+
+**Mô tả:** UC-247: Staff/Admin approve Media (chuyển ApprovalStatus từ Pending → Approved).
+
+**Authorization:** Required (Roles: Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "approvalStatus": "Approved",
+    "approvedById": "guid",
+    "approvedByName": "Staff Nguyễn Thị C",
+    "approvedAt": "2025-01-15T11:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại hoặc đã bị xóa
+- `409 Conflict`: Media đã được approve
+
+---
+
+### 15.7. Reject Media
+
+**Endpoint:** `POST /api/media/{id}/reject`
+
+**Mô tả:** UC-247a: Staff/Admin reject Media (chuyển ApprovalStatus từ Pending → Rejected).
+
+**Authorization:** Required (Roles: Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "approvalStatus": "Rejected",
+    "updatedAt": "2025-01-15T11:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại hoặc đã bị xóa
+- `409 Conflict`: Media đã được reject
+
+---
+
+### 15.8. Publish Media
+
+**Endpoint:** `POST /api/media/{id}/publish`
+
+**Mô tả:** UC-248: Publish Media lên gallery (set IsPublished = true). Media phải được approve trước khi publish.
+
+**Authorization:** Required (Roles: Staff, Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của Media
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "isPublished": true,
+    "updatedAt": "2025-01-15T12:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: Media không tồn tại hoặc đã bị xóa
+- `409 Conflict`: 
+  - Media đã được publish
+  - Media chưa được approve (phải approve trước khi publish)
+
+---
+
+## 18. User Management APIs
+
+Base URL: `/api/admin/users`
+
+### 16.1. Get Users
+
+**Endpoint:** `GET /api/admin/users`
+
+**Mô tả:** UC-371: Xem danh sách Users với phân trang và filter.
+
+**Authorization:** Required (Role: Admin)
+
+**Query Parameters:**
+- `isActive` (bool?, optional): Lọc theo trạng thái active
+- `role` (string?, optional): Lọc theo role (Admin, Staff, Teacher)
+- `branchId` (Guid?, optional): Lọc theo Branch ID
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Example Request:**
+```
+GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "userName": "teacher@kidzgo.com",
+        "fullName": "Teacher Nguyễn Văn A",
+        "email": "teacher@kidzgo.com",
+        "role": "Teacher",
+        "branchId": "guid",
+        "branchName": "Chi nhánh Hà Nội",
+        "isActive": true,
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 16.2. Get User By ID
+
+**Endpoint:** `GET /api/admin/users/{id}`
+
+**Mô tả:** UC-372: Xem chi tiết User.
+
+**Authorization:** Required (Role: Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của User
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "userName": "teacher@kidzgo.com",
+    "fullName": "Teacher Nguyễn Văn A",
+    "email": "teacher@kidzgo.com",
+    "role": "Teacher",
+    "branchId": "guid",
+    "branchName": "Chi nhánh Hà Nội",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: User không tồn tại
+
+---
+
+### 16.3. Create User
+
+**Endpoint:** `POST /api/admin/users`
+
+**Mô tả:** UC-370: Tạo User mới.
+
+**Authorization:** Required (Role: Admin)
+
+**Request Body:**
+```json
+{
+  "name": "Teacher Nguyễn Văn A",
+  "email": "teacher@kidzgo.com",
+  "password": "password123",
+  "role": "Teacher"
+}
+```
+
+**Role Values:**
+- `"Admin"`: Quản trị viên
+- `"Staff"`: Nhân viên
+- `"Teacher"`: Giáo viên
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "userName": "teacher@kidzgo.com",
+    "fullName": "Teacher Nguyễn Văn A",
+    "email": "teacher@kidzgo.com",
+    "role": "Teacher",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Headers:**
+- `Location: /api/admin/users/{id}`
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `409 Conflict`: Email đã tồn tại
+
+---
+
+### 16.4. Update User
+
+**Endpoint:** `PUT /api/admin/users/{id}`
+
+**Mô tả:** UC-373: Cập nhật thông tin User.
+
+**Authorization:** Required (Role: Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của User
+
+**Request Body:**
+```json
+{
+  "fullName": "Teacher Nguyễn Văn A - Updated",
+  "email": "teacher.updated@kidzgo.com",
+  "role": "Teacher",
+  "isDeleted": false
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "userName": "teacher.updated@kidzgo.com",
+    "fullName": "Teacher Nguyễn Văn A - Updated",
+    "email": "teacher.updated@kidzgo.com",
+    "role": "Teacher",
+    "isActive": true,
+    "updatedAt": "2024-01-02T00:00:00Z"
+  }
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: User không tồn tại
+- `409 Conflict`: Email đã tồn tại (nếu đổi email)
+
+---
+
+### 16.5. Delete User
+
+**Endpoint:** `DELETE /api/admin/users/{id}`
+
+**Mô tả:** UC-374: Xóa mềm User (set IsDeleted = true).
+
+**Authorization:** Required (Role: Admin)
+
+**Path Parameters:**
+- `id` (Guid): ID của User
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `404 Not Found`: User không tồn tại
+
+---
+
+*Tài liệu này được cập nhật lần cuối: 2025-01-10*
 
