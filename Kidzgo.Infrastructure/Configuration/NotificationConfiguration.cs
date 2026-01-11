@@ -38,6 +38,8 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         builder.Property(x => x.SentAt);
 
+        builder.Property(x => x.ReadAt);
+
         builder.Property(x => x.TemplateId)
             .HasMaxLength(100);
 

@@ -227,22 +227,43 @@
 
 ---
 
-## 9. Exams & Test Results 🟢
+## 9. Exams & Test Results 🟡
 
 ### 9.1. Quản lý Exams
-- UC-152: Tạo Exam (PLACEMENT/PROGRESS/MIDTERM/FINAL/SPEAKING)
-- UC-153: Xem danh sách Exams
+- UC-152: Tạo Exam cho Class (type: PLACEMENT/PROGRESS/MIDTERM/FINAL/SPEAKING, date, rubric)
+- UC-153: Xem danh sách Exams của Class (filter theo classId)
 - UC-154: Xem chi tiết Exam
 - UC-155: Cập nhật Exam
 - UC-156: Xóa Exam
+- UC-152a: Thiết lập thời gian thi (ScheduledStartTime, TimeLimitMinutes) cho Exam
+- UC-152b: Thiết lập settings (AutoSubmitOnTimeLimit, PreventCopyPaste, PreventNavigation) cho Exam
 
-### 9.2. Nhập và quản lý Exam Results
-- UC-157: Nhập Exam Result cho học sinh
+### 9.2. Quản lý Exam Questions
+- UC-163: Tạo Exam Question (QuestionText, QuestionType, Options, CorrectAnswer, Points)
+- UC-164: Xem danh sách Exam Questions của Exam
+- UC-165: Xem chi tiết Exam Question
+- UC-166: Cập nhật Exam Question
+- UC-167: Xóa Exam Question
+- UC-168: Sắp xếp thứ tự Exam Questions (OrderIndex)
+
+### 9.3. Làm bài thi tại trung tâm (Online Testing)
+- UC-169: Học sinh bắt đầu làm bài thi (tạo ExamSubmission, check ScheduledStartTime)
+- UC-170: Học sinh lưu câu trả lời (ExamSubmissionAnswer)
+- UC-171: Học sinh nộp bài thi
+- UC-172: Tự động nộp bài khi hết giờ (AutoSubmitOnTimeLimit)
+- UC-173: Tự động chấm Multiple Choice (AutoScore)
+- UC-174: Xem bài làm của học sinh (ExamSubmission với answers)
+- UC-175: Teacher chấm bài thi (text input, cập nhật FinalScore)
+- UC-176: Xem kết quả thi (Student xem sau khi được chấm)
+
+### 9.4. Nhập và quản lý Exam Results (Offline - Scan bài làm)
+- UC-157: Nhập Exam Result cho 1 học sinh (single: studentId, score, comment, attachments?)
+- UC-157a: Nhập Exam Results cho nhiều học sinh cùng lúc (bulk: list {studentId, score, comment, attachments?})
 - UC-158: Xem danh sách Exam Results
 - UC-159: Xem chi tiết Exam Result
 - UC-160: Cập nhật Exam Result
-- UC-161: Upload nhiều ảnh scan bài làm (JSON)
-- UC-162: Xem lịch sử Exam Results của học sinh
+- UC-161: Upload nhiều ảnh scan bài làm (JSON) cho Exam Result
+- UC-162: Parent/Student xem lịch sử Exam Results của học sinh (filter theo type)
 
 ---
 
@@ -270,20 +291,21 @@
 ### 11.1. Tạo và quản lý Monthly Reports
 - UC-174: Tạo Monthly Report Job
 - UC-175: Gom dữ liệu cho Monthly Report (attendance, homework, test, mission, notes)
-- UC-176: AI tạo draft Monthly Report
-- UC-177: Xem danh sách Monthly Report Jobs
+- UC-176: AI tạo draft Monthly Report (có thể mock: BE trả về draft text mẫu để FE làm UI review/approve trước)
+- UC-177: Teacher xem danh sách Monthly Report Jobs (filter theo month, theo lớp/học viên, status)
 - UC-178: Xem trạng thái Monthly Report Job (PENDING/GENERATING/DONE/FAILED)
 
 ### 11.2. Review và Publish Monthly Reports
-- UC-179: Teacher xem draft Monthly Report
+- UC-179: Teacher xem draft Monthly Report (nội dung HTML/JSON)
 - UC-180: Teacher chỉnh sửa draft Monthly Report
 - UC-181: Teacher submit Monthly Report (REVIEW)
 - UC-182: Staff/Admin comment Monthly Report
 - UC-183: Staff/Admin approve Monthly Report
 - UC-184: Staff/Admin reject Monthly Report
 - UC-185: Publish Monthly Report
-- UC-186: Parent/Student xem Monthly Report
-- UC-187: Gửi thông báo khi publish Monthly Report
+- UC-186: Parent/Student xem Monthly Report (filter theo month, studentId)
+- UC-187: Export Monthly Report sang PDF (hoặc exportUrl)
+- UC-187a: Gửi thông báo khi publish Monthly Report
 
 ---
 
@@ -494,6 +516,11 @@
 - UC-338: Xem trạng thái Notification (PENDING/SENT/FAILED)
 - UC-339: Retry Notification nếu FAILED
 
+### 16.2. Xem và quản lý Notifications
+- UC-339a: Đánh dấu Notification đã đọc (Mark as Read)
+- UC-339b: Xem danh sách Notifications (filter theo profileId, unreadOnly)
+- UC-339c: Broadcast Notification (gửi cho nhiều users theo filters)
+
 ---
 
 ## 17. Tickets & Support 🟢
@@ -578,20 +605,19 @@
 
 ## Tổng kết
 
-**Tổng số Use Cases**: 392
+**Tổng số Use Cases**: 413
 
 **Phân bổ theo nhóm và độ khó**:
 
 ### 🟢 Dễ (CRUD cơ bản, logic đơn giản)
 - Program & Class Management: 28
 - Enrollment: 9
-- Exams & Test Results: 11
 - Session Reports: 11
 - Media Management: 18
 - Tickets & Support: 9
 - Blog Management: 9
 - System Administration: 20
-**Tổng**: 115 use cases
+**Tổng**: 104 use cases
 
 ### 🟡 Trung bình (Logic nghiệp vụ phức tạp, tích hợp hệ thống, AI đã có người cover)
 - Authentication & Authorization: 12
@@ -600,16 +626,17 @@
 - Leave Request & Attendance: 14
 - Makeup Credit Management: 12
 - Homework & Exercises: 35
-- Monthly Reports (AI): 14
+- Exams & Test Results: 25
+- Monthly Reports (AI): 15
 - Gamification: 49
 - Dashboard & Reports: 12
-**Tổng**: 189 use cases
+**Tổng**: 214 use cases
 
 ### 🔴 Khó (Tính toán phức tạp, workflow nhiều bước, tích hợp bên ngoài)
 - Finance Management: 31
-- Notifications: 15
+- Notifications: 18
 - Payroll Management: 41
-**Tổng**: 87 use cases
+**Tổng**: 90 use cases
 
 **Tỷ lệ**: Dễ 29% | Trung bình 48% | Khó 22%
 

@@ -368,8 +368,21 @@ namespace Kidzgo.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AllowLateStart")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("AutoSubmitOnTimeLimit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -385,8 +398,35 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<int?>("LateStartToleranceMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("MaxScore")
                         .HasColumnType("numeric");
+
+                    b.Property<bool>("PreventCopyPaste")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("PreventNavigation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("ScheduledStartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ShowResultsImmediately")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int?>("TimeLimitMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -395,6 +435,52 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.ToTable("Exams", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrectAnswer")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Explanation")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Options")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("QuestionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.ToTable("ExamQuestions", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.ExamResult", b =>
@@ -408,6 +494,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<string>("Comment")
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ExamId")
                         .HasColumnType("uuid");
@@ -424,6 +513,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExamId");
@@ -433,6 +525,98 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("StudentProfileId");
 
                     b.ToTable("ExamResults", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActualStartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("AutoScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("AutoSubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("FinalScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("GradedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("GradedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TeacherComment")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TimeSpentMinutes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("GradedBy");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("ExamSubmissions", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamSubmissionAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("PointsAwarded")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TeacherFeedback")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("SubmissionId");
+
+                    b.ToTable("ExamSubmissionAnswers", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
@@ -1479,6 +1663,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<string>("Deeplink")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("RecipientProfileId")
                         .HasColumnType("uuid");
 
@@ -1949,6 +2136,55 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("TuitionPlans", "public");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Reports.MonthlyReportData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttendanceData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("HomeworkData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("MissionData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NotesData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TestData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId")
+                        .IsUnique();
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("MonthlyReportData", "public");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Reports.MonthlyReportJob", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1961,11 +2197,26 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid>("BranchId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Month")
                         .HasColumnType("integer");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1975,12 +2226,17 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Year")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedBy");
 
                     b.ToTable("MonthlyReportJobs", "public");
                 });
@@ -2071,14 +2327,29 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid?>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("DraftContent")
                         .HasColumnType("jsonb");
 
                     b.Property<string>("FinalContent")
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid?>("JobId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Month")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("PdfGeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PdfUrl")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2100,10 +2371,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid?>("SubmittedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Year")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("JobId");
 
                     b.HasIndex("ReviewedBy");
 
@@ -2461,6 +2739,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2887,6 +3170,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamQuestion", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Exams.Exam", "Exam")
+                        .WithMany("Questions")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Exams.ExamResult", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Exams.Exam", "Exam")
@@ -2911,6 +3205,51 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("GradedByUser");
 
                     b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamSubmission", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Exams.Exam", "Exam")
+                        .WithMany("Submissions")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "GradedByUser")
+                        .WithMany()
+                        .HasForeignKey("GradedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("GradedByUser");
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamSubmissionAnswer", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Exams.ExamQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Exams.ExamSubmission", "Submission")
+                        .WithMany("SubmissionAnswers")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Submission");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
@@ -3521,6 +3860,25 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Program");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Reports.MonthlyReportData", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Reports.StudentMonthlyReport", "Report")
+                        .WithOne()
+                        .HasForeignKey("Kidzgo.Domain.Reports.MonthlyReportData", "ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
+
+                    b.Navigation("StudentProfile");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Reports.MonthlyReportJob", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
@@ -3529,7 +3887,14 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kidzgo.Domain.Users.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Branch");
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.ReportComment", b =>
@@ -3580,6 +3945,16 @@ namespace Kidzgo.Infrastructure.Migrations
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.StudentMonthlyReport", b =>
                 {
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Reports.MonthlyReportJob", "Job")
+                        .WithMany("Reports")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kidzgo.Domain.Users.User", "ReviewedByUser")
                         .WithMany("ReviewedReports")
                         .HasForeignKey("ReviewedBy")
@@ -3595,6 +3970,10 @@ namespace Kidzgo.Infrastructure.Migrations
                         .WithMany("SubmittedReports")
                         .HasForeignKey("SubmittedBy")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Job");
 
                     b.Navigation("ReviewedByUser");
 
@@ -3951,6 +4330,15 @@ namespace Kidzgo.Infrastructure.Migrations
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>
                 {
                     b.Navigation("ExamResults");
+
+                    b.Navigation("Questions");
+
+                    b.Navigation("Submissions");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Exams.ExamSubmission", b =>
+                {
+                    b.Navigation("SubmissionAnswers");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exercise", b =>
@@ -4023,6 +4411,11 @@ namespace Kidzgo.Infrastructure.Migrations
             modelBuilder.Entity("Kidzgo.Domain.Programs.TuitionPlan", b =>
                 {
                     b.Navigation("ClassEnrollments");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Reports.MonthlyReportJob", b =>
+                {
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.StudentMonthlyReport", b =>

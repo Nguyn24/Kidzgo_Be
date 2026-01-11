@@ -36,6 +36,14 @@ public class StudentMonthlyReportConfiguration : IEntityTypeConfiguration<Studen
         builder.Property(x => x.AiVersion)
             .HasMaxLength(50);
 
+        builder.Property(x => x.ClassId);
+
+        builder.Property(x => x.JobId);
+
+        builder.Property(x => x.PdfUrl);
+
+        builder.Property(x => x.PdfGeneratedAt);
+
         builder.Property(x => x.SubmittedBy);
 
         builder.Property(x => x.ReviewedBy);
@@ -44,7 +52,22 @@ public class StudentMonthlyReportConfiguration : IEntityTypeConfiguration<Studen
 
         builder.Property(x => x.PublishedAt);
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Relationships
+        builder.HasOne(x => x.Class)
+            .WithMany()
+            .HasForeignKey(x => x.ClassId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Job)
+            .WithMany(x => x.Reports)
+            .HasForeignKey(x => x.JobId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.StudentProfile)
             .WithMany(x => x.StudentMonthlyReports)
             .HasForeignKey(x => x.StudentProfileId)

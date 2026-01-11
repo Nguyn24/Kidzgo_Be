@@ -42,6 +42,7 @@ public sealed class UpdateTicketStatusCommandHandler(
             ClassCode = ticket.Class?.Code,
             ClassTitle = ticket.Class?.Title,
             Category = ticket.Category,
+            Subject = ticket.Subject,
             Message = ticket.Message,
             Status = ticket.Status,
             AssignedToUserId = ticket.AssignedToUserId,

@@ -13,6 +13,7 @@ public class Ticket : Entity
     public Guid BranchId { get; set; }
     public Guid? ClassId { get; set; }
     public TicketCategory Category { get; set; }
+    public string Subject { get; set; } = null!;
     public string Message { get; set; } = null!;
     public TicketStatus Status { get; set; }
     public Guid? AssignedToUserId { get; set; }
