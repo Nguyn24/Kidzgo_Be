@@ -9,5 +9,6 @@ public sealed class CreateTicketCommand : ICommand<CreateTicketResponse>
     public Guid BranchId { get; init; }
     public Guid? ClassId { get; init; }
     public TicketCategory Category { get; init; }
+    public string Subject { get; init; } = null!;
     public string Message { get; init; } = null!;
 }

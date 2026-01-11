@@ -28,6 +28,10 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
             .HasMaxLength(30)
             .IsRequired();
 
+        builder.Property(x => x.Subject)
+            .HasMaxLength(200)
+            .IsRequired();
+
         builder.Property(x => x.Message)
             .IsRequired();
 

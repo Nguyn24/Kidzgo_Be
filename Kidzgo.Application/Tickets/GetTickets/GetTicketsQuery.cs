@@ -6,6 +6,7 @@ namespace Kidzgo.Application.Tickets.GetTickets;
 
 public sealed class GetTicketsQuery : IQuery<GetTicketsResponse>, IPageableQuery
 {
+    public bool? Mine { get; init; }
     public Guid? BranchId { get; init; }
     public Guid? OpenedByUserId { get; init; }
     public Guid? AssignedToUserId { get; init; }

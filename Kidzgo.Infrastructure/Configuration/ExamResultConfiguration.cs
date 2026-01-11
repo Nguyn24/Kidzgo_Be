@@ -31,6 +31,12 @@ public class ExamResultConfiguration : IEntityTypeConfiguration<ExamResult>
 
         builder.Property(x => x.GradedAt);
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Relationships
         builder.HasOne(x => x.Exam)
             .WithMany(x => x.ExamResults)
