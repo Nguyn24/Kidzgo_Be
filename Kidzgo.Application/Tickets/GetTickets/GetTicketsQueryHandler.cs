@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Tickets.GetTickets;
 
 public sealed class GetTicketsQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetTicketsQuery, GetTicketsResponse>
 {
     public async Task<Result<GetTicketsResponse>> Handle(GetTicketsQuery query, CancellationToken cancellationToken)
@@ -20,6 +22,15 @@ public sealed class GetTicketsQueryHandler(
             .Include(t => t.AssignedToUser)
             .Include(t => t.TicketComments)
             .AsQueryable();
+
+        // Filter by mine (tickets of current user)
+        if (query.Mine == true)
+        {
+            var currentUserId = userContext.UserId;
+            ticketsQuery = ticketsQuery.Where(t => 
+                t.OpenedByUserId == currentUserId || 
+                t.AssignedToUserId == currentUserId);
+        }
 
         // Filter by branch
         if (query.BranchId.HasValue)
@@ -77,6 +88,7 @@ public sealed class GetTicketsQueryHandler(
                 ClassCode = t.Class != null ? t.Class.Code : null,
                 ClassTitle = t.Class != null ? t.Class.Title : null,
                 Category = t.Category,
+                Subject = t.Subject,
                 Message = t.Message,
                 Status = t.Status,
                 AssignedToUserId = t.AssignedToUserId,

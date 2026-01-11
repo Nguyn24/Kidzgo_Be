@@ -14,6 +14,7 @@ public class Notification : Entity
     public string? Deeplink { get; set; }
     public NotificationStatus Status { get; set; }
     public DateTime? SentAt { get; set; }
+    public DateTime? ReadAt { get; set; }
     public string? TemplateId { get; set; }
     public DateTime CreatedAt { get; set; }
 

@@ -29,7 +29,36 @@ public class ExamConfiguration : IEntityTypeConfiguration<Exam>
 
         builder.Property(x => x.Description);
 
+        // Thời gian thi (cho thi tại trung tâm)
+        builder.Property(x => x.ScheduledStartTime);
+
+        builder.Property(x => x.TimeLimitMinutes);
+
+        builder.Property(x => x.AllowLateStart)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.LateStartToleranceMinutes);
+
+        // Settings
+        builder.Property(x => x.AutoSubmitOnTimeLimit)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.PreventCopyPaste)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.PreventNavigation)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.ShowResultsImmediately)
+            .HasDefaultValue(false);
+
         builder.Property(x => x.CreatedBy);
+
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
 
         // Relationships
         builder.HasOne(x => x.Class)
@@ -43,6 +72,16 @@ public class ExamConfiguration : IEntityTypeConfiguration<Exam>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.ExamResults)
+            .WithOne(x => x.Exam)
+            .HasForeignKey(x => x.ExamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.Questions)
+            .WithOne(x => x.Exam)
+            .HasForeignKey(x => x.ExamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.Submissions)
             .WithOne(x => x.Exam)
             .HasForeignKey(x => x.ExamId)
             .OnDelete(DeleteBehavior.Cascade);

@@ -76,6 +76,7 @@ public sealed class AssignTicketCommandHandler(
             ClassCode = ticketWithNav.Class?.Code,
             ClassTitle = ticketWithNav.Class?.Title,
             Category = ticketWithNav.Category,
+            Subject = ticketWithNav.Subject,
             Message = ticketWithNav.Message,
             Status = ticketWithNav.Status,
             AssignedToUserId = ticketWithNav.AssignedToUserId,

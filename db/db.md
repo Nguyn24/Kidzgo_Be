@@ -255,7 +255,19 @@ Table exams {
   date date
   max_score numeric
   description text
+  // Thời gian thi (cho thi tại trung tâm)
+  scheduled_start_time timestamptz // Thời gian bắt đầu thi (theo lịch)
+  time_limit_minutes int // Thời gian làm bài (phút)
+  allow_late_start boolean // Cho phép bắt đầu muộn
+  late_start_tolerance_minutes int // Cho phép muộn tối đa bao nhiêu phút
+  // Settings
+  auto_submit_on_time_limit boolean // Tự động nộp khi hết giờ
+  prevent_copy_paste boolean // Prevent copy/paste (frontend)
+  prevent_navigation boolean // Prevent mở tab khác (frontend)
+  show_results_immediately boolean // Hiển thị kết quả ngay sau khi nộp (cho multiple choice)
   created_by uuid [ref: - users.id]
+  created_at timestamptz
+  updated_at timestamptz
 }
 
 Table exercises {
@@ -312,6 +324,55 @@ Table exercise_submission_answers {
   }
 }
 
+Table exam_questions {
+  id uuid [pk]
+  exam_id uuid [ref: > exams.id]
+  order_index int // Order of question in the exam
+  question_text text
+  question_type varchar(20) // MULTIPLE_CHOICE/TEXT_INPUT
+  options jsonb // JSON array for multiple choice options
+  correct_answer text // Correct answer (for multiple choice: option index, for text: answer text)
+  points int // Points awarded for correct answer
+  explanation text // Explanation of the answer
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table exam_submissions {
+  id uuid [pk]
+  exam_id uuid [ref: > exams.id]
+  student_profile_id uuid [ref: > profiles.id]
+  // Thời gian thi
+  actual_start_time timestamptz // Thời gian học sinh bắt đầu làm (tại trung tâm)
+  submitted_at timestamptz // Thời gian nộp bài
+  auto_submitted_at timestamptz // Thời gian auto-submit (nếu hết giờ)
+  time_spent_minutes int // Thời gian làm bài thực tế
+  // Điểm số
+  auto_score numeric // Điểm tự động (multiple choice)
+  final_score numeric // Điểm cuối cùng (sau khi teacher chấm)
+  // Chấm bài
+  graded_by uuid [ref: - users.id]
+  graded_at timestamptz
+  teacher_comment text
+  // Trạng thái
+  status varchar(20) // NOT_STARTED/IN_PROGRESS/SUBMITTED/AUTO_SUBMITTED/GRADED
+}
+
+Table exam_submission_answers {
+  id uuid [pk]
+  submission_id uuid [ref: > exam_submissions.id]
+  question_id uuid [ref: > exam_questions.id]
+  answer text // Student's answer
+  is_correct boolean // Whether answer is correct (for auto-graded questions)
+  points_awarded numeric // Points awarded for this answer
+  teacher_feedback text // Teacher feedback (for writing questions)
+  answered_at timestamptz // Thời gian trả lời
+  
+  Indexes {
+    (submission_id, question_id) [unique]
+  }
+}
+
 Table exam_results {
   id uuid [pk]
   exam_id uuid [ref: > exams.id]
@@ -321,6 +382,8 @@ Table exam_results {
   attachment_urls jsonb // JSON array of image URLs (changed from attachment_url string)
   graded_by uuid [ref: - users.id]
   graded_at timestamptz
+  created_at timestamptz
+  updated_at timestamptz
 }
 
 Table monthly_report_jobs {
@@ -701,14 +764,15 @@ Table payroll_payments {
 
 Table notifications {
   id uuid [pk]
-    recipient_user_id uuid [ref: > users.id] // user (can be any role)
+  recipient_user_id uuid [ref: > users.id] // user (can be any role)
   recipient_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
-  channel varchar(20) // ZALO_OA/PUSH/EMAIL
+  channel varchar(20) // INAPP/ZALO_OA/PUSH/EMAIL
   title varchar(255)
   content text
   deeplink text
   status varchar(20) // PENDING/SENT/FAILED
   sent_at timestamptz
+  read_at timestamptz // Thời gian user đọc notification
   template_id varchar(100)
   created_at timestamptz
 }
@@ -728,14 +792,15 @@ Table notification_templates {
 
 Table tickets {
   id uuid [pk]
-  recipient_user_id uuid [ref: > users.id] // user (can be any role)
-  recipient_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
+  opened_by_user_id uuid [ref: > users.id] // user (can be any role)
+  opened_by_profile_id uuid [ref: - profiles.id] // optional: for PARENT/STUDENT profiles
   branch_id uuid [ref: > branches.id]
   class_id uuid [ref: - classes.id]
   category varchar(30) // HOMEWORK/FINANCE/SCHEDULE/TECH
+  subject varchar(200) // Subject/title of the ticket
   message text
   status varchar(20) // OPEN/IN_PROGRESS/RESOLVED/CLOSED
-  assigned_to_profile_id uuid [ref: - users.id]
+  assigned_to_user_id uuid [ref: - users.id]
   created_at timestamptz
   updated_at timestamptz
 }

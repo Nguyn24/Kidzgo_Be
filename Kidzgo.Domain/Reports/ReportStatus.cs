@@ -5,5 +5,6 @@ public enum ReportStatus
     Draft,
     Review,
     Approved,
-    Rejected
+    Rejected,
+    Published
 }
