@@ -1,0 +1,14 @@
+namespace Kidzgo.API.Requests;
+
+public sealed class CreateSessionRequest
+{
+    public Guid ClassId { get; set; }
+    public DateTime PlannedDatetime { get; set; }
+    public int DurationMinutes { get; set; }
+    public Guid? PlannedRoomId { get; set; }
+    public Guid? PlannedTeacherId { get; set; }
+    public Guid? PlannedAssistantId { get; set; }
+    public string ParticipationType { get; set; } = "Main";
+}
+
+
