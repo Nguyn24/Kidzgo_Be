@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Users.Admin.AssignBranch;
 using Kidzgo.Application.Users.Admin.CreateUser;
 using Kidzgo.Application.Users.Admin.GetAllUser;
 using Kidzgo.Application.Users.Admin.GetUserById;
@@ -52,9 +53,7 @@ public class AdminUserController : ControllerBase
     }
 
   
-    /// <summary>
-    /// UC-372: Xem chi tiết User
-    /// </summary>
+   
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetUserById(
         Guid id,
@@ -107,6 +106,7 @@ public class AdminUserController : ControllerBase
     }
 
   
+   
     [HttpDelete("{id:guid}")]
     public async Task<IResult> DeleteUser(
         Guid id,
@@ -116,6 +116,23 @@ public class AdminUserController : ControllerBase
         {
             UserId = id,
             isDeleted = true
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+
+    [HttpPatch("{id:guid}/assign-branch")]
+    public async Task<IResult> AssignBranch(
+        Guid id,
+        [FromBody] AssignBranchRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AssignBranchCommand
+        {
+            UserId = id,
+            BranchId = request.BranchId
         };
 
         var result = await _mediator.Send(command, cancellationToken);

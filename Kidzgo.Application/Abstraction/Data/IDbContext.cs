@@ -100,7 +100,7 @@ public interface IDbContext
     DbSet<StudentMonthlyReport> StudentMonthlyReports { get; }
 
     // Sessions
-    DbSet<Attendance> Attendances { get; }
+    DbSet<Domain.Sessions.Attendance> Attendances { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
     DbSet<MakeupAllocation> MakeupAllocations { get; }
     DbSet<MakeupCredit> MakeupCredits { get; }
