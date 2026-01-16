@@ -14,6 +14,16 @@ public sealed class GetUsersResponse
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public List<UserProfileDto> Profiles { get; set; } = new();
+}
+
+public sealed class UserProfileDto
+{
+    public Guid Id { get; set; }
+    public ProfileType ProfileType { get; set; }
+    public string DisplayName { get; set; } = null!;
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 

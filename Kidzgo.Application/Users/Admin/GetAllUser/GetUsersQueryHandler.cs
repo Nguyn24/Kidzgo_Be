@@ -14,6 +14,7 @@ public sealed class GetUsersQueryHandler(IDbContext context)
     {
         var query = context.Users
             .Include(u => u.Branch)
+            .Include(u => u.Profiles.Where(p => !p.IsDeleted))
             .Where(u => !u.IsDeleted);
 
         // Apply filters
@@ -34,22 +35,34 @@ public sealed class GetUsersQueryHandler(IDbContext context)
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var result = await query
+        var users = await query
             .ApplyPagination(request.PageNumber, request.PageSize)
-            .Select(u => new GetUsersResponse
-            {
-                Id = u.Id,
-                Username = u.Username,
-                Name = u.Name,
-                Email = u.Email,
-                Role = u.Role,
-                BranchId = u.BranchId,
-                BranchName = u.Branch != null ? u.Branch.Name : null,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt,
-                UpdatedAt = u.UpdatedAt
-            })
             .ToListAsync(cancellationToken);
+
+        var result = users.Select(u => new GetUsersResponse
+        {
+            Id = u.Id,
+            Username = u.Username,
+            Name = u.Name,
+            Email = u.Email,
+            Role = u.Role,
+            BranchId = u.BranchId,
+            BranchName = u.Branch != null ? u.Branch.Name : null,
+            IsActive = u.IsActive,
+            CreatedAt = u.CreatedAt,
+            UpdatedAt = u.UpdatedAt,
+            Profiles = u.Profiles
+                .Where(p => !p.IsDeleted)
+                .Select(p => new UserProfileDto
+                {
+                    Id = p.Id,
+                    ProfileType = p.ProfileType,
+                    DisplayName = p.DisplayName,
+                    IsActive = p.IsActive,
+                    CreatedAt = p.CreatedAt
+                })
+                .ToList()
+        }).ToList();
 
         return new Page<GetUsersResponse>(
             result,
