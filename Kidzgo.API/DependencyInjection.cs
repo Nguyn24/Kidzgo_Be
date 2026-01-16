@@ -7,7 +7,8 @@ public static class DependencyInjection
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        // Swagger is already added in Program.cs via AddSwaggerGenWithAuth()
+        // services.AddSwaggerGen(); // Removed to avoid conflict
 
         services.AddControllers();
 
