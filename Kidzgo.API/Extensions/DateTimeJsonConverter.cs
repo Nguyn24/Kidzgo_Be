@@ -147,3 +147,71 @@ public class NullableDateTimeJsonConverter : JsonConverter<DateTime?>
     }
 }
 
+public class DateOnlyJsonConverter : JsonConverter<DateOnly>
+{
+    public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var dateString = reader.GetString();
+            if (DateOnly.TryParse(dateString, out var date))
+            {
+                return date;
+            }
+        }
+        else if (reader.TokenType == JsonTokenType.Null)
+        {
+            return default;
+        }
+
+        return DateOnly.FromDateTime(reader.GetDateTime());
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+    {
+        // Format: "2025-11-23" (ISO 8601 date format)
+        var formatted = value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        writer.WriteStringValue(formatted);
+    }
+}
+
+public class NullableDateOnlyJsonConverter : JsonConverter<DateOnly?>
+{
+    public override DateOnly? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var dateString = reader.GetString();
+            if (string.IsNullOrEmpty(dateString))
+            {
+                return null;
+            }
+
+            if (DateOnly.TryParse(dateString, out var date))
+            {
+                return date;
+            }
+        }
+
+        var dateTime = reader.GetDateTime();
+        return DateOnly.FromDateTime(dateTime);
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateOnly? value, JsonSerializerOptions options)
+    {
+        if (!value.HasValue)
+        {
+            writer.WriteNullValue();
+            return;
+        }
+
+        // Format: "2025-11-23" (ISO 8601 date format)
+        var formatted = value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        writer.WriteStringValue(formatted);
+    }
+}
