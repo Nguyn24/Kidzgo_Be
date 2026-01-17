@@ -2618,7 +2618,7 @@ Base URL: `/api/exams`
 
 Base URL: `/api/tickets`
 
-### 8.1. Create Ticket
+### 9.1. Create Ticket
 
 **Endpoint:** `POST /api/tickets`
 
@@ -2678,7 +2678,7 @@ Base URL: `/api/tickets`
 
 ---
 
-### 8.2. Get Tickets
+### 9.2. Get Tickets
 
 **Endpoint:** `GET /api/tickets`
 
@@ -2740,7 +2740,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.3. Get Ticket By ID
+### 9.3. Get Ticket By ID
 
 **Endpoint:** `GET /api/tickets/{id}`
 
@@ -2795,7 +2795,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.4. Assign Ticket
+### 9.4. Assign Ticket
 
 **Endpoint:** `PATCH /api/tickets/{id}/assign`
 
@@ -2823,7 +2823,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.5. Update Ticket Status
+### 9.5. Update Ticket Status
 
 **Endpoint:** `PATCH /api/tickets/{id}/status`
 
@@ -2854,7 +2854,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.6. Add Ticket Comment
+### 9.6. Add Ticket Comment
 
 **Endpoint:** `POST /api/tickets/{id}/comments`
 
@@ -2903,7 +2903,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.7. Get Ticket History
+### 9.7. Get Ticket History
 
 **Endpoint:** `GET /api/tickets/{id}/history`
 
@@ -2962,7 +2962,7 @@ GET /api/tickets?status=Open&category=Homework&pageNumber=1&pageSize=10
 
 ---
 
-### 8.8. Get Ticket SLA
+### 9.8. Get Ticket SLA
 
 **Endpoint:** `GET /api/tickets/{id}/sla`
 
@@ -3136,7 +3136,7 @@ GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
 
 Base URL: `/api/blogs`
 
-### 9.1. Create Blog
+### 11.1. Create Blog
 
 **Endpoint:** `POST /api/blogs`
 
@@ -3184,7 +3184,7 @@ Base URL: `/api/blogs`
 
 ---
 
-### 9.2. Get Blogs
+### 11.2. Get Blogs
 
 **Endpoint:** `GET /api/blogs`
 
@@ -3235,7 +3235,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.3. Get Blog By ID
+### 11.3. Get Blog By ID
 
 **Endpoint:** `GET /api/blogs/{id}`
 
@@ -3272,7 +3272,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.4. Update Blog
+### 11.4. Update Blog
 
 **Endpoint:** `PUT /api/blogs/{id}`
 
@@ -3301,7 +3301,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.5. Delete Blog
+### 11.5. Delete Blog
 
 **Endpoint:** `DELETE /api/blogs/{id}`
 
@@ -3331,7 +3331,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.6. Publish Blog
+### 11.6. Publish Blog
 
 **Endpoint:** `PATCH /api/blogs/{id}/publish`
 
@@ -3364,7 +3364,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.7. Unpublish Blog
+### 11.7. Unpublish Blog
 
 **Endpoint:** `PATCH /api/blogs/{id}/unpublish`
 
@@ -3396,7 +3396,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 ---
 
-### 9.8. Get Published Blogs
+### 11.8. Get Published Blogs
 
 **Endpoint:** `GET /api/blogs/published`
 
@@ -3441,7 +3441,7 @@ GET /api/blogs?isPublished=true&pageNumber=1&pageSize=10
 
 Base URL: `/api/files`
 
-### 10.1. Upload File
+### 12.1. Upload File
 
 **Endpoint:** `POST /api/files/upload`
 
@@ -3497,7 +3497,7 @@ curl -X 'POST' \
 
 ---
 
-### 10.2. Delete File
+### 12.2. Delete File
 
 **Endpoint:** `DELETE /api/files?url={publicUrl}`
 
@@ -3526,7 +3526,7 @@ DELETE /api/files?url=https://res.cloudinary.com/dbvjdx05r/image/upload/v1767628
 
 ---
 
-### 10.3. Get Transformed URL
+### 12.3. Get Transformed URL
 
 **Endpoint:** `GET /api/files/transform?url={publicUrl}&width=800&height=600&format=webp`
 
@@ -3654,7 +3654,7 @@ Trong Swagger UI, bạn có thể:
 
 Base URL: `/api/`
 
-### 11.1. Get Branches
+### 13.1. Get Branches
 
 **Endpoint:** `GET /api/branches`
 
@@ -3688,7 +3688,7 @@ Base URL: `/api/`
 
 ---
 
-### 11.2. Get Levels
+### 13.2. Get Levels
 
 **Endpoint:** `GET /api/levels`
 
@@ -3712,7 +3712,7 @@ Base URL: `/api/`
 
 ---
 
-### 11.3. Get Roles
+### 13.3. Get Roles
 
 **Endpoint:** `GET /api/roles`
 
@@ -3741,7 +3741,7 @@ Base URL: `/api/`
 
 ---
 
-### 11.4. Get Lookups
+### 13.4. Get Lookups
 
 **Endpoint:** `GET /api/lookups`
 
@@ -3822,7 +3822,7 @@ Base URL: `/api/`
 
 Base URL: `/api/teacher`
 
-### 12.1. Get Teacher Classes
+### 14.1. Get Teacher Classes
 
 **Endpoint:** `GET /api/teacher/classes`
 
@@ -3877,7 +3877,7 @@ Base URL: `/api/teacher`
 
 ---
 
-### 12.2. Get Teacher Timetable
+### 14.2. Get Teacher Timetable
 
 **Endpoint:** `GET /api/teacher/timetable`
 
@@ -3940,7 +3940,7 @@ GET /api/teacher/timetable?from=2025-01-01&to=2025-01-31
 
 Base URL: `/api/students`
 
-### 13.1. Get Student Classes
+### 15.1. Get Student Classes
 
 **Endpoint:** `GET /api/students/{studentId}/classes`
 
@@ -4000,7 +4000,7 @@ Base URL: `/api/students`
 
 ---
 
-### 13.2. Get Student Timetable
+### 15.2. Get Student Timetable
 
 **Endpoint:** `GET /api/students/{studentId}/timetable`
 
@@ -4069,7 +4069,7 @@ GET /api/students/11111111-1111-1111-1111-111111111100/timetable?from=2025-01-01
 
 Base URL: `/api/sessions`
 
-### 14.1. Get Session By ID
+### 16.1. Get Session By ID
 
 **Endpoint:** `GET /api/sessions/{sessionId}`
 
@@ -4140,7 +4140,7 @@ Base URL: `/api/sessions`
 
 Base URL: `/api/media`
 
-### 15.1. Create Media
+### 17.1. Create Media
 
 **Endpoint:** `POST /api/media`
 
@@ -4215,7 +4215,7 @@ Base URL: `/api/media`
 
 ---
 
-### 15.2. Get Media
+### 17.2. Get Media
 
 **Endpoint:** `GET /api/media`
 
@@ -4282,7 +4282,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.3. Get Media By ID
+### 17.3. Get Media By ID
 
 **Endpoint:** `GET /api/media/{id}`
 
@@ -4329,7 +4329,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.4. Update Media
+### 17.4. Update Media
 
 **Endpoint:** `PUT /api/media/{id}`
 
@@ -4376,7 +4376,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.5. Delete Media
+### 17.5. Delete Media
 
 **Endpoint:** `DELETE /api/media/{id}`
 
@@ -4400,7 +4400,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.6. Approve Media
+### 17.6. Approve Media
 
 **Endpoint:** `POST /api/media/{id}/approve`
 
@@ -4431,7 +4431,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.7. Reject Media
+### 17.7. Reject Media
 
 **Endpoint:** `POST /api/media/{id}/reject`
 
@@ -4460,7 +4460,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 ---
 
-### 15.8. Publish Media
+### 17.8. Publish Media
 
 **Endpoint:** `POST /api/media/{id}/publish`
 
@@ -4495,7 +4495,7 @@ GET /api/media?classId=guid&isPublished=true&pageNumber=1&pageSize=20
 
 Base URL: `/api/admin/users`
 
-### 16.1. Get Users
+### 18.1. Get Users
 
 **Endpoint:** `GET /api/admin/users`
 
@@ -4544,7 +4544,7 @@ GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
 
 ---
 
-### 16.2. Get User By ID
+### 18.2. Get User By ID
 
 **Endpoint:** `GET /api/admin/users/{id}`
 
@@ -4579,7 +4579,7 @@ GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
 
 ---
 
-### 16.3. Create User
+### 18.3. Create User
 
 **Endpoint:** `POST /api/admin/users`
 
@@ -4628,7 +4628,7 @@ GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
 
 ---
 
-### 16.4. Update User
+### 18.4. Update User
 
 **Endpoint:** `PUT /api/admin/users/{id}`
 
@@ -4671,7 +4671,7 @@ GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
 
 ---
 
-### 16.5. Delete User
+### 18.5. Delete User
 
 **Endpoint:** `DELETE /api/admin/users/{id}`
 
