@@ -29,7 +29,7 @@ public class BlogController : ControllerBase
     /// UC-349: Admin/Staff tạo Blog Post
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> CreateBlog(
         [FromBody] CreateBlogRequest request,
         CancellationToken cancellationToken)
@@ -46,16 +46,9 @@ public class BlogController : ControllerBase
         return result.MatchCreated(b => $"/api/blogs/{b.Id}");
     }
 
-    /// <summary>
-    /// UC-350: Xem danh sách Blog Posts
-    /// </summary>
-    /// <param name="createdBy">Filter by creator user ID</param>
-    /// <param name="isPublished">Filter by published status</param>
-    /// <param name="includeDeleted">Include deleted blogs (default: false)</param>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
+    
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> GetBlogs(
         [FromQuery] Guid? createdBy,
         [FromQuery] bool? isPublished,
@@ -77,9 +70,7 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-351: Xem chi tiết Blog Post
-    /// </summary>
+   
     [HttpGet("{id:guid}")]
     [Authorize]
     public async Task<IResult> GetBlogById(
@@ -95,11 +86,9 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-352: Cập nhật Blog Post
-    /// </summary>
+ 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> UpdateBlog(
         Guid id,
         [FromBody] UpdateBlogRequest request,
@@ -118,11 +107,9 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-353: Xóa mềm Blog Post
-    /// </summary>
+ 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> DeleteBlog(
         Guid id,
         CancellationToken cancellationToken)
@@ -140,7 +127,7 @@ public class BlogController : ControllerBase
     /// UC-354: Publish Blog Post
     /// </summary>
     [HttpPatch("{id:guid}/publish")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> PublishBlog(
         Guid id,
         CancellationToken cancellationToken)
@@ -158,7 +145,7 @@ public class BlogController : ControllerBase
     /// UC-355: Unpublish Blog Post
     /// </summary>
     [HttpPatch("{id:guid}/unpublish")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     public async Task<IResult> UnpublishBlog(
         Guid id,
         CancellationToken cancellationToken)

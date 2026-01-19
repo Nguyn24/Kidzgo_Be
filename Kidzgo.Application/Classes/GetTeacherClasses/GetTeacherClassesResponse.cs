@@ -22,7 +22,7 @@ public sealed class TeacherClassDto
     public string? AssistantTeacherName { get; init; }
     public DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
-    public Domain.Classes.ClassStatus Status { get; init; }
+    public string Status { get; init; } = null!;
     public int Capacity { get; init; }
     public int CurrentEnrollmentCount { get; init; }
     public string? SchedulePattern { get; init; }

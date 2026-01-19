@@ -25,8 +25,8 @@ public sealed class GetStudentAttendanceHistoryQueryHandler(IDbContext context)
                 Id = a.Id,
                 SessionId = a.SessionId,
                 SessionDateTime = a.Session.PlannedDatetime,
-                AttendanceStatus = a.AttendanceStatus,
-                AbsenceType = a.AbsenceType
+                AttendanceStatus = a.AttendanceStatus.ToString(),
+                AbsenceType = a.AbsenceType.HasValue ? a.AbsenceType.Value.ToString() : null
             })
             .ToListAsync(cancellationToken);
 

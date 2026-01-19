@@ -23,9 +23,7 @@ public sealed class CompleteSessionCommandHandler(
 
         if (session.Status == SessionStatus.Cancelled)
         {
-            return Result.Failure(
-                Error.Validation("Session.Cancelled",
-                    "Cancelled sessions cannot be completed"));
+            return Result.Failure(SessionErrors.Cancelled);
         }
 
         var actualUtc = command.ActualDatetime switch
@@ -44,8 +42,5 @@ public sealed class CompleteSessionCommandHandler(
         return Result.Success();
     }
 }
-
-
-
 
 

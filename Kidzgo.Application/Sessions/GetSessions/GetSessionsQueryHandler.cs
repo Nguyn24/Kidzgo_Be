@@ -102,6 +102,3 @@ public sealed class GetSessionsQueryHandler(
 }
 
 
-
-
-

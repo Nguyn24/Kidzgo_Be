@@ -1,4 +1,5 @@
 using Kidzgo.API.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Kidzgo.API;
 
@@ -14,6 +15,12 @@ public static class DependencyInjection
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+        
+        // Configure authorization to return proper status codes
+        services.Configure<AuthorizationOptions>(options =>
+        {
+            options.FallbackPolicy = null; // Don't require auth by default
+        });
         services.AddCors(options =>
         {
             options.AddPolicy("AllowLocalAndProdFE", policy =>

@@ -11,6 +11,3 @@ public sealed class UpdateSessionRequest
 }
 
 
-
-
-

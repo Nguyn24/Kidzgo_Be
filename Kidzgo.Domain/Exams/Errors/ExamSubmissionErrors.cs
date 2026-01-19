@@ -47,6 +47,10 @@ public static class ExamSubmissionErrors
     public static Error AlreadyGraded => Error.Conflict(
         "ExamSubmission.AlreadyGraded",
         "Exam submission has already been graded");
+
+    public static Error InvalidStatus => Error.Validation(
+        "ExamSubmission.InvalidStatus",
+        "Can only grade submitted or auto-submitted exams");
 }
 
 

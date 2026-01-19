@@ -27,8 +27,8 @@ public sealed class GetMakeupCreditsQueryHandler(IDbContext context)
                 Id = c.Id,
                 StudentProfileId = c.StudentProfileId,
                 SourceSessionId = c.SourceSessionId,
-                Status = c.Status,
-                CreatedReason = c.CreatedReason,
+                Status = c.Status.ToString(),
+                CreatedReason = c.CreatedReason.ToString(),
                 ExpiresAt = c.ExpiresAt,
                 UsedSessionId = c.UsedSessionId,
                 CreatedAt = c.CreatedAt

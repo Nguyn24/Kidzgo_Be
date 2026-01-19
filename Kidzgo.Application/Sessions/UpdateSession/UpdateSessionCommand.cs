@@ -15,6 +15,3 @@ public sealed class UpdateSessionCommand : ICommand<UpdateSessionResponse>
 }
 
 
-
-
-

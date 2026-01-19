@@ -39,5 +39,9 @@ public static class ProfileErrors
     public static readonly Error LinkNotFound = Error.NotFound(
         "Profile.LinkNotFound",
         "Parent-Student link not found");
+
+    public static readonly Error EmailNotSet = Error.Validation(
+        "Profile.EmailNotSet",
+        "Email is required for PIN reset.");
 }
 

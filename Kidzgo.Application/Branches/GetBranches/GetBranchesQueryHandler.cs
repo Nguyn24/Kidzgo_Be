@@ -44,7 +44,6 @@ public sealed class GetBranchesQueryHandler(
         }
 
         var branches = await branchesQuery
-            .Where(b => b.IsActive)
             .OrderBy(b => b.Name)
             .Select(b => new BranchDto
             {

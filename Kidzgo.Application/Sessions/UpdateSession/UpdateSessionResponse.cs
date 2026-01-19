@@ -8,6 +8,3 @@ public sealed class UpdateSessionResponse
 }
 
 
-
-
-

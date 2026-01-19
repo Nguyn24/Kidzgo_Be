@@ -1,6 +1,8 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Requests;
 using Kidzgo.Application.Authentication.Logout;
 using Kidzgo.Application.Users.GetCurrentUser;
+using Kidzgo.Application.Users.UpdateCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +28,30 @@ public class UserController : ControllerBase
     public async Task<IResult> GetCurrentUser(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetCurrentUserQuery(), cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Update current user information and profiles
+    /// </summary>
+    [HttpPut]
+    public async Task<IResult> UpdateCurrentUser(
+        [FromBody] UpdateCurrentUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateCurrentUserCommand
+        {
+            FullName = request.FullName,
+            Email = request.Email,
+            AvatarUrl = request.AvatarUrl,
+            Profiles = request.Profiles?.Select(p => new UpdateProfileDto
+            {
+                Id = p.Id,
+                DisplayName = p.DisplayName
+            }).ToList()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
 

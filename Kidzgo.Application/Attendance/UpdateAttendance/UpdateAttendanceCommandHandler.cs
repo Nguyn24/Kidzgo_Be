@@ -33,8 +33,8 @@ public sealed class UpdateAttendanceCommandHandler(IDbContext context)
             Id = attendance.Id,
             SessionId = attendance.SessionId,
             StudentProfileId = attendance.StudentProfileId,
-            AttendanceStatus = attendance.AttendanceStatus,
-            AbsenceType = attendance.AbsenceType
+            AttendanceStatus = attendance.AttendanceStatus.ToString(),
+            AbsenceType = attendance.AbsenceType.HasValue ? attendance.AbsenceType.Value.ToString() : null
         };
     }
 }
