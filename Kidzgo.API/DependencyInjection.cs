@@ -18,7 +18,7 @@ public static class DependencyInjection
         {
             options.AddPolicy("AllowLocalAndProdFE", policy =>
                 policy.WithOrigins(
-                        "http://localhost:5173",
+                        "http://localhost:3000",
                         "https://kidzgo-centre-pvjj.vercel.app"
                     )
                     .AllowAnyHeader()
