@@ -404,6 +404,7 @@
 ### 14.1. Invoices
 - UC-253: Tạo Invoice (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE)
 - UC-254: Xem danh sách Invoices
+- UC-254a: Xem danh sách Invoices của Parent (filter theo parentId, status)
 - UC-255: Xem chi tiết Invoice
 - UC-256: Cập nhật Invoice
 - UC-257: Hủy Invoice (CANCELLED)
@@ -415,13 +416,14 @@
 - UC-263: Đánh dấu Invoice OVERDUE
 
 ### 14.2. Payments
-- UC-264: Thanh toán qua PayOS (webhook)
+- UC-264: Thanh toán qua PayOS (webhook) - tự động update invoice status + ghi Cashbook Entry
 - UC-265: Thanh toán bằng tiền mặt
 - UC-266: Thanh toán chuyển khoản
 - UC-267: Xác nhận thanh toán (Staff)
 - UC-268: Upload chứng từ thanh toán
 - UC-269: Cập nhật Invoice status sau thanh toán
 - UC-270: Xem lịch sử Payments của Invoice
+- UC-270a: Xem lịch sử Payments của Parent (filter theo from/to)
 
 ### 14.3. Cashbook
 - UC-271: Tạo Cashbook Entry (CASH_IN/CASH_OUT)
@@ -605,7 +607,7 @@
 
 ## Tổng kết
 
-**Tổng số Use Cases**: 413
+**Tổng số Use Cases**: 415
 
 **Phân bổ theo nhóm và độ khó**:
 
@@ -633,10 +635,10 @@
 **Tổng**: 214 use cases
 
 ### 🔴 Khó (Tính toán phức tạp, workflow nhiều bước, tích hợp bên ngoài)
-- Finance Management: 31
+- Finance Management: 33
 - Notifications: 18
 - Payroll Management: 41
-**Tổng**: 90 use cases
+**Tổng**: 92 use cases
 
-**Tỷ lệ**: Dễ 29% | Trung bình 48% | Khó 22%
+**Tỷ lệ**: Dễ 25% | Trung bình 52% | Khó 22%
 
