@@ -6,7 +6,7 @@ public sealed class GetProfilesResponse
 {
     public Guid Id { get; set; }
     public string DisplayName { get; set; } = null!;
-    public ProfileType ProfileType { get; set; }
+    public string ProfileType { get; set; } = null!;
 }
 
 

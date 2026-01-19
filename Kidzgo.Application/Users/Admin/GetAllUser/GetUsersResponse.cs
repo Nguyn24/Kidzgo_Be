@@ -20,7 +20,7 @@ public sealed class GetUsersResponse
 public sealed class UserProfileDto
 {
     public Guid Id { get; set; }
-    public ProfileType ProfileType { get; set; }
+    public string ProfileType { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
