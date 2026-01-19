@@ -7,8 +7,8 @@ public sealed class MarkAttendanceResponse
     public Guid Id { get; init; }
     public Guid SessionId { get; init; }
     public Guid StudentProfileId { get; init; }
-    public AttendanceStatus AttendanceStatus { get; init; }
-    public AbsenceType? AbsenceType { get; init; }
+    public string AttendanceStatus { get; init; } = null!;
+    public string? AbsenceType { get; init; }
     public DateTime? MarkedAt { get; init; }
 }
 

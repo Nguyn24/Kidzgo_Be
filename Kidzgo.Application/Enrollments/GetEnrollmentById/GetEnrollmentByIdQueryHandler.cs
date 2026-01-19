@@ -40,7 +40,7 @@ public sealed class GetEnrollmentByIdQueryHandler(
             StudentProfileId = enrollment.StudentProfileId,
             StudentName = enrollment.StudentProfile.DisplayName,
             EnrollDate = enrollment.EnrollDate,
-            Status = enrollment.Status,
+            Status = enrollment.Status.ToString(),
             TuitionPlanId = enrollment.TuitionPlanId,
             TuitionPlanName = enrollment.TuitionPlan?.Name,
             CreatedAt = enrollment.CreatedAt,

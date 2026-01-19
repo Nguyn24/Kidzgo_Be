@@ -29,9 +29,7 @@ public sealed class RequestParentPinResetCommandHandler(
 
         if (string.IsNullOrWhiteSpace(profile.User.Email))
         {
-            return Result.Failure(Error.Validation(
-                "Profile.EmailNotSet",
-                "Email is required for PIN reset."));
+            return Result.Failure(ProfileErrors.EmailNotSet);
         }
 
         // Raise domain event để gửi email

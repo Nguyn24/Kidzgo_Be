@@ -49,3 +49,14 @@ public static class ClassErrors
         "Cannot change status from Closed to Planned");
 }
 
+public static class ScheduleErrors
+{
+    public static Error Empty => Error.Validation(
+        "SchedulePattern.Empty",
+        "Schedule pattern cannot be empty");
+
+    public static Error Invalid(string message) => Error.Validation(
+        "SchedulePattern.Invalid",
+        $"Invalid RRULE pattern: {message}");
+}
+

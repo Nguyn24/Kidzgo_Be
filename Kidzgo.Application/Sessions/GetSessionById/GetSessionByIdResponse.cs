@@ -16,8 +16,8 @@ public sealed class SessionDetailDto
     public DateTime PlannedDatetime { get; init; }
     public DateTime? ActualDatetime { get; init; }
     public int DurationMinutes { get; init; }
-    public Domain.Sessions.ParticipationType ParticipationType { get; init; }
-    public Domain.Sessions.SessionStatus Status { get; init; }
+    public string ParticipationType { get; init; } = null!;
+    public string Status { get; init; } = null!;
     public Guid? PlannedRoomId { get; init; }
     public string? PlannedRoomName { get; init; }
     public Guid? ActualRoomId { get; init; }

@@ -14,7 +14,7 @@ namespace Kidzgo.API.Controllers;
 
 [Route("api/branches")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class BranchController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -24,9 +24,7 @@ public class BranchController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// UC-384: Tạo Branch
-    /// </summary>
+
     [HttpPost]
     public async Task<IResult> CreateBranch(
         [FromBody] CreateBranchRequest request,
@@ -45,9 +43,7 @@ public class BranchController : ControllerBase
         return result.MatchCreated(b => $"/api/branches/{b.Id}");
     }
 
-    /// <summary>
-    /// UC-385: Xem danh sách Branches
-    /// </summary>
+    
     [HttpGet]
     [AllowAnonymous]
     public async Task<IResult> GetBranches(CancellationToken cancellationToken)
@@ -57,9 +53,7 @@ public class BranchController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-386: Xem chi tiết Branch
-    /// </summary>
+    
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IResult> GetBranchById(
@@ -75,9 +69,7 @@ public class BranchController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-387: Cập nhật Branch
-    /// </summary>
+  
     [HttpPut("{id:guid}")]
     public async Task<IResult> UpdateBranch(
         Guid id,
@@ -98,9 +90,7 @@ public class BranchController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-388: Xóa Branch (soft delete - set IsActive = false)
-    /// </summary>
+   
     [HttpDelete("{id:guid}")]
     public async Task<IResult> DeleteBranch(
         Guid id,
@@ -115,9 +105,7 @@ public class BranchController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-389: Kích hoạt/Vô hiệu hóa Branch
-    /// </summary>
+    
     [HttpPatch("{id:guid}/status")]
     public async Task<IResult> ToggleBranchStatus(
         Guid id,

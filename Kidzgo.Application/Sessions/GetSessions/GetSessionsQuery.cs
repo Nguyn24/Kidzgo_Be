@@ -16,6 +16,3 @@ public sealed class GetSessionsQuery : IQuery<GetSessionsResponse>, IPageableQue
 }
 
 
-
-
-

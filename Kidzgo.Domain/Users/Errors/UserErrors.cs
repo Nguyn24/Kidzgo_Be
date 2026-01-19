@@ -60,4 +60,12 @@ public static class UserErrors
     public static readonly Error RoleRequired = Error.Validation(
         "Users.RoleRequired",
         "Role is required. Valid values: Admin, Staff, Teacher, Student, Parent");
+    
+    public static Error EmailAlreadyExists(string email) => Error.Conflict(
+        "User.EmailAlreadyExists",
+        $"Email '{email}' is already in use.");
+
+    public static Error InvalidRoleForBranchAssignment => Error.Validation(
+        "User.InvalidRole",
+        "Only Teacher and Staff can be assigned to a branch");
 }

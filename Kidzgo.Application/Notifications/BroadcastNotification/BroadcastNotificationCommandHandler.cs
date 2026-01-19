@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Notifications;
+using Kidzgo.Domain.Notifications.Errors;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -89,14 +90,12 @@ public sealed class BroadcastNotificationCommandHandler(
         else
         {
             // No filters specified
-            return Result.Failure<BroadcastNotificationResponse>(
-                Error.Validation("Notification.InvalidFilters", "At least one filter must be specified"));
+            return Result.Failure<BroadcastNotificationResponse>(NotificationErrors.InvalidFilters);
         }
 
         if (recipientUserIds.Count == 0)
         {
-            return Result.Failure<BroadcastNotificationResponse>(
-                Error.Validation("Notification.NoRecipients", "No recipients found matching the filters"));
+            return Result.Failure<BroadcastNotificationResponse>(NotificationErrors.NoRecipients);
         }
 
         // Create notifications for each recipient
