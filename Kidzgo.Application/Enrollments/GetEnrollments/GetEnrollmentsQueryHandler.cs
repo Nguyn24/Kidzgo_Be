@@ -52,7 +52,7 @@ public sealed class GetEnrollmentsQueryHandler(
                 StudentProfileId = e.StudentProfileId,
                 StudentName = e.StudentProfile.DisplayName,
                 EnrollDate = e.EnrollDate,
-                Status = e.Status,
+                Status = e.Status.ToString(),
                 TuitionPlanId = e.TuitionPlanId,
                 TuitionPlanName = e.TuitionPlan != null ? e.TuitionPlan.Name : null
             })

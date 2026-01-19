@@ -45,7 +45,7 @@ public sealed class GetUsersQueryHandler(IDbContext context)
             Username = u.Username,
             Name = u.Name,
             Email = u.Email,
-            Role = u.Role,
+            Role = u.Role.ToString(),
             BranchId = u.BranchId,
             BranchName = u.Branch != null ? u.Branch.Name : null,
             IsActive = u.IsActive,

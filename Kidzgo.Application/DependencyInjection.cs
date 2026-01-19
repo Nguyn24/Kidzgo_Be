@@ -1,5 +1,6 @@
 using FluentValidation;
 using Kidzgo.Application.Abstraction.Behaviors;
+using Kidzgo.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kidzgo.Application;
@@ -16,6 +17,7 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+        services.AddScoped<SessionConflictChecker>();
         return services;
     }
 }

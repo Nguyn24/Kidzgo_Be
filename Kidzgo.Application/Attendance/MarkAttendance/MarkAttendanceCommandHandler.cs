@@ -81,8 +81,8 @@ public sealed class MarkAttendanceCommandHandler(IDbContext context, IUserContex
             Id = attendance.Id,
             SessionId = attendance.SessionId,
             StudentProfileId = attendance.StudentProfileId,
-            AttendanceStatus = attendance.AttendanceStatus,
-            AbsenceType = attendance.AbsenceType,
+            AttendanceStatus = attendance.AttendanceStatus.ToString(),
+            AbsenceType = attendance.AbsenceType.HasValue ? attendance.AbsenceType.Value.ToString() : null,
             MarkedAt = attendance.MarkedAt
         };
     }

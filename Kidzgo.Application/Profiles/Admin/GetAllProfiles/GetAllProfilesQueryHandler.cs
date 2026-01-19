@@ -44,7 +44,7 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
                 Id = p.Id,
                 UserId = p.UserId,
                 UserEmail = p.User.Email,
-                ProfileType = p.ProfileType,
+                ProfileType = p.ProfileType.ToString(),
                 DisplayName = p.DisplayName,
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,

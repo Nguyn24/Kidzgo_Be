@@ -14,9 +14,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kidzgo.API.Controllers;
 
-[Route("api/admin/profiles")]
+[Route("api/profiles")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class ProfileController : ControllerBase
 {
     private readonly ISender _mediator;

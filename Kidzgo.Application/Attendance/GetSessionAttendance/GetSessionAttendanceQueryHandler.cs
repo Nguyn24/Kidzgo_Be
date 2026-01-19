@@ -18,8 +18,8 @@ public sealed class GetSessionAttendanceQueryHandler(IDbContext context)
                 Id = a.Id,
                 StudentProfileId = a.StudentProfileId,
                 StudentName = a.StudentProfile.DisplayName,
-                AttendanceStatus = a.AttendanceStatus,
-                AbsenceType = a.AbsenceType,
+                AttendanceStatus = a.AttendanceStatus.ToString(),
+                AbsenceType = a.AbsenceType.HasValue ? a.AbsenceType.Value.ToString() : null,
                 HasMakeupCredit = context.MakeupCredits.Any(c =>
                     c.StudentProfileId == a.StudentProfileId &&
                     c.Status == Kidzgo.Domain.Sessions.MakeupCreditStatus.Available)

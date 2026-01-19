@@ -23,8 +23,7 @@ public sealed class CancelSessionCommandHandler(
 
         if (session.Status == SessionStatus.Cancelled)
         {
-            return Result.Failure(
-                Error.Validation("Session.AlreadyCancelled", "Session is already cancelled"));
+            return Result.Failure(SessionErrors.AlreadyCancelled);
         }
 
         session.Status = SessionStatus.Cancelled;
@@ -35,8 +34,5 @@ public sealed class CancelSessionCommandHandler(
         return Result.Success();
     }
 }
-
-
-
 
 

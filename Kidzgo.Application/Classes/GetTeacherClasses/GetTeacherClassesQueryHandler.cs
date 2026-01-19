@@ -48,7 +48,7 @@ public sealed class GetTeacherClassesQueryHandler(
                 AssistantTeacherName = c.AssistantTeacher != null ? c.AssistantTeacher.Name : null,
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
-                Status = c.Status,
+                Status = c.Status.ToString(),
                 Capacity = c.Capacity,
                 CurrentEnrollmentCount = c.ClassEnrollments.Count(ce => ce.Status == EnrollmentStatus.Active),
                 SchedulePattern = c.SchedulePattern,

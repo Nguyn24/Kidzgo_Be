@@ -1,11 +1,16 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Sessions.CancelSession;
+using Kidzgo.Application.Sessions.CheckSessionConflicts;
 using Kidzgo.Application.Sessions.CompleteSession;
 using Kidzgo.Application.Sessions.CreateSession;
+using Kidzgo.Application.Sessions.CreateSessionRole;
+using Kidzgo.Application.Sessions.DeleteSessionRole;
 using Kidzgo.Application.Sessions.GetSessionById;
+using Kidzgo.Application.Sessions.GetSessionRoles;
 using Kidzgo.Application.Sessions.GetSessions;
 using Kidzgo.Application.Sessions.UpdateSession;
+using Kidzgo.Application.Sessions.UpdateSessionRole;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -169,6 +174,117 @@ public class SessionController : ControllerBase
         {
             SessionId = sessionId,
             ActualDatetime = request.ActualDatetime
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-082: Kiểm tra xung đột phòng/giáo viên
+    /// UC-083: Gợi ý phòng/slot khác khi xung đột
+    /// </summary>
+    [HttpPost("check-conflicts")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> CheckSessionConflicts(
+        [FromBody] CheckSessionConflictsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new CheckSessionConflictsQuery
+        {
+            SessionId = request.SessionId,
+            PlannedDatetime = request.PlannedDatetime,
+            DurationMinutes = request.DurationMinutes,
+            PlannedRoomId = request.PlannedRoomId,
+            PlannedTeacherId = request.PlannedTeacherId,
+            PlannedAssistantId = request.PlannedAssistantId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-085: Tạo Session Role (MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP)
+    /// </summary>
+    [HttpPost("{sessionId:guid}/roles")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> CreateSessionRole(
+        Guid sessionId,
+        [FromBody] CreateSessionRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var roleType = Enum.TryParse<Domain.Payroll.SessionRoleType>(
+            request.RoleType, true, out var parsedType)
+            ? parsedType
+            : throw new ArgumentException($"Invalid role type: {request.RoleType}");
+
+        var command = new CreateSessionRoleCommand
+        {
+            SessionId = sessionId,
+            StaffUserId = request.StaffUserId,
+            RoleType = roleType,
+            PayableUnitPrice = request.PayableUnitPrice,
+            PayableAllowance = request.PayableAllowance
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(sr => $"/api/sessions/{sessionId}/roles/{sr.Id}");
+    }
+
+    /// <summary>
+    /// UC-086: Xem danh sách Session Roles của Session
+    /// </summary>
+    [HttpGet("{sessionId:guid}/roles")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> GetSessionRoles(
+        Guid sessionId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetSessionRolesQuery
+        {
+            SessionId = sessionId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-087: Cập nhật Session Role
+    /// UC-089: Thiết lập payable_unit_price cho Session Role
+    /// UC-090: Thiết lập payable_allowance cho Session Role
+    /// </summary>
+    [HttpPut("roles/{sessionRoleId:guid}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> UpdateSessionRole(
+        Guid sessionRoleId,
+        [FromBody] UpdateSessionRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateSessionRoleCommand
+        {
+            SessionRoleId = sessionRoleId,
+            PayableUnitPrice = request.PayableUnitPrice,
+            PayableAllowance = request.PayableAllowance
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-088: Xóa Session Role
+    /// </summary>
+    [HttpDelete("roles/{sessionRoleId:guid}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> DeleteSessionRole(
+        Guid sessionRoleId,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeleteSessionRoleCommand
+        {
+            SessionRoleId = sessionRoleId
         };
 
         var result = await _mediator.Send(command, cancellationToken);

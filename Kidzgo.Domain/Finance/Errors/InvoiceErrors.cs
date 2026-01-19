@@ -39,5 +39,9 @@ public static class InvoiceErrors
     public static readonly Error ParentNotFound = Error.NotFound(
         "Invoice.ParentNotFound",
         "Parent profile not found.");
+
+    public static readonly Error InvalidPayOSSignature = Error.Validation(
+        "PayOS.InvalidSignature",
+        "Invalid webhook signature");
 }
 

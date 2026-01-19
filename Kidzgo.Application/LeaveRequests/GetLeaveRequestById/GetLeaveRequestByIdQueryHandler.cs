@@ -22,7 +22,7 @@ public sealed class GetLeaveRequestByIdQueryHandler(IDbContext context)
                 EndDate = l.EndDate,
                 Reason = l.Reason,
                 NoticeHours = l.NoticeHours,
-                Status = l.Status,
+                Status = l.Status.ToString(),
                 RequestedAt = l.RequestedAt,
                 ApprovedAt = l.ApprovedAt,
                 ApprovedBy = l.ApprovedBy

@@ -1,15 +1,18 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.CreateSession;
 
 public sealed class CreateSessionCommandHandler(
-    IDbContext context
+    IDbContext context,
+    SessionConflictChecker conflictChecker
 ) : ICommandHandler<CreateSessionCommand, CreateSessionResponse>
 {
     public async Task<Result<CreateSessionResponse>> Handle(CreateSessionCommand command, CancellationToken cancellationToken)
@@ -25,8 +28,7 @@ public sealed class CreateSessionCommandHandler(
         // Only allow creating sessions for Planned or Active classes
         if (classEntity.Status is not ClassStatus.Planned and not ClassStatus.Active)
         {
-            return Result.Failure<CreateSessionResponse>(
-                Error.Validation("Session.InvalidClassStatus", "Sessions can only be created for Planned or Active classes"));
+            return Result.Failure<CreateSessionResponse>(SessionErrors.InvalidClassStatus);
         }
 
         var now = DateTime.UtcNow;
@@ -34,6 +36,18 @@ public sealed class CreateSessionCommandHandler(
         var plannedUtc = command.PlannedDatetime.Kind == DateTimeKind.Unspecified
             ? DateTime.SpecifyKind(command.PlannedDatetime, DateTimeKind.Utc)
             : command.PlannedDatetime.ToUniversalTime();
+
+        // Check for conflicts (warning only, không block)
+        var conflictResult = await conflictChecker.CheckConflictsAsync(
+            Guid.Empty, // New session, no ID yet
+            plannedUtc,
+            command.DurationMinutes,
+            command.PlannedRoomId,
+            command.PlannedTeacherId,
+            command.PlannedAssistantId,
+            cancellationToken);
+
+        // Note: Conflicts are logged but don't block creation - business logic decision
 
         var session = new Session
         {
@@ -64,8 +78,3 @@ public sealed class CreateSessionCommandHandler(
         };
     }
 }
-
-
-
-
-

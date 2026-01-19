@@ -44,7 +44,7 @@ public sealed class GetLeaveRequestsQueryHandler(IDbContext context)
                 EndDate = l.EndDate,
                 Reason = l.Reason,
                 NoticeHours = l.NoticeHours,
-                Status = l.Status,
+                Status = l.Status.ToString(),
                 RequestedAt = l.RequestedAt,
                 ApprovedAt = l.ApprovedAt
             })

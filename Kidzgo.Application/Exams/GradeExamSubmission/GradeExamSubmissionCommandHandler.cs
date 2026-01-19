@@ -30,9 +30,7 @@ public sealed class GradeExamSubmissionCommandHandler(
         if (submission.Status != ExamSubmissionStatus.Submitted && 
             submission.Status != ExamSubmissionStatus.AutoSubmitted)
         {
-            return Result.Failure<GradeExamSubmissionResponse>(
-                Error.Validation("ExamSubmission.InvalidStatus", 
-                    "Can only grade submitted or auto-submitted exams"));
+            return Result.Failure<GradeExamSubmissionResponse>(ExamSubmissionErrors.InvalidStatus);
         }
 
         if (submission.Status == ExamSubmissionStatus.Graded)
