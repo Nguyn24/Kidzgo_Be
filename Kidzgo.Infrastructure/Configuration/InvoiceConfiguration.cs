@@ -47,6 +47,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
         builder.Property(x => x.PayosQr);
 
+        builder.Property(x => x.PayosOrderCode);
+
         builder.Property(x => x.IssuedAt);
 
         builder.Property(x => x.IssuedBy);
