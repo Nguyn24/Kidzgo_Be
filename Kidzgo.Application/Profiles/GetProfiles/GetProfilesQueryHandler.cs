@@ -25,13 +25,15 @@ public sealed class GetProfilesQueryHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
-                ProfileType = p.ProfileType
+                ProfileType = p.ProfileType.ToString()
             })
             .ToList();
 
         return response;
     }
 }
+
+
 
 
 
