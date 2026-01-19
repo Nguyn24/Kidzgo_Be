@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Sessions.UpdateSession;
 
 public sealed class UpdateSessionCommandHandler(
-    IDbContext context
+    IDbContext context,
+    SessionConflictChecker conflictChecker
 ) : ICommandHandler<UpdateSessionCommand, UpdateSessionResponse>
 {
     public async Task<Result<UpdateSessionResponse>> Handle(UpdateSessionCommand command, CancellationToken cancellationToken)
@@ -23,14 +25,24 @@ public sealed class UpdateSessionCommandHandler(
 
         if (session.Status is SessionStatus.Cancelled or SessionStatus.Completed)
         {
-            return Result.Failure<UpdateSessionResponse>(
-                Error.Validation("Session.InvalidStatus",
-                    "Only sessions with Scheduled status can be updated"));
+            return Result.Failure<UpdateSessionResponse>(SessionErrors.InvalidStatus);
         }
 
         var plannedUtc = command.PlannedDatetime.Kind == DateTimeKind.Unspecified
             ? DateTime.SpecifyKind(command.PlannedDatetime, DateTimeKind.Utc)
             : command.PlannedDatetime.ToUniversalTime();
+
+        // Check for conflicts (warning only, không block)
+        var conflictResult = await conflictChecker.CheckConflictsAsync(
+            session.Id,
+            plannedUtc,
+            command.DurationMinutes,
+            command.PlannedRoomId,
+            command.PlannedTeacherId,
+            command.PlannedAssistantId,
+            cancellationToken);
+
+        // Note: Conflicts are logged but don't block update - business logic decision
 
         session.PlannedDatetime = plannedUtc;
         session.DurationMinutes = command.DurationMinutes;
@@ -50,8 +62,3 @@ public sealed class UpdateSessionCommandHandler(
         };
     }
 }
-
-
-
-
-

@@ -26,9 +26,7 @@ public sealed class AssignBranchCommandHandler(IDbContext context)
         // Only Teacher and Staff can have branch assigned
         if (user.Role != UserRole.Teacher && user.Role != UserRole.Staff)
         {
-            return Result.Failure<AssignBranchResponse>(Error.Validation(
-                "User.InvalidRole",
-                "Only Teacher and Staff can be assigned to a branch"));
+            return Result.Failure<AssignBranchResponse>(UserErrors.InvalidRoleForBranchAssignment);
         }
 
         // If BranchId is provided, verify branch exists

@@ -8,7 +8,7 @@ public sealed class GetUsersResponse
     public string? Username { get; set; }
     public string? Name { get; set; }
     public string Email { get; set; } = null!;
-    public UserRole Role { get; set; }
+    public string Role { get; set; } = null!;
     public Guid? BranchId { get; set; }
     public string? BranchName { get; set; }
     public bool IsActive { get; set; }

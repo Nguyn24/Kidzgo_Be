@@ -59,8 +59,8 @@ public sealed class CreateMakeupCreditCommandHandler(IDbContext context)
             Id = credit.Id,
             StudentProfileId = credit.StudentProfileId,
             SourceSessionId = credit.SourceSessionId,
-            Status = credit.Status,
-            CreatedReason = credit.CreatedReason,
+            Status = credit.Status.ToString(),
+            CreatedReason = credit.CreatedReason.ToString(),
             ExpiresAt = credit.ExpiresAt,
             UsedSessionId = credit.UsedSessionId,
             CreatedAt = credit.CreatedAt

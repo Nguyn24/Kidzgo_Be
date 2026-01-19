@@ -21,10 +21,7 @@ public sealed class ProcessPayOSWebhookCommandHandler(
         var webhookDataJson = System.Text.Json.JsonSerializer.Serialize(webhook.Data);
         if (!payOSService.VerifyWebhookSignature(command.Signature, webhookDataJson))
         {
-            return Result.Failure<ProcessPayOSWebhookResponse>(
-                Error.Validation(
-                    "PayOS.InvalidSignature",
-                    "Invalid webhook signature"));
+            return Result.Failure<ProcessPayOSWebhookResponse>(InvoiceErrors.InvalidPayOSSignature);
         }
 
         // Check if webhook indicates successful payment

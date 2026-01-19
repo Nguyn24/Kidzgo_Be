@@ -6,6 +6,3 @@ public sealed class CompleteSessionRequest
 }
 
 
-
-
-

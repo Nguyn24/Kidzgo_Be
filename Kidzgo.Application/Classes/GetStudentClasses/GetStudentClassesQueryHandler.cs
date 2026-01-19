@@ -75,12 +75,12 @@ public sealed class GetStudentClassesQueryHandler(
             AssistantTeacherName = ce.Class.AssistantTeacher != null ? ce.Class.AssistantTeacher.Name : null,
             StartDate = ce.Class.StartDate,
             EndDate = ce.Class.EndDate,
-            Status = ce.Class.Status,
+            Status = ce.Class.Status.ToString(),
             Capacity = ce.Class.Capacity,
             CurrentEnrollmentCount = ce.Class.ClassEnrollments.Count(e => e.Status == EnrollmentStatus.Active),
             SchedulePattern = ce.Class.SchedulePattern,
             EnrollDate = ce.EnrollDate,
-            EnrollmentStatus = ce.Status
+            EnrollmentStatus = ce.Status.ToString()
         }).ToList();
 
         var page = new Page<StudentClassDto>(

@@ -9,6 +9,3 @@ public sealed class CompleteSessionCommand : ICommand
 }
 
 
-
-
-
