@@ -19,6 +19,7 @@ public class Invoice : Entity
     public string? Description { get; set; }
     public string? PayosPaymentLink { get; set; }
     public string? PayosQr { get; set; }
+    public long? PayosOrderCode { get; set; }
     public DateTime? IssuedAt { get; set; }
     public Guid? IssuedBy { get; set; }
 
