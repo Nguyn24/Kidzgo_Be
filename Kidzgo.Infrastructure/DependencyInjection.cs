@@ -1,8 +1,10 @@
 using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Infrastructure.Authentication;
 using Kidzgo.Infrastructure.Database;
+using Kidzgo.Infrastructure.Payments;
 using Kidzgo.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,7 @@ public static class DependencyInjection
             .AddHealthChecks(configuration)
             .AddClientUrl(configuration)            
             .AddMailService(configuration)
+            .AddPayOSService(configuration)
             .AddAuthenticationInternal(configuration);
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -72,6 +75,23 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.Configure<ClientSettings>(configuration.GetSection(nameof(ClientSettings)));
+        return services;
+    }
+
+    private static IServiceCollection AddPayOSService(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<PayOSOptions>(configuration.GetSection(PayOSOptions.SectionName));
+        
+        services.AddHttpClient<IPayOSService, PayOSService>(client =>
+        {
+            var options = configuration.GetSection(PayOSOptions.SectionName).Get<PayOSOptions>();
+            if (options != null)
+            {
+                client.BaseAddress = new Uri(options.BaseUrl);
+            }
+        });
+
         return services;
     }
 
