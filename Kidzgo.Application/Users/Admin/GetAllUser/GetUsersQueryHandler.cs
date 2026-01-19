@@ -56,7 +56,7 @@ public sealed class GetUsersQueryHandler(IDbContext context)
                 .Select(p => new UserProfileDto
                 {
                     Id = p.Id,
-                    ProfileType = p.ProfileType,
+                    ProfileType = p.ProfileType.ToString(),
                     DisplayName = p.DisplayName,
                     IsActive = p.IsActive,
                     CreatedAt = p.CreatedAt
