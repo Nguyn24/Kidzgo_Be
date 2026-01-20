@@ -57,7 +57,7 @@ public class EnrollmentController : ControllerBase
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    // [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetEnrollments(
         [FromQuery] Guid? classId,
         [FromQuery] Guid? studentProfileId,
@@ -89,7 +89,7 @@ public class EnrollmentController : ControllerBase
     /// UC-069: Xem chi tiết Enrollment
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    // [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetEnrollmentById(
         Guid id,
         CancellationToken cancellationToken)
