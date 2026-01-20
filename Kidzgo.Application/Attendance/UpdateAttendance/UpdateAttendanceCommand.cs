@@ -5,7 +5,9 @@ namespace Kidzgo.Application.Attendance.UpdateAttendance;
 
 public sealed class UpdateAttendanceCommand : ICommand<UpdateAttendanceResponse>
 {
-    public Guid Id { get; init; }
+    public Guid SessionId { get; init; }
+    public Guid StudentProfileId { get; init; }
     public AttendanceStatus AttendanceStatus { get; init; }
+    public bool IsAdmin { get; init; }
 }
 

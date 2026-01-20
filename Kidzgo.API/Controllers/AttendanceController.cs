@@ -77,16 +77,19 @@ public class AttendanceController : ControllerBase
     /// <summary>
     /// UC-104: Cập nhật điểm danh
     /// </summary>
-    [HttpPut("{id:guid}")]
+    [HttpPut("{sessionId:guid}/students/{studentProfileId:guid}")]
     public async Task<IResult> Update(
-        Guid id,
+        Guid sessionId,
+        Guid studentProfileId,
         [FromBody] UpdateAttendanceRequest request,
         CancellationToken cancellationToken)
     {
         var command = new UpdateAttendanceCommand
         {
-            Id = id,
-            AttendanceStatus = request.AttendanceStatus
+            SessionId = sessionId,
+            StudentProfileId = studentProfileId,
+            AttendanceStatus = request.AttendanceStatus,
+            IsAdmin = User.IsInRole("Admin")
         };
 
         var result = await _mediator.Send(command, cancellationToken);
