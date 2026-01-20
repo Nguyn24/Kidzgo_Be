@@ -12,6 +12,7 @@ public class Attendance : Entity
     public AbsenceType? AbsenceType { get; set; }
     public Guid? MarkedBy { get; set; }
     public DateTime? MarkedAt { get; set; }
+    public string? Note { get; set; }
 
     // Navigation properties
     public Session Session { get; set; } = null!;
