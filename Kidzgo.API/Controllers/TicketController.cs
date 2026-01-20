@@ -66,33 +66,21 @@ public class TicketController : ControllerBase
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? openedByUserId,
         [FromQuery] Guid? assignedToUserId,
-        [FromQuery] string? status,
-        [FromQuery] string? category,
+        [FromQuery] TicketStatus? status,
+        [FromQuery] TicketCategory? category,
         [FromQuery] Guid? classId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        TicketStatus? ticketStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
-        {
-            ticketStatus = parsedStatus;
-        }
-
-        TicketCategory? ticketCategory = null;
-        if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<TicketCategory>(category, true, out var parsedCategory))
-        {
-            ticketCategory = parsedCategory;
-        }
-
         var query = new GetTicketsQuery
         {
             Mine = mine,
             BranchId = branchId,
             OpenedByUserId = openedByUserId,
             AssignedToUserId = assignedToUserId,
-            Status = ticketStatus,
-            Category = ticketCategory,
+            Status = status,
+            Category = category,
             ClassId = classId,
             PageNumber = pageNumber,
             PageSize = pageSize
