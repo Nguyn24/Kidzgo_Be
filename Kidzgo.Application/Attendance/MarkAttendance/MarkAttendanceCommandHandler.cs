@@ -30,9 +30,13 @@ public sealed class MarkAttendanceCommandHandler(IDbContext context, IUserContex
                 Id = Guid.NewGuid(),
                 SessionId = command.SessionId,
                 StudentProfileId = command.StudentProfileId,
-                Note = command.Note,
             };
             context.Attendances.Add(attendance);
+        }
+
+        if (command.Note is not null)
+        {
+            attendance.Note = command.Note;
         }
 
         attendance.AttendanceStatus = command.AttendanceStatus;
