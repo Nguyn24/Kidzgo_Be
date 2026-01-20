@@ -31,8 +31,10 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
             user.Role = role;
         }
 
-        user.Username = request.FullName ?? user.Username;
+        user.Username = request.Username ?? user.Username;
+        user.Name = request.FullName ?? user.Name;
         user.Email = request.Email ?? user.Email;
+        user.IsActive = request.IsActive ?? user.IsActive;
         user.IsDeleted = request.isDeleted ?? user.IsDeleted;
 
         await context.SaveChangesAsync(cancellationToken);

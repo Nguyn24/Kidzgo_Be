@@ -50,7 +50,8 @@ public class CreateUserCommandHandler(
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = command.Name,
+            Username = command.Username,
+            Name = command.FullName,
             Email = command.Email,
             PasswordHash = hashedPassword,
             Role = role,
@@ -68,9 +69,9 @@ public class CreateUserCommandHandler(
         {
             Id = user.Id,
             Username = user.Username,
-            Name = user.Name,
+            FullName = user.Name,
             Email = user.Email,
-            Role = user.Role,
+            Role = user.Role.ToString(),
             BranchId = user.BranchId,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt

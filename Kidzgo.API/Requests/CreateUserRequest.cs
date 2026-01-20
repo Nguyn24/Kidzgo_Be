@@ -6,7 +6,10 @@ namespace Kidzgo.API.Requests;
 public sealed class CreateUserRequest
 {
     [Required]
-    public string Name { get; set; } = null!;
+    public string Username { get; set; } = null!;
+
+    [Required]
+    public string FullName { get; set; } = null!;
     
     [Required]
     [EmailAddress]
