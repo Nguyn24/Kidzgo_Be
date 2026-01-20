@@ -69,32 +69,20 @@ public class InvoiceController : ControllerBase
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
-        [FromQuery] string? status,
-        [FromQuery] string? type,
+        [FromQuery] InvoiceStatus? status,
+        [FromQuery] InvoiceType? type,
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        InvoiceStatus? invoiceStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsedStatus))
-        {
-            invoiceStatus = parsedStatus;
-        }
-
-        InvoiceType? invoiceType = null;
-        if (!string.IsNullOrWhiteSpace(type) && Enum.TryParse<InvoiceType>(type, true, out var parsedType))
-        {
-            invoiceType = parsedType;
-        }
-
         var query = new GetInvoicesQuery
         {
             BranchId = branchId,
             StudentProfileId = studentProfileId,
             ClassId = classId,
-            Status = invoiceStatus,
-            Type = invoiceType,
+            Status = status,
+            Type = type,
             SearchTerm = searchTerm,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -111,21 +99,15 @@ public class InvoiceController : ControllerBase
     [Authorize(Roles = "Parent")]
     public async Task<IResult> GetParentInvoices(
         Guid parentProfileId,
-        [FromQuery] string? status,
+        [FromQuery] InvoiceStatus? status,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        InvoiceStatus? invoiceStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsedStatus))
-        {
-            invoiceStatus = parsedStatus;
-        }
-
         var query = new GetParentInvoicesQuery
         {
             ParentProfileId = parentProfileId,
-            Status = invoiceStatus,
+            Status = status,
             PageNumber = pageNumber,
             PageSize = pageSize
         };

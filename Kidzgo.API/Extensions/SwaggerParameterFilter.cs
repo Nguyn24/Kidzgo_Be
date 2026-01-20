@@ -31,19 +31,32 @@ public class SwaggerParameterFilter : IParameterFilter
                     parameter.Description = "Search by username, email, or transaction code";
                 break;
             case "status":
-                // Check if this is for Class status by checking controller name and XML comment description
-                var isClassController = false;
-                if (context.ParameterInfo?.Member?.DeclaringType != null)
-                {
-                    var controllerName = context.ParameterInfo.Member.DeclaringType.Name;
-                    isClassController = controllerName.Contains("ClassController", StringComparison.OrdinalIgnoreCase);
-                }
+                // Detect controller name if available
+                var controllerName = context.ParameterInfo?.Member?.DeclaringType?.Name ?? string.Empty;
+
+                var isClassController = controllerName.Contains("ClassController", StringComparison.OrdinalIgnoreCase);
+                var isEnrollmentController = controllerName.Contains("EnrollmentController", StringComparison.OrdinalIgnoreCase);
+                var isInvoiceController = controllerName.Contains("InvoiceController", StringComparison.OrdinalIgnoreCase);
+                var isSessionController = controllerName.Contains("SessionController", StringComparison.OrdinalIgnoreCase);
+                var isTicketController = controllerName.Contains("TicketController", StringComparison.OrdinalIgnoreCase);
                 
-                // Also check XML comment description as fallback
+                // Also check XML comment descriptions as fallback
                 var hasClassStatusDescription = parameter.Description?.Contains("Class status", StringComparison.OrdinalIgnoreCase) == true ||
                                                 parameter.Description?.Contains("Planned", StringComparison.OrdinalIgnoreCase) == true ||
                                                 parameter.Description?.Contains("Active", StringComparison.OrdinalIgnoreCase) == true ||
                                                 parameter.Description?.Contains("Closed", StringComparison.OrdinalIgnoreCase) == true;
+
+                var hasEnrollmentStatusDescription = parameter.Description?.Contains("Enrollment status", StringComparison.OrdinalIgnoreCase) == true ||
+                                                     parameter.Description?.Contains("Active, Paused, or Dropped", StringComparison.OrdinalIgnoreCase) == true;
+
+                var hasInvoiceStatusDescription = parameter.Description?.Contains("Invoice status", StringComparison.OrdinalIgnoreCase) == true ||
+                                                   parameter.Description?.Contains("Pending, Paid, Overdue, or Cancelled", StringComparison.OrdinalIgnoreCase) == true;
+
+                var hasSessionStatusDescription = parameter.Description?.Contains("Session status", StringComparison.OrdinalIgnoreCase) == true ||
+                                                  parameter.Description?.Contains("Scheduled, Completed, or Cancelled", StringComparison.OrdinalIgnoreCase) == true;
+
+                var hasTicketStatusDescription = parameter.Description?.Contains("Ticket status", StringComparison.OrdinalIgnoreCase) == true ||
+                                                 parameter.Description?.Contains("Open, InProgress, Resolved, or Closed", StringComparison.OrdinalIgnoreCase) == true;
                 
                 if (isClassController || hasClassStatusDescription)
                 {
@@ -53,12 +66,53 @@ public class SwaggerParameterFilter : IParameterFilter
                     if (string.IsNullOrEmpty(parameter.Description))
                         parameter.Description = "Class status: Planned, Active, or Closed";
                 }
+                else if (isEnrollmentController || hasEnrollmentStatusDescription)
+                {
+                    // This is EnrollmentStatus enum - use string example
+                    parameter.Example = new OpenApiString("Active");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Enrollment status: Active, Paused, or Dropped";
+                }
+                else if (isInvoiceController || hasInvoiceStatusDescription)
+                {
+                    // This is InvoiceStatus enum - use string example
+                    parameter.Example = new OpenApiString("Pending");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Invoice status: Pending, Paid, Overdue, or Cancelled";
+                }
+                else if (isSessionController || hasSessionStatusDescription)
+                {
+                    // This is SessionStatus enum - use string example
+                    parameter.Example = new OpenApiString("Scheduled");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Session status: Scheduled, Completed, or Cancelled";
+                }
+                else if (isTicketController || hasTicketStatusDescription)
+                {
+                    // This is TicketStatus enum - use string example
+                    parameter.Example = new OpenApiString("Open");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Ticket status: Open, InProgress, Resolved, or Closed";
+                }
                 else if (string.IsNullOrEmpty(parameter.Description))
                 {
-                    // Only set default description if no XML comment description exists
                     // Default status (for other controllers like Payment, etc.)
                     parameter.Example = new OpenApiInteger(2);
                     parameter.Description = "Status: 1=Pending, 2=Success, 3=Failed";
+                }
+                break;
+            case "category":
+                // Detect controller name if available
+                var categoryControllerName = context.ParameterInfo?.Member?.DeclaringType?.Name ?? string.Empty;
+                var isTicketCategory = categoryControllerName.Contains("TicketController", StringComparison.OrdinalIgnoreCase) ||
+                                       parameter.Description?.Contains("Ticket category", StringComparison.OrdinalIgnoreCase) == true ||
+                                       parameter.Description?.Contains("Homework, Finance, Schedule, or Tech", StringComparison.OrdinalIgnoreCase) == true;
+
+                if (isTicketCategory)
+                {
+                    parameter.Example = new OpenApiString("Homework");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Ticket category: Homework, Finance, Schedule, or Tech";
                 }
                 break;
             case "createdfrom":
