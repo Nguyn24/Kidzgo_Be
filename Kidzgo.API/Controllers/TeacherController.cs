@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.Application.Classes.GetTeacherClasses;
+using Kidzgo.Application.Classes.GetTeacherClassStudents;
 using Kidzgo.Application.Sessions.GetTeacherTimetable;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +31,27 @@ public class TeacherController : ControllerBase
     {
         var query = new GetTeacherClassesQuery
         {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Lấy danh sách học sinh trong 1 lớp mà Teacher đang đảm nhận
+    /// </summary>
+    [HttpGet("classes/{classId:guid}/students")]
+    public async Task<IResult> GetClassStudents(
+        Guid classId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetTeacherClassStudentsQuery
+        {
+            ClassId = classId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
