@@ -14,11 +14,23 @@ public sealed class UpdateAttendanceCommandHandler(IDbContext context)
     {
         var attendance = await context.Attendances
             .Include(a => a.Session)
-            .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken);
+            .FirstOrDefaultAsync(a =>
+                a.SessionId == request.SessionId &&
+                a.StudentProfileId == request.StudentProfileId,
+                cancellationToken);
 
         if (attendance is null)
         {
-            return Result.Failure<UpdateAttendanceResponse>(AttendanceErrors.NotFound(request.Id));
+            return Result.Failure<UpdateAttendanceResponse>(
+                AttendanceErrors.NotFoundForSessionStudent(request.SessionId, request.StudentProfileId));
+        }
+
+        var sessionEndUtc = (attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime)
+            .AddMinutes(attendance.Session.DurationMinutes);
+        if (!request.IsAdmin && DateTime.UtcNow - sessionEndUtc > TimeSpan.FromHours(24))
+        {
+            return Result.Failure<UpdateAttendanceResponse>(
+                AttendanceErrors.UpdateWindowClosed(attendance.SessionId));
         }
 
         attendance.AttendanceStatus = request.AttendanceStatus;

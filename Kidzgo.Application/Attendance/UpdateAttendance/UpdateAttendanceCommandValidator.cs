@@ -6,7 +6,8 @@ public class UpdateAttendanceCommandValidator : AbstractValidator<UpdateAttendan
 {
     public UpdateAttendanceCommandValidator()
     {
-        RuleFor(c => c.Id).NotEmpty();
+        RuleFor(c => c.SessionId).NotEmpty();
+        RuleFor(c => c.StudentProfileId).NotEmpty();
         RuleFor(c => c.AttendanceStatus).IsInEnum();
     }
 }
