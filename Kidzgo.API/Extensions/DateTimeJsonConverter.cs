@@ -35,14 +35,47 @@ internal static class VietnamTimeZoneHelper
 
 public class DateTimeJsonConverter : JsonConverter<DateTime>
 {
+    internal static readonly string[] SupportedFormats = new[]
+    {
+        "dd/MM/yyyy hh:mm:ss tt",
+        "d/M/yyyy hh:mm:ss tt",
+        "dd/M/yyyy hh:mm:ss tt",
+        "d/MM/yyyy hh:mm:ss tt",
+        "yyyy-MM-dd'T'HH:mm:ss",
+        "yyyy-MM-dd'T'HH:mm:ss.fff",
+        "yyyy-MM-dd'T'HH:mm:ssK",
+        "yyyy-MM-dd'T'HH:mm:ss.fffK",
+        "O"
+    };
+
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.String)
         {
             var dateString = reader.GetString();
-            if (DateTime.TryParse(dateString, out var date))
+            if (!string.IsNullOrWhiteSpace(dateString) &&
+                DateTime.TryParseExact(
+                    dateString,
+                    SupportedFormats,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.RoundtripKind,
+                    out var date))
             {
                 // If the date is in UTC, convert to Vietnam time
+                if (date.Kind == DateTimeKind.Utc)
+                {
+                    return TimeZoneInfo.ConvertTimeFromUtc(date, VietnamTimeZoneHelper.VietnamTimeZone);
+                }
+                return date;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateString) &&
+                DateTime.TryParse(
+                    dateString,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                    out date))
+            {
                 if (date.Kind == DateTimeKind.Utc)
                 {
                     return TimeZoneInfo.ConvertTimeFromUtc(date, VietnamTimeZoneHelper.VietnamTimeZone);
@@ -99,9 +132,27 @@ public class NullableDateTimeJsonConverter : JsonConverter<DateTime?>
                 return null;
             }
 
-            if (DateTime.TryParse(dateString, out var date))
+            if (DateTime.TryParseExact(
+                dateString,
+                DateTimeJsonConverter.SupportedFormats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.RoundtripKind,
+                out var date))
             {
                 // If the date is in UTC, convert to Vietnam time
+                if (date.Kind == DateTimeKind.Utc)
+                {
+                    return TimeZoneInfo.ConvertTimeFromUtc(date, VietnamTimeZoneHelper.VietnamTimeZone);
+                }
+                return date;
+            }
+
+            if (DateTime.TryParse(
+                dateString,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                out date))
+            {
                 if (date.Kind == DateTimeKind.Utc)
                 {
                     return TimeZoneInfo.ConvertTimeFromUtc(date, VietnamTimeZoneHelper.VietnamTimeZone);
