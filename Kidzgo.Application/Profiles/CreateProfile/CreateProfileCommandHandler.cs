@@ -96,7 +96,7 @@ public sealed class CreateProfileCommandHandler(
         {
             Id = profile.Id,
             UserId = profile.UserId,
-            ProfileType = profile.ProfileType,
+            ProfileType = profile.ProfileType.ToString(),
             DisplayName = profile.DisplayName,
             IsActive = profile.IsActive,
             CreatedAt = profile.CreatedAt,
