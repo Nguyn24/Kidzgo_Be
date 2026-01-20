@@ -66,25 +66,18 @@ public class SessionController : ControllerBase
     public async Task<IResult> GetSessions(
         [FromQuery] Guid? classId,
         [FromQuery] Guid? branchId,
-        [FromQuery] string? status,
+        [FromQuery] Domain.Sessions.SessionStatus? status,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        Domain.Sessions.SessionStatus? sessionStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) &&
-            Enum.TryParse<Domain.Sessions.SessionStatus>(status, true, out var parsedStatus))
-        {
-            sessionStatus = parsedStatus;
-        }
-
         var query = new GetSessionsQuery
         {
             ClassId = classId,
             BranchId = branchId,
-            Status = sessionStatus,
+            Status = status,
             From = from,
             To = to,
             PageNumber = pageNumber,
