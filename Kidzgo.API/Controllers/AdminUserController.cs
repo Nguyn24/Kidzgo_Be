@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
 using Kidzgo.Application.Users.Admin.AssignBranch;
 using Kidzgo.Application.Users.Admin.CreateUser;
 using Kidzgo.Application.Users.Admin.GetAllUser;
@@ -15,6 +16,7 @@ namespace Kidzgo.API.Controllers;
 
 [Route("api/admin/users")]
 [ApiController]
+// [Authorize(Roles = "Admin")]
 public class AdminUserController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -133,6 +135,23 @@ public class AdminUserController : ControllerBase
         {
             UserId = id,
             BranchId = request.BranchId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+    
+    
+    [HttpPut("{profileId:guid}/change-pin")]
+    public async Task<IResult> ChangeParentPin(
+        Guid profileId,
+        [FromBody] ChangeParentPinRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ChangeParentPinCommand
+        {
+            ProfileId = profileId,
+            NewPin = request.NewPin
         };
 
         var result = await _mediator.Send(command, cancellationToken);
