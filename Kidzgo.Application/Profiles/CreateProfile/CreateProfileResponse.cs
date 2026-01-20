@@ -6,7 +6,7 @@ public sealed class CreateProfileResponse
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
-    public ProfileType ProfileType { get; init; }
+    public string ProfileType { get; init; } = null!;
     public string DisplayName { get; init; } = null!;
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
