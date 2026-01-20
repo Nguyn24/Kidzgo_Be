@@ -32,6 +32,8 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
 
         builder.Property(x => x.MarkedAt);
 
+        builder.Property(x => x.Note);
+
         builder.HasIndex(x => new { x.SessionId, x.StudentProfileId })
             .IsUnique()
             .HasDatabaseName("attendance_unique");
