@@ -35,7 +35,8 @@ public class AttendanceController : ControllerBase
         {
             SessionId = sessionId,
             StudentProfileId = request.StudentProfileId,
-            AttendanceStatus = request.AttendanceStatus
+            AttendanceStatus = request.AttendanceStatus,
+            Note = request.Comment,
         };
 
         var result = await _mediator.Send(command, cancellationToken);

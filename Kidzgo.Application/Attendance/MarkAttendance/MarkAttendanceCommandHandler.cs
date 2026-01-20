@@ -29,7 +29,8 @@ public sealed class MarkAttendanceCommandHandler(IDbContext context, IUserContex
             {
                 Id = Guid.NewGuid(),
                 SessionId = command.SessionId,
-                StudentProfileId = command.StudentProfileId
+                StudentProfileId = command.StudentProfileId,
+                Note = command.Note,
             };
             context.Attendances.Add(attendance);
         }
@@ -83,7 +84,8 @@ public sealed class MarkAttendanceCommandHandler(IDbContext context, IUserContex
             StudentProfileId = attendance.StudentProfileId,
             AttendanceStatus = attendance.AttendanceStatus.ToString(),
             AbsenceType = attendance.AbsenceType.HasValue ? attendance.AbsenceType.Value.ToString() : null,
-            MarkedAt = attendance.MarkedAt
+            MarkedAt = attendance.MarkedAt,
+            Note = attendance.Note
         };
     }
 

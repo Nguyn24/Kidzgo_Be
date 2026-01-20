@@ -10,5 +10,6 @@ public sealed class MarkAttendanceResponse
     public string AttendanceStatus { get; init; } = null!;
     public string? AbsenceType { get; init; }
     public DateTime? MarkedAt { get; init; }
+    public string? Note { get; init; }
 }
 

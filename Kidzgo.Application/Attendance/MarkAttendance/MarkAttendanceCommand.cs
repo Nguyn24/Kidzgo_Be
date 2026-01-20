@@ -8,5 +8,6 @@ public sealed class MarkAttendanceCommand : ICommand<MarkAttendanceResponse>
     public Guid SessionId { get; init; }
     public Guid StudentProfileId { get; init; }
     public AttendanceStatus AttendanceStatus { get; init; }
+    public string? Note { get; init; }
 }
 
