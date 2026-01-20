@@ -10,5 +10,6 @@ public sealed class GetSessionAttendanceResponse
     public string AttendanceStatus { get; set; } = null!;
     public string? AbsenceType { get; set; }
     public bool HasMakeupCredit { get; set; }
+    public string? Note { get; set; }
 }
 

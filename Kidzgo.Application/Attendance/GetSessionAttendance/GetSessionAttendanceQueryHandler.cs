@@ -47,7 +47,8 @@ public sealed class GetSessionAttendanceQueryHandler(IDbContext context)
                     : null,
                 HasMakeupCredit = context.MakeupCredits.Any(c =>
                     c.StudentProfileId == x.Enrollment.StudentProfileId &&
-                    c.Status == MakeupCreditStatus.Available)
+                    c.Status == MakeupCreditStatus.Available),
+                Note = x.Attendance != null ? x.Attendance.Note : null
             })
             .ToListAsync(cancellationToken);
 

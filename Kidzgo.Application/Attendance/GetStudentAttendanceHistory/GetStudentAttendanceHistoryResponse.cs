@@ -9,5 +9,6 @@ public sealed class GetStudentAttendanceHistoryResponse
     public DateTime SessionDateTime { get; set; }
     public string AttendanceStatus { get; set; } = null!;
     public string? AbsenceType { get; set; }
+    public string? Note { get; set; }
 }
 
