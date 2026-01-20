@@ -78,7 +78,8 @@ public class AdminUserController : ControllerBase
     {
         var command = new CreateUserCommand
         {
-            Name = request.Name,
+            Username = request.Username,
+            FullName = request.FullName,
             Email = request.Email,
             Password = request.Password,
             Role = request.Role
@@ -97,9 +98,11 @@ public class AdminUserController : ControllerBase
         var command = new UpdateUserCommand
         {
             UserId = id,
+            Username = request.Username,
             FullName = request.FullName,
             Email = request.Email,
             Role = request.Role,
+            IsActive = request.IsActive,
             isDeleted = request.IsDeleted
         };
 

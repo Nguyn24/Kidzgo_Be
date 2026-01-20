@@ -6,9 +6,9 @@ public class UpdateUserResponse
 {
     public Guid Id { get; init; }
     public string? Username { get; init; }
-    public string? Name { get; init; }
+    public string? FullName { get; init; }
     public string Email { get; init; } = null!;
-    public UserRole Role { get; init; }
+    public string Role { get; init; } = null!;
     public Guid? BranchId { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
@@ -19,9 +19,9 @@ public class UpdateUserResponse
     {
         Id = user.Id;
         Username = user.Username;
-        Name = user.Name;
+        FullName = user.Name;
         Email = user.Email;
-        Role = user.Role;
+        Role = user.Role.ToString();
         BranchId = user.BranchId;
         IsActive = user.IsActive;
         IsDeleted = user.IsDeleted;
