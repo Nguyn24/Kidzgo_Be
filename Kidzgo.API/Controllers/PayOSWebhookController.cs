@@ -17,9 +17,7 @@ public class PayOSWebhookController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-264: Webhook từ PayOS khi thanh toán thành công
-    /// </summary>
     [HttpPost]
     public async Task<IResult> ProcessWebhook(
         [FromBody] PayOSWebhookRequest request,

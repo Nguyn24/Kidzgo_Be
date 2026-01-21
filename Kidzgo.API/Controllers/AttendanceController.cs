@@ -22,9 +22,7 @@ public class AttendanceController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-099: Điểm danh học sinh
-    /// </summary>
     [HttpPost("{sessionId:guid}")]
     public async Task<IResult> Mark(
         Guid sessionId,
@@ -43,9 +41,7 @@ public class AttendanceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-100: Danh sách điểm danh của Session
-    /// </summary>
     [HttpGet("{sessionId:guid}")]
     public async Task<IResult> GetSessionAttendance(Guid sessionId, CancellationToken cancellationToken)
     {
@@ -54,9 +50,7 @@ public class AttendanceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-101: Lịch sử điểm danh học sinh
-    /// </summary>
     [HttpGet("students/{studentProfileId:guid}")]
     public async Task<IResult> GetStudentHistory(
         Guid studentProfileId,
@@ -75,9 +69,7 @@ public class AttendanceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-104: Cập nhật điểm danh
-    /// </summary>
     [HttpPut("{sessionId:guid}/students/{studentProfileId:guid}")]
     public async Task<IResult> Update(
         Guid sessionId,

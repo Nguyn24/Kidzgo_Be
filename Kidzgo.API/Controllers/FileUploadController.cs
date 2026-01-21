@@ -20,9 +20,7 @@ public class FileUploadController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
     /// Upload a file (image or video) to cloud storage
-    /// </summary>
     /// <param name="file">File to upload</param>
     /// <param name="folder">Folder name (e.g., "tickets", "media", "blog"). Default: "uploads"</param>
     /// <param name="resourceType">Resource type: "image", "video", or "auto" (detect from extension). Default: "auto"</param>
@@ -86,9 +84,7 @@ public class FileUploadController : ControllerBase
         }
     }
 
-    /// <summary>
     /// Delete a file from cloud storage
-    /// </summary>
     /// <param name="url">Public URL of the file to delete</param>
     [HttpDelete]
     [Authorize(Roles = "Admin,Staff")]
@@ -122,9 +118,7 @@ public class FileUploadController : ControllerBase
         }
     }
 
-    /// <summary>
     /// Get transformed/optimized URL for an image
-    /// </summary>
     /// <param name="url">Original public URL</param>
     /// <param name="width">Desired width (optional)</param>
     /// <param name="height">Desired height (optional)</param>

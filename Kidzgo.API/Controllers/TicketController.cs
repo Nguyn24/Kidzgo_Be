@@ -25,9 +25,7 @@ public class TicketController : ControllerBase
     {
         _mediator = mediator;
     }
-    /// <summary>
     /// UC-340: Parent/Student tạo Ticket
-    /// </summary>
     [HttpPost]
     [Authorize]
     public async Task<IResult> CreateTicket(
@@ -48,9 +46,7 @@ public class TicketController : ControllerBase
         return result.MatchCreated(t => $"/api/tickets/{t.Id}");
     }
 
-    /// <summary>
     /// UC-341: Xem danh sách Tickets
-    /// </summary>
     /// <param name="branchId">Filter by branch ID</param>
     /// <param name="openedByUserId">Filter by opened by user ID</param>
     /// <param name="assignedToUserId">Filter by assigned to user ID</param>
@@ -90,9 +86,7 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-342: Xem chi tiết Ticket
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize]
     public async Task<IResult> GetTicketById(
@@ -108,9 +102,7 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-343: Gán Ticket cho Staff/Teacher
-    /// </summary>
     [HttpPatch("{id:guid}/assign")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> AssignTicket(
@@ -128,9 +120,7 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-344: Cập nhật trạng thái Ticket (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
-    /// </summary>
     [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = "Admin,Staff,Teacher")]
     public async Task<IResult> UpdateTicketStatus(
@@ -148,9 +138,7 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-345: Thêm comment vào Ticket
-    /// </summary>
     [HttpPost("{id:guid}/comments")]
     [Authorize]
     public async Task<IResult> AddTicketComment(
@@ -170,9 +158,7 @@ public class TicketController : ControllerBase
         return result.MatchCreated(c => $"/api/tickets/{id}/comments/{c.Id}");
     }
 
-    /// <summary>
     /// UC-347: Xem lịch sử Ticket
-    /// </summary>
     [HttpGet("{id:guid}/history")]
     [Authorize]
     public async Task<IResult> GetTicketHistory(
@@ -188,9 +174,7 @@ public class TicketController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-348: Theo dõi SLA phản hồi Ticket
-    /// </summary>
     [HttpGet("{id:guid}/sla")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetTicketSLA(

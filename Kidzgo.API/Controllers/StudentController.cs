@@ -19,9 +19,7 @@ public class StudentController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// Lấy danh sách lớp của Student
-    /// </summary>
     [HttpGet("{studentId:guid}/classes")]
     public async Task<IResult> GetClasses(
         Guid studentId,
@@ -40,9 +38,7 @@ public class StudentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy thời khóa biểu của Student
-    /// </summary>
     [HttpGet("{studentId:guid}/timetable")]
     public async Task<IResult> GetTimetable(
         Guid studentId,
