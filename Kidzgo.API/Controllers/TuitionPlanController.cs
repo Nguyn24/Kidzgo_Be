@@ -23,9 +23,7 @@ public class TuitionPlanController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-045: Tạo Tuition Plan
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreateTuitionPlan(
@@ -47,9 +45,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchCreated(tp => $"/api/tuition-plans/{tp.Id}");
     }
 
-    /// <summary>
     /// UC-046: Xem danh sách Tuition Plans
-    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetTuitionPlans(
@@ -73,9 +69,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy tất cả Tuition Plans đang active (không cần authorize)
-    /// </summary>
     [HttpGet("active")]
     [AllowAnonymous]
     public async Task<IResult> GetActiveTuitionPlans(
@@ -98,9 +92,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-047: Xem chi tiết Tuition Plan
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetTuitionPlanById(
@@ -116,9 +108,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-048: Cập nhật Tuition Plan
-    /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> UpdateTuitionPlan(
@@ -142,9 +132,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-049: Xóa mềm Tuition Plan
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteTuitionPlan(
@@ -160,9 +148,7 @@ public class TuitionPlanController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-050: Kích hoạt/Vô hiệu hóa Tuition Plan
-    /// </summary>
     [HttpPatch("{id:guid}/toggle-status")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> ToggleTuitionPlanStatus(

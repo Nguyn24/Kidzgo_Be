@@ -40,9 +40,7 @@ public class ExamController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-152: Tạo Exam cho Class
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> CreateExam(
@@ -70,9 +68,7 @@ public class ExamController : ControllerBase
         return result.MatchCreated(e => $"/api/exams/{e.Id}");
     }
 
-    /// <summary>
     /// UC-153: Xem danh sách Exams của Class (filter theo classId)
-    /// </summary>
     [HttpGet]
     [Authorize]
     public async Task<IResult> GetExams(
@@ -94,9 +90,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-154: Xem chi tiết Exam
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize]
     public async Task<IResult> GetExamById(
@@ -108,9 +102,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-155: Cập nhật Exam
-    /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> UpdateExam(
@@ -139,9 +131,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-156: Xóa Exam
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteExam(
@@ -153,9 +143,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-157: Nhập Exam Result cho 1 học sinh
-    /// </summary>
     [HttpPost("{examId:guid}/results")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> CreateExamResult(
@@ -176,9 +164,7 @@ public class ExamController : ControllerBase
         return result.MatchCreated(er => $"/api/exams/{examId}/results/{er.Id}");
     }
 
-    /// <summary>
     /// UC-157a: Nhập Exam Results bulk cho nhiều học sinh
-    /// </summary>
     [HttpPost("{examId:guid}/results/bulk")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> CreateExamResultsBulk(
@@ -202,9 +188,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-158: Xem danh sách Exam Results
-    /// </summary>
     [HttpGet("results")]
     [Authorize]
     public async Task<IResult> GetExamResults(
@@ -226,9 +210,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-159: Xem chi tiết Exam Result
-    /// </summary>
     [HttpGet("results/{id:guid}")]
     [Authorize]
     public async Task<IResult> GetExamResultById(
@@ -240,9 +222,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-160: Cập nhật Exam Result
-    /// </summary>
     [HttpPut("results/{id:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> UpdateExamResult(
@@ -262,9 +242,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-162: Parent/Student xem lịch sử Exam Results của học sinh (filter theo type)
-    /// </summary>
     [HttpGet("students/{studentProfileId:guid}")]
     [Authorize]
     public async Task<IResult> GetStudentExamResults(
@@ -286,9 +264,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-163: Tạo Exam Question
-    /// </summary>
     [HttpPost("{examId:guid}/questions")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> CreateExamQuestion(
@@ -312,9 +288,7 @@ public class ExamController : ControllerBase
         return result.MatchCreated(q => $"/api/exams/{examId}/questions/{q.Id}");
     }
 
-    /// <summary>
     /// UC-164: Xem danh sách Exam Questions của Exam
-    /// </summary>
     [HttpGet("{examId:guid}/questions")]
     [Authorize]
     public async Task<IResult> GetExamQuestions(
@@ -326,9 +300,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-165: Xem chi tiết Exam Question
-    /// </summary>
     [HttpGet("{examId:guid}/questions/{questionId:guid}")]
     [Authorize]
     public async Task<IResult> GetExamQuestionById(
@@ -341,9 +313,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-166: Cập nhật Exam Question
-    /// </summary>
     [HttpPut("{examId:guid}/questions/{questionId:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> UpdateExamQuestion(
@@ -368,9 +338,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-167: Xóa Exam Question
-    /// </summary>
     [HttpDelete("{examId:guid}/questions/{questionId:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> DeleteExamQuestion(
@@ -383,9 +351,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-169: Học sinh bắt đầu làm bài thi
-    /// </summary>
     [HttpPost("{examId:guid}/submissions/start")]
     [Authorize]
     public async Task<IResult> StartExamSubmission(
@@ -403,9 +369,7 @@ public class ExamController : ControllerBase
         return result.MatchCreated(s => $"/api/exams/{examId}/submissions/{s.Id}");
     }
 
-    /// <summary>
     /// UC-170: Học sinh lưu câu trả lời
-    /// </summary>
     [HttpPut("{examId:guid}/submissions/{submissionId:guid}/answers")]
     [Authorize]
     public async Task<IResult> SaveExamSubmissionAnswer(
@@ -425,9 +389,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-171: Học sinh nộp bài thi
-    /// </summary>
     [HttpPost("{examId:guid}/submissions/{submissionId:guid}/submit")]
     [Authorize]
     public async Task<IResult> SubmitExamSubmission(
@@ -445,9 +407,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-174: Xem bài làm của học sinh (Teacher/Admin)
-    /// </summary>
     [HttpGet("{examId:guid}/submissions")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> GetExamSubmissions(
@@ -471,9 +431,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-174: Xem chi tiết bài làm
-    /// </summary>
     [HttpGet("{examId:guid}/submissions/{submissionId:guid}")]
     [Authorize]
     public async Task<IResult> GetExamSubmission(
@@ -494,9 +452,7 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-175: Teacher chấm bài thi
-    /// </summary>
     [HttpPut("{examId:guid}/submissions/{submissionId:guid}/grade")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> GradeExamSubmission(

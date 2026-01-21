@@ -20,9 +20,7 @@ public class TeacherController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// Lấy danh sách lớp của Teacher
-    /// </summary>
     [HttpGet("classes")]
     public async Task<IResult> GetClasses(
         [FromQuery] int pageNumber = 1,
@@ -39,9 +37,7 @@ public class TeacherController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy danh sách học sinh trong 1 lớp mà Teacher đang đảm nhận
-    /// </summary>
     [HttpGet("classes/{classId:guid}/students")]
     public async Task<IResult> GetClassStudents(
         Guid classId,
@@ -60,9 +56,7 @@ public class TeacherController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy thời khóa biểu của Teacher
-    /// </summary>
     [HttpGet("timetable")]
     public async Task<IResult> GetTimetable(
         [FromQuery] DateTime? from,

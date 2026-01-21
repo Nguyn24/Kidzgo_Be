@@ -21,9 +21,7 @@ public class UserController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// Get current user information with role, branchId, permissions, and selected profile
-    /// </summary>
     [HttpGet]
     public async Task<IResult> GetCurrentUser(CancellationToken cancellationToken)
     {
@@ -31,9 +29,7 @@ public class UserController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Update current user information and profiles
-    /// </summary>
     [HttpPut]
     public async Task<IResult> UpdateCurrentUser(
         [FromBody] UpdateCurrentUserRequest request,
@@ -56,9 +52,7 @@ public class UserController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Logout - remove all refresh tokens
-    /// </summary>
     [HttpPost("logout")]
     public async Task<IResult> Logout(CancellationToken cancellationToken)
     {
