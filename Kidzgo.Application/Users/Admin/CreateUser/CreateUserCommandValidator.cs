@@ -8,13 +8,26 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
     public CreateUserCommandValidator()
     {
         RuleFor(command => command.Username).NotNull().NotEmpty();
-        RuleFor(command => command.FullName).NotNull().NotEmpty();
+        RuleFor(command => command.Name).NotNull().NotEmpty();
         RuleFor(command => command.Email).NotNull().NotEmpty().EmailAddress();
         RuleFor(command => command.Password).NotNull().NotEmpty().MinimumLength(6);
         RuleFor(command => command.Role)
             .NotNull()
             .NotEmpty()
             .Must(role => Enum.TryParse<UserRole>(role, true, out _))
-            .WithMessage("Role must be a valid value: Admin, Staff, Teacher, Student, or Parent");
+            .WithMessage("Role must be a valid value: Admin, Staff, Teacher, or Parent");
+
+        When(command => Enum.TryParse<UserRole>(command.Role, true, out var role)
+                        && (role == UserRole.Staff || role == UserRole.Teacher || role == UserRole.Parent), () =>
+        {
+            RuleFor(command => command.BranchId)
+                .NotNull()
+                .WithMessage("BranchId is required for Staff, Teacher, and Parent accounts.");
+        });
+
+        When(command => !string.IsNullOrWhiteSpace(command.PhoneNumber), () =>
+        {
+            RuleFor(command => command.PhoneNumber).MaximumLength(50);
+        });
     }
 }

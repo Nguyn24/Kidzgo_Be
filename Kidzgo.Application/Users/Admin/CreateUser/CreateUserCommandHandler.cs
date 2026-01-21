@@ -2,6 +2,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Schools.Errors;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,22 @@ public class CreateUserCommandHandler(
             }
         }
 
+        if (role == UserRole.Staff || role == UserRole.Teacher || role == UserRole.Parent)
+        {
+            if (!command.BranchId.HasValue)
+            {
+                return Result.Failure<CreateUserCommandResponse>(UserErrors.BranchRequiredForRole);
+            }
+
+            var branchExists = await context.Branches
+                .AnyAsync(b => b.Id == command.BranchId.Value, cancellationToken);
+
+            if (!branchExists)
+            {
+                return Result.Failure<CreateUserCommandResponse>(BranchErrors.NotFound(command.BranchId));
+            }
+        }
+
         var hashedPassword = passwordHasher.Hash(command.Password);
         
         
@@ -51,10 +68,12 @@ public class CreateUserCommandHandler(
         {
             Id = Guid.NewGuid(),
             Username = command.Username,
-            Name = command.FullName,
+            Name = command.Name,
             Email = command.Email,
+            PhoneNumber = string.IsNullOrWhiteSpace(command.PhoneNumber) ? null : command.PhoneNumber.Trim(),
             PasswordHash = hashedPassword,
             Role = role,
+            BranchId = command.BranchId,
             IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -71,6 +90,7 @@ public class CreateUserCommandHandler(
             Username = user.Username,
             FullName = user.Name,
             Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
             Role = user.Role.ToString(),
             BranchId = user.BranchId,
             IsActive = user.IsActive,

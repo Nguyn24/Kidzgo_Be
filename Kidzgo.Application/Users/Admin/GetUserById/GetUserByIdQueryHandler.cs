@@ -20,6 +20,7 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
                 Id = u.Id,
                 Username = u.Username,
                 Name = u.Name,
+                PhoneNumber = u.PhoneNumber,
                 Email = u.Email,
                 Role = u.Role.ToString(),
                 BranchId = u.BranchId,
