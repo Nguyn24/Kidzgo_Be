@@ -67,5 +67,9 @@ public static class UserErrors
 
     public static Error InvalidRoleForBranchAssignment => Error.Validation(
         "User.InvalidRole",
-        "Only Teacher and Staff can be assigned to a branch");
+        "Only Staff, Teacher, and Parent can be assigned to a branch");
+
+    public static readonly Error BranchRequiredForRole = Error.Validation(
+        "User.BranchRequired",
+        "BranchId is required for Staff, Teacher, and Parent accounts");
 }

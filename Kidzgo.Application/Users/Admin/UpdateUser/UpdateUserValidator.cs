@@ -20,5 +20,10 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
         {
             RuleFor(command => command.Email).EmailAddress();
         });
+
+        When(command => !string.IsNullOrWhiteSpace(command.PhoneNumber), () =>
+        {
+            RuleFor(command => command.PhoneNumber).MaximumLength(50);
+        });
     }
 }
