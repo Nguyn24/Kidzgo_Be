@@ -41,7 +41,7 @@ public class ClassController : ControllerBase
             MainTeacherId = request.MainTeacherId,
             AssistantTeacherId = request.AssistantTeacherId,
             StartDate = request.StartDate,
-            EndDate = request.EndDate,
+            EndDate = request.EndDate, // Nếu là null hoặc default, sẽ được tính tự động trong handler
             Capacity = request.Capacity,
             SchedulePattern = request.SchedulePattern
         };

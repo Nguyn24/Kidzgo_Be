@@ -6,7 +6,7 @@ namespace Kidzgo.API.Extensions;
 
 public sealed class SchedulePatternSchemaFilter : ISchemaFilter
 {
-    private const string ExamplePattern = "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=18;BYMINUTE=0;DURATION=90";
+    private const string ExamplePattern = "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=8;BYMINUTE=30;DURATION=60";
 
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
