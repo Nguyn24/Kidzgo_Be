@@ -23,9 +23,7 @@ public class ClassroomController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-051: Tạo Classroom
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreateClassroom(
@@ -44,9 +42,7 @@ public class ClassroomController : ControllerBase
         return result.MatchCreated(c => $"/api/classrooms/{c.Id}");
     }
 
-    /// <summary>
     /// UC-052: Xem danh sách Classrooms
-    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetClassrooms(
@@ -70,9 +66,7 @@ public class ClassroomController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy danh sách tất cả Classrooms đang active (IsActive = true)
-    /// </summary>
     [HttpGet("active")]
     [AllowAnonymous]
     public async Task<IResult> GetActiveClassrooms(
@@ -95,9 +89,7 @@ public class ClassroomController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-053: Xem chi tiết Classroom
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetClassroomById(
@@ -113,9 +105,7 @@ public class ClassroomController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-054: Cập nhật Classroom
-    /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> UpdateClassroom(
@@ -136,9 +126,7 @@ public class ClassroomController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-055: Xóa Classroom
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteClassroom(
@@ -154,9 +142,7 @@ public class ClassroomController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-056: Kích hoạt/Vô hiệu hóa Classroom
-    /// </summary>
     [HttpPatch("{id:guid}/toggle-status")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> ToggleClassroomStatus(

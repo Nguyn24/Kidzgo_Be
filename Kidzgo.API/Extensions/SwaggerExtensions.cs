@@ -99,6 +99,7 @@ public static class SwaggerExtensions
 
             // Add parameter filter for examples
             o.ParameterFilter<SwaggerParameterFilter>();
+            o.SchemaFilter<SchedulePatternSchemaFilter>();
         });
 
         return services;

@@ -26,10 +26,8 @@ public class MediaController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-238: Teacher/Staff upload ảnh/video
     /// UC-239-242: Gắn tag (Class, Student, Month, Type, Visibility)
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> CreateMedia(
@@ -52,12 +50,10 @@ public class MediaController : ControllerBase
         return result.MatchCreated(m => $"/api/media/{m.Id}");
     }
 
-    /// <summary>
     /// UC-243: Xem danh sách Media
     /// UC-249: Parent/Student xem album lớp
     /// UC-250: Parent/Student xem album cá nhân
     /// UC-251: Filter Media theo tháng
-    /// </summary>
     [HttpGet]
     [Authorize]
     public async Task<IResult> GetMedia(
@@ -92,10 +88,8 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-244: Xem chi tiết Media
     /// UC-252: Download Media (FE sẽ dùng Url từ response)
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize]
     public async Task<IResult> GetMediaById(
@@ -107,9 +101,7 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-245: Cập nhật Media
-    /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> UpdateMedia(
@@ -131,9 +123,7 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-246: Xóa Media
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Teacher,Staff,Admin")]
     public async Task<IResult> DeleteMedia(
@@ -145,9 +135,7 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-247: Staff/Admin approve Media
-    /// </summary>
     [HttpPost("{id:guid}/approve")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IResult> ApproveMedia(
@@ -159,9 +147,7 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-247a: Staff/Admin reject Media
-    /// </summary>
     [HttpPost("{id:guid}/reject")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IResult> RejectMedia(
@@ -173,9 +159,7 @@ public class MediaController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-248: Publish Media lên gallery
-    /// </summary>
     [HttpPost("{id:guid}/publish")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IResult> PublishMedia(

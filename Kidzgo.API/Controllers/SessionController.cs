@@ -9,8 +9,10 @@ using Kidzgo.Application.Sessions.DeleteSessionRole;
 using Kidzgo.Application.Sessions.GetSessionById;
 using Kidzgo.Application.Sessions.GetSessionRoles;
 using Kidzgo.Application.Sessions.GetSessions;
+using Kidzgo.Application.Sessions.GenerateSessionsFromPattern;
 using Kidzgo.Application.Sessions.UpdateSession;
 using Kidzgo.Application.Sessions.UpdateSessionRole;
+using Kidzgo.Application.Sessions.UpdateSessionsByClass;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,9 +31,24 @@ public class SessionController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
+    /// UC-076: Sinh Sessions tự động từ schedule pattern cho Class/Program
+    [HttpPost("generate-from-pattern")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> GenerateSessionsFromPattern(
+        [FromBody] GenerateSessionsFromPatternRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new GenerateSessionsFromPatternCommand
+        {
+            ClassId = request.ClassId,
+            OnlyFutureSessions = request.OnlyFutureSessions
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
     /// UC-076 (manual): Tạo Session thủ công
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreateSession(
@@ -58,9 +75,7 @@ public class SessionController : ControllerBase
         return result.MatchCreated(s => $"/api/sessions/{s.Id}");
     }
 
-    /// <summary>
     /// UC-077: Xem danh sách Sessions (Admin/Staff)
-    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetSessions(
@@ -88,9 +103,7 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-078: Xem chi tiết Session
-    /// </summary>
     [HttpGet("{sessionId:guid}")]
     public async Task<IResult> GetSessionById(
         Guid sessionId,
@@ -105,9 +118,7 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-079: Cập nhật Session (giờ/phòng/giáo viên)
-    /// </summary>
     [HttpPut("{sessionId:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> UpdateSession(
@@ -135,9 +146,46 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
+    /// UC-079-Bulk: Cập nhật nhiều Sessions của một Class cùng lúc
+    [HttpPut("by-class")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IResult> UpdateSessionsByClass(
+        [FromBody] UpdateSessionsByClassRequest request,
+        CancellationToken cancellationToken)
+    {
+        var participationType = request.ParticipationType != null
+            ? (Enum.TryParse<Domain.Sessions.ParticipationType>(
+                request.ParticipationType, true, out var parsedType)
+                ? parsedType
+                : Domain.Sessions.ParticipationType.Main)
+            : (Domain.Sessions.ParticipationType?)null;
+
+        var filterByStatus = request.FilterByStatus != null
+            ? (Enum.TryParse<Domain.Sessions.SessionStatus>(
+                request.FilterByStatus, true, out var parsedStatus)
+                ? parsedStatus
+                : (Domain.Sessions.SessionStatus?)null)
+            : null;
+
+        var command = new UpdateSessionsByClassCommand
+        {
+            ClassId = request.ClassId,
+            SessionIds = request.SessionIds,
+            FilterByStatus = filterByStatus,
+            FromDate = request.FromDate,
+            PlannedDatetime = request.PlannedDatetime,
+            DurationMinutes = request.DurationMinutes,
+            PlannedRoomId = request.PlannedRoomId,
+            PlannedTeacherId = request.PlannedTeacherId,
+            PlannedAssistantId = request.PlannedAssistantId,
+            ParticipationType = participationType
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
     /// UC-080: Hủy Session (CANCELLED)
-    /// </summary>
     [HttpPost("{sessionId:guid}/cancel")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CancelSession(
@@ -153,9 +201,7 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-081: Đánh dấu Session hoàn thành (COMPLETED)
-    /// </summary>
     [HttpPost("{sessionId:guid}/complete")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CompleteSession(
@@ -173,10 +219,8 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-082: Kiểm tra xung đột phòng/giáo viên
     /// UC-083: Gợi ý phòng/slot khác khi xung đột
-    /// </summary>
     [HttpPost("check-conflicts")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CheckSessionConflicts(
@@ -197,9 +241,7 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-085: Tạo Session Role (MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP)
-    /// </summary>
     [HttpPost("{sessionId:guid}/roles")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreateSessionRole(
@@ -225,9 +267,7 @@ public class SessionController : ControllerBase
         return result.MatchCreated(sr => $"/api/sessions/{sessionId}/roles/{sr.Id}");
     }
 
-    /// <summary>
     /// UC-086: Xem danh sách Session Roles của Session
-    /// </summary>
     [HttpGet("{sessionId:guid}/roles")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetSessionRoles(
@@ -243,11 +283,9 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-087: Cập nhật Session Role
     /// UC-089: Thiết lập payable_unit_price cho Session Role
     /// UC-090: Thiết lập payable_allowance cho Session Role
-    /// </summary>
     [HttpPut("roles/{sessionRoleId:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> UpdateSessionRole(
@@ -266,9 +304,7 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-088: Xóa Session Role
-    /// </summary>
     [HttpDelete("roles/{sessionRoleId:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> DeleteSessionRole(

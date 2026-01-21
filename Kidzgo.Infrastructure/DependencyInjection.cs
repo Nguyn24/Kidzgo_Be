@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Infrastructure.Authentication;
+using Kidzgo.Infrastructure.BackgroundJobs;
 using Kidzgo.Infrastructure.Database;
 using Kidzgo.Infrastructure.Payments;
 using Kidzgo.Infrastructure.Services;
@@ -13,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Quartz;
 using What2Gift.Infrastructure.Shared;
 
 namespace Kidzgo.Infrastructure;
@@ -26,7 +28,46 @@ public static class DependencyInjection
             .AddClientUrl(configuration)            
             .AddMailService(configuration)
             .AddPayOSService(configuration)
-            .AddAuthenticationInternal(configuration);
+            .AddAuthenticationInternal(configuration)
+            .AddBackgroundJobs(configuration);
+
+    private static IServiceCollection AddBackgroundJobs(this IServiceCollection services, IConfiguration configuration)
+    {
+        var jobKey = new JobKey(nameof(SyncPlannedToActualSessionsJob));
+
+        // Ưu tiên lấy lịch từ cấu hình (appsettings) nếu có
+        // Key: "Quartz:Schedules:SyncPlannedToActualSessionsJob"
+        var cron = configuration["Quartz:Schedules:SyncPlannedToActualSessionsJob"];
+
+        services.AddQuartz(q =>
+        {
+            q.AddJob<SyncPlannedToActualSessionsJob>(opts => opts.WithIdentity(jobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(jobKey)
+                    .WithIdentity($"{nameof(SyncPlannedToActualSessionsJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(cron))
+                {
+                    opts.WithCronSchedule(cron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi 1 phút
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(1)
+                        .RepeatForever());
+                }
+            });
+        });
+
+        services.AddQuartzHostedService(options =>
+        {
+            options.WaitForJobsToComplete = true;
+        });
+        return services;
+    }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
@@ -119,13 +160,12 @@ public static class DependencyInjection
         services.AddScoped<IUserContext, UserContext>();
         services.AddSingleton<ITokenProvider, TokenProvider>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
-
-        // services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<IMailService, MailService>();
         services.AddSingleton<IPayload, Payload>();
         services.AddScoped<ITemplateRenderer, TemplateRenderer>();
         services.AddScoped<IImageUploader, ImageUploader>();
         services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
+        services.AddScoped<Kidzgo.Application.Services.SessionGenerationService>();
         return services;
     }
 
