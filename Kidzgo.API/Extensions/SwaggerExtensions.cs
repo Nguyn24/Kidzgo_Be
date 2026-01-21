@@ -30,7 +30,7 @@ public static class SwaggerExtensions
             {
                 Type = "string",
                 Format = "date-time",
-                Example = new Microsoft.OpenApi.Any.OpenApiString("23/11/2025 10:46:41 PM")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23T22:46:41+07:00")
             });
             
             o.MapType<DateTime?>(() => new OpenApiSchema
@@ -38,7 +38,7 @@ public static class SwaggerExtensions
                 Type = "string",
                 Format = "date-time",
                 Nullable = true,
-                Example = new Microsoft.OpenApi.Any.OpenApiString("23/11/2025 10:46:41 PM")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23T22:46:41+07:00")
             });
             
             // Map DateOnly to string with format

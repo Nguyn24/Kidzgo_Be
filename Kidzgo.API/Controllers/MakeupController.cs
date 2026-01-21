@@ -2,6 +2,7 @@ using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.MakeupCredits.CreateMakeupCredit;
 using Kidzgo.Application.MakeupCredits.ExpireMakeupCredit;
+using Kidzgo.Application.MakeupCredits.GetAllMakeupCredits;
 using Kidzgo.Application.MakeupCredits.GetMakeupAllocations;
 using Kidzgo.Application.MakeupCredits.GetMakeupCreditById;
 using Kidzgo.Application.MakeupCredits.GetMakeupCredits;
@@ -53,6 +54,51 @@ public class MakeupController : ControllerBase
     public async Task<IResult> GetList([FromQuery] Guid studentProfileId, CancellationToken cancellationToken)
     {
         var query = new GetMakeupCreditsQuery { StudentProfileId = studentProfileId };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-105/107: Danh sach tat ca Makeup Credits
+    /// </summary>
+    [HttpGet("all")]
+    public async Task<IResult> GetAll(
+        [FromQuery] Guid? studentProfileId,
+        [FromQuery] string? status,
+        [FromQuery] string? createdReason,
+        [FromQuery] DateTime? createdFrom,
+        [FromQuery] DateTime? createdTo,
+        [FromQuery] DateTime? expiresFrom,
+        [FromQuery] DateTime? expiresTo,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        MakeupCreditStatus? creditStatus = null;
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MakeupCreditStatus>(status, true, out var parsedStatus))
+        {
+            creditStatus = parsedStatus;
+        }
+
+        CreatedReason? parsedCreatedReason = null;
+        if (!string.IsNullOrWhiteSpace(createdReason) &&
+            Enum.TryParse<CreatedReason>(createdReason, true, out var parsedReason))
+        {
+            parsedCreatedReason = parsedReason;
+        }
+
+        var query = new GetAllMakeupCreditsQuery
+        {
+            StudentProfileId = studentProfileId,
+            Status = creditStatus,
+            CreatedReason = parsedCreatedReason,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo,
+            ExpiresFrom = expiresFrom,
+            ExpiresTo = expiresTo,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }

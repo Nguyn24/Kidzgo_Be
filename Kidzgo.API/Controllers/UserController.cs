@@ -43,6 +43,7 @@ public class UserController : ControllerBase
         {
             FullName = request.FullName,
             Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             AvatarUrl = request.AvatarUrl,
             Profiles = request.Profiles?.Select(p => new UpdateProfileDto
             {
