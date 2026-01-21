@@ -26,8 +26,12 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
                 pattern = "RRULE:" + pattern;
             }
 
+            // Tách DURATION ra khỏi pattern vì DURATION không phải là parameter hợp lệ của RRULE standard
+            // DURATION là custom parameter của chúng ta
+            var patternWithoutDuration = RemoveDurationParameter(pattern);
+
             // Parse BYHOUR và BYMINUTE từ pattern để set Start time đúng
-            var recurrencePattern = new RecurrencePattern(pattern);
+            var recurrencePattern = new RecurrencePattern(patternWithoutDuration);
 
             // Dùng timezone VN (UTC+7). Trên Windows: "SE Asia Standard Time"
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -138,6 +142,42 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
             // Nếu có lỗi khi parse, trả về null (fallback về default duration)
             return null;
         }
+    }
+
+    /// <summary>
+    /// Remove DURATION parameter từ RRULE pattern để tránh lỗi khi parse với RecurrencePattern
+    /// </summary>
+    private static string RemoveDurationParameter(string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return pattern;
+        }
+
+        // Remove "RRULE:" prefix để xử lý
+        var hasPrefix = pattern.StartsWith("RRULE:", StringComparison.OrdinalIgnoreCase);
+        var patternWithoutPrefix = hasPrefix ? pattern.Substring(6) : pattern;
+
+        // Split by semicolon để lấy các parameters
+        var parameters = patternWithoutPrefix.Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !p.Trim().StartsWith("DURATION=", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Rebuild pattern
+        var cleanedPattern = string.Join(";", parameters);
+        
+        // Add prefix back nếu có
+        if (hasPrefix && !string.IsNullOrWhiteSpace(cleanedPattern))
+        {
+            cleanedPattern = "RRULE:" + cleanedPattern;
+        }
+        else if (hasPrefix && string.IsNullOrWhiteSpace(cleanedPattern))
+        {
+            // Nếu sau khi remove DURATION mà pattern rỗng, giữ lại "RRULE:"
+            cleanedPattern = "RRULE:";
+        }
+
+        return cleanedPattern;
     }
 }
 
