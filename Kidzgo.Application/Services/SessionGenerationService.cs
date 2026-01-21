@@ -64,6 +64,9 @@ public sealed class SessionGenerationService
             return Result.Success(0);
         }
 
+        // Parse duration từ schedule pattern, fallback về 90 phút nếu không có
+        var durationMinutes = _patternParser.ParseDuration(classEntity.SchedulePattern) ?? 90;
+
         // Lấy danh sách sessions hiện có của class để check trùng lặp
         var existingSessions = await _context.Sessions
             .Where(s => s.ClassId == classEntity.Id)
@@ -116,7 +119,7 @@ public sealed class SessionGenerationService
             if (roomId.HasValue)
             {
                 var sessionStart = occurrence;
-                var sessionEnd = sessionStart.AddMinutes(90); // Default duration
+                var sessionEnd = sessionStart.AddMinutes(durationMinutes);
                 
                 // Kiểm tra xem phòng đã bị chiếm dụng bởi class khác vào thời điểm này chưa
                 var roomConflict = await _context.Sessions
@@ -148,7 +151,7 @@ public sealed class SessionGenerationService
                 PlannedRoomId = roomId,
                 PlannedTeacherId = classEntity.MainTeacherId,
                 PlannedAssistantId = classEntity.AssistantTeacherId,
-                DurationMinutes = 90, // Default duration, có thể lấy từ Program sau
+                DurationMinutes = durationMinutes, // Lấy từ DURATION trong schedule pattern, fallback 90 phút
                 ParticipationType = ParticipationType.Main,
                 Status = SessionStatus.Scheduled,
                 CreatedAt = now,
