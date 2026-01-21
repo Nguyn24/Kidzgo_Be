@@ -27,9 +27,7 @@ public class InvoiceController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-253: Tạo Invoice
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreateInvoice(
@@ -60,9 +58,7 @@ public class InvoiceController : ControllerBase
         return result.MatchCreated(i => $"/api/invoices/{i.Id}");
     }
 
-    /// <summary>
     /// UC-254: Xem danh sách Invoices
-    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetInvoices(
@@ -92,9 +88,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-254a: Xem danh sách Invoices của Parent
-    /// </summary>
     [HttpGet("parents/{parentProfileId:guid}")]
     [Authorize(Roles = "Parent")]
     public async Task<IResult> GetParentInvoices(
@@ -116,9 +110,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-255: Xem chi tiết Invoice
-    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetInvoiceById(
         Guid id,
@@ -133,9 +125,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-256: Cập nhật Invoice
-    /// </summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> UpdateInvoice(
@@ -160,9 +150,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-257: Hủy Invoice
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CancelInvoice(
@@ -178,9 +166,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-260/261: Sinh PayOS payment link và QR code
-    /// </summary>
     [HttpPost("{id:guid}/payos/create-link")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> CreatePayOSLink(
@@ -196,9 +182,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-263: Đánh dấu Invoice OVERDUE
-    /// </summary>
     [HttpPatch("{id:guid}/mark-overdue")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> MarkInvoiceOverdue(

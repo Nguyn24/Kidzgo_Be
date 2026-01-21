@@ -146,9 +146,7 @@ public class AuthenticateController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Request PIN reset for Parent profile (nếu có email flow)
-    /// </summary>
     [Authorize]
     [HttpPost("profiles/request-pin-reset")]
     public async Task<IResult> RequestParentPinReset([FromBody] RequestParentPinResetRequest request, CancellationToken cancellationToken)

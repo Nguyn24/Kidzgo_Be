@@ -25,9 +25,7 @@ public class BlogController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-349: Admin/Staff tạo Blog Post
-    /// </summary>
     [HttpPost]
     [Authorize]
     public async Task<IResult> CreateBlog(
@@ -123,9 +121,7 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-354: Publish Blog Post
-    /// </summary>
     [HttpPatch("{id:guid}/publish")]
     [Authorize]
     public async Task<IResult> PublishBlog(
@@ -141,9 +137,7 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-355: Unpublish Blog Post
-    /// </summary>
     [HttpPatch("{id:guid}/unpublish")]
     [Authorize]
     public async Task<IResult> UnpublishBlog(
@@ -159,9 +153,7 @@ public class BlogController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-356: Hiển thị Blog Post trên Landing Page (Public endpoint - không cần auth)
-    /// </summary>
     [HttpGet("published")]
     [AllowAnonymous]
     public async Task<IResult> GetPublishedBlogs(

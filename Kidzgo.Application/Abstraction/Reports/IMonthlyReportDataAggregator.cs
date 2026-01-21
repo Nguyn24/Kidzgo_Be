@@ -1,13 +1,9 @@
 namespace Kidzgo.Application.Abstraction.Reports;
 
-/// <summary>
 /// Interface for aggregating data from various sources for Monthly Report
-/// </summary>
 public interface IMonthlyReportDataAggregator
 {
-    /// <summary>
     /// Aggregate all data needed for Monthly Report generation
-    /// </summary>
     /// <param name="studentProfileId">Student profile ID</param>
     /// <param name="month">Report month (1-12)</param>
     /// <param name="year">Report year</param>
