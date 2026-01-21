@@ -25,6 +25,11 @@ public class LoginWithRefreshToken (IDbContext context,
 
         }
 
+        if (refreshToken.User == null || refreshToken.User.IsActive == false || refreshToken.User.IsDeleted)
+        {
+            return Result.Failure<TokenResponse>(UserErrors.InActive);
+        }
+
         string accessToken = tokenProvider.Create(refreshToken.User);
         refreshToken.Token = tokenProvider.GenerateRefreshToken();
         refreshToken.Expires = DateTime.UtcNow.AddDays(1);

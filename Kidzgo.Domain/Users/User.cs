@@ -24,6 +24,7 @@ public class User : Entity
     public UserRole Role { get; set; }
     public string? Username  { get; set; }
     public string? Name { get; set; }
+    public string? PhoneNumber { get; set; }
     public string? PinHash { get; set; }
     public Guid? BranchId { get; set; }
     public bool IsActive { get; set; }

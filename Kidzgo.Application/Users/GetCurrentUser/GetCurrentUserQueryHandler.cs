@@ -28,6 +28,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                 UserName = user.Username,
                 FullName = user.Name,
                 Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
                 Role = user.Role.ToString(),
                 BranchId = user.BranchId,
                 Branch = user.Branch != null ? new BranchDto

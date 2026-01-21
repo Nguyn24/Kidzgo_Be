@@ -9,7 +9,7 @@ public sealed class CreateUserRequest
     public string Username { get; set; } = null!;
 
     [Required]
-    public string FullName { get; set; } = null!;
+    public string Name { get; set; } = null!;
     
     [Required]
     [EmailAddress]
@@ -20,5 +20,8 @@ public sealed class CreateUserRequest
     
     [Required]
     public string Role { get; set; } = null!;
+
+    public Guid? BranchId { get; set; }
+    public string? PhoneNumber { get; set; }
 }
 

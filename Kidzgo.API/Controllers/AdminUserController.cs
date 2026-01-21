@@ -79,10 +79,12 @@ public class AdminUserController : ControllerBase
         var command = new CreateUserCommand
         {
             Username = request.Username,
-            FullName = request.FullName,
+            Name = request.Name,
             Email = request.Email,
             Password = request.Password,
-            Role = request.Role
+            Role = request.Role,
+            BranchId = request.BranchId,
+            PhoneNumber = request.PhoneNumber
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -101,6 +103,7 @@ public class AdminUserController : ControllerBase
             Username = request.Username,
             FullName = request.FullName,
             Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             Role = request.Role,
             IsActive = request.IsActive,
             isDeleted = request.IsDeleted
