@@ -30,7 +30,7 @@ public static class SwaggerExtensions
             {
                 Type = "string",
                 Format = "date-time",
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23T22:46:41+07:00")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00")
             });
             
             o.MapType<DateTime?>(() => new OpenApiSchema
@@ -38,7 +38,7 @@ public static class SwaggerExtensions
                 Type = "string",
                 Format = "date-time",
                 Nullable = true,
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23T22:46:41+07:00")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00")
             });
             
             // Map DateOnly to string with format
@@ -46,7 +46,7 @@ public static class SwaggerExtensions
             {
                 Type = "string",
                 Format = "date",
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24")
             });
             
             o.MapType<DateOnly?>(() => new OpenApiSchema
@@ -54,7 +54,7 @@ public static class SwaggerExtensions
                 Type = "string",
                 Format = "date",
                 Nullable = true,
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2025-11-23")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24")
             });
             
             // Configure Swagger to use the same JsonSerializerOptions
