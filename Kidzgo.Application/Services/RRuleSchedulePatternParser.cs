@@ -95,5 +95,49 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
                 Error.Validation("SchedulePattern.Invalid", $"Invalid RRULE pattern: {ex.Message}"));
         }
     }
+
+    public int? ParseDuration(string rrulePattern)
+    {
+        if (string.IsNullOrWhiteSpace(rrulePattern))
+        {
+            return null;
+        }
+
+        try
+        {
+            // Parse RRULE pattern để tìm DURATION parameter
+            // RRULE format: "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=18;BYMINUTE=0;DURATION=90"
+            var pattern = rrulePattern.Trim();
+            
+            // Remove "RRULE:" prefix nếu có
+            if (pattern.StartsWith("RRULE:", StringComparison.OrdinalIgnoreCase))
+            {
+                pattern = pattern.Substring(6); // Remove "RRULE:"
+            }
+
+            // Split by semicolon để lấy các parameters
+            var parameters = pattern.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var param in parameters)
+            {
+                var parts = param.Split('=', 2);
+                if (parts.Length == 2 && 
+                    parts[0].Trim().Equals("DURATION", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(parts[1].Trim(), out var duration) && duration > 0)
+                    {
+                        return duration;
+                    }
+                }
+            }
+
+            return null; // Không tìm thấy DURATION trong pattern
+        }
+        catch
+        {
+            // Nếu có lỗi khi parse, trả về null (fallback về default duration)
+            return null;
+        }
+    }
 }
 
