@@ -87,7 +87,7 @@ public class FileUploadController : ControllerBase
     /// Delete a file from cloud storage
     /// <param name="url">Public URL of the file to delete</param>
     [HttpDelete]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DeleteFile(
         [FromQuery] string url,
         CancellationToken cancellationToken = default)

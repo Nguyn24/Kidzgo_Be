@@ -15,14 +15,14 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
             .NotNull()
             .NotEmpty()
             .Must(role => Enum.TryParse<UserRole>(role, true, out _))
-            .WithMessage("Role must be a valid value: Admin, Staff, Teacher, or Parent");
+            .WithMessage("Role must be a valid value: Admin, ManagementStaff, AccountantStaff, Teacher, or Parent");
 
         When(command => Enum.TryParse<UserRole>(command.Role, true, out var role)
-                        && (role == UserRole.Staff || role == UserRole.Teacher || role == UserRole.Parent), () =>
+                        && (role == UserRole.ManagementStaff || role == UserRole.AccountantStaff || role == UserRole.Teacher || role == UserRole.Parent), () =>
         {
             RuleFor(command => command.BranchId)
                 .NotNull()
-                .WithMessage("BranchId is required for Staff, Teacher, and Parent accounts.");
+                .WithMessage("BranchId is required for ManagementStaff, AccountantStaff, Teacher, and Parent accounts.");
         });
 
         When(command => !string.IsNullOrWhiteSpace(command.PhoneNumber), () =>

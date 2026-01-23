@@ -104,7 +104,7 @@ public class TicketController : ControllerBase
 
     /// UC-343: Gán Ticket cho Staff/Teacher
     [HttpPatch("{id:guid}/assign")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AssignTicket(
         Guid id,
         [FromBody] AssignTicketRequest request,
@@ -122,7 +122,7 @@ public class TicketController : ControllerBase
 
     /// UC-344: Cập nhật trạng thái Ticket (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Admin,Staff,Teacher")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
     public async Task<IResult> UpdateTicketStatus(
         Guid id,
         [FromBody] UpdateTicketStatusRequest request,
@@ -176,7 +176,7 @@ public class TicketController : ControllerBase
 
     /// UC-348: Theo dõi SLA phản hồi Ticket
     [HttpGet("{id:guid}/sla")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetTicketSLA(
         Guid id,
         CancellationToken cancellationToken)
