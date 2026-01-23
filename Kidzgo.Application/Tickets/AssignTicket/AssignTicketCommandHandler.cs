@@ -25,15 +25,15 @@ public sealed class AssignTicketCommandHandler(
                 Error.NotFound("Ticket.NotFound", "Ticket not found"));
         }
 
-        // Check if assigned user exists and is Staff or Teacher
+        // Check if assigned user exists and is ManagementStaff or Teacher
         var assignedUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == command.AssignedToUserId && 
-                (u.Role == Domain.Users.UserRole.Staff || u.Role == Domain.Users.UserRole.Teacher), cancellationToken);
+                (u.Role == Domain.Users.UserRole.ManagementStaff || u.Role == Domain.Users.UserRole.Teacher), cancellationToken);
 
         if (assignedUser is null)
         {
             return Result.Failure<AssignTicketResponse>(
-                Error.NotFound("Ticket.AssignedUserNotFound", "Assigned user not found or is not Staff/Teacher"));
+                Error.NotFound("Ticket.AssignedUserNotFound", "Assigned user not found or is not ManagementStaff/Teacher"));
         }
 
         // Check if assigned user belongs to the same branch as the ticket

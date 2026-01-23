@@ -48,7 +48,7 @@ public class NotificationController : ControllerBase
 
     /// UC-325-339: Admin/Staff broadcast notification
     [HttpPost("broadcast")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> BroadcastNotification(
         [FromBody] BroadcastNotificationRequest request,
         CancellationToken cancellationToken = default)
