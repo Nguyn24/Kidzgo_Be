@@ -1,0 +1,300 @@
+@startuml KidzGo Use Case Diagram
+
+!define RECTANGLE class
+
+left to right direction
+
+' Actors
+actor Parent
+actor Student
+actor Teacher
+actor Staff
+actor Admin
+actor "External System" as ExternalSystem
+actor "AI System" as AISystem
+
+' Package: Authentication & Authorization
+package "Authentication & Authorization" {
+    usecase "Đăng nhập (Email/Zalo)" as UC_Login
+    usecase "Chọn Profile" as UC_SelectProfile
+    usecase "Xác thực PIN" as UC_VerifyPIN
+    usecase "Quên mật khẩu" as UC_ForgotPassword
+    usecase "Đổi mật khẩu/PIN" as UC_ChangePassword
+}
+
+' Package: CRM & Lead Management
+package "CRM & Lead Management" {
+    usecase "Tạo Lead" as UC_CreateLead
+    usecase "Quản lý Lead" as UC_ManageLead
+    usecase "Đặt lịch Placement Test" as UC_SchedulePlacementTest
+    usecase "Nhập kết quả Placement Test" as UC_PlacementTestResult
+    usecase "Chuyển Lead sang ENROLLED" as UC_ConvertLead
+}
+
+' Package: Program & Class Management
+package "Program & Class Management" {
+    usecase "Quản lý Program" as UC_ManageProgram
+    usecase "Quản lý Tuition Plan" as UC_ManageTuitionPlan
+    usecase "Quản lý Classroom" as UC_ManageClassroom
+    usecase "Quản lý Class" as UC_ManageClass
+    usecase "Thiết lập Schedule Pattern" as UC_SetupSchedule
+}
+
+' Package: Enrollment
+package "Enrollment" {
+    usecase "Ghi danh học sinh" as UC_EnrollStudent
+    usecase "Quản lý Enrollment" as UC_ManageEnrollment
+    usecase "Tạm dừng/Hủy Enrollment" as UC_PauseEnrollment
+}
+
+' Package: Session & Schedule
+package "Session & Schedule Management" {
+    usecase "Sinh Sessions từ pattern" as UC_GenerateSessions
+    usecase "Quản lý Sessions" as UC_ManageSessions
+    usecase "Kiểm tra xung đột" as UC_CheckConflict
+    usecase "Quản lý Session Roles" as UC_ManageSessionRoles
+}
+
+' Package: Leave & Attendance
+package "Leave Request & Attendance" {
+    usecase "Tạo Leave Request" as UC_CreateLeaveRequest
+    usecase "Duyệt Leave Request" as UC_ApproveLeaveRequest
+    usecase "Điểm danh học sinh" as UC_MarkAttendance
+    usecase "Xem lịch sử điểm danh" as UC_ViewAttendanceHistory
+}
+
+' Package: Makeup Credit
+package "Makeup Credit Management" {
+    usecase "Tạo Makeup Credit" as UC_CreateMakeupCredit
+    usecase "Quản lý Makeup Credit" as UC_ManageMakeupCredit
+    usecase "Phân bổ Makeup" as UC_AllocateMakeup
+    usecase "Chọn buổi bù" as UC_SelectMakeupSession
+}
+
+' Package: Homework & Exercises
+package "Homework & Exercises" {
+    usecase "Tạo Homework/Exercise" as UC_CreateHomework
+    usecase "Nộp Homework/Exercise" as UC_SubmitHomework
+    usecase "Chấm Homework/Exercise" as UC_GradeHomework
+    usecase "AI chấm Homework" as UC_AIGradeHomework
+}
+
+' Package: Exams
+package "Exams & Test Results" {
+    usecase "Tạo Exam" as UC_CreateExam
+    usecase "Nhập Exam Result" as UC_EnterExamResult
+    usecase "Xem Exam Results" as UC_ViewExamResults
+}
+
+' Package: Session Reports
+package "Session Reports" {
+    usecase "Tạo Session Report" as UC_CreateSessionReport
+    usecase "Tổng hợp Session Reports" as UC_CompileSessionReports
+    usecase "AI generate summary" as UC_AIGenerateSummary
+}
+
+' Package: Monthly Reports
+package "Monthly Reports (AI)" {
+    usecase "Tạo Monthly Report Job" as UC_CreateMonthlyReport
+    usecase "AI tạo draft Monthly Report" as UC_AICreateMonthlyReport
+    usecase "Review Monthly Report" as UC_ReviewMonthlyReport
+    usecase "Publish Monthly Report" as UC_PublishMonthlyReport
+}
+
+' Package: Gamification
+package "Gamification" {
+    usecase "Quản lý Missions" as UC_ManageMissions
+    usecase "Hoàn thành Mission" as UC_CompleteMission
+    usecase "Quản lý Stars & XP" as UC_ManageStarsXP
+    usecase "Attendance Streak" as UC_AttendanceStreak
+    usecase "Đổi quà (Reward Store)" as UC_RedeemReward
+}
+
+' Package: Media
+package "Media Management" {
+    usecase "Upload Media" as UC_UploadMedia
+    usecase "Quản lý Media" as UC_ManageMedia
+    usecase "Xem Album" as UC_ViewAlbum
+}
+
+' Package: Finance
+package "Finance Management" {
+    usecase "Tạo Invoice" as UC_CreateInvoice
+    usecase "Thanh toán (PayOS/Cash)" as UC_ProcessPayment
+    usecase "Quản lý Cashbook" as UC_ManageCashbook
+    usecase "Xem công nợ" as UC_ViewDebt
+}
+
+' Package: Payroll
+package "Payroll Management" {
+    usecase "Quản lý Contracts" as UC_ManageContracts
+    usecase "Quản lý Shift Attendance" as UC_ManageShiftAttendance
+    usecase "Tính Monthly Work Hours" as UC_CalculateWorkHours
+    usecase "Tạo Payroll Run" as UC_CreatePayrollRun
+    usecase "Thanh toán lương" as UC_PaySalary
+}
+
+' Package: Notifications
+package "Notifications" {
+    usecase "Gửi Notification" as UC_SendNotification
+    usecase "Quản lý Notification Templates" as UC_ManageNotificationTemplates
+}
+
+' Package: Tickets
+package "Tickets & Support" {
+    usecase "Tạo Ticket" as UC_CreateTicket
+    usecase "Quản lý Ticket" as UC_ManageTicket
+}
+
+' Package: Blog
+package "Blog Management" {
+    usecase "Quản lý Blog Posts" as UC_ManageBlog
+    usecase "Publish Blog" as UC_PublishBlog
+}
+
+' Package: Dashboard
+package "Dashboard & Reports" {
+    usecase "Xem Dashboard học vụ" as UC_ViewAcademicDashboard
+    usecase "Xem Dashboard tài chính" as UC_ViewFinanceDashboard
+    usecase "Xem Dashboard nhân sự" as UC_ViewHRDashboard
+    usecase "Xem Dashboard Lead" as UC_ViewLeadDashboard
+}
+
+' Package: System Admin
+package "System Administration" {
+    usecase "Quản lý Users" as UC_ManageUsers
+    usecase "Quản lý Profiles" as UC_ManageProfiles
+    usecase "Quản lý Branches" as UC_ManageBranches
+}
+
+' Relationships - Parent
+Parent --> UC_Login
+Parent --> UC_SelectProfile
+Parent --> UC_VerifyPIN
+Parent --> UC_ChangePassword
+Parent --> UC_CreateLeaveRequest
+Parent --> UC_SelectMakeupSession
+Parent --> UC_ViewAlbum
+Parent --> UC_ViewAttendanceHistory
+Parent --> UC_CreateTicket
+Parent --> UC_ViewExamResults
+Parent --> UC_PublishMonthlyReport : "xem"
+
+' Relationships - Student
+Student --> UC_Login
+Student --> UC_SelectProfile
+Student --> UC_SubmitHomework
+Student --> UC_CompleteMission
+Student --> UC_AttendanceStreak
+Student --> UC_RedeemReward
+Student --> UC_ViewAlbum
+Student --> UC_CreateTicket
+Student --> UC_ViewExamResults
+
+' Relationships - Teacher
+Teacher --> UC_Login
+Teacher --> UC_VerifyPIN
+Teacher --> UC_CreateHomework
+Teacher --> UC_GradeHomework
+Teacher --> UC_CreateSessionReport
+Teacher --> UC_CompileSessionReports
+Teacher --> UC_ReviewMonthlyReport
+Teacher --> UC_MarkAttendance
+Teacher --> UC_ManageMissions
+Teacher --> UC_ManageStarsXP
+Teacher --> UC_UploadMedia
+Teacher --> UC_ManageShiftAttendance
+Teacher --> UC_ViewAcademicDashboard
+
+' Relationships - Staff
+Staff --> UC_Login
+Staff --> UC_VerifyPIN
+Staff --> UC_CreateLead
+Staff --> UC_ManageLead
+Staff --> UC_SchedulePlacementTest
+Staff --> UC_PlacementTestResult
+Staff --> UC_ConvertLead
+Staff --> UC_EnrollStudent
+Staff --> UC_ManageEnrollment
+Staff --> UC_ApproveLeaveRequest
+Staff --> UC_AllocateMakeup
+Staff --> UC_ProcessPayment
+Staff --> UC_ManageCashbook
+Staff --> UC_ManageTicket
+Staff --> UC_RedeemReward : "duyệt"
+Staff --> UC_ManageMedia : "duyệt"
+Staff --> UC_ViewFinanceDashboard
+Staff --> UC_ViewLeadDashboard
+
+' Relationships - Admin
+Admin --> UC_Login
+Admin --> UC_VerifyPIN
+Admin --> UC_ManageProgram
+Admin --> UC_ManageTuitionPlan
+Admin --> UC_ManageClassroom
+Admin --> UC_ManageClass
+Admin --> UC_SetupSchedule
+Admin --> UC_ManageUsers
+Admin --> UC_ManageProfiles
+Admin --> UC_ManageBranches
+Admin --> UC_ManageContracts
+Admin --> UC_CreatePayrollRun
+Admin --> UC_PaySalary
+Admin --> UC_ManageNotificationTemplates
+Admin --> UC_ManageBlog
+Admin --> UC_PublishBlog
+Admin --> UC_ViewHRDashboard
+Admin --> UC_ViewFinanceDashboard
+Admin --> UC_ViewAcademicDashboard
+Admin --> UC_ViewLeadDashboard
+
+' Relationships - External System
+ExternalSystem --> UC_Login : "Zalo SSO"
+ExternalSystem --> UC_CreateLead : "Zalo/Web Form"
+ExternalSystem --> UC_ProcessPayment : "PayOS Webhook"
+ExternalSystem --> UC_SendNotification : "Zalo OA/Email"
+
+' Relationships - AI System
+AISystem --> UC_AIGradeHomework
+AISystem --> UC_AIGenerateSummary
+AISystem --> UC_AICreateMonthlyReport
+
+' System automatic relationships
+UC_ApproveLeaveRequest ..> UC_CreateMakeupCredit : "tự động tạo"
+UC_GenerateSessions ..> UC_ManageSessions : "tạo"
+UC_CompleteMission ..> UC_ManageStarsXP : "cộng Stars/XP"
+UC_AttendanceStreak ..> UC_ManageStarsXP : "cộng Stars/XP"
+UC_SubmitHomework ..> UC_ManageStarsXP : "cộng Stars"
+UC_ProcessPayment ..> UC_ManageCashbook : "ghi nhận"
+UC_PaySalary ..> UC_ManageCashbook : "ghi nhận"
+UC_CompileSessionReports ..> UC_AIGenerateSummary : "AI generate"
+UC_CreateMonthlyReport ..> UC_AICreateMonthlyReport : "AI tạo draft"
+UC_PublishMonthlyReport ..> UC_SendNotification : "gửi thông báo"
+
+note right of UC_Login
+  UC-001: Email + Password
+  UC-002: Zalo Mini App (SSO)
+end note
+
+note right of UC_CreateLead
+  UC-013: Form web
+  UC-014: Zalo
+  UC-015: Referral
+  UC-016: Offline
+end note
+
+note right of UC_ProcessPayment
+  UC-264: PayOS (webhook)
+  UC-265: Tiền mặt
+  UC-266: Chuyển khoản
+end note
+
+note right of UC_SendNotification
+  UC-328: Zalo OA
+  UC-329: Email
+  UC-330: Push
+end note
+
+@enduml
+
+

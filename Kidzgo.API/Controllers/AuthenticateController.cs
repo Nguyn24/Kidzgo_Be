@@ -72,9 +72,16 @@ public class AuthenticateController : ControllerBase
     
     [Authorize]
     [HttpGet("profiles")]
-    public async Task<IResult> GetProfiles(CancellationToken cancellationToken)
+    public async Task<IResult> GetProfiles(
+        [FromQuery] string? profileType,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetProfilesQuery(), cancellationToken);
+        var query = new GetProfilesQuery
+        {
+            ProfileType = profileType
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
     
