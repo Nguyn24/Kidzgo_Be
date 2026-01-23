@@ -29,7 +29,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-253: Tạo Invoice
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreateInvoice(
         [FromBody] CreateInvoiceRequest request,
         CancellationToken cancellationToken)
@@ -60,7 +60,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-254: Xem danh sách Invoices
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetInvoices(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? studentProfileId,
@@ -127,7 +127,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-256: Cập nhật Invoice
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> UpdateInvoice(
         Guid id,
         [FromBody] UpdateInvoiceRequest request,
@@ -152,7 +152,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-257: Hủy Invoice
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CancelInvoice(
         Guid id,
         CancellationToken cancellationToken)
@@ -168,7 +168,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-260/261: Sinh PayOS payment link và QR code
     [HttpPost("{id:guid}/payos/create-link")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreatePayOSLink(
         Guid id,
         CancellationToken cancellationToken)
@@ -184,7 +184,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-263: Đánh dấu Invoice OVERDUE
     [HttpPatch("{id:guid}/mark-overdue")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> MarkInvoiceOverdue(
         Guid id,
         CancellationToken cancellationToken)

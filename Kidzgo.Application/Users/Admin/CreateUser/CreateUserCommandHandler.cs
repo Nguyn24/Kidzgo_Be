@@ -45,7 +45,7 @@ public class CreateUserCommandHandler(
             }
         }
 
-        if (role == UserRole.Staff || role == UserRole.Teacher || role == UserRole.Parent)
+        if (role == UserRole.ManagementStaff || role == UserRole.AccountantStaff || role == UserRole.Teacher || role == UserRole.Parent)
         {
             if (!command.BranchId.HasValue)
             {

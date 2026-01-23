@@ -33,7 +33,7 @@ public class SessionController : ControllerBase
 
     /// UC-076: Sinh Sessions tự động từ schedule pattern cho Class/Program
     [HttpPost("generate-from-pattern")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GenerateSessionsFromPattern(
         [FromBody] GenerateSessionsFromPatternRequest request,
         CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ public class SessionController : ControllerBase
 
     /// UC-076 (manual): Tạo Session thủ công
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateSession(
         [FromBody] CreateSessionRequest request,
         CancellationToken cancellationToken)
@@ -78,7 +78,7 @@ public class SessionController : ControllerBase
 
     /// UC-077: Xem danh sách Sessions (Admin/Staff)
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetSessions(
         [FromQuery] Guid? classId,
         [FromQuery] Guid? branchId,
@@ -121,7 +121,7 @@ public class SessionController : ControllerBase
 
     /// UC-079: Cập nhật Session (giờ/phòng/giáo viên)
     [HttpPut("{sessionId:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateSession(
         Guid sessionId,
         [FromBody] UpdateSessionRequest request,
@@ -149,7 +149,7 @@ public class SessionController : ControllerBase
 
     /// UC-079-Bulk: Cập nhật nhiều Sessions của một Class cùng lúc
     [HttpPut("by-class")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateSessionsByClass(
         [FromBody] UpdateSessionsByClassRequest request,
         CancellationToken cancellationToken)
@@ -188,7 +188,7 @@ public class SessionController : ControllerBase
 
     /// UC-080: Hủy Session (CANCELLED)
     [HttpPost("{sessionId:guid}/cancel")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CancelSession(
         Guid sessionId,
         CancellationToken cancellationToken)
@@ -204,7 +204,7 @@ public class SessionController : ControllerBase
 
     /// UC-081: Đánh dấu Session hoàn thành (COMPLETED)
     [HttpPost("{sessionId:guid}/complete")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CompleteSession(
         Guid sessionId,
         [FromBody] CompleteSessionRequest request,
@@ -223,7 +223,7 @@ public class SessionController : ControllerBase
     /// UC-082: Kiểm tra xung đột phòng/giáo viên
     /// UC-083: Gợi ý phòng/slot khác khi xung đột
     [HttpPost("check-conflicts")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CheckSessionConflicts(
         [FromBody] CheckSessionConflictsRequest request,
         CancellationToken cancellationToken)
@@ -244,7 +244,7 @@ public class SessionController : ControllerBase
 
     /// UC-085: Tạo Session Role (MAIN_TEACHER/ASSISTANT/CLUB/WORKSHOP)
     [HttpPost("{sessionId:guid}/roles")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateSessionRole(
         Guid sessionId,
         [FromBody] CreateSessionRoleRequest request,
@@ -270,7 +270,7 @@ public class SessionController : ControllerBase
 
     /// UC-086: Xem danh sách Session Roles của Session
     [HttpGet("{sessionId:guid}/roles")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetSessionRoles(
         Guid sessionId,
         CancellationToken cancellationToken)
@@ -288,7 +288,7 @@ public class SessionController : ControllerBase
     /// UC-089: Thiết lập payable_unit_price cho Session Role
     /// UC-090: Thiết lập payable_allowance cho Session Role
     [HttpPut("roles/{sessionRoleId:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateSessionRole(
         Guid sessionRoleId,
         [FromBody] UpdateSessionRoleRequest request,
@@ -307,7 +307,7 @@ public class SessionController : ControllerBase
 
     /// UC-088: Xóa Session Role
     [HttpDelete("roles/{sessionRoleId:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DeleteSessionRole(
         Guid sessionRoleId,
         CancellationToken cancellationToken)

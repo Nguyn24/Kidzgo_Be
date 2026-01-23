@@ -25,7 +25,7 @@ public class ProgramController : ControllerBase
 
     /// UC-039: Tạo Program
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateProgram(
         [FromBody] CreateProgramRequest request,
         CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ public class ProgramController : ControllerBase
 
     /// UC-040: Xem danh sách Programs
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetPrograms(
         [FromQuery] Guid? branchId,
         [FromQuery] string? searchTerm,
@@ -110,7 +110,7 @@ public class ProgramController : ControllerBase
 
     /// UC-042: Cập nhật Program
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateProgram(
         Guid id,
         [FromBody] UpdateProgramRequest request,
@@ -150,7 +150,7 @@ public class ProgramController : ControllerBase
 
     /// UC-044: Kích hoạt/Vô hiệu hóa Program
     [HttpPatch("{id:guid}/toggle-status")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ToggleProgramStatus(
         Guid id,
         CancellationToken cancellationToken)

@@ -25,7 +25,7 @@ public class ClassroomController : ControllerBase
 
     /// UC-051: Tạo Classroom
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateClassroom(
         [FromBody] CreateClassroomRequest request,
         CancellationToken cancellationToken)
@@ -44,7 +44,7 @@ public class ClassroomController : ControllerBase
 
     /// UC-052: Xem danh sách Classrooms
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetClassrooms(
         [FromQuery] Guid? branchId,
         [FromQuery] string? searchTerm,
@@ -91,7 +91,7 @@ public class ClassroomController : ControllerBase
 
     /// UC-053: Xem chi tiết Classroom
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetClassroomById(
         Guid id,
         CancellationToken cancellationToken)
@@ -107,7 +107,7 @@ public class ClassroomController : ControllerBase
 
     /// UC-054: Cập nhật Classroom
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateClassroom(
         Guid id,
         [FromBody] UpdateClassroomRequest request,
@@ -144,7 +144,7 @@ public class ClassroomController : ControllerBase
 
     /// UC-056: Kích hoạt/Vô hiệu hóa Classroom
     [HttpPatch("{id:guid}/toggle-status")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ToggleClassroomStatus(
         Guid id,
         CancellationToken cancellationToken)
