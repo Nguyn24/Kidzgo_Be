@@ -25,7 +25,7 @@ public class TuitionPlanController : ControllerBase
 
     /// UC-045: Tạo Tuition Plan
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateTuitionPlan(
         [FromBody] CreateTuitionPlanRequest request,
         CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ public class TuitionPlanController : ControllerBase
 
     /// UC-046: Xem danh sách Tuition Plans
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetTuitionPlans(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,
@@ -94,7 +94,7 @@ public class TuitionPlanController : ControllerBase
 
     /// UC-047: Xem chi tiết Tuition Plan
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetTuitionPlanById(
         Guid id,
         CancellationToken cancellationToken)
@@ -110,7 +110,7 @@ public class TuitionPlanController : ControllerBase
 
     /// UC-048: Cập nhật Tuition Plan
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateTuitionPlan(
         Guid id,
         [FromBody] UpdateTuitionPlanRequest request,
@@ -150,7 +150,7 @@ public class TuitionPlanController : ControllerBase
 
     /// UC-050: Kích hoạt/Vô hiệu hóa Tuition Plan
     [HttpPatch("{id:guid}/toggle-status")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ToggleTuitionPlanStatus(
         Guid id,
         CancellationToken cancellationToken)

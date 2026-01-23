@@ -3,7 +3,8 @@
 public enum UserRole
 {
     Admin,
-    Staff,
+    ManagementStaff,
+    AccountantStaff,
     Teacher,
     Parent
 }
