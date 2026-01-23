@@ -113,8 +113,7 @@ public class MakeupController : ControllerBase
         var command = new UseMakeupCreditCommand
         {
             MakeupCreditId = id,
-            TargetSessionId = request.TargetSessionId,
-            AssignedBy = request.AssignedBy
+            TargetSessionId = request.TargetSessionId
         };
 
         var result = await _mediator.Send(command, cancellationToken);

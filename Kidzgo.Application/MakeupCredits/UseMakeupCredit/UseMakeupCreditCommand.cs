@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -11,10 +12,9 @@ public sealed class UseMakeupCreditCommand : ICommand
 {
     public Guid MakeupCreditId { get; set; }
     public Guid TargetSessionId { get; set; }
-    public Guid? AssignedBy { get; set; }
 }
 
-public sealed class UseMakeupCreditCommandHandler(IDbContext context)
+public sealed class UseMakeupCreditCommandHandler(IDbContext context, IUserContext userContext)
     : ICommandHandler<UseMakeupCreditCommand>
 {
     public async Task<Result> Handle(UseMakeupCreditCommand command, CancellationToken cancellationToken)
@@ -54,7 +54,7 @@ public sealed class UseMakeupCreditCommandHandler(IDbContext context)
             MakeupCreditId = credit.Id,
             TargetSessionId = command.TargetSessionId,
             AssignedAt = DateTime.UtcNow,
-            AssignedBy = command.AssignedBy
+            AssignedBy = userContext.UserId
         };
 
         context.MakeupAllocations.Add(allocation);
