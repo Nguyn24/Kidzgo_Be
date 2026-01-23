@@ -22,10 +22,10 @@ public sealed class GetTicketSLAQueryHandler(
                 Error.NotFound("Ticket.NotFound", "Ticket not found"));
         }
 
-        // Calculate first response time (time from ticket creation to first comment by Staff/Teacher)
+        // Calculate first response time (time from ticket creation to first comment by ManagementStaff/Teacher)
         DateTime? firstResponseAt = null;
         var firstStaffComment = ticket.TicketComments
-            .Where(c => c.CommenterUser.Role == Domain.Users.UserRole.Staff || 
+            .Where(c => c.CommenterUser.Role == Domain.Users.UserRole.ManagementStaff || 
                        c.CommenterUser.Role == Domain.Users.UserRole.Teacher)
             .OrderBy(c => c.CreatedAt)
             .FirstOrDefault();
@@ -49,7 +49,7 @@ public sealed class GetTicketSLAQueryHandler(
             (DateTime.UtcNow - ticket.CreatedAt).TotalHours > slaTargetHours;
 
         var staffCommentCount = ticket.TicketComments
-            .Count(c => c.CommenterUser.Role == Domain.Users.UserRole.Staff || 
+            .Count(c => c.CommenterUser.Role == Domain.Users.UserRole.ManagementStaff || 
                        c.CommenterUser.Role == Domain.Users.UserRole.Teacher);
 
         return new GetTicketSLAResponse

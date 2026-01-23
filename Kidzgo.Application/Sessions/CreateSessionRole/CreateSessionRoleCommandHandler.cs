@@ -27,16 +27,16 @@ public sealed class CreateSessionRoleCommandHandler(
                 SessionErrors.NotFound(command.SessionId));
         }
 
-        // Check if staff user exists and is Teacher or Staff
+        // Check if staff user exists and is Teacher or ManagementStaff
         var staffUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == command.StaffUserId &&
-                (u.Role == UserRole.Teacher || u.Role == UserRole.Staff),
+                (u.Role == UserRole.Teacher || u.Role == UserRole.ManagementStaff),
                 cancellationToken);
 
         if (staffUser is null)
         {
             return Result.Failure<CreateSessionRoleResponse>(
-                Error.NotFound("User.NotFound", "Staff user not found or is not a Teacher/Staff"));
+                Error.NotFound("User.NotFound", "Staff user not found or is not a Teacher/ManagementStaff"));
         }
 
         // Check if session role already exists for this session and staff user

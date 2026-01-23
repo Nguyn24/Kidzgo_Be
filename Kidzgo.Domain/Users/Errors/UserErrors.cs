@@ -55,11 +55,11 @@ public static class UserErrors
     
     public static Error InvalidRole(string? role) => Error.Validation(
         "Users.InvalidRole",
-        $"Invalid role value: '{role}'. Valid values: Admin, Staff, Teacher, Student, Parent");
+        $"Invalid role value: '{role}'. Valid values: Admin, ManagementStaff, AccountantStaff, Teacher, Student, Parent");
     
     public static readonly Error RoleRequired = Error.Validation(
         "Users.RoleRequired",
-        "Role is required. Valid values: Admin, Staff, Teacher, Student, Parent");
+        "Role is required. Valid values: Admin, ManagementStaff, AccountantStaff, Teacher, Student, Parent");
     
     public static Error EmailAlreadyExists(string email) => Error.Conflict(
         "User.EmailAlreadyExists",
@@ -67,9 +67,9 @@ public static class UserErrors
 
     public static Error InvalidRoleForBranchAssignment => Error.Validation(
         "User.InvalidRole",
-        "Only Staff, Teacher, and Parent can be assigned to a branch");
+        "Only ManagementStaff, AccountantStaff, Teacher, and Parent can be assigned to a branch");
 
     public static readonly Error BranchRequiredForRole = Error.Validation(
         "User.BranchRequired",
-        "BranchId is required for Staff, Teacher, and Parent accounts");
+        "BranchId is required for ManagementStaff, AccountantStaff, Teacher, and Parent accounts");
 }

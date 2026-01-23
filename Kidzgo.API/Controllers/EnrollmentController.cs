@@ -29,7 +29,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-067: Ghi danh học sinh vào Class
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateEnrollment(
         [FromBody] CreateEnrollmentRequest request,
         CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-070: Cập nhật Enrollment
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateEnrollment(
         Guid id,
         [FromBody] UpdateEnrollmentRequest request,
@@ -118,7 +118,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-071: Tạm dừng Enrollment (PAUSED)
     [HttpPatch("{id:guid}/pause")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> PauseEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -134,7 +134,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-072: Hủy Enrollment (DROPPED)
     [HttpPatch("{id:guid}/drop")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DropEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -150,7 +150,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-073: Kích hoạt lại Enrollment
     [HttpPatch("{id:guid}/reactivate")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ReactivateEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -166,7 +166,7 @@ public class EnrollmentController : ControllerBase
 
     /// UC-074: Gán Tuition Plan cho Enrollment
     [HttpPatch("{id:guid}/assign-tuition-plan")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AssignTuitionPlan(
         Guid id,
         [FromBody] AssignTuitionPlanRequest request,
@@ -187,7 +187,7 @@ public class EnrollmentController : ControllerBase
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet("student/{studentProfileId:guid}/history")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetStudentEnrollmentHistory(
         Guid studentProfileId,
         [FromQuery] int pageNumber = 1,

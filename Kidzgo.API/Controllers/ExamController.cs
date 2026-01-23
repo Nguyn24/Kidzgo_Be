@@ -42,7 +42,7 @@ public class ExamController : ControllerBase
 
     /// UC-152: Tạo Exam cho Class
     [HttpPost]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateExam(
         [FromBody] CreateExamRequest request,
         CancellationToken cancellationToken)
@@ -104,7 +104,7 @@ public class ExamController : ControllerBase
 
     /// UC-155: Cập nhật Exam
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> UpdateExam(
         Guid id,
         [FromBody] UpdateExamRequest request,
@@ -145,7 +145,7 @@ public class ExamController : ControllerBase
 
     /// UC-157: Nhập Exam Result cho 1 học sinh
     [HttpPost("{examId:guid}/results")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateExamResult(
         Guid examId,
         [FromBody] CreateExamResultRequest request,
@@ -166,7 +166,7 @@ public class ExamController : ControllerBase
 
     /// UC-157a: Nhập Exam Results bulk cho nhiều học sinh
     [HttpPost("{examId:guid}/results/bulk")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateExamResultsBulk(
         Guid examId,
         [FromBody] CreateExamResultsBulkRequest request,
@@ -224,7 +224,7 @@ public class ExamController : ControllerBase
 
     /// UC-160: Cập nhật Exam Result
     [HttpPut("results/{id:guid}")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> UpdateExamResult(
         Guid id,
         [FromBody] UpdateExamResultRequest request,
@@ -266,7 +266,7 @@ public class ExamController : ControllerBase
 
     /// UC-163: Tạo Exam Question
     [HttpPost("{examId:guid}/questions")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateExamQuestion(
         Guid examId,
         [FromBody] CreateExamQuestionRequest request,
@@ -315,7 +315,7 @@ public class ExamController : ControllerBase
 
     /// UC-166: Cập nhật Exam Question
     [HttpPut("{examId:guid}/questions/{questionId:guid}")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> UpdateExamQuestion(
         Guid examId,
         Guid questionId,
@@ -340,7 +340,7 @@ public class ExamController : ControllerBase
 
     /// UC-167: Xóa Exam Question
     [HttpDelete("{examId:guid}/questions/{questionId:guid}")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> DeleteExamQuestion(
         Guid examId,
         Guid questionId,
@@ -409,7 +409,7 @@ public class ExamController : ControllerBase
 
     /// UC-174: Xem bài làm của học sinh (Teacher/Admin)
     [HttpGet("{examId:guid}/submissions")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> GetExamSubmissions(
         Guid examId,
         [FromQuery] Guid? studentProfileId,
@@ -454,7 +454,7 @@ public class ExamController : ControllerBase
 
     /// UC-175: Teacher chấm bài thi
     [HttpPut("{examId:guid}/submissions/{submissionId:guid}/grade")]
-    [Authorize(Roles = "Teacher,Staff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> GradeExamSubmission(
         Guid examId,
         Guid submissionId,
