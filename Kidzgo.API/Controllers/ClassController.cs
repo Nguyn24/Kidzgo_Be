@@ -27,7 +27,7 @@ public class ClassController : ControllerBase
 
     /// UC-057: Tạo Class
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateClass(
         [FromBody] CreateClassRequest request,
         CancellationToken cancellationToken)
@@ -58,7 +58,7 @@ public class ClassController : ControllerBase
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetClasses(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,
@@ -90,7 +90,7 @@ public class ClassController : ControllerBase
 
     /// UC-059: Xem chi tiết Class
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetClassById(
         Guid id,
         CancellationToken cancellationToken)
@@ -106,7 +106,7 @@ public class ClassController : ControllerBase
 
     /// UC-060: Cập nhật Class
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateClass(
         Guid id,
         [FromBody] UpdateClassRequest request,
@@ -149,7 +149,7 @@ public class ClassController : ControllerBase
 
     /// UC-062: Thay đổi trạng thái Class (PLANNED/ACTIVE/CLOSED)
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ChangeClassStatus(
         Guid id,
         [FromBody] ChangeClassStatusRequest request,
@@ -167,7 +167,7 @@ public class ClassController : ControllerBase
 
     /// UC-063/064: Gán Main Teacher và Assistant Teacher cho Class
     [HttpPatch("{id:guid}/assign-teacher")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AssignTeacher(
         Guid id,
         [FromBody] AssignTeacherRequest request,
@@ -186,7 +186,7 @@ public class ClassController : ControllerBase
 
     /// UC-066: Kiểm tra capacity trước khi ghi danh
     [HttpGet("{id:guid}/capacity")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CheckClassCapacity(
         Guid id,
         CancellationToken cancellationToken)

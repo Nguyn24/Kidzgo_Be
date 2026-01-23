@@ -70,9 +70,9 @@ public sealed class AddTicketCommentCommandHandler(
 
         context.TicketComments.Add(comment);
 
-        // Update ticket status to InProgress if it's Open and commenter is Staff/Teacher
+        // Update ticket status to InProgress if it's Open and commenter is ManagementStaff/Teacher
         if (ticket.Status == TicketStatus.Open && 
-            (user.Role == Domain.Users.UserRole.Staff || user.Role == Domain.Users.UserRole.Teacher))
+            (user.Role == Domain.Users.UserRole.ManagementStaff || user.Role == Domain.Users.UserRole.Teacher))
         {
             ticket.Status = TicketStatus.InProgress;
             ticket.UpdatedAt = now;

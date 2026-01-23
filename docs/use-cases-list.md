@@ -400,6 +400,7 @@
 ---
 
 ## 14. Finance Management 🔴
+**Role chính: AccountantStaff** (cùng với Admin và ManagementStaff)
 
 ### 14.1. Invoices
 - UC-253: Tạo Invoice (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE)
@@ -416,6 +417,7 @@
 - UC-263: Đánh dấu Invoice OVERDUE
 
 ### 14.2. Payments
+**Role: AccountantStaff, Admin, ManagementStaff**
 - UC-264: Thanh toán qua PayOS (webhook) - tự động update invoice status + ghi Cashbook Entry
 - UC-265: Thanh toán bằng tiền mặt
 - UC-266: Thanh toán chuyển khoản
@@ -426,6 +428,7 @@
 - UC-270a: Xem lịch sử Payments của Parent (filter theo from/to)
 
 ### 14.3. Cashbook
+**Role: AccountantStaff, Admin, ManagementStaff**
 - UC-271: Tạo Cashbook Entry (CASH_IN/CASH_OUT)
 - UC-272: Xem danh sách Cashbook Entries
 - UC-273: Xem chi tiết Cashbook Entry
@@ -436,6 +439,7 @@
 - UC-278: Xem tổng thu/chi theo tháng
 
 ### 14.4. Công nợ
+**Role: AccountantStaff, Admin, ManagementStaff**
 - UC-279: Xem danh sách công nợ
 - UC-280: Xem công nợ của học sinh
 - UC-281: Xem tuổi nợ
