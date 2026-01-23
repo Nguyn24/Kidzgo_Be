@@ -6,6 +6,8 @@ using Kidzgo.Application.Users.UpdateCurrentUser;
 using Kidzgo.Application.Users.GetAdminOverview;
 using Kidzgo.Application.Users.GetTeacherOverview;
 using Kidzgo.Application.Users.GetStaffOverview;
+using Kidzgo.Application.Users.GetManagementStaffOverview;
+using Kidzgo.Application.Users.GetAccountantStaffOverview;
 using Kidzgo.Application.Users.GetParentOverview;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -114,7 +116,7 @@ public class UserController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Get Staff Overview - Dashboard data for Staff role
+    /// Get Staff Overview - Dashboard data for Staff role (Legacy - use management-staff or accountant-staff instead)
     [HttpGet("staff/overview")]
     [Authorize(Roles = "Staff")]
     public async Task<IResult> GetStaffOverview(
@@ -132,6 +134,56 @@ public class UserController : ControllerBase
             StudentProfileId = studentProfileId,
             LeadId = leadId,
             EnrollmentId = enrollmentId,
+            FromDate = fromDate,
+            ToDate = toDate
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Get Management Staff Overview - Dashboard data for Management Staff (Operations)
+    [HttpGet("management-staff/overview")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IResult> GetManagementStaffOverview(
+        [FromQuery] Guid? classId,
+        [FromQuery] Guid? studentProfileId,
+        [FromQuery] Guid? leadId,
+        [FromQuery] Guid? enrollmentId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetManagementStaffOverviewQuery
+        {
+            ClassId = classId,
+            StudentProfileId = studentProfileId,
+            LeadId = leadId,
+            EnrollmentId = enrollmentId,
+            FromDate = fromDate,
+            ToDate = toDate
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Get Accountant Staff Overview - Dashboard data for Accountant Staff (Finance)
+    [HttpGet("accountant-staff/overview")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IResult> GetAccountantStaffOverview(
+        [FromQuery] Guid? studentProfileId,
+        [FromQuery] Guid? invoiceId,
+        [FromQuery] Guid? paymentId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAccountantStaffOverviewQuery
+        {
+            StudentProfileId = studentProfileId,
+            InvoiceId = invoiceId,
+            PaymentId = paymentId,
             FromDate = fromDate,
             ToDate = toDate
         };
