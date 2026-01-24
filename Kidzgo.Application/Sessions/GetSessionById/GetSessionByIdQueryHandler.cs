@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.GetSessionById;
@@ -33,8 +34,7 @@ public sealed class GetSessionByIdQueryHandler(
 
         if (session == null)
         {
-            return Result.Failure<GetSessionByIdResponse>(
-                Error.NotFound("Session.NotFound", "Session not found"));
+            return Result.Failure<GetSessionByIdResponse>(SessionErrors.NotFound(query.SessionId));
         }
 
         // Calculate attendance summary

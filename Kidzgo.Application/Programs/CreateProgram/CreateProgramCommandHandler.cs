@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Programs;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Programs.CreateProgram;
@@ -18,8 +19,7 @@ public sealed class CreateProgramCommandHandler(
 
         if (!branchExists)
         {
-            return Result.Failure<CreateProgramResponse>(
-                Error.NotFound("Program.BranchNotFound", "Branch not found or inactive"));
+            return Result.Failure<CreateProgramResponse>(ProgramErrors.BranchNotFound);
         }
 
         var now = DateTime.UtcNow;

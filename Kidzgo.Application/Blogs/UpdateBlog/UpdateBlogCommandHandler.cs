@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.UpdateBlog;
@@ -17,14 +18,12 @@ public sealed class UpdateBlogCommandHandler(
 
         if (blog is null)
         {
-            return Result.Failure<UpdateBlogResponse>(
-                Error.NotFound("Blog.NotFound", "Blog not found"));
+            return Result.Failure<UpdateBlogResponse>(BlogErrors.NotFound(command.Id));
         }
 
         if (blog.IsDeleted)
         {
-            return Result.Failure<UpdateBlogResponse>(
-                Error.Conflict("Blog.Deleted", "Cannot update a deleted blog"));
+            return Result.Failure<UpdateBlogResponse>(BlogErrors.Deleted);
         }
 
         blog.Title = command.Title;

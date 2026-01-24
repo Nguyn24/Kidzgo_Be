@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Notifications;
+using Kidzgo.Domain.Notifications.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Notifications.MarkNotificationAsRead;
@@ -23,22 +24,19 @@ public sealed class MarkNotificationAsReadCommandHandler(
 
         if (notification is null)
         {
-            return Result.Failure<MarkNotificationAsReadResponse>(
-                Error.NotFound("Notification.NotFound", "Notification not found"));
+            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.NotFound(command.NotificationId));
         }
 
         // Check if notification belongs to current user
         if (notification.RecipientUserId != currentUserId)
         {
-            return Result.Failure<MarkNotificationAsReadResponse>(
-                Error.Problem("Notification.AccessDenied", "You do not have permission to mark this notification as read"));
+            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.AccessDenied);
         }
 
         // Check if already read
         if (notification.ReadAt.HasValue)
         {
-            return Result.Failure<MarkNotificationAsReadResponse>(
-                Error.Conflict("Notification.AlreadyRead", "Notification is already marked as read"));
+            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.AlreadyRead);
         }
 
         // Mark as read

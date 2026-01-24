@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Tickets;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.CreateTicket;
@@ -22,8 +23,7 @@ public sealed class CreateTicketCommandHandler(
 
         if (user is null)
         {
-            return Result.Failure<CreateTicketResponse>(
-                Error.NotFound("Ticket.UserNotFound", "User not found"));
+            return Result.Failure<CreateTicketResponse>(TicketErrors.UserNotFound);
         }
 
         // Check if branch exists
@@ -32,8 +32,7 @@ public sealed class CreateTicketCommandHandler(
 
         if (branch is null)
         {
-            return Result.Failure<CreateTicketResponse>(
-                Error.NotFound("Ticket.BranchNotFound", "Branch not found or inactive"));
+            return Result.Failure<CreateTicketResponse>(TicketErrors.BranchNotFound);
         }
 
         // Check if class exists (if provided)
@@ -44,8 +43,7 @@ public sealed class CreateTicketCommandHandler(
 
             if (!classExists)
             {
-                return Result.Failure<CreateTicketResponse>(
-                    Error.NotFound("Ticket.ClassNotFound", "Class not found"));
+                return Result.Failure<CreateTicketResponse>(TicketErrors.ClassNotFound);
             }
         }
 
@@ -57,8 +55,7 @@ public sealed class CreateTicketCommandHandler(
 
             if (profile is null)
             {
-                return Result.Failure<CreateTicketResponse>(
-                    Error.NotFound("Ticket.ProfileNotFound", "Profile not found or does not belong to the user"));
+                return Result.Failure<CreateTicketResponse>(TicketErrors.ProfileNotFound);
             }
         }
 

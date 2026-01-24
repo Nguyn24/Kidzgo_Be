@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.UpdateSessionRole;
@@ -18,8 +19,7 @@ public sealed class UpdateSessionRoleCommandHandler(
 
         if (sessionRole is null)
         {
-            return Result.Failure<UpdateSessionRoleResponse>(
-                Error.NotFound("SessionRole.NotFound", "Session role not found"));
+            return Result.Failure<UpdateSessionRoleResponse>(SessionRoleErrors.NotFound(command.SessionRoleId));
         }
 
         // Update only PayableUnitPrice and PayableAllowance

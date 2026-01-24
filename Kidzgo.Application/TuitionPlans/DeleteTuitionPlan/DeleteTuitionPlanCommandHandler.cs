@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.TuitionPlans.DeleteTuitionPlan;
@@ -16,8 +17,7 @@ public sealed class DeleteTuitionPlanCommandHandler(
 
         if (tuitionPlan is null)
         {
-            return Result.Failure(
-                Error.NotFound("TuitionPlan.NotFound", "Tuition Plan not found"));
+            return Result.Failure(TuitionPlanErrors.NotFound(command.Id));
         }
 
         // Check if tuition plan is being used by any active enrollments
@@ -29,8 +29,7 @@ public sealed class DeleteTuitionPlanCommandHandler(
 
         if (hasActiveEnrollments)
         {
-            return Result.Failure(
-                Error.Conflict("TuitionPlan.HasActiveEnrollments", "Cannot delete tuition plan with active enrollments"));
+            return Result.Failure(TuitionPlanErrors.HasActiveEnrollments);
         }
 
         // Soft delete
