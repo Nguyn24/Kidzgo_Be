@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Tickets;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.AddTicketComment;
@@ -20,15 +21,13 @@ public sealed class AddTicketCommentCommandHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<AddTicketCommentResponse>(
-                Error.NotFound("TicketComment.TicketNotFound", "Ticket not found"));
+            return Result.Failure<AddTicketCommentResponse>(TicketCommentErrors.TicketNotFound);
         }
 
         // Check if ticket is closed
         if (ticket.Status == TicketStatus.Closed)
         {
-            return Result.Failure<AddTicketCommentResponse>(
-                Error.Conflict("TicketComment.TicketClosed", "Cannot add comment to a closed ticket"));
+            return Result.Failure<AddTicketCommentResponse>(TicketCommentErrors.TicketClosed);
         }
 
         var commenterUserId = userContext.UserId;
@@ -39,8 +38,7 @@ public sealed class AddTicketCommentCommandHandler(
 
         if (user is null)
         {
-            return Result.Failure<AddTicketCommentResponse>(
-                Error.NotFound("TicketComment.UserNotFound", "User not found"));
+            return Result.Failure<AddTicketCommentResponse>(TicketCommentErrors.UserNotFound);
         }
 
         // Check if profile exists (if provided)
@@ -51,8 +49,7 @@ public sealed class AddTicketCommentCommandHandler(
 
             if (profile is null)
             {
-                return Result.Failure<AddTicketCommentResponse>(
-                    Error.NotFound("TicketComment.ProfileNotFound", "Profile not found or does not belong to the user"));
+                return Result.Failure<AddTicketCommentResponse>(TicketCommentErrors.ProfileNotFound);
             }
         }
 

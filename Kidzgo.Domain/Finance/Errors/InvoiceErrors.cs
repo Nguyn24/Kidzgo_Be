@@ -43,5 +43,9 @@ public static class InvoiceErrors
     public static readonly Error InvalidPayOSSignature = Error.Validation(
         "PayOS.InvalidSignature",
         "Invalid webhook signature");
+
+    public static Error PayOSCreateLinkFailed(string? message) => Error.Problem(
+        "PayOS.CreateLinkFailed",
+        message ?? "Failed to create PayOS payment link");
 }
 

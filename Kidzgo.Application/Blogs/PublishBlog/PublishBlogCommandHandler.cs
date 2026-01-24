@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.PublishBlog;
@@ -17,20 +18,17 @@ public sealed class PublishBlogCommandHandler(
 
         if (blog is null)
         {
-            return Result.Failure<PublishBlogResponse>(
-                Error.NotFound("Blog.NotFound", "Blog not found"));
+            return Result.Failure<PublishBlogResponse>(BlogErrors.NotFound(command.Id));
         }
 
         if (blog.IsDeleted)
         {
-            return Result.Failure<PublishBlogResponse>(
-                Error.Conflict("Blog.Deleted", "Cannot publish a deleted blog"));
+            return Result.Failure<PublishBlogResponse>(BlogErrors.Deleted);
         }
 
         if (blog.IsPublished)
         {
-            return Result.Failure<PublishBlogResponse>(
-                Error.Conflict("Blog.AlreadyPublished", "Blog is already published"));
+            return Result.Failure<PublishBlogResponse>(BlogErrors.AlreadyPublished);
         }
 
         var now = DateTime.UtcNow;

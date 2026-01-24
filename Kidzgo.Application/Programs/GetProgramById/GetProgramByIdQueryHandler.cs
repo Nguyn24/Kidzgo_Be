@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Programs.GetProgramById;
@@ -31,8 +32,7 @@ public sealed class GetProgramByIdQueryHandler(
 
         if (program is null)
         {
-            return Result.Failure<GetProgramByIdResponse>(
-                Error.NotFound("Program.NotFound", "Program not found"));
+            return Result.Failure<GetProgramByIdResponse>(ProgramErrors.NotFound(query.Id));
         }
 
         return program;

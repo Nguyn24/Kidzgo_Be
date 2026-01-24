@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.GetStudentTimetable;
@@ -19,20 +20,17 @@ public sealed class GetStudentTimetableQueryHandler(
 
         if (profile == null)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Student profile not found"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.NotFound(query.StudentId));
         }
 
         if (profile.ProfileType != Domain.Users.ProfileType.Student)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Profile is not a student"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
         }
 
         if (!profile.IsActive || profile.IsDeleted)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
         }
 
         // Get sessions from classes where student is enrolled (Status = Active)

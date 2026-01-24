@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Branches.GetBranches;
@@ -20,8 +21,7 @@ public sealed class GetBranchesQueryHandler(
 
         if (user == null)
         {
-            return Result.Failure<GetBranchesResponse>(
-                Error.NotFound("User.NotFound", "User not found"));
+            return Result.Failure<GetBranchesResponse>(UserErrors.NotFound(userContext.UserId));
         }
 
         IQueryable<Domain.Schools.Branch> branchesQuery = context.Branches;

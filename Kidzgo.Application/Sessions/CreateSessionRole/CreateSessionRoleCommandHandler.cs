@@ -5,6 +5,7 @@ using Kidzgo.Domain.Payroll;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.CreateSessionRole;
@@ -36,7 +37,7 @@ public sealed class CreateSessionRoleCommandHandler(
         if (staffUser is null)
         {
             return Result.Failure<CreateSessionRoleResponse>(
-                Error.NotFound("User.NotFound", "Staff user not found or is not a Teacher/ManagementStaff"));
+                UserErrors.NotFound(command.StaffUserId));
         }
 
         // Check if session role already exists for this session and staff user
@@ -48,9 +49,7 @@ public sealed class CreateSessionRoleCommandHandler(
 
         if (roleExists)
         {
-            return Result.Failure<CreateSessionRoleResponse>(
-                Error.Conflict("SessionRole.Exists", 
-                    $"Session role {command.RoleType} already exists for this session and staff user"));
+            return Result.Failure<CreateSessionRoleResponse>(SessionRoleErrors.AlreadyExists);
         }
 
         var sessionRole = new SessionRole

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classrooms.UpdateClassroom;
@@ -16,8 +17,7 @@ public sealed class UpdateClassroomCommandHandler(
 
         if (classroom is null)
         {
-            return Result.Failure<UpdateClassroomResponse>(
-                Error.NotFound("Classroom.NotFound", "Classroom not found"));
+            return Result.Failure<UpdateClassroomResponse>(ClassroomErrors.NotFound(command.Id));
         }
 
         // Check if branch exists
@@ -26,8 +26,7 @@ public sealed class UpdateClassroomCommandHandler(
 
         if (!branchExists)
         {
-            return Result.Failure<UpdateClassroomResponse>(
-                Error.NotFound("Classroom.BranchNotFound", "Branch not found or inactive"));
+            return Result.Failure<UpdateClassroomResponse>(ClassroomErrors.BranchNotFound);
         }
 
         classroom.BranchId = command.BranchId;

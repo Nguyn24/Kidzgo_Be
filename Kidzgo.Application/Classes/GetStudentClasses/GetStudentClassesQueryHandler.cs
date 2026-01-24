@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classes.GetStudentClasses;
@@ -19,20 +20,17 @@ public sealed class GetStudentClassesQueryHandler(
 
         if (profile == null)
         {
-            return Result.Failure<GetStudentClassesResponse>(
-                Error.NotFound("Student.NotFound", "Student profile not found"));
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.NotFound(query.StudentId));
         }
 
         if (profile.ProfileType != Domain.Users.ProfileType.Student)
         {
-            return Result.Failure<GetStudentClassesResponse>(
-                Error.NotFound("Student.NotFound", "Profile is not a student"));
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.StudentNotFound);
         }
 
         if (!profile.IsActive || profile.IsDeleted)
         {
-            return Result.Failure<GetStudentClassesResponse>(
-                Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.StudentNotFound);
         }
 
         // Get enrollments where student is enrolled (Status = Active) and Class exists
