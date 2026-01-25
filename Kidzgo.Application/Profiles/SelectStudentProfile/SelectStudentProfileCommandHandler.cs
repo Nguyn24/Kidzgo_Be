@@ -10,23 +10,31 @@ namespace Kidzgo.Application.Profiles.SelectStudentProfile;
 
 public sealed class SelectStudentProfileCommandHandler(
     IDbContext context,
-    IUserContext userContext
-) : ICommandHandler<SelectStudentProfileCommand>
+    IUserContext userContext,
+    ITokenProvider tokenProvider
+) : ICommandHandler<SelectStudentProfileCommand, SelectStudentProfileResponse>
 {
-    public async Task<Result> Handle(SelectStudentProfileCommand command, CancellationToken cancellationToken)
+    public async Task<Result<SelectStudentProfileResponse>> Handle(SelectStudentProfileCommand command, CancellationToken cancellationToken)
     {
         Guid userId = userContext.UserId;
 
         Profile? profile = await context.Profiles
+            .Include(p => p.User)
             .SingleOrDefaultAsync(p => p.Id == command.ProfileId && p.UserId == userId, cancellationToken);
 
         if (profile is null || profile.ProfileType != ProfileType.Student || profile.IsDeleted || !profile.IsActive)
         {
-            return Result.Failure(ProfileErrors.Invalid);
+            return Result.Failure<SelectStudentProfileResponse>(ProfileErrors.Invalid);
         }
 
-        // Không cần làm gì thêm phía backend; FE dùng profileId để set context
-        return Result.Success();
+        // Generate new token with selected student ID
+        string newAccessToken = tokenProvider.Create(profile.User, profile.Id);
+
+        return Result.Success(new SelectStudentProfileResponse
+        {
+            AccessToken = newAccessToken,
+            StudentId = profile.Id
+        });
     }
 }
 

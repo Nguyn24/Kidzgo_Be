@@ -35,30 +35,33 @@ public sealed class GetParentInvoicesByCurrentUserQueryHandler(
                 InvoiceErrors.ParentNotFound);
         }
 
-        // Get linked student profiles
-        var studentProfileIds = await context.ParentStudentLinks
-            .AsNoTracking()
-            .Where(psl => psl.ParentProfileId == parentProfile.Id)
-            .Select(psl => psl.StudentProfileId)
-            .ToListAsync(cancellationToken);
+        // Get StudentId from context (token) - only get data for selected student
+        var selectedStudentId = userContext.StudentId;
 
-        if (!studentProfileIds.Any())
+        if (!selectedStudentId.HasValue)
         {
-            return Result.Success(new GetParentInvoicesResponse
-            {
-                Invoices = new Page<InvoiceDto>(
-                    new List<InvoiceDto>(),
-                    0,
-                    query.PageNumber,
-                    query.PageSize)
-            });
+            return Result.Failure<GetParentInvoicesResponse>(
+                InvoiceErrors.ParentNotFound);
+        }
+
+        // Verify the student is linked to this parent
+        var isLinked = await context.ParentStudentLinks
+            .AsNoTracking()
+            .AnyAsync(psl => psl.ParentProfileId == parentProfile.Id && 
+                            psl.StudentProfileId == selectedStudentId.Value, 
+                     cancellationToken);
+
+        if (!isLinked)
+        {
+            return Result.Failure<GetParentInvoicesResponse>(
+                InvoiceErrors.ParentNotFound);
         }
 
         var invoicesQuery = context.Invoices
             .Include(i => i.Branch)
             .Include(i => i.StudentProfile)
             .Include(i => i.Class)
-            .Where(i => studentProfileIds.Contains(i.StudentProfileId))
+            .Where(i => i.StudentProfileId == selectedStudentId.Value)
             .AsQueryable();
 
         // Filter by status

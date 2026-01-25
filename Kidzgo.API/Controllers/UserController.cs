@@ -192,11 +192,10 @@ public class UserController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Get Parent Overview - Dashboard data for Parent role
+    /// Get Parent Overview - Dashboard data for Parent role (studentId lấy từ token)
     [HttpGet("parent/overview")]
     [Authorize]
     public async Task<IResult> GetParentOverview(
-        [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] Guid? sessionId,
         [FromQuery] DateTime? fromDate,
@@ -205,7 +204,6 @@ public class UserController : ControllerBase
     {
         var query = new GetParentOverviewQuery
         {
-            StudentProfileId = studentProfileId,
             ClassId = classId,
             SessionId = sessionId,
             FromDate = fromDate,

@@ -28,10 +28,9 @@ public class ParentController : ControllerBase
         _mediator = mediator;
     }
 
-    /// Dashboard tổng quan của phụ huynh
+    /// Dashboard tổng quan của phụ huynh (studentId lấy từ token)
     [HttpGet("overview")]
     public async Task<IResult> GetOverview(
-        [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] Guid? sessionId,
         [FromQuery] DateTime? fromDate,
@@ -40,7 +39,6 @@ public class ParentController : ControllerBase
     {
         var query = new GetParentOverviewQuery
         {
-            StudentProfileId = studentProfileId,
             ClassId = classId,
             SessionId = sessionId,
             FromDate = fromDate,
@@ -73,17 +71,15 @@ public class ParentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Lịch học của học viên
+    /// Lịch học của học viên (studentId lấy từ token)
     [HttpGet("timetable")]
     public async Task<IResult> GetTimetable(
-        [FromQuery] Guid studentId,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
         var query = new GetStudentTimetableQuery
         {
-            StudentId = studentId,
             From = from,
             To = to
         };
@@ -92,17 +88,15 @@ public class ParentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Lịch sử điểm danh của học viên
+    /// Lịch sử điểm danh của học viên (studentId lấy từ token)
     [HttpGet("attendance")]
     public async Task<IResult> GetAttendance(
-        [FromQuery] Guid studentProfileId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var query = new GetStudentAttendanceHistoryQuery
         {
-            StudentProfileId = studentProfileId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -111,10 +105,9 @@ public class ParentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Kết quả kiểm tra của học viên
+    /// Kết quả kiểm tra của học viên (studentId lấy từ token)
     [HttpGet("exam-results")]
     public async Task<IResult> GetExamResults(
-        [FromQuery] Guid studentProfileId,
         [FromQuery] string? examType,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -129,7 +122,6 @@ public class ParentController : ControllerBase
 
         var query = new GetStudentExamResultsQuery
         {
-            StudentProfileId = studentProfileId,
             ExamType = parsedExamType,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -165,10 +157,9 @@ public class ParentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Tài liệu, album, video của học viên
+    /// Tài liệu, album, video của học viên (studentId lấy từ token)
     [HttpGet("media")]
     public async Task<IResult> GetMedia(
-        [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] string? monthTag,
         [FromQuery] string? type,
@@ -211,7 +202,6 @@ public class ParentController : ControllerBase
         var query = new GetMediaQuery(
             BranchId: null,
             ClassId: classId,
-            StudentProfileId: studentProfileId,
             MonthTag: monthTag,
             Type: parsedType,
             ContentType: parsedContentType,

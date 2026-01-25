@@ -1,4 +1,5 @@
-﻿using Kidzgo.Application.Abstraction.Data;
+﻿using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
@@ -6,20 +7,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.MakeupCredits.GetAllMakeupCredits;
 
-public sealed class GetAllMakeupCreditsQueryHandler(IDbContext context)
+public sealed class GetAllMakeupCreditsQueryHandler(
+    IDbContext context,
+    IUserContext userContext)
     : IQueryHandler<GetAllMakeupCreditsQuery, Page<MakeupCreditResponse>>
 {
     public async Task<Result<Page<MakeupCreditResponse>>> Handle(
         GetAllMakeupCreditsQuery query,
         CancellationToken cancellationToken)
     {
+        // Use StudentProfileId from query if provided, otherwise use from context
+        var studentProfileId = query.StudentProfileId ?? userContext.StudentId;
+
         var creditsQuery = context.MakeupCredits
             .AsNoTracking()
             .AsQueryable();
 
-        if (query.StudentProfileId.HasValue)
+        if (studentProfileId.HasValue)
         {
-            creditsQuery = creditsQuery.Where(c => c.StudentProfileId == query.StudentProfileId.Value);
+            creditsQuery = creditsQuery.Where(c => c.StudentProfileId == studentProfileId.Value);
         }
 
         if (query.Status.HasValue)

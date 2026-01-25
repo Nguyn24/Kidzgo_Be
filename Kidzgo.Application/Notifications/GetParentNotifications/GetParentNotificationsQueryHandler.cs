@@ -35,16 +35,30 @@ public sealed class GetParentNotificationsQueryHandler(
                 Error.NotFound("ParentProfile", "Parent profile not found for current user"));
         }
 
-        // Get linked student profile IDs
-        var studentProfileIds = await context.ParentStudentLinks
-            .AsNoTracking()
-            .Where(psl => psl.ParentProfileId == parentProfile.Id)
-            .Select(psl => psl.StudentProfileId)
-            .ToListAsync(cancellationToken);
+        // Get StudentId from context (token) - only get data for selected student
+        var selectedStudentId = userContext.StudentId;
 
-        // Get notifications for parent user and all linked student profiles
-        var profileIds = new List<Guid?> { parentProfile.Id };
-        profileIds.AddRange(studentProfileIds.Select(id => (Guid?)id));
+        if (!selectedStudentId.HasValue)
+        {
+            return Result.Failure<GetParentNotificationsResponse>(
+                Error.NotFound("StudentId", "No student selected in token"));
+        }
+
+        // Verify the student is linked to this parent
+        var isLinked = await context.ParentStudentLinks
+            .AsNoTracking()
+            .AnyAsync(psl => psl.ParentProfileId == parentProfile.Id && 
+                            psl.StudentProfileId == selectedStudentId.Value, 
+                     cancellationToken);
+
+        if (!isLinked)
+        {
+            return Result.Failure<GetParentNotificationsResponse>(
+                Error.NotFound("Student", "Student not linked to this parent"));
+        }
+
+        // Get notifications for parent user and selected student profile only
+        var profileIds = new List<Guid?> { parentProfile.Id, selectedStudentId.Value };
 
         var notificationsQuery = context.Notifications
             .Include(n => n.RecipientUser)
