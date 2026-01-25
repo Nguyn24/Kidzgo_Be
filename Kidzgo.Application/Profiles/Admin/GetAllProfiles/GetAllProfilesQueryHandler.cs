@@ -34,6 +34,22 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
             query = query.Where(p => p.IsActive == request.IsActive.Value);
         }
 
+        // Apply search by display name (for students)
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchTerm = request.SearchTerm.Trim().ToLower();
+            query = query.Where(p => 
+                p.DisplayName.ToLower().Contains(searchTerm));
+        }
+
+        // Apply branch filter (for students through class enrollments)
+        if (request.BranchId.HasValue)
+        {
+            query = query.Where(p => 
+                p.ProfileType != ProfileType.Student || 
+                p.ClassEnrollments.Any(ce => ce.Class.BranchId == request.BranchId.Value));
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var result = await query

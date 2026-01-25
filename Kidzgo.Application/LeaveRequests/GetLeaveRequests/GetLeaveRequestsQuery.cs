@@ -12,5 +12,6 @@ public sealed class GetLeaveRequestsQuery : IPageableQuery, IQuery<Page<GetLeave
     public Guid? StudentProfileId { get; init; }
     public Guid? ClassId { get; init; }
     public LeaveRequestStatus? Status { get; init; }
+    public Guid? BranchId { get; init; }
 }
 
