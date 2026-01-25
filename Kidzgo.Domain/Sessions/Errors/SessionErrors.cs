@@ -51,5 +51,9 @@ public static class SessionErrors
     public static Error SaveFailed(string details) => Error.Validation(
         "Session.SaveFailed",
         $"Không thể lưu sessions: {details}");
+
+    public static Error UnauthorizedAccess(Guid sessionId) => Error.Validation(
+        "Session.UnauthorizedAccess",
+        $"Teacher không được phép tạo report cho session với ID '{sessionId}'");
 }
 

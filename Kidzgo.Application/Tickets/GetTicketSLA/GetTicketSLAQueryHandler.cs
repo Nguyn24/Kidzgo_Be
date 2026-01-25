@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.GetTicketSLA;
@@ -18,8 +19,7 @@ public sealed class GetTicketSLAQueryHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<GetTicketSLAResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<GetTicketSLAResponse>(TicketErrors.NotFound(query.TicketId));
         }
 
         // Calculate first response time (time from ticket creation to first comment by ManagementStaff/Teacher)

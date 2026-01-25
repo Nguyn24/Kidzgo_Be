@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.TuitionPlans.ToggleTuitionPlanStatus;
@@ -16,8 +17,7 @@ public sealed class ToggleTuitionPlanStatusCommandHandler(
 
         if (tuitionPlan is null)
         {
-            return Result.Failure<ToggleTuitionPlanStatusResponse>(
-                Error.NotFound("TuitionPlan.NotFound", "Tuition Plan not found"));
+            return Result.Failure<ToggleTuitionPlanStatusResponse>(TuitionPlanErrors.NotFound(command.Id));
         }
 
         tuitionPlan.IsActive = !tuitionPlan.IsActive;

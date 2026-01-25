@@ -23,6 +23,10 @@ public static class ExamQuestionErrors
     public static readonly Error MissingCorrectAnswer = Error.Validation(
         "ExamQuestion.MissingCorrectAnswer",
         "Correct answer is required");
+
+    public static readonly Error HasSubmissions = Error.Conflict(
+        "ExamQuestion.HasSubmissions",
+        "Cannot delete question that has submission answers");
 }
 
 

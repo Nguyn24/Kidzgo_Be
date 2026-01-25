@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.UnpublishBlog;
@@ -17,20 +18,17 @@ public sealed class UnpublishBlogCommandHandler(
 
         if (blog is null)
         {
-            return Result.Failure<UnpublishBlogResponse>(
-                Error.NotFound("Blog.NotFound", "Blog not found"));
+            return Result.Failure<UnpublishBlogResponse>(BlogErrors.NotFound(command.Id));
         }
 
         if (blog.IsDeleted)
         {
-            return Result.Failure<UnpublishBlogResponse>(
-                Error.Conflict("Blog.Deleted", "Cannot unpublish a deleted blog"));
+            return Result.Failure<UnpublishBlogResponse>(BlogErrors.Deleted);
         }
 
         if (!blog.IsPublished)
         {
-            return Result.Failure<UnpublishBlogResponse>(
-                Error.Conflict("Blog.NotPublished", "Blog is not published"));
+            return Result.Failure<UnpublishBlogResponse>(BlogErrors.NotPublished);
         }
 
         blog.IsPublished = false;

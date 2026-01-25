@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Schools;
+using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classrooms.CreateClassroom;
@@ -18,8 +19,7 @@ public sealed class CreateClassroomCommandHandler(
 
         if (!branchExists)
         {
-            return Result.Failure<CreateClassroomResponse>(
-                Error.NotFound("Classroom.BranchNotFound", "Branch not found or inactive"));
+            return Result.Failure<CreateClassroomResponse>(ClassroomErrors.BranchNotFound);
         }
 
         var classroom = new Classroom

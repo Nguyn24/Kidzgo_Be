@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.TuitionPlans.GetTuitionPlanById;
@@ -35,8 +36,7 @@ public sealed class GetTuitionPlanByIdQueryHandler(
 
         if (tuitionPlan is null)
         {
-            return Result.Failure<GetTuitionPlanByIdResponse>(
-                Error.NotFound("TuitionPlan.NotFound", "Tuition Plan not found"));
+            return Result.Failure<GetTuitionPlanByIdResponse>(TuitionPlanErrors.NotFound(query.Id));
         }
 
         return tuitionPlan;

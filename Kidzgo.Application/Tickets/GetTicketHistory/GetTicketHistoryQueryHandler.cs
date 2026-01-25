@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.GetTicketHistory;
@@ -21,8 +22,7 @@ public sealed class GetTicketHistoryQueryHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<GetTicketHistoryResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<GetTicketHistoryResponse>(TicketErrors.NotFound(query.TicketId));
         }
 
         var comments = await context.TicketComments
