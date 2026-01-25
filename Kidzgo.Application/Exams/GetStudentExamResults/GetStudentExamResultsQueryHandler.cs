@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
@@ -6,20 +7,31 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Exams;
 using Kidzgo.Domain.Exams.Errors;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Exams.GetStudentExamResults;
 
 public sealed class GetStudentExamResultsQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetStudentExamResultsQuery, GetStudentExamResultsResponse>
 {
     public async Task<Result<GetStudentExamResultsResponse>> Handle(GetStudentExamResultsQuery query, CancellationToken cancellationToken)
     {
-        // Check if student profile exists
+        // Get StudentId from context (token)
+        var studentId = userContext.StudentId;
+
+        if (!studentId.HasValue)
+        {
+            return Result.Failure<GetStudentExamResultsResponse>(ProfileErrors.StudentNotFound);
+        }
+
+        // Check if student profile exists and belongs to current user
         var studentProfile = await context.Profiles
             .FirstOrDefaultAsync(
-                p => p.Id == query.StudentProfileId &&
+                p => p.Id == studentId.Value &&
+                     p.UserId == userContext.UserId &&
                      p.ProfileType == ProfileType.Student &&
                      p.IsActive &&
                      !p.IsDeleted,
@@ -34,7 +46,7 @@ public sealed class GetStudentExamResultsQueryHandler(
         var examResultsQuery = context.ExamResults
             .Include(er => er.Exam)
                 .ThenInclude(e => e.Class)
-            .Where(er => er.StudentProfileId == query.StudentProfileId)
+            .Where(er => er.StudentProfileId == studentId.Value)
             .AsQueryable();
 
         // Filter by exam type
