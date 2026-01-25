@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Profiles.Admin.GetAllProfiles;
+using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
 using Kidzgo.Application.Profiles.CreateProfile;
 using Kidzgo.Application.Profiles.DeleteProfile;
 using Kidzgo.Application.Profiles.GetProfileById;
@@ -45,11 +46,20 @@ public class ProfileController : ControllerBase
     }
 
  
+    /// <param name="userId">Filter by user ID</param>
+    /// <param name="profileType">Filter by profile type</param>
+    /// <param name="isActive">Filter by active status</param>
+    /// <param name="searchTerm">Search by profile display name</param>
+    /// <param name="branchId">Filter by branch ID (for students)</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
     public async Task<IResult> GetProfiles(
         [FromQuery] Guid? userId,
         [FromQuery] string? profileType,
         [FromQuery] bool? isActive,
+        [FromQuery] string? searchTerm,
+        [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -60,7 +70,9 @@ public class ProfileController : ControllerBase
             PageSize = pageSize,
             UserId = userId,
             ProfileType = profileType,
-            IsActive = isActive
+            IsActive = isActive,
+            SearchTerm = searchTerm,
+            BranchId = branchId
         };
 
         var result = await _mediator.Send(query, cancellationToken);
