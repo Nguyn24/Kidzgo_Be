@@ -12,4 +12,13 @@ internal static class ClaimsPrincipalExtensions
             parsedUserId :
             throw new ApplicationException("Users id is unavailable");
     }
+
+    public static Guid? GetStudentId(this ClaimsPrincipal? principal)
+    {
+        string? studentId = principal?.FindFirstValue("StudentId");
+
+        return Guid.TryParse(studentId, out Guid parsedStudentId) ?
+            parsedStudentId :
+            null;
+    }
 }

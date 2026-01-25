@@ -1,17 +1,37 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Media.GetMedia;
 
 public sealed class GetMediaQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetMediaQuery, GetMediaResponse>
 {
     public async Task<Result<GetMediaResponse>> Handle(GetMediaQuery query, CancellationToken cancellationToken)
     {
+        // Get StudentId from context (token)
+        var studentId = userContext.StudentId;
+
+        if (!studentId.HasValue)
+        {
+            return Result.Failure<GetMediaResponse>(ProfileErrors.StudentNotFound);
+        }
+
+        // Verify the student belongs to the current user
+        var profile = await context.Profiles
+            .FirstOrDefaultAsync(p => p.Id == studentId.Value && p.UserId == userContext.UserId, cancellationToken);
+
+        if (profile == null || profile.ProfileType != Domain.Users.ProfileType.Student)
+        {
+            return Result.Failure<GetMediaResponse>(ProfileErrors.StudentNotFound);
+        }
+
         var mediaQuery = context.MediaAssets
             .Include(m => m.UploaderUser)
             .Include(m => m.ApprovedByUser)
@@ -33,11 +53,8 @@ public sealed class GetMediaQueryHandler(
             mediaQuery = mediaQuery.Where(m => m.ClassId == query.ClassId.Value);
         }
 
-        // Filter by student
-        if (query.StudentProfileId.HasValue)
-        {
-            mediaQuery = mediaQuery.Where(m => m.StudentProfileId == query.StudentProfileId.Value);
-        }
+        // Filter by student from context
+        mediaQuery = mediaQuery.Where(m => m.StudentProfileId == studentId.Value);
 
         // Filter by month tag
         if (!string.IsNullOrWhiteSpace(query.MonthTag))

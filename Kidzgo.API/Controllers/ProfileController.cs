@@ -53,7 +53,7 @@ public class ProfileController : ControllerBase
     /// <param name="branchId">Filter by branch ID (for students)</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
-    [HttpGet]
+    [HttpGet("/GetAll/Students")]
     public async Task<IResult> GetProfiles(
         [FromQuery] Guid? userId,
         [FromQuery] string? profileType,

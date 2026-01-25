@@ -59,7 +59,6 @@ public class MediaController : ControllerBase
     public async Task<IResult> GetMedia(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? classId,
-        [FromQuery] Guid? studentProfileId,
         [FromQuery] string? monthTag,
         [FromQuery] MediaType? type,
         [FromQuery] MediaContentType? contentType,
@@ -73,7 +72,6 @@ public class MediaController : ControllerBase
         var query = new GetMediaQuery(
             branchId,
             classId,
-            studentProfileId,
             monthTag,
             type,
             contentType,

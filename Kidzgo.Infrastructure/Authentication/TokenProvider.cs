@@ -13,6 +13,11 @@ internal sealed class TokenProvider(IConfiguration configuration) : ITokenProvid
 {
     public string Create(User user)
     {
+        return Create(user, null);
+    }
+
+    public string Create(User user, Guid? studentId)
+    {
         string secretKey = configuration["Jwt:Secret"]!;
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -23,6 +28,11 @@ internal sealed class TokenProvider(IConfiguration configuration) : ITokenProvid
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
+
+        if (studentId.HasValue)
+        {
+            claims.Add(new Claim("StudentId", studentId.Value.ToString()));
+        }
 
         var token = new JwtSecurityToken(
             issuer: configuration["Jwt:Issuer"],

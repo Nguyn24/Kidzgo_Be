@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
@@ -9,18 +10,27 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Classes.GetStudentClasses;
 
 public sealed class GetStudentClassesQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetStudentClassesQuery, GetStudentClassesResponse>
 {
     public async Task<Result<GetStudentClassesResponse>> Handle(GetStudentClassesQuery query, CancellationToken cancellationToken)
     {
+        // Get StudentId from context (token)
+        var studentId = userContext.StudentId;
+
+        if (!studentId.HasValue)
+        {
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.StudentNotFound);
+        }
+
         // Verify student exists and is active
         var profile = await context.Profiles
-            .FirstOrDefaultAsync(p => p.Id == query.StudentId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == studentId.Value, cancellationToken);
 
         if (profile == null)
         {
-            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.NotFound(query.StudentId));
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.NotFound(studentId.Value));
         }
 
         if (profile.ProfileType != Domain.Users.ProfileType.Student)
@@ -33,9 +43,15 @@ public sealed class GetStudentClassesQueryHandler(
             return Result.Failure<GetStudentClassesResponse>(ProfileErrors.StudentNotFound);
         }
 
+        // Verify the student belongs to the current user
+        if (profile.UserId != userContext.UserId)
+        {
+            return Result.Failure<GetStudentClassesResponse>(ProfileErrors.StudentNotFound);
+        }
+
         // Get enrollments where student is enrolled (Status = Active) and Class exists
         var enrollmentsQuery = context.ClassEnrollments
-            .Where(ce => ce.StudentProfileId == query.StudentId && ce.Status == EnrollmentStatus.Active)
+            .Where(ce => ce.StudentProfileId == studentId.Value && ce.Status == EnrollmentStatus.Active)
             .Where(ce => ce.Class != null);
 
         // Get total count
