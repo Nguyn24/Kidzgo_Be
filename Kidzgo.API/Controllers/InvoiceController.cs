@@ -59,6 +59,14 @@ public class InvoiceController : ControllerBase
     }
 
     /// UC-254: Xem danh sách Invoices
+    /// <param name="branchId">Filter by branch ID</param>
+    /// <param name="studentProfileId">Filter by student profile ID</param>
+    /// <param name="classId">Filter by class ID</param>
+    /// <param name="status">Invoice status: Pending, Paid, Overdue, or Cancelled</param>
+    /// <param name="type">Invoice type</param>
+    /// <param name="searchTerm">Search by student display name</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetInvoices(

@@ -34,6 +34,14 @@ public sealed class GetTeacherClassStudentsQueryHandler(
             .ThenInclude(p => p.User)
             .Where(e => e.ClassId == query.ClassId && e.Status == EnrollmentStatus.Active);
 
+        // Apply search by display name
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var searchTerm = query.SearchTerm.Trim().ToLower();
+            enrollmentsQuery = enrollmentsQuery.Where(e => 
+                e.StudentProfile.DisplayName.ToLower().Contains(searchTerm));
+        }
+
         var totalCount = await enrollmentsQuery.CountAsync(cancellationToken);
 
         var students = await enrollmentsQuery

@@ -1,0 +1,12 @@
+using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
+
+namespace Kidzgo.Application.Notifications.GetParentNotifications;
+
+public sealed class GetParentNotificationsQuery : IQuery<GetParentNotificationsResponse>, IPageableQuery
+{
+    public bool? UnreadOnly { get; init; }
+    public int PageNumber { get; init; } = 1;
+    public int PageSize { get; init; } = 10;
+}
+

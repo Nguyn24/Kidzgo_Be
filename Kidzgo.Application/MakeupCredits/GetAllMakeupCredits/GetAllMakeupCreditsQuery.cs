@@ -18,6 +18,7 @@ public sealed class GetAllMakeupCreditsQuery : IPageableQuery, IQuery<Page<Makeu
     public DateTime? CreatedTo { get; init; }
     public DateTime? ExpiresFrom { get; init; }
     public DateTime? ExpiresTo { get; init; }
+    public Guid? BranchId { get; init; }
 }
 
 

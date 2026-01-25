@@ -52,6 +52,13 @@ public sealed class GetAllMakeupCreditsQueryHandler(IDbContext context)
             creditsQuery = creditsQuery.Where(c => c.ExpiresAt.HasValue && c.ExpiresAt.Value <= query.ExpiresTo.Value);
         }
 
+        // Apply branch filter (through student's class enrollments)
+        if (query.BranchId.HasValue)
+        {
+            creditsQuery = creditsQuery.Where(c => 
+                c.StudentProfile.ClassEnrollments.Any(ce => ce.Class.BranchId == query.BranchId.Value));
+        }
+
         var totalCount = await creditsQuery.CountAsync(cancellationToken);
 
         var credits = await creditsQuery

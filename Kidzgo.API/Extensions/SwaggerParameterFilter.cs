@@ -26,9 +26,28 @@ public class SwaggerParameterFilter : IParameterFilter
                     parameter.Description = "Page size (default: 10)";
                 break;
             case "searchterm":
-                parameter.Example = new OpenApiString("example@email.com");
-                if (string.IsNullOrEmpty(parameter.Description))
-                    parameter.Description = "Search by username, email, or transaction code";
+                // Detect controller name to provide appropriate example
+                var searchControllerName = context.ParameterInfo?.Member?.DeclaringType?.Name ?? string.Empty;
+                var isStudentSearch = searchControllerName.Contains("MakeupController", StringComparison.OrdinalIgnoreCase) ||
+                                     searchControllerName.Contains("ParentController", StringComparison.OrdinalIgnoreCase) ||
+                                     searchControllerName.Contains("TeacherController", StringComparison.OrdinalIgnoreCase) ||
+                                     searchControllerName.Contains("ProfileController", StringComparison.OrdinalIgnoreCase) ||
+                                     searchControllerName.Contains("InvoiceController", StringComparison.OrdinalIgnoreCase) ||
+                                     parameter.Description?.Contains("student display name", StringComparison.OrdinalIgnoreCase) == true ||
+                                     parameter.Description?.Contains("profile display name", StringComparison.OrdinalIgnoreCase) == true;
+
+                if (isStudentSearch)
+                {
+                    parameter.Example = new OpenApiString("Nguyễn Văn A");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Search by student display name";
+                }
+                else
+                {
+                    parameter.Example = new OpenApiString("example@email.com");
+                    if (string.IsNullOrEmpty(parameter.Description))
+                        parameter.Description = "Search by username, email, or transaction code";
+                }
                 break;
             case "status":
                 // Detect controller name if available
