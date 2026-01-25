@@ -6,6 +6,7 @@ using Kidzgo.Application.MakeupCredits.GetAllMakeupCredits;
 using Kidzgo.Application.MakeupCredits.GetMakeupAllocations;
 using Kidzgo.Application.MakeupCredits.GetMakeupCreditById;
 using Kidzgo.Application.MakeupCredits.GetMakeupCredits;
+using Kidzgo.Application.MakeupCredits.GetStudentsWithMakeupOrLeave;
 using Kidzgo.Application.MakeupCredits.SuggestSessions;
 using Kidzgo.Application.MakeupCredits.UseMakeupCredit;
 using Kidzgo.Domain.Sessions;
@@ -64,6 +65,7 @@ public class MakeupController : ControllerBase
         [FromQuery] DateTime? createdTo,
         [FromQuery] DateTime? expiresFrom,
         [FromQuery] DateTime? expiresTo,
+        [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -90,6 +92,7 @@ public class MakeupController : ControllerBase
             CreatedTo = createdTo,
             ExpiresFrom = expiresFrom,
             ExpiresTo = expiresTo,
+            BranchId = branchId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -153,6 +156,31 @@ public class MakeupController : ControllerBase
     public async Task<IResult> Allocations([FromQuery] Guid studentProfileId, CancellationToken cancellationToken)
     {
         var query = new GetMakeupAllocationsQuery { StudentProfileId = studentProfileId };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Danh sách học viên đang có đơn xin nghỉ hoặc đang có makeup credit
+    /// <param name="searchTerm">Search by student display name</param>
+    /// <param name="branchId">Filter by branch ID</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
+    [HttpGet("students")]
+    public async Task<IResult> GetStudentsWithMakeupOrLeave(
+        [FromQuery] string? searchTerm,
+        [FromQuery] Guid? branchId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetStudentsWithMakeupOrLeaveQuery
+        {
+            SearchTerm = searchTerm,
+            BranchId = branchId,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }

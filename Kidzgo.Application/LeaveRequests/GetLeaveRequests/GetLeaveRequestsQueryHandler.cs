@@ -30,6 +30,12 @@ public sealed class GetLeaveRequestsQueryHandler(IDbContext context)
             query = query.Where(l => l.Status == request.Status.Value);
         }
 
+        // Apply branch filter
+        if (request.BranchId.HasValue)
+        {
+            query = query.Where(l => l.Class.BranchId == request.BranchId.Value);
+        }
+
         var total = await query.CountAsync(cancellationToken);
 
         var items = await query

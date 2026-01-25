@@ -38,9 +38,14 @@ public class TeacherController : ControllerBase
     }
 
     /// Lấy danh sách học sinh trong 1 lớp mà Teacher đang đảm nhận
+    /// <param name="classId">Class ID</param>
+    /// <param name="searchTerm">Search by student display name</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet("classes/{classId:guid}/students")]
     public async Task<IResult> GetClassStudents(
         Guid classId,
+        [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -48,6 +53,7 @@ public class TeacherController : ControllerBase
         var query = new GetTeacherClassStudentsQuery
         {
             ClassId = classId,
+            SearchTerm = searchTerm,
             PageNumber = pageNumber,
             PageSize = pageSize
         };

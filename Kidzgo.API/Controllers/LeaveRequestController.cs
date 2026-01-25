@@ -49,6 +49,7 @@ public class LeaveRequestController : ControllerBase
         [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] LeaveRequestStatus? status,
+        [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -58,6 +59,7 @@ public class LeaveRequestController : ControllerBase
             StudentProfileId = studentProfileId,
             ClassId = classId,
             Status = status,
+            BranchId = branchId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
