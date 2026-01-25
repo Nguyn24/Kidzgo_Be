@@ -17,4 +17,10 @@ public class UserContext : IUserContext
             .User
             .GetUserId() ??
         throw new ApplicationException("Users context is unavailable");
+
+    public Guid? StudentId =>
+        _httpContextAccessor
+            .HttpContext?
+            .User
+            .GetStudentId();
 }

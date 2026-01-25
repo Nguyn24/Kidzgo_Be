@@ -53,7 +53,7 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
         var totalCount = await query.CountAsync(cancellationToken);
 
         var result = await query
-            .OrderByDescending(p => p.CreatedAt)
+            .OrderBy(p => p.DisplayName)
             .ApplyPagination(request.PageNumber, request.PageSize)
             .Select(p => new GetAllProfilesResponse
             {

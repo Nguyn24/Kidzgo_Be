@@ -39,27 +39,30 @@ public sealed class GetParentOverviewQueryHandler(
                 Domain.Common.Error.NotFound("ParentProfile", "not found"));
         }
 
-        // Get student profiles linked to this parent
-        var studentProfileIds = await context.ParentStudentLinks
+        // Get StudentId from context (token) - only get data for selected student
+        var selectedStudentId = userContext.StudentId;
+
+        if (!selectedStudentId.HasValue)
+        {
+            return Result.Failure<ParentOverviewResponse>(
+                Domain.Common.Error.NotFound("StudentId", "No student selected in token"));
+        }
+
+        // Verify the student is linked to this parent
+        var isLinked = await context.ParentStudentLinks
             .AsNoTracking()
-            .Where(link => link.ParentProfileId == parentProfile.Id)
-            .Select(link => link.StudentProfileId)
-            .ToListAsync(cancellationToken);
+            .AnyAsync(link => link.ParentProfileId == parentProfile.Id && 
+                             link.StudentProfileId == selectedStudentId.Value, 
+                      cancellationToken);
 
-        if (!studentProfileIds.Any())
+        if (!isLinked)
         {
-            return new ParentOverviewResponse
-            {
-                Statistics = new DashboardStatistics(),
-                StudentProfiles = new List<StudentProfileDto>()
-            };
+            return Result.Failure<ParentOverviewResponse>(
+                Domain.Common.Error.NotFound("Student", "Student not linked to this parent"));
         }
 
-        // Filter by specific student if provided
-        if (query.StudentProfileId.HasValue && studentProfileIds.Contains(query.StudentProfileId.Value))
-        {
-            studentProfileIds = new List<Guid> { query.StudentProfileId.Value };
-        }
+        // Use only the selected student from token
+        var studentProfileIds = new List<Guid> { selectedStudentId.Value };
 
         // Statistics
         var statistics = new DashboardStatistics

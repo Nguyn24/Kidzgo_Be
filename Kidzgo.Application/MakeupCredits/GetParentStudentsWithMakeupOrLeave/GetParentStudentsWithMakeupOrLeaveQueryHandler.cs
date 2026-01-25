@@ -34,14 +34,41 @@ public sealed class GetParentStudentsWithMakeupOrLeaveQueryHandler(
                 Error.NotFound("ParentProfile", "Parent profile not found for current user"));
         }
 
-        // Get student profile IDs linked to this parent
-        var linkedStudentProfileIds = await context.ParentStudentLinks
+        // Get StudentId from context (token) - only get data for selected student
+        var selectedStudentId = userContext.StudentId;
+
+        if (!selectedStudentId.HasValue)
+        {
+            return Result.Failure<Page<StudentWithMakeupOrLeaveResponse>>(
+                Error.NotFound("StudentId", "No student selected in token"));
+        }
+
+        // Verify the student is linked to this parent
+        var isLinked = await context.ParentStudentLinks
             .AsNoTracking()
-            .Where(link => link.ParentProfileId == parentProfile.Id)
-            .Select(link => link.StudentProfileId)
-            .ToListAsync(cancellationToken);
+            .AnyAsync(link => link.ParentProfileId == parentProfile.Id && 
+                             link.StudentProfileId == selectedStudentId.Value, 
+                      cancellationToken);
 
-        if (!linkedStudentProfileIds.Any())
+        if (!isLinked)
+        {
+            return Result.Failure<Page<StudentWithMakeupOrLeaveResponse>>(
+                Error.NotFound("Student", "Student not linked to this parent"));
+        }
+
+        // Check if this student has leave requests or makeup credits
+        var hasLeaveRequest = await context.LeaveRequests
+            .AnyAsync(lr => lr.StudentProfileId == selectedStudentId.Value &&
+                           (lr.Status == Domain.Sessions.LeaveRequestStatus.Pending || 
+                            lr.Status == Domain.Sessions.LeaveRequestStatus.Approved),
+                     cancellationToken);
+
+        var hasMakeupCredit = await context.MakeupCredits
+            .AnyAsync(mc => mc.StudentProfileId == selectedStudentId.Value &&
+                           mc.Status == Domain.Sessions.MakeupCreditStatus.Available,
+                     cancellationToken);
+
+        if (!hasLeaveRequest && !hasMakeupCredit)
         {
             return new Page<StudentWithMakeupOrLeaveResponse>(
                 new List<StudentWithMakeupOrLeaveResponse>(),
@@ -50,84 +77,67 @@ public sealed class GetParentStudentsWithMakeupOrLeaveQueryHandler(
                 query.PageSize);
         }
 
-        // Get distinct student profile IDs that have leave requests or makeup credits
-        var studentsWithLeaveRequests = context.LeaveRequests
-            .Where(lr => linkedStudentProfileIds.Contains(lr.StudentProfileId) &&
-                        (lr.Status == Domain.Sessions.LeaveRequestStatus.Pending || 
-                         lr.Status == Domain.Sessions.LeaveRequestStatus.Approved))
-            .Select(lr => lr.StudentProfileId)
-            .Distinct();
-
-        var studentsWithMakeupCredits = context.MakeupCredits
-            .Where(mc => linkedStudentProfileIds.Contains(mc.StudentProfileId) &&
-                        mc.Status == Domain.Sessions.MakeupCreditStatus.Available)
-            .Select(mc => mc.StudentProfileId)
-            .Distinct();
-
-        var studentProfileIds = await studentsWithLeaveRequests
-            .Union(studentsWithMakeupCredits)
-            .ToListAsync(cancellationToken);
-
-        if (!studentProfileIds.Any())
-        {
-            return new Page<StudentWithMakeupOrLeaveResponse>(
-                new List<StudentWithMakeupOrLeaveResponse>(),
-                0,
-                query.PageNumber,
-                query.PageSize);
-        }
-
-        // Query profiles with filters (already filtered to linked students)
-        var profilesQuery = context.Profiles
+        // Query profile for selected student only
+        var profile = await context.Profiles
             .Include(p => p.User)
-            .Where(p => studentProfileIds.Contains(p.Id) && 
-                       p.ProfileType == ProfileType.Student && 
-                       !p.IsDeleted && 
-                       p.IsActive)
-            .AsQueryable();
+            .FirstOrDefaultAsync(p => p.Id == selectedStudentId.Value && 
+                                     p.ProfileType == ProfileType.Student && 
+                                     !p.IsDeleted && 
+                                     p.IsActive, cancellationToken);
 
-        // Apply search by display name
+        if (profile == null)
+        {
+            return new Page<StudentWithMakeupOrLeaveResponse>(
+                new List<StudentWithMakeupOrLeaveResponse>(),
+                0,
+                query.PageNumber,
+                query.PageSize);
+        }
+
+        // Apply search filter if provided
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
             var searchTerm = query.SearchTerm.Trim().ToLower();
-            profilesQuery = profilesQuery.Where(p => 
-                p.DisplayName.ToLower().Contains(searchTerm));
+            if (!profile.DisplayName.ToLower().Contains(searchTerm))
+            {
+                return new Page<StudentWithMakeupOrLeaveResponse>(
+                    new List<StudentWithMakeupOrLeaveResponse>(),
+                    0,
+                    query.PageNumber,
+                    query.PageSize);
+            }
         }
 
-        var totalCount = await profilesQuery.CountAsync(cancellationToken);
+        // Get leave request and makeup credit counts
+        var leaveRequestCount = await context.LeaveRequests
+            .CountAsync(lr => lr.StudentProfileId == selectedStudentId.Value && 
+                             (lr.Status == Domain.Sessions.LeaveRequestStatus.Pending || 
+                              lr.Status == Domain.Sessions.LeaveRequestStatus.Approved),
+                       cancellationToken);
 
-        // Get leave request and makeup credit counts for each student
-        var profiles = await profilesQuery
-            .OrderBy(p => p.DisplayName)
-            .ApplyPagination(query.PageNumber, query.PageSize)
-            .Select(p => new
-            {
-                Profile = p,
-                LeaveRequestCount = context.LeaveRequests
-                    .Count(lr => lr.StudentProfileId == p.Id && 
-                                (lr.Status == Domain.Sessions.LeaveRequestStatus.Pending || 
-                                 lr.Status == Domain.Sessions.LeaveRequestStatus.Approved)),
-                MakeupCreditCount = context.MakeupCredits
-                    .Count(mc => mc.StudentProfileId == p.Id && 
-                               mc.Status == Domain.Sessions.MakeupCreditStatus.Available)
-            })
-            .ToListAsync(cancellationToken);
+        var makeupCreditCount = await context.MakeupCredits
+            .CountAsync(mc => mc.StudentProfileId == selectedStudentId.Value &&
+                             mc.Status == Domain.Sessions.MakeupCreditStatus.Available,
+                       cancellationToken);
 
-        var result = profiles.Select(p => new StudentWithMakeupOrLeaveResponse
+        var result = new List<StudentWithMakeupOrLeaveResponse>
         {
-            Id = p.Profile.Id,
-            UserId = p.Profile.UserId,
-            DisplayName = p.Profile.DisplayName,
-            UserEmail = p.Profile.User.Email,
-            HasLeaveRequest = p.LeaveRequestCount > 0,
-            HasMakeupCredit = p.MakeupCreditCount > 0,
-            LeaveRequestCount = p.LeaveRequestCount,
-            MakeupCreditCount = p.MakeupCreditCount
-        }).ToList();
+            new StudentWithMakeupOrLeaveResponse
+            {
+                Id = profile.Id,
+                UserId = profile.UserId,
+                DisplayName = profile.DisplayName,
+                UserEmail = profile.User.Email,
+                HasLeaveRequest = leaveRequestCount > 0,
+                HasMakeupCredit = makeupCreditCount > 0,
+                LeaveRequestCount = leaveRequestCount,
+                MakeupCreditCount = makeupCreditCount
+            }
+        };
 
         return new Page<StudentWithMakeupOrLeaveResponse>(
             result,
-            totalCount,
+            1,
             query.PageNumber,
             query.PageSize);
     }

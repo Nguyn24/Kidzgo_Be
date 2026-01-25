@@ -242,11 +242,10 @@ public class ExamController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-162: Parent/Student xem lịch sử Exam Results của học sinh (filter theo type)
-    [HttpGet("students/{studentProfileId:guid}")]
+    /// UC-162: Parent/Student xem lịch sử Exam Results của học sinh (studentId lấy từ token)
+    [HttpGet("students")]
     [Authorize]
     public async Task<IResult> GetStudentExamResults(
-        Guid studentProfileId,
         [FromQuery] ExamType? examType,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -254,7 +253,6 @@ public class ExamController : ControllerBase
     {
         var query = new GetStudentExamResultsQuery
         {
-            StudentProfileId = studentProfileId,
             ExamType = examType,
             PageNumber = pageNumber,
             PageSize = pageSize

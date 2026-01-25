@@ -50,17 +50,15 @@ public class AttendanceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-101: Lịch sử điểm danh học sinh
-    [HttpGet("students/{studentProfileId:guid}")]
+    /// UC-101: Lịch sử điểm danh học sinh (studentId lấy từ token)
+    [HttpGet("students")]
     public async Task<IResult> GetStudentHistory(
-        Guid studentProfileId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var query = new GetStudentAttendanceHistoryQuery
         {
-            StudentProfileId = studentProfileId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
