@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.DeleteBlog;
@@ -17,14 +18,12 @@ public sealed class DeleteBlogCommandHandler(
 
         if (blog is null)
         {
-            return Result.Failure<DeleteBlogResponse>(
-                Error.NotFound("Blog.NotFound", "Blog not found"));
+            return Result.Failure<DeleteBlogResponse>(BlogErrors.NotFound(command.Id));
         }
 
         if (blog.IsDeleted)
         {
-            return Result.Failure<DeleteBlogResponse>(
-                Error.Conflict("Blog.AlreadyDeleted", "Blog is already deleted"));
+            return Result.Failure<DeleteBlogResponse>(BlogErrors.AlreadyDeleted);
         }
 
         // Soft delete

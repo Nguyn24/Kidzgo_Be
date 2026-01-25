@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.TuitionPlans.UpdateTuitionPlan;
@@ -16,8 +17,7 @@ public sealed class UpdateTuitionPlanCommandHandler(
 
         if (tuitionPlan is null)
         {
-            return Result.Failure<UpdateTuitionPlanResponse>(
-                Error.NotFound("TuitionPlan.NotFound", "Tuition Plan not found"));
+            return Result.Failure<UpdateTuitionPlanResponse>(TuitionPlanErrors.NotFound(command.Id));
         }
 
         // Check if program exists
@@ -26,8 +26,7 @@ public sealed class UpdateTuitionPlanCommandHandler(
 
         if (!programExists)
         {
-            return Result.Failure<UpdateTuitionPlanResponse>(
-                Error.NotFound("TuitionPlan.ProgramNotFound", "Program not found or deleted"));
+            return Result.Failure<UpdateTuitionPlanResponse>(TuitionPlanErrors.ProgramNotFound);
         }
 
         // Check if branch exists (if provided)
@@ -38,8 +37,7 @@ public sealed class UpdateTuitionPlanCommandHandler(
 
             if (!branchExists)
             {
-                return Result.Failure<UpdateTuitionPlanResponse>(
-                    Error.NotFound("TuitionPlan.BranchNotFound", "Branch not found or inactive"));
+                return Result.Failure<UpdateTuitionPlanResponse>(TuitionPlanErrors.BranchNotFound);
             }
         }
 

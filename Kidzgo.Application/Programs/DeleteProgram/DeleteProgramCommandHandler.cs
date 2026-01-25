@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Programs.DeleteProgram;
@@ -17,8 +18,7 @@ public sealed class DeleteProgramCommandHandler(
 
         if (program is null)
         {
-            return Result.Failure(
-                Error.NotFound("Program.NotFound", "Program not found"));
+            return Result.Failure(ProgramErrors.NotFound(command.Id));
         }
 
         // Check if program is being used by any active classes
@@ -27,8 +27,7 @@ public sealed class DeleteProgramCommandHandler(
 
         if (hasActiveClasses)
         {
-            return Result.Failure(
-                Error.Conflict("Program.HasActiveClasses", "Cannot delete program with active classes"));
+            return Result.Failure(ProgramErrors.HasActiveClasses);
         }
 
         // Soft delete

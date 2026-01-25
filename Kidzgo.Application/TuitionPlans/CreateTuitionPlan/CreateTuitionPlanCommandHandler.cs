@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Programs;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.TuitionPlans.CreateTuitionPlan;
@@ -18,8 +19,7 @@ public sealed class CreateTuitionPlanCommandHandler(
 
         if (!programExists)
         {
-            return Result.Failure<CreateTuitionPlanResponse>(
-                Error.NotFound("TuitionPlan.ProgramNotFound", "Program not found or deleted"));
+            return Result.Failure<CreateTuitionPlanResponse>(TuitionPlanErrors.ProgramNotFound);
         }
 
         // Check if branch exists (if provided)
@@ -30,8 +30,7 @@ public sealed class CreateTuitionPlanCommandHandler(
 
             if (!branchExists)
             {
-                return Result.Failure<CreateTuitionPlanResponse>(
-                    Error.NotFound("TuitionPlan.BranchNotFound", "Branch not found or inactive"));
+                return Result.Failure<CreateTuitionPlanResponse>(TuitionPlanErrors.BranchNotFound);
             }
         }
 

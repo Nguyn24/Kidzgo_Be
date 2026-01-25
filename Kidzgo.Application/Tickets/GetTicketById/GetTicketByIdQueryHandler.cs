@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.GetTicketById;
@@ -25,8 +26,7 @@ public sealed class GetTicketByIdQueryHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<GetTicketByIdResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<GetTicketByIdResponse>(TicketErrors.NotFound(query.Id));
         }
 
         return new GetTicketByIdResponse
