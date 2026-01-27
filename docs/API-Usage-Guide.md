@@ -22,6 +22,8 @@ Tài liệu này mô tả chi tiết cách sử dụng tất cả các API endpo
 16. [Session APIs](#16-session-apis)
 17. [Media APIs](#17-media-apis)
 18. [User Management APIs](#18-user-management-apis)
+19. [Lead APIs](#19-lead-apis)
+20. [Placement Test APIs](#20-placement-test-apis)
 
 ---
 
@@ -4695,5 +4697,361 @@ GET /api/admin/users?role=Teacher&isActive=true&pageNumber=1&pageSize=10
 
 ---
 
-*Tài liệu này được cập nhật lần cuối: 2025-01-10*
+## 19. Lead APIs
 
+Base URL: `/api/leads`
+
+### 19.1. Create Lead from Web (Public)
+
+**Endpoint:** `POST /api/leads/public`
+
+**Mô tả:** Tạo Lead từ form web public (Landing page). Không cần authentication. Các field khác sẽ được set `null` hoặc mặc định trong backend, `Source` luôn là `"Landing"`.
+
+**Authorization:** Không cần (Public)
+
+**Request Body:**
+```json
+{
+  "contactName": "Nguyễn Văn A",
+  "phone": "0912345678",
+  "zaloId": "zalo_user_id",
+  "email": "parent@example.com"
+}
+```
+
+**Lưu ý:**
+- Ít nhất **một trong bốn field** `contactName`, `phone`, `email`, `zaloId` phải không rỗng.
+- `source` được tự động set = `"Landing"`.
+- `ownerStaffId` mặc định là `null` (chưa gán cho staff).
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "source": "Landing",
+    "campaign": null,
+    "contactName": "Nguyễn Văn A",
+    "childName": null,
+    "childDateOfBirth": null,
+    "phone": "0912345678",
+    "zaloId": "zalo_user_id",
+    "email": "parent@example.com",
+    "company": null,
+    "subject": null,
+    "branchPreference": null,
+    "programInterest": null,
+    "notes": null,
+    "status": "New",
+    "ownerStaffId": null,
+    "createdAt": "2026-01-27T10:00:00Z"
+  }
+}
+```
+
+---
+
+### 19.2. Create Lead (Internal)
+
+**Endpoint:** `POST /api/leads`
+
+**Mô tả:** Tạo Lead từ Zalo, Referral, Offline hoặc các nguồn nội bộ khác. Cho phép nhập đầy đủ thông tin, bao gồm child info, campaign, branchPreference, ownerStaffId,...
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+**Request Body:**
+```json
+{
+  "source": "Zalo",
+  "campaign": "Zalo_OA_2026",
+  "contactName": "Nguyễn Văn A",
+  "childName": "Nguyễn Văn B",
+  "childDateOfBirth": "2017-03-24T00:00:00Z",
+  "phone": "0912345678",
+  "zaloId": "zalo_user_id",
+  "email": "parent@example.com",
+  "company": "Trường Tiểu học ABC",
+  "subject": "Đăng ký tư vấn khóa học",
+  "branchPreference": "guid",
+  "programInterest": "Tiếng Anh Lớp 2",
+  "notes": "Khách ưu tiên lịch tối thứ 3, 5",
+  "ownerStaffId": "guid"
+}
+```
+
+**Response (201 Created):** Tương tự như 19.1, nhưng các field có thể đầy đủ hơn tùy dữ liệu gửi lên.
+
+---
+
+### 19.3. Get Leads
+
+**Endpoint:** `GET /api/leads`
+
+**Mô tả:** Xem danh sách Leads với filter theo `status`, `source`, `ownerStaffId`, `branchPreference`, `searchTerm` và phân trang.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+**Query Parameters:**
+- `status` (string?, optional): Lọc theo trạng thái lead (`New`, `Contacted`, `BookedTest`, `TestDone`, `Enrolled`, `Lost`)
+- `source` (string?, optional): Lọc theo nguồn (`Landing`, `Zalo`, `Referral`, `Offline`, ...)
+- `ownerStaffId` (Guid?, optional): Lọc theo staff phụ trách
+- `branchPreference` (Guid?, optional): Lọc theo chi nhánh ưu tiên
+- `searchTerm` (string?, optional): Tìm theo tên, điện thoại, email
+- `page` (int, default: 1): Số trang
+- `pageSize` (int, default: 20): Số lượng items mỗi trang
+
+---
+
+### 19.4. Get Lead By ID
+
+**Endpoint:** `GET /api/leads/{id}`
+
+**Mô tả:** Xem chi tiết Lead, bao gồm thông tin liên hệ, child info, branchPreference, status, ownerStaffId,...
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+### 19.5. Update Lead
+
+**Endpoint:** `PUT /api/leads/{id}`
+
+**Mô tả:** Cập nhật thông tin Lead (contact, child info, branchPreference, notes,...). Không cho phép sửa Lead đã `Enrolled`.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+**Request Body (tất cả fields đều optional):**
+```json
+{
+  "contactName": "Nguyễn Văn A - Updated",
+  "childName": "Nguyễn Văn B",
+  "childDateOfBirth": "2017-03-24T00:00:00Z",
+  "phone": "0912345678",
+  "zaloId": "zalo_user_id",
+  "email": "parent@example.com",
+  "company": "Trường Tiểu học ABC",
+  "subject": "Cập nhật nhu cầu khóa học",
+  "branchPreference": "guid",
+  "programInterest": "Tiếng Anh Lớp 3",
+  "notes": "Khách muốn đổi lịch kiểm tra"
+}
+```
+
+---
+
+### 19.6. Assign Lead
+
+**Endpoint:** `POST /api/leads/{id}/assign`
+
+**Mô tả:** Gán Lead cho 1 staff phụ trách (`ownerStaffId`) và tạo LeadActivity tương ứng.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+---
+
+### 19.7. Update Lead Status
+
+**Endpoint:** `PATCH /api/leads/{id}/status`
+
+**Mô tả:** Cập nhật trạng thái Lead (`New`, `Contacted`, `BookedTest`, `TestDone`, `Enrolled`, `Lost`). Khi chuyển trạng thái, hệ thống sẽ log LeadActivity để theo dõi lịch sử.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+### 19.8. Add Lead Note
+
+**Endpoint:** `POST /api/leads/{id}/notes`
+
+**Mô tả:** Thêm ghi chú/hoạt động cho Lead (gọi điện, nhắn tin, note chăm sóc...) và cập nhật `touchCount`, `nextActionAt`, `firstResponseAt` (nếu là lần chạm đầu tiên).
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+### 19.9. Get Lead Activities
+
+**Endpoint:** `GET /api/leads/{id}/activities`
+
+**Mô tả:** Xem lịch sử toàn bộ hoạt động (LeadActivity) của Lead: created, notes, status changes, assignments,...
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+### 19.10. Get Lead SLA
+
+**Endpoint:** `GET /api/leads/{id}/sla`
+
+**Mô tả:** Theo dõi thời gian phản hồi đầu tiên cho Lead (`firstResponseAt`) và SLA compliance.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+*Tài liệu này được cập nhật lần cuối: 2026-01-27*
+
+---
+
+## 20. Placement Test APIs
+
+Base URL: `/api/placement-tests`
+
+### 20.1. Schedule Placement Test
+
+**Endpoint:** `POST /api/placement-tests`
+
+**Mô tả:** Đặt lịch Placement Test cho một Lead (có thể kèm sẵn StudentProfile và Class nếu đã biết). Khi đặt lịch, Lead thường chuyển sang trạng thái `BookedTest`.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body:**
+```json
+{
+  "leadId": "guid",
+  "studentProfileId": "guid",
+  "classId": "guid",
+  "scheduledAt": "2026-01-28T09:00:00Z",
+  "room": "Phòng Test 1",
+  "invigilatorUserId": "guid"
+}
+```
+
+---
+
+### 20.2. Get Placement Tests
+
+**Endpoint:** `GET /api/placement-tests`
+
+**Mô tả:** Xem danh sách Placement Tests với filter theo Lead, Student, trạng thái và khoảng ngày.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+**Query Parameters:**
+- `leadId` (Guid?, optional): Lọc theo Lead
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile
+- `status` (`PlacementTestStatus`?, optional): `Scheduled`, `Completed`, `NoShow`, `Cancelled`
+- `fromDate` (DateTime?, optional): Ngày bắt đầu
+- `toDate` (DateTime?, optional): Ngày kết thúc
+- `page` (int, default: 1): Số trang
+- `pageSize` (int, default: 20): Số lượng items mỗi trang
+
+---
+
+### 20.3. Get Placement Test By ID
+
+**Endpoint:** `GET /api/placement-tests/{id}`
+
+**Mô tả:** Xem chi tiết một Placement Test, bao gồm Lead, StudentProfile, Class, lịch hẹn, kết quả, notes,...
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
+
+---
+
+### 20.4. Update Placement Test
+
+**Endpoint:** `PUT /api/placement-tests/{id}`
+
+**Mô tả:** Cập nhật thông tin lịch hẹn Placement Test (giờ, phòng, invigilator, studentProfile, class).
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body (tất cả fields đều optional):**
+```json
+{
+  "scheduledAt": "2026-01-28T10:00:00Z",
+  "room": "Phòng Test 2",
+  "invigilatorUserId": "guid",
+  "studentProfileId": "guid",
+  "classId": "guid"
+}
+```
+
+---
+
+### 20.5. Cancel Placement Test
+
+**Endpoint:** `POST /api/placement-tests/{id}/cancel`
+
+**Mô tả:** Hủy lịch Placement Test với lý do cụ thể, trạng thái chuyển sang `Cancelled`.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body (optional):**
+```json
+{
+  "reason": "Phụ huynh xin dời lịch"
+}
+```
+
+---
+
+### 20.6. Mark Placement Test No-Show
+
+**Endpoint:** `POST /api/placement-tests/{id}/no-show`
+
+**Mô tả:** Đánh dấu học sinh không đến thi (`NoShow`). Dùng khi đến giờ thi mà học sinh không xuất hiện.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+---
+
+### 20.7. Update Placement Test Results
+
+**Endpoint:** `PUT /api/placement-tests/{id}/results`
+
+**Mô tả:** Nhập kết quả Placement Test (Listening/Speaking/Reading/Writing, tổng điểm, gợi ý level/program). Khi đủ điểm và trạng thái phù hợp, hệ thống tự chuyển lead sang `TestDone`.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body:**
+```json
+{
+  "listeningScore": 20,
+  "speakingScore": 18,
+  "readingScore": 22,
+  "writingScore": 19,
+  "resultScore": 79,
+  "levelRecommendation": "Starter 2",
+  "programRecommendation": "Tiếng Anh Lớp 2",
+  "attachmentUrl": "https://res.cloudinary.com/.../placement-test-result.jpg"
+}
+```
+
+---
+
+### 20.8. Add Placement Test Note
+
+**Endpoint:** `POST /api/placement-tests/{id}/notes`
+
+**Mô tả:** Thêm ghi chú cho Placement Test (nhận xét thêm của giáo viên, tình trạng học sinh,...).
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body:**
+```json
+{
+  "note": "Học sinh hơi rụt rè, cần thêm thời gian làm quen."
+}
+```
+
+---
+
+### 20.9. Convert Lead To Enrolled
+
+**Endpoint:** `POST /api/placement-tests/{id}/convert-to-enrolled`
+
+**Mô tả:** Sau khi có kết quả test và phụ huynh đồng ý ghi danh, API này sẽ:
+- Link Placement Test với `studentProfileId` (nếu gửi vào).
+- Cập nhật Lead sang trạng thái `Enrolled` và set `ConvertedStudentProfileId`, `ConvertedAt`.
+- Trả về thông tin cần thiết để FE tiếp tục tạo Enrollment cho lớp.
+
+**Authorization:** Required (Roles: `Admin`, `ManagementStaff`)
+
+**Request Body (optional):**
+```json
+{
+  "studentProfileId": "guid"
+}
+```
