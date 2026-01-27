@@ -44,7 +44,7 @@ public sealed class GetExamsQueryHandler(
                 ClassId = e.ClassId,
                 ClassCode = e.Class.Code,
                 ClassTitle = e.Class.Title,
-                ExamType = e.ExamType,
+                ExamType = e.ExamType.ToString(),
                 Date = e.Date,
                 MaxScore = e.MaxScore,
                 Description = e.Description,

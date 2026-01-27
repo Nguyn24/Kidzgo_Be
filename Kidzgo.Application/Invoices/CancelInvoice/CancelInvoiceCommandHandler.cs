@@ -40,7 +40,7 @@ public sealed class CancelInvoiceCommandHandler(
         return new CancelInvoiceResponse
         {
             Id = invoice.Id,
-            Status = invoice.Status
+            Status = invoice.Status.ToString()
         };
     }
 }

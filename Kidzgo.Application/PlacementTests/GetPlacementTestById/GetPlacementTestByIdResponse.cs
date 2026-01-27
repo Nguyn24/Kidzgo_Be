@@ -1,0 +1,29 @@
+namespace Kidzgo.Application.PlacementTests.GetPlacementTestById;
+
+public sealed class GetPlacementTestByIdResponse
+{
+    public Guid Id { get; init; }
+    public Guid? LeadId { get; init; }
+    public string? LeadContactName { get; init; }
+    public Guid? StudentProfileId { get; init; }
+    public string? StudentName { get; init; }
+    public Guid? ClassId { get; init; }
+    public string? ClassName { get; init; }
+    public DateTime? ScheduledAt { get; init; }
+    public string Status { get; init; } = null!;
+    public string? Room { get; init; }
+    public Guid? InvigilatorUserId { get; init; }
+    public string? InvigilatorName { get; init; }
+    public decimal? ResultScore { get; init; }
+    public decimal? ListeningScore { get; init; }
+    public decimal? SpeakingScore { get; init; }
+    public decimal? ReadingScore { get; init; }
+    public decimal? WritingScore { get; init; }
+    public string? LevelRecommendation { get; init; }
+    public string? ProgramRecommendation { get; init; }
+    public string? Notes { get; init; }
+    public string? AttachmentUrl { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
+

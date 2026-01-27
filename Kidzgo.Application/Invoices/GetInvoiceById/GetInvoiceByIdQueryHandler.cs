@@ -30,11 +30,11 @@ public sealed class GetInvoiceByIdQueryHandler(
                 StudentName = i.StudentProfile.DisplayName ?? "Unknown",
                 ClassId = i.ClassId,
                 ClassCode = i.Class != null ? i.Class.Code : null,
-                Type = i.Type,
+                Type = i.Type.ToString(),
                 Amount = i.Amount,
                 Currency = i.Currency,
                 DueDate = i.DueDate,
-                Status = i.Status,
+                Status = i.Status.ToString(),
                 Description = i.Description,
                 PayosPaymentLink = i.PayosPaymentLink,
                 PayosQr = i.PayosQr,
@@ -44,7 +44,7 @@ public sealed class GetInvoiceByIdQueryHandler(
                 InvoiceLines = i.InvoiceLines.Select(il => new InvoiceLineDto
                 {
                     Id = il.Id,
-                    ItemType = il.ItemType,
+                    ItemType = il.ItemType.ToString(),
                     Quantity = il.Quantity,
                     UnitPrice = il.UnitPrice,
                     Description = il.Description,

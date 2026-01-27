@@ -99,10 +99,10 @@ public sealed class CreateTicketCommandHandler(
             ClassId = ticketWithNav.ClassId,
             ClassCode = ticketWithNav.Class?.Code,
             ClassTitle = ticketWithNav.Class?.Title,
-            Category = ticketWithNav.Category,
+            Category = ticketWithNav.Category.ToString(),
             Subject = ticketWithNav.Subject,
             Message = ticketWithNav.Message,
-            Status = ticketWithNav.Status,
+            Status = ticketWithNav.Status.ToString(),
             AssignedToUserId = ticketWithNav.AssignedToUserId,
             CreatedAt = ticketWithNav.CreatedAt,
             UpdatedAt = ticketWithNav.UpdatedAt
