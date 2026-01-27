@@ -12,11 +12,11 @@ public sealed class GetInvoiceByIdResponse
     public string StudentName { get; init; } = null!;
     public Guid? ClassId { get; init; }
     public string? ClassCode { get; init; }
-    public InvoiceType Type { get; init; }
+    public string Type { get; init; } = null!;
     public decimal Amount { get; init; }
     public string Currency { get; init; } = null!;
     public DateOnly? DueDate { get; init; }
-    public InvoiceStatus Status { get; init; }
+    public string Status { get; init; } = null!;
     public string? Description { get; init; }
     public string? PayosPaymentLink { get; init; }
     public string? PayosQr { get; init; }
@@ -29,7 +29,7 @@ public sealed class GetInvoiceByIdResponse
 public sealed class InvoiceLineDto
 {
     public Guid Id { get; init; }
-    public InvoiceLineItemType ItemType { get; init; }
+    public string ItemType { get; init; } = null!;
     public int Quantity { get; init; }
     public decimal UnitPrice { get; init; }
     public string? Description { get; init; }

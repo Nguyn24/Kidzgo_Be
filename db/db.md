@@ -273,6 +273,7 @@ Table exams {
 Table exercises {
   id uuid [pk]
   class_id uuid [ref: - classes.id] // optional: can be assigned to specific class
+  mission_id uuid [ref: - missions.id] // optional: link to mission for rewards when student completes exercise
   title varchar(255)
   description text
   exercise_type varchar(20) // READING/LISTENING/WRITING
@@ -450,8 +451,6 @@ Table missions {
   end_at timestamptz
   reward_stars int
   reward_exp int // experience points reward
-  total_questions int // total questions for question-based missions
-  progress_per_question numeric // percentage progress per question (e.g., 10% if 10 questions)
   created_by uuid [ref: - users.id]
   created_at timestamptz
 }
@@ -534,6 +533,8 @@ Table leads {
   phone varchar(50)
   zalo_id varchar(100)
   email varchar(255)
+  company varchar(255) // Công ty/Trường học
+  subject varchar(255) // Tiêu đề form
   branch_preference uuid [ref: - branches.id]
   program_interest varchar(255)
   notes text

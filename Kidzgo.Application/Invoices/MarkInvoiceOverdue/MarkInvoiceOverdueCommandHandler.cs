@@ -35,7 +35,7 @@ public sealed class MarkInvoiceOverdueCommandHandler(
         return new MarkInvoiceOverdueResponse
         {
             Id = invoice.Id,
-            Status = invoice.Status
+            Status = invoice.Status.ToString()
         };
     }
 }

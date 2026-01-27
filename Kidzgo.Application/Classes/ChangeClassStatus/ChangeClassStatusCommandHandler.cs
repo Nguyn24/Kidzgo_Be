@@ -46,7 +46,7 @@ public sealed class ChangeClassStatusCommandHandler(
         return new ChangeClassStatusResponse
         {
             Id = classEntity.Id,
-            Status = classEntity.Status
+            Status = classEntity.Status.ToString()
         };
     }
 }

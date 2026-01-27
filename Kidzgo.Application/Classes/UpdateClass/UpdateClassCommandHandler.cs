@@ -115,7 +115,7 @@ public sealed class UpdateClassCommandHandler(
             AssistantTeacherId = classEntity.AssistantTeacherId,
             StartDate = classEntity.StartDate,
             EndDate = classEntity.EndDate,
-            Status = classEntity.Status,
+            Status = classEntity.Status.ToString(),
             Capacity = classEntity.Capacity,
             SchedulePattern = classEntity.SchedulePattern
         };

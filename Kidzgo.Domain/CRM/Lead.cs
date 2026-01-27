@@ -10,9 +10,13 @@ public class Lead : Entity
     public LeadSource Source { get; set; }
     public string? Campaign { get; set; }
     public string ContactName { get; set; } = null!;
+    public string? ChildName { get; set; }
+    public DateTime? ChildDateOfBirth { get; set; }
     public string? Phone { get; set; }
     public string? ZaloId { get; set; }
     public string? Email { get; set; }
+    public string? Company { get; set; } // Công ty/Trường học
+    public string? Subject { get; set; } // Tiêu đề form
     public Guid? BranchPreference { get; set; }
     public string? ProgramInterest { get; set; }
     public string? Notes { get; set; }

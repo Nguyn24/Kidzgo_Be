@@ -5,7 +5,7 @@ namespace Kidzgo.Application.Tickets.GetTicketSLA;
 public sealed class GetTicketSLAResponse
 {
     public Guid TicketId { get; init; }
-    public TicketStatus TicketStatus { get; init; }
+    public string TicketStatus { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
     public DateTime? FirstResponseAt { get; init; }
     public double? TimeToFirstResponseHours { get; init; }

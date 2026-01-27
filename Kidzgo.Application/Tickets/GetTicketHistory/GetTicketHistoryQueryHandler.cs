@@ -101,7 +101,7 @@ public sealed class GetTicketHistoryQueryHandler(
         return new GetTicketHistoryResponse
         {
             TicketId = ticket.Id,
-            TicketStatus = ticket.Status,
+            TicketStatus = ticket.Status.ToString(),
             History = history
         };
     }
