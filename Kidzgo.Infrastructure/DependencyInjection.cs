@@ -28,6 +28,7 @@ public static class DependencyInjection
             .AddClientUrl(configuration)            
             .AddMailService(configuration)
             .AddPayOSService(configuration)
+            .AddZaloService(configuration)
             .AddAuthenticationInternal(configuration)
             .AddBackgroundJobs(configuration);
 
@@ -133,6 +134,13 @@ public static class DependencyInjection
             }
         });
 
+        return services;
+    }
+
+    private static IServiceCollection AddZaloService(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<Shared.ZaloSettings>(configuration.GetSection("Zalo"));
         return services;
     }
 

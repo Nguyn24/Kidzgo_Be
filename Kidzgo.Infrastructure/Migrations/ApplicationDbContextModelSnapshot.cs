@@ -79,6 +79,17 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime?>("ChildDateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChildName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Company")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("ContactName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -126,6 +137,10 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<int>("TouchCount")
                         .HasColumnType("integer");
@@ -195,6 +210,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid?>("ClassId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("InvigilatorUserId")
                         .HasColumnType("uuid");
 
@@ -238,6 +256,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<Guid?>("StudentProfileId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("WritingScore")
                         .HasColumnType("numeric");
@@ -648,6 +669,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("MissionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -661,6 +685,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ClassId");
 
                     b.HasIndex("CreatedBy");
+
+                    b.HasIndex("MissionId");
 
                     b.ToTable("Exercises", "public");
                 });
@@ -1029,9 +1055,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<decimal?>("ProgressPerQuestion")
-                        .HasColumnType("numeric");
-
                     b.Property<int?>("RewardExp")
                         .HasColumnType("integer");
 
@@ -1056,9 +1079,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<int?>("TotalQuestions")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -3275,9 +3295,16 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kidzgo.Domain.Gamification.Mission", "Mission")
+                        .WithMany("Exercises")
+                        .HasForeignKey("MissionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Class");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Mission");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.ExerciseQuestion", b =>
@@ -4377,6 +4404,8 @@ namespace Kidzgo.Infrastructure.Migrations
 
             modelBuilder.Entity("Kidzgo.Domain.Gamification.Mission", b =>
                 {
+                    b.Navigation("Exercises");
+
                     b.Navigation("HomeworkAssignments");
 
                     b.Navigation("MissionProgresses");

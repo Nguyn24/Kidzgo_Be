@@ -20,10 +20,10 @@ public sealed class TicketDto
     public Guid? ClassId { get; init; }
     public string? ClassCode { get; init; }
     public string? ClassTitle { get; init; }
-    public TicketCategory Category { get; init; }
+    public string Category { get; init; } = null!;
     public string Subject { get; init; } = null!;
     public string Message { get; init; } = null!;
-    public TicketStatus Status { get; init; }
+    public string Status { get; init; } = null!;
     public Guid? AssignedToUserId { get; init; }
     public string? AssignedToUserName { get; init; }
     public DateTime CreatedAt { get; init; }

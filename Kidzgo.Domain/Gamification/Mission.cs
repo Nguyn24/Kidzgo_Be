@@ -2,6 +2,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.LessonPlans;
+using Kidzgo.Domain.Exams;
 
 namespace Kidzgo.Domain.Gamification;
 
@@ -18,8 +19,6 @@ public class Mission : Entity
     public DateTime? EndAt { get; set; }
     public int? RewardStars { get; set; }
     public int? RewardExp { get; set; } // Experience points reward
-    public int? TotalQuestions { get; set; } // Total number of questions for question-based missions
-    public decimal? ProgressPerQuestion { get; set; } // Percentage progress per question (e.g., 10% per question if 10 questions)
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 
@@ -28,4 +27,5 @@ public class Mission : Entity
     public User? CreatedByUser { get; set; }
     public ICollection<MissionProgress> MissionProgresses { get; set; } = new List<MissionProgress>();
     public ICollection<HomeworkAssignment> HomeworkAssignments { get; set; } = new List<HomeworkAssignment>();
+    public ICollection<Exercise> Exercises { get; set; } = new List<Exercise>();
 }

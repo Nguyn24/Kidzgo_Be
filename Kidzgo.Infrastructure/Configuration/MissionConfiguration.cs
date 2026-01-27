@@ -42,11 +42,6 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
 
         builder.Property(x => x.RewardExp);
 
-        builder.Property(x => x.TotalQuestions);
-
-        builder.Property(x => x.ProgressPerQuestion)
-            .HasColumnType("numeric");
-
         builder.Property(x => x.CreatedBy);
 
         builder.Property(x => x.CreatedAt)
@@ -69,6 +64,11 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.HomeworkAssignments)
+            .WithOne(x => x.Mission)
+            .HasForeignKey(x => x.MissionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(x => x.Exercises)
             .WithOne(x => x.Mission)
             .HasForeignKey(x => x.MissionId)
             .OnDelete(DeleteBehavior.Restrict);
