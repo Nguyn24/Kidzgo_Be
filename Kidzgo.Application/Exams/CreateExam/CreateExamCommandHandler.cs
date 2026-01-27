@@ -84,7 +84,7 @@ public sealed class CreateExamCommandHandler(
             ClassId = exam.ClassId,
             ClassCode = classEntity.Code,
             ClassTitle = classEntity.Title,
-            ExamType = exam.ExamType,
+            ExamType = exam.ExamType.ToString(),
             Date = exam.Date,
             MaxScore = exam.MaxScore,
             Description = exam.Description,

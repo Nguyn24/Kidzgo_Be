@@ -54,6 +54,12 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
 
         builder.Property(x => x.AttachmentUrl);
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Relationships
         builder.HasOne(x => x.Lead)
             .WithMany(x => x.PlacementTests)

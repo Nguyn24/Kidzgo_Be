@@ -32,7 +32,7 @@ public sealed class GetSessionReportByIdQueryHandler(
             Id = sessionReport.Id,
             SessionId = sessionReport.SessionId,
             SessionDate = sessionReport.Session.PlannedDatetime,
-            SessionStatus = sessionReport.Session.Status,
+            SessionStatus = sessionReport.Session.Status.ToString(),
             ClassId = sessionReport.Session.ClassId,
             ClassCode = sessionReport.Session.Class.Code,
             ClassTitle = sessionReport.Session.Class.Title,

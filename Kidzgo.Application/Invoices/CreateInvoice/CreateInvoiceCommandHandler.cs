@@ -103,11 +103,11 @@ public sealed class CreateInvoiceCommandHandler(
             BranchId = invoice.BranchId,
             StudentProfileId = invoice.StudentProfileId,
             ClassId = invoice.ClassId,
-            Type = invoice.Type,
+            Type = invoice.Type.ToString(),
             Amount = invoice.Amount,
             Currency = invoice.Currency,
             DueDate = invoice.DueDate,
-            Status = invoice.Status,
+            Status = invoice.Status.ToString(),
             Description = invoice.Description,
             IssuedAt = invoice.IssuedAt,
             IssuedBy = invoice.IssuedBy

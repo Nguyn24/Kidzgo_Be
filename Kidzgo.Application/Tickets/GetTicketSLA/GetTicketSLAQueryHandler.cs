@@ -55,7 +55,7 @@ public sealed class GetTicketSLAQueryHandler(
         return new GetTicketSLAResponse
         {
             TicketId = ticket.Id,
-            TicketStatus = ticket.Status,
+            TicketStatus = ticket.Status.ToString(),
             CreatedAt = ticket.CreatedAt,
             FirstResponseAt = firstResponseAt,
             TimeToFirstResponseHours = timeToFirstResponse,
