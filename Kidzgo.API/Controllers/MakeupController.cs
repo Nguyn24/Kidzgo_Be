@@ -28,23 +28,23 @@ public class MakeupController : ControllerBase
         _mediator = mediator;
     }
 
-    /// UC-109: Tạo Makeup Credit thủ công
-    [HttpPost]
-    public async Task<IResult> Create([FromBody] CreateMakeupCreditRequest request, CancellationToken cancellationToken)
-    {
-        Enum.TryParse<CreatedReason>(request.CreatedReason, true, out var createdReason);
-
-        var command = new CreateMakeupCreditCommand
-        {
-            StudentProfileId = request.StudentProfileId,
-            SourceSessionId = request.SourceSessionId,
-            ExpiresAt = request.ExpiresAt,
-            CreatedReason = createdReason == 0 ? CreatedReason.LongTerm : createdReason
-        };
-
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchCreated(r => $"/api/makeup-credits/{r.Id}");
-    }
+    /// Tạo Makeup Credit thủ công
+    // [HttpPost]
+    // public async Task<IResult> Create([FromBody] CreateMakeupCreditRequest request, CancellationToken cancellationToken)
+    // {
+    //     Enum.TryParse<CreatedReason>(request.CreatedReason, true, out var createdReason);
+    //
+    //     var command = new CreateMakeupCreditCommand
+    //     {
+    //         StudentProfileId = request.StudentProfileId,
+    //         SourceSessionId = request.SourceSessionId,
+    //         ExpiresAt = request.ExpiresAt,
+    //         CreatedReason = createdReason == 0 ? CreatedReason.LongTerm : createdReason
+    //     };
+    //
+    //     var result = await _mediator.Send(command, cancellationToken);
+    //     return result.MatchCreated(r => $"/api/makeup-credits/{r.Id}");
+    // }
 
     /// UC-105/107: Danh sách Makeup Credits theo học sinh
     [HttpGet]
@@ -59,39 +59,16 @@ public class MakeupController : ControllerBase
     [HttpGet("all")]
     public async Task<IResult> GetAll(
         [FromQuery] Guid? studentProfileId,
-        [FromQuery] string? status,
-        [FromQuery] string? createdReason,
-        [FromQuery] DateTime? createdFrom,
-        [FromQuery] DateTime? createdTo,
-        [FromQuery] DateTime? expiresFrom,
-        [FromQuery] DateTime? expiresTo,
+        [FromQuery] MakeupCreditStatus? status,
         [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        MakeupCreditStatus? creditStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MakeupCreditStatus>(status, true, out var parsedStatus))
-        {
-            creditStatus = parsedStatus;
-        }
-
-        CreatedReason? parsedCreatedReason = null;
-        if (!string.IsNullOrWhiteSpace(createdReason) &&
-            Enum.TryParse<CreatedReason>(createdReason, true, out var parsedReason))
-        {
-            parsedCreatedReason = parsedReason;
-        }
-
         var query = new GetAllMakeupCreditsQuery
         {
             StudentProfileId = studentProfileId,
-            Status = creditStatus,
-            CreatedReason = parsedCreatedReason,
-            CreatedFrom = createdFrom,
-            CreatedTo = createdTo,
-            ExpiresFrom = expiresFrom,
-            ExpiresTo = expiresTo,
+            Status = status,
             BranchId = branchId,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -116,6 +93,7 @@ public class MakeupController : ControllerBase
         var command = new UseMakeupCreditCommand
         {
             MakeupCreditId = id,
+            ClassId = request.ClassId,
             TargetSessionId = request.TargetSessionId
         };
 
