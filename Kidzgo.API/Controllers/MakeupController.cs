@@ -46,7 +46,7 @@ public class MakeupController : ControllerBase
     //     return result.MatchCreated(r => $"/api/makeup-credits/{r.Id}");
     // }
 
-    /// UC-105/107: Danh sách Makeup Credits theo học sinh
+    /// UC-105/107: Danh sách Makeup Credits theo học sinhdwe
     [HttpGet]
     public async Task<IResult> GetList([FromQuery] Guid studentProfileId, CancellationToken cancellationToken)
     {
@@ -59,16 +59,23 @@ public class MakeupController : ControllerBase
     [HttpGet("all")]
     public async Task<IResult> GetAll(
         [FromQuery] Guid? studentProfileId,
-        [FromQuery] MakeupCreditStatus? status,
+        [FromQuery] string? status,
         [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
+        MakeupCreditStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<MakeupCreditStatus>(status, ignoreCase: true, out var tmpStatus))
+        {
+            parsedStatus = tmpStatus;
+        }
+
         var query = new GetAllMakeupCreditsQuery
         {
             StudentProfileId = studentProfileId,
-            Status = status,
+            Status = parsedStatus,
             BranchId = branchId,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -116,13 +123,21 @@ public class MakeupController : ControllerBase
     }
 
     /// UC-112/113: Đề xuất buổi bù
+    /// <param name="id">Makeup credit id</param>
+    /// <param name="makeupDate">Ngày mong muốn học bù (DateOnly)</param>
+    /// <param name="timeOfDay">Buổi trong ngày: morning | afternoon | evening (optional)</param>
     [HttpGet("{id:guid}/suggestions")]
-    public async Task<IResult> Suggest(Guid id, [FromQuery] int limit = 5, CancellationToken cancellationToken = default)
+    public async Task<IResult> Suggest(
+        Guid id,
+        [FromQuery] DateOnly makeupDate,
+        [FromQuery] string? timeOfDay,
+        CancellationToken cancellationToken = default)
     {
         var query = new SuggestMakeupSessionsQuery
         {
             MakeupCreditId = id,
-            Limit = limit
+            MakeupDate = makeupDate,
+            TimeOfDay = timeOfDay
         };
 
         var result = await _mediator.Send(query, cancellationToken);
@@ -138,7 +153,7 @@ public class MakeupController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Danh sách học viên đang có đơn xin nghỉ hoặc đang có makeup credit
+    /// Danh sách học viên đang có makeup credit
     /// <param name="searchTerm">Search by student display name</param>
     /// <param name="branchId">Filter by branch ID</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
