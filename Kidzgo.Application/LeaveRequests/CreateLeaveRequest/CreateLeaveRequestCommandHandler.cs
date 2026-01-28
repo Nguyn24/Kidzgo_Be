@@ -53,33 +53,38 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
 
         context.LeaveRequests.Add(leave);
 
-        // Auto approve path -> create makeup credit
+        // Auto approve path -> create makeup credits for all sessions in leave range
         if (status == LeaveRequestStatus.Approved)
         {
-            // Find a session of this class that matches the requested date
-            Guid? sourceSessionId = await context.Sessions
-                .Where(s => s.ClassId == command.ClassId &&
-                            DateOnly.FromDateTime(s.PlannedDatetime) == command.SessionDate)
-                .Select(s => (Guid?)s.Id)
-                .FirstOrDefaultAsync(cancellationToken);
+            var endDate = command.EndDate ?? command.SessionDate;
 
-            if (sourceSessionId is null)
+            var sessionsInRange = await context.Sessions
+                .Where(s => s.ClassId == command.ClassId
+                            && DateOnly.FromDateTime(s.PlannedDatetime) >= command.SessionDate
+                            && DateOnly.FromDateTime(s.PlannedDatetime) <= endDate)
+                .ToListAsync(cancellationToken);
+
+            if (!sessionsInRange.Any())
             {
                 return Result.Failure<CreateLeaveRequestResponse>(
                     LeaveRequestErrors.SessionNotFound(command.ClassId, command.SessionDate));
             }
 
-            var credit = new MakeupCredit
+            foreach (var session in sessionsInRange)
             {
-                Id = Guid.NewGuid(),
-                StudentProfileId = leave.StudentProfileId,
-                SourceSessionId = sourceSessionId.Value,
-                Status = MakeupCreditStatus.Available,
-                CreatedReason = CreatedReason.ApprovedLeave24H,
-                ExpiresAt = null,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.MakeupCredits.Add(credit);
+                var credit = new MakeupCredit
+                {
+                    Id = Guid.NewGuid(),
+                    StudentProfileId = leave.StudentProfileId,
+                    SourceSessionId = session.Id,
+                    Status = MakeupCreditStatus.Available,
+                    CreatedReason = CreatedReason.ApprovedLeave24H,
+                    ExpiresAt = null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.MakeupCredits.Add(credit);
+            }
+
             leave.ApprovedAt = DateTime.UtcNow;
         }
 
