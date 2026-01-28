@@ -10,7 +10,17 @@ namespace Kidzgo.Application.MakeupCredits.SuggestSessions;
 public sealed class SuggestMakeupSessionsQuery : IQuery<IEnumerable<SuggestedSessionResponse>>
 {
     public Guid MakeupCreditId { get; set; }
-    public int Limit { get; set; } = 5;
+
+    /// <summary>
+    /// Ngày mong muốn học bù (DateOnly).
+    /// </summary>
+    public DateOnly MakeupDate { get; set; }
+
+    /// <summary>
+    /// Buổi trong ngày mong muốn (vd: \"morning\", \"afternoon\", \"evening\").
+    /// Nếu null hoặc rỗng thì không lọc theo buổi.
+    /// </summary>
+    public string? TimeOfDay { get; set; }
 }
 
 

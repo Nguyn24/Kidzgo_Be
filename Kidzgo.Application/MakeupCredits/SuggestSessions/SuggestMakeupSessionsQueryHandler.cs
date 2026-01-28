@@ -59,15 +59,36 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
         // - Khác lớp với buổi nguồn
         // - Trạng thái Scheduled và thời gian trong tương lai
         // - Không trùng/ quá sát giờ với các buổi mà học sinh đang học (cách nhau tối thiểu 2 tiếng)
-        var rawSuggestions = await context.Sessions
+        // Lọc theo ngày mong muốn học bù và buổi trong ngày (nếu có)
+        var targetDate = query.MakeupDate;
+        string? timeOfDay = query.TimeOfDay?.ToLower().Trim();
+
+        var rawSuggestionsQuery = context.Sessions
             .AsNoTracking()
             .Include(s => s.Class)
             .ThenInclude(c => c.Program)
             .Where(s => s.Id != sourceSession.Id)
             .Where(s => s.Status == SessionStatus.Scheduled && s.PlannedDatetime >= now)
+            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) == targetDate)
             .Where(s => s.BranchId == sourceSession.BranchId)
             .Where(s => s.Class.Program.Level == sourceProgram.Level)
-            .Where(s => s.ClassId != sourceSession.ClassId)
+            .Where(s => s.ClassId != sourceSession.ClassId);
+
+        if (!string.IsNullOrWhiteSpace(timeOfDay))
+        {
+            rawSuggestionsQuery = timeOfDay switch
+            {
+                "morning" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(6, 0, 0) &&
+                                                            s.PlannedDatetime.TimeOfDay < new TimeSpan(12, 0, 0)),
+                "afternoon" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(12, 0, 0) &&
+                                                              s.PlannedDatetime.TimeOfDay < new TimeSpan(18, 0, 0)),
+                "evening" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(18, 0, 0) &&
+                                                            s.PlannedDatetime.TimeOfDay < new TimeSpan(23, 0, 0)),
+                _ => rawSuggestionsQuery
+            };
+        }
+
+        var rawSuggestions = await rawSuggestionsQuery
             .OrderBy(s => s.PlannedDatetime)
             .ToListAsync(cancellationToken);
 
@@ -94,7 +115,6 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
                     return overlap || tooClose;
                 });
             })
-            .Take(query.Limit)
             .Select(s => new SuggestedSessionResponse
             {
                 SessionId = s.Id,
