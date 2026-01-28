@@ -36,7 +36,8 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
                            c.CreatedReason == CreatedReason.ApprovedLeave24H &&
                            c.SourceSessionId == Guid.Empty, cancellationToken);
 
-        if (!creditExists && leave.NoticeHours.GetValueOrDefault() >= 24)
+        // Luôn tạo MakeupCredit khi đơn xin nghỉ được approve (không còn điều kiện > 24h)
+        if (!creditExists)
         {
             var credit = new MakeupCredit
             {
