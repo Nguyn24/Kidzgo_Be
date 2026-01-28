@@ -13,11 +13,6 @@ public sealed class GetAllMakeupCreditsQuery : IPageableQuery, IQuery<Page<Makeu
     public int PageSize { get; init; } = 10;
     public Guid? StudentProfileId { get; init; }
     public MakeupCreditStatus? Status { get; init; }
-    public CreatedReason? CreatedReason { get; init; }
-    public DateTime? CreatedFrom { get; init; }
-    public DateTime? CreatedTo { get; init; }
-    public DateTime? ExpiresFrom { get; init; }
-    public DateTime? ExpiresTo { get; init; }
     public Guid? BranchId { get; init; }
 }
 

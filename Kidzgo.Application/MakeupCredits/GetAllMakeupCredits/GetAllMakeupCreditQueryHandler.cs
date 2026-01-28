@@ -33,31 +33,6 @@ public sealed class GetAllMakeupCreditsQueryHandler(
             creditsQuery = creditsQuery.Where(c => c.Status == query.Status.Value);
         }
 
-        if (query.CreatedReason.HasValue)
-        {
-            creditsQuery = creditsQuery.Where(c => c.CreatedReason == query.CreatedReason.Value);
-        }
-
-        if (query.CreatedFrom.HasValue)
-        {
-            creditsQuery = creditsQuery.Where(c => c.CreatedAt >= query.CreatedFrom.Value);
-        }
-
-        if (query.CreatedTo.HasValue)
-        {
-            creditsQuery = creditsQuery.Where(c => c.CreatedAt <= query.CreatedTo.Value);
-        }
-
-        if (query.ExpiresFrom.HasValue)
-        {
-            creditsQuery = creditsQuery.Where(c => c.ExpiresAt.HasValue && c.ExpiresAt.Value >= query.ExpiresFrom.Value);
-        }
-
-        if (query.ExpiresTo.HasValue)
-        {
-            creditsQuery = creditsQuery.Where(c => c.ExpiresAt.HasValue && c.ExpiresAt.Value <= query.ExpiresTo.Value);
-        }
-
         // Apply branch filter (through student's class enrollments)
         if (query.BranchId.HasValue)
         {
