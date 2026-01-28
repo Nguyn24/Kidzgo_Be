@@ -78,7 +78,7 @@ public class LeaveRequestController : ControllerBase
     }
 
     /// UC-095: Duyệt Leave Request
-    [HttpPost("{id:guid}/approve")]
+    [HttpPut("{id:guid}/approve")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Approve(Guid id, CancellationToken cancellationToken)
     {
@@ -88,7 +88,7 @@ public class LeaveRequestController : ControllerBase
     }
 
     /// UC-096: Từ chối Leave Request
-    [HttpPost("{id:guid}/reject")]
+    [HttpPut("{id:guid}/reject")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Reject(Guid id, CancellationToken cancellationToken)
     {
