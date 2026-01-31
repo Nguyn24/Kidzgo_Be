@@ -66,6 +66,7 @@ public interface IDbContext
     DbSet<RewardStoreItem> RewardStoreItems { get; }
     DbSet<StarTransaction> StarTransactions { get; }
     DbSet<StudentLevel> StudentLevels { get; }
+    DbSet<AttendanceStreak> AttendanceStreaks { get; }
 
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }

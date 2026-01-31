@@ -19,6 +19,9 @@ public class RewardStoreItemConfiguration : IEntityTypeConfiguration<RewardStore
 
         builder.Property(x => x.Description);
 
+        builder.Property(x => x.ImageUrl)
+            .HasMaxLength(500);
+
         builder.Property(x => x.CostStars)
             .IsRequired();
 
@@ -32,6 +35,9 @@ public class RewardStoreItemConfiguration : IEntityTypeConfiguration<RewardStore
             .IsRequired();
 
         builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
         // Relationships
