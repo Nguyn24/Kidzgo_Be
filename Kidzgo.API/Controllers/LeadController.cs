@@ -87,6 +87,8 @@ public class LeadController : ControllerBase
     /// <summary>
     /// UC-017: Xem danh sách Leads
     /// </summary>
+    /// <param name="status">Status: New, Contacted, BookedTest, TestDone, Enrolled, Lost</param>
+    /// <param name="source">Source: Landing, Zalo, Referral, Offline</param>
     [HttpGet]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetLeads(
@@ -262,6 +264,21 @@ public class LeadController : ControllerBase
 
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Lấy danh sách tất cả các status có thể có của Lead
+    /// </summary>
+    [HttpGet("statuses")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
+    public IResult GetLeadStatuses()
+    {
+        var statuses = Enum.GetValues(typeof(Kidzgo.Domain.CRM.LeadStatus))
+            .Cast<Kidzgo.Domain.CRM.LeadStatus>()
+            .Select(s => s.ToString())
+            .ToList();
+
+        return Results.Ok(new { statuses });
     }
 }
 
