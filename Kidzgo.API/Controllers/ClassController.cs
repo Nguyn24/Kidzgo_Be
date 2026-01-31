@@ -53,6 +53,7 @@ public class ClassController : ControllerBase
     /// UC-058: Xem danh sách Classes
     /// <param name="branchId">Filter by branch ID</param>
     /// <param name="programId">Filter by program ID</param>
+    /// <param name="studentId">Filter by enrolled student ID</param>
     /// <param name="status">Class status: Planned, Active, or Closed</param>
     /// <param name="searchTerm">Search by class code or title</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
@@ -62,6 +63,7 @@ public class ClassController : ControllerBase
     public async Task<IResult> GetClasses(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,
+        [FromQuery] Guid? studentId,
         [FromQuery] string? status,
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
@@ -78,6 +80,7 @@ public class ClassController : ControllerBase
         {
             BranchId = branchId,
             ProgramId = programId,
+            StudentId = studentId,
             Status = classStatus,
             SearchTerm = searchTerm,
             PageNumber = pageNumber,

@@ -37,6 +37,16 @@ public sealed class GetClassesQueryHandler(
             classesQuery = classesQuery.Where(c => c.Status == query.Status.Value);
         }
 
+        // Filter by student (chỉ những lớp mà học sinh đang ghi danh active)
+        if (query.StudentId.HasValue)
+        {
+            var studentId = query.StudentId.Value;
+            classesQuery = classesQuery.Where(c =>
+                c.ClassEnrollments.Any(ce =>
+                    ce.StudentProfileId == studentId &&
+                    ce.Status == Domain.Classes.EnrollmentStatus.Active));
+        }
+
         // Filter by search term
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {

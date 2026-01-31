@@ -71,11 +71,7 @@ public sealed class GetStudentsWithMakeupOrLeaveQueryHandler(IDbContext context)
             .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(p => new
             {
-                Profile = p,
-                LeaveRequestCount = context.LeaveRequests
-                    .Count(lr => lr.StudentProfileId == p.Id && 
-                                (lr.Status == Domain.Sessions.LeaveRequestStatus.Pending || 
-                                 lr.Status == Domain.Sessions.LeaveRequestStatus.Approved)),
+                Profile = p,      
                 MakeupCreditCount = context.MakeupCredits
                     .Count(mc => mc.StudentProfileId == p.Id && 
                                mc.Status == Domain.Sessions.MakeupCreditStatus.Available)
@@ -88,9 +84,7 @@ public sealed class GetStudentsWithMakeupOrLeaveQueryHandler(IDbContext context)
             UserId = p.Profile.UserId,
             DisplayName = p.Profile.DisplayName,
             UserEmail = p.Profile.User.Email,
-            HasLeaveRequest = p.LeaveRequestCount > 0,
             HasMakeupCredit = p.MakeupCreditCount > 0,
-            LeaveRequestCount = p.LeaveRequestCount,
             MakeupCreditCount = p.MakeupCreditCount
         }).ToList();
 
