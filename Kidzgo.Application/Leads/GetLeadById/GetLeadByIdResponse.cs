@@ -6,6 +6,8 @@ public sealed class GetLeadByIdResponse
     public string Source { get; init; } = null!;
     public string? Campaign { get; init; }
     public string ContactName { get; init; } = null!;
+    public string? ChildName { get; init; }
+    public DateTime? ChildDateOfBirth { get; init; }
     public string? Phone { get; init; }
     public string? ZaloId { get; init; }
     public string? Email { get; init; }

@@ -31,6 +31,8 @@ public sealed class GetLeadByIdQueryHandler(
             Source = lead.Source.ToString(),
             Campaign = lead.Campaign,
             ContactName = lead.ContactName,
+            ChildName = lead.ChildName,
+            ChildDateOfBirth = lead.ChildDateOfBirth,
             Phone = lead.Phone,
             ZaloId = lead.ZaloId,
             Email = lead.Email,
