@@ -15,6 +15,7 @@ public sealed class GetLeadsQueryHandler(
     {
         var leadsQuery = context.Leads
             .Include(l => l.OwnerStaffUser)
+            .Include(l => l.BranchPreferenceNavigation)
             .AsQueryable();
 
         // Apply filters
@@ -59,12 +60,17 @@ public sealed class GetLeadsQueryHandler(
                 Source = l.Source.ToString(),
                 Campaign = l.Campaign,
                 ContactName = l.ContactName,
+                ChildName = l.ChildName,
+                ChildDateOfBirth = l.ChildDateOfBirth,
                 Phone = l.Phone,
                 ZaloId = l.ZaloId,
                 Email = l.Email,
                 Company = l.Company,
                 Subject = l.Subject,
                 BranchPreference = l.BranchPreference,
+                BranchPreferenceName = l.BranchPreferenceNavigation != null
+                    ? l.BranchPreferenceNavigation.Name
+                    : null,
                 ProgramInterest = l.ProgramInterest,
                 Status = l.Status.ToString(),
                 OwnerStaffId = l.OwnerStaffId,
