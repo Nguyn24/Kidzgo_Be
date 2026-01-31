@@ -34,24 +34,22 @@ public static class DependencyInjection
 
     private static IServiceCollection AddBackgroundJobs(this IServiceCollection services, IConfiguration configuration)
     {
-        var jobKey = new JobKey(nameof(SyncPlannedToActualSessionsJob));
-
-        // Ưu tiên lấy lịch từ cấu hình (appsettings) nếu có
-        // Key: "Quartz:Schedules:SyncPlannedToActualSessionsJob"
-        var cron = configuration["Quartz:Schedules:SyncPlannedToActualSessionsJob"];
-
         services.AddQuartz(q =>
         {
-            q.AddJob<SyncPlannedToActualSessionsJob>(opts => opts.WithIdentity(jobKey));
+            // Register SyncPlannedToActualSessionsJob
+            var syncJobKey = new JobKey(nameof(SyncPlannedToActualSessionsJob));
+            var syncCron = configuration["Quartz:Schedules:SyncPlannedToActualSessionsJob"];
+
+            q.AddJob<SyncPlannedToActualSessionsJob>(opts => opts.WithIdentity(syncJobKey));
 
             q.AddTrigger(opts =>
             {
-                opts.ForJob(jobKey)
+                opts.ForJob(syncJobKey)
                     .WithIdentity($"{nameof(SyncPlannedToActualSessionsJob)}.trigger");
 
-                if (!string.IsNullOrWhiteSpace(cron))
+                if (!string.IsNullOrWhiteSpace(syncCron))
                 {
-                    opts.WithCronSchedule(cron, x => x.WithMisfireHandlingInstructionDoNothing());
+                    opts.WithCronSchedule(syncCron, x => x.WithMisfireHandlingInstructionDoNothing());
                 }
                 else
                 {
@@ -59,6 +57,28 @@ public static class DependencyInjection
                     opts.WithSimpleSchedule(x => x
                         .WithIntervalInMinutes(1)
                         .RepeatForever());
+                }
+            });
+
+            // Register AutoConfirmRewardRedemptionJob
+            var autoConfirmJobKey = new JobKey(nameof(AutoConfirmRewardRedemptionJob));
+            var autoConfirmCron = configuration["Quartz:Schedules:AutoConfirmRewardRedemptionJob"];
+
+            q.AddJob<AutoConfirmRewardRedemptionJob>(opts => opts.WithIdentity(autoConfirmJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(autoConfirmJobKey)
+                    .WithIdentity($"{nameof(AutoConfirmRewardRedemptionJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(autoConfirmCron))
+                {
+                    opts.WithCronSchedule(autoConfirmCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi ngày lúc 2:00 AM UTC
+                    opts.WithCronSchedule("0 0 2 * * ?", x => x.WithMisfireHandlingInstructionDoNothing());
                 }
             });
         });
