@@ -30,25 +30,43 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
         leave.ApprovedAt = DateTime.UtcNow;
         leave.ApprovedBy = userContext.UserId;
 
-        // Create makeup credit if none exists for this leave/session date
-        bool creditExists = await context.MakeupCredits
-            .AnyAsync(c => c.StudentProfileId == leave.StudentProfileId &&
-                           c.CreatedReason == CreatedReason.ApprovedLeave24H &&
-                           c.SourceSessionId == Guid.Empty, cancellationToken);
+        // Tạo MakeupCredit cho tất cả các buổi học trong khoảng ngày xin nghỉ
+        var endDate = leave.EndDate ?? leave.SessionDate;
 
-        if (!creditExists && leave.NoticeHours.GetValueOrDefault() >= 24)
+        var sessionsInRange = await context.Sessions
+            .Where(s => s.ClassId == leave.ClassId
+                        && DateOnly.FromDateTime(s.PlannedDatetime) >= leave.SessionDate
+                        && DateOnly.FromDateTime(s.PlannedDatetime) <= endDate)
+            .ToListAsync(cancellationToken);
+
+        if (!sessionsInRange.Any())
         {
-            var credit = new MakeupCredit
+            return Result.Failure(LeaveRequestErrors.SessionNotFound(leave.ClassId, leave.SessionDate));
+        }
+
+        foreach (var session in sessionsInRange)
+        {
+            bool creditExists = await context.MakeupCredits
+                .AnyAsync(c => c.StudentProfileId == leave.StudentProfileId &&
+                               c.CreatedReason == CreatedReason.ApprovedLeave24H &&
+                               c.SourceSessionId == session.Id, cancellationToken);
+
+            // Luôn tạo MakeupCredit khi đơn xin nghỉ được approve (không còn điều kiện > 24h),
+            // nhưng tránh tạo trùng cho cùng 1 session.
+            if (!creditExists)
             {
-                Id = Guid.NewGuid(),
-                StudentProfileId = leave.StudentProfileId,
-                SourceSessionId = Guid.Empty,
-                Status = MakeupCreditStatus.Available,
-                CreatedReason = CreatedReason.ApprovedLeave24H,
-                ExpiresAt = null,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.MakeupCredits.Add(credit);
+                var credit = new MakeupCredit
+                {
+                    Id = Guid.NewGuid(),
+                    StudentProfileId = leave.StudentProfileId,
+                    SourceSessionId = session.Id,
+                    Status = MakeupCreditStatus.Available,
+                    CreatedReason = CreatedReason.ApprovedLeave24H,
+                    ExpiresAt = null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.MakeupCredits.Add(credit);
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
