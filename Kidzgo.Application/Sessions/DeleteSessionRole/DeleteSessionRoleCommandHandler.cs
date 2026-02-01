@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.DeleteSessionRole;
@@ -18,8 +19,7 @@ public sealed class DeleteSessionRoleCommandHandler(
 
         if (sessionRole is null)
         {
-            return Result.Failure(
-                Error.NotFound("SessionRole.NotFound", "Session role not found"));
+            return Result.Failure(SessionRoleErrors.NotFound(command.SessionRoleId));
         }
 
         context.SessionRoles.Remove(sessionRole);

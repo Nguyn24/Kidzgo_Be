@@ -113,7 +113,7 @@ public sealed class UpdateExamCommandHandler(
             ClassId = exam.ClassId,
             ClassCode = exam.Class.Code,
             ClassTitle = exam.Class.Title,
-            ExamType = exam.ExamType,
+            ExamType = exam.ExamType.ToString(),
             Date = exam.Date,
             MaxScore = exam.MaxScore,
             Description = exam.Description,

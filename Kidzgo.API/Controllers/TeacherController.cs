@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.Application.Classes.GetTeacherClasses;
+using Kidzgo.Application.Classes.GetTeacherClassStudents;
 using Kidzgo.Application.Sessions.GetTeacherTimetable;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -19,9 +20,7 @@ public class TeacherController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// Lấy danh sách lớp của Teacher
-    /// </summary>
     [HttpGet("classes")]
     public async Task<IResult> GetClasses(
         [FromQuery] int pageNumber = 1,
@@ -38,9 +37,32 @@ public class TeacherController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
+    /// Lấy danh sách học sinh trong 1 lớp mà Teacher đang đảm nhận
+    /// <param name="classId">Class ID</param>
+    /// <param name="searchTerm">Search by student display name</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
+    [HttpGet("classes/{classId:guid}/students")]
+    public async Task<IResult> GetClassStudents(
+        Guid classId,
+        [FromQuery] string? searchTerm,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetTeacherClassStudentsQuery
+        {
+            ClassId = classId,
+            SearchTerm = searchTerm,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
     /// Lấy thời khóa biểu của Teacher
-    /// </summary>
     [HttpGet("timetable")]
     public async Task<IResult> GetTimetable(
         [FromQuery] DateTime? from,

@@ -24,9 +24,7 @@ public class LeaveRequestController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-091/092: Tạo Leave Request
-    /// </summary>
     [HttpPost]
     public async Task<IResult> Create(
         [FromBody] CreateLeaveRequestRequest request,
@@ -45,14 +43,13 @@ public class LeaveRequestController : ControllerBase
         return result.MatchCreated(r => $"/api/leave-requests/{r.Id}");
     }
 
-    /// <summary>
     /// UC-093: Danh sách Leave Requests
-    /// </summary>
     [HttpGet]
     public async Task<IResult> GetList(
         [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] LeaveRequestStatus? status,
+        [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -62,6 +59,7 @@ public class LeaveRequestController : ControllerBase
             StudentProfileId = studentProfileId,
             ClassId = classId,
             Status = status,
+            BranchId = branchId,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -70,9 +68,7 @@ public class LeaveRequestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-094: Chi tiết Leave Request
-    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -81,11 +77,9 @@ public class LeaveRequestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-095: Duyệt Leave Request
-    /// </summary>
-    [HttpPost("{id:guid}/approve")]
-    [Authorize(Roles = "Admin,Staff")]
+    [HttpPut("{id:guid}/approve")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Approve(Guid id, CancellationToken cancellationToken)
     {
         var command = new ApproveLeaveRequestCommand { Id = id };
@@ -93,11 +87,9 @@ public class LeaveRequestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-096: Từ chối Leave Request
-    /// </summary>
-    [HttpPost("{id:guid}/reject")]
-    [Authorize(Roles = "Admin,Staff")]
+    [HttpPut("{id:guid}/reject")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Reject(Guid id, CancellationToken cancellationToken)
     {
         var command = new RejectLeaveRequestCommand { Id = id };

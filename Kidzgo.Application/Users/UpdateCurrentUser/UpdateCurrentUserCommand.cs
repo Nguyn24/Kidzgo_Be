@@ -6,6 +6,7 @@ public sealed class UpdateCurrentUserCommand : ICommand<UpdateCurrentUserRespons
 {
     public string? FullName { get; set; }
     public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
     public string? AvatarUrl { get; set; }
     public List<UpdateProfileDto>? Profiles { get; set; }
 }

@@ -5,9 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Services;
 
-/// <summary>
 /// Service để kiểm tra xung đột phòng/giáo viên khi tạo/cập nhật Session
-/// </summary>
 public sealed class SessionConflictChecker
 {
     private readonly IDbContext _context;
@@ -17,9 +15,7 @@ public sealed class SessionConflictChecker
         _context = context;
     }
 
-    /// <summary>
     /// Kiểm tra xung đột phòng và giáo viên cho một Session
-    /// </summary>
     public async Task<SessionConflictResult> CheckConflictsAsync(
         Guid sessionId,
         DateTime plannedDatetime,
@@ -157,9 +153,7 @@ public sealed class SessionConflictChecker
         };
     }
 
-    /// <summary>
     /// Gợi ý các phòng/slot khác khi có xung đột
-    /// </summary>
     public async Task<ConflictSuggestions> GetSuggestionsAsync(
         Guid branchId,
         DateTime plannedDatetime,

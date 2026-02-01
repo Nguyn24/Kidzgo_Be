@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
@@ -7,17 +8,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LeaveRequests.GetLeaveRequests;
 
-public sealed class GetLeaveRequestsQueryHandler(IDbContext context)
+public sealed class GetLeaveRequestsQueryHandler(
+    IDbContext context,
+    IUserContext userContext)
     : IQueryHandler<GetLeaveRequestsQuery, Page<GetLeaveRequestsResponse>>
 {
     public async Task<Result<Page<GetLeaveRequestsResponse>>> Handle(GetLeaveRequestsQuery request, CancellationToken cancellationToken)
     {
+        // Use StudentProfileId from query if provided, otherwise use from context
+        var studentProfileId = request.StudentProfileId ?? userContext.StudentId;
+
         var query = context.LeaveRequests
             .AsQueryable();
 
-        if (request.StudentProfileId.HasValue)
+        if (studentProfileId.HasValue)
         {
-            query = query.Where(l => l.StudentProfileId == request.StudentProfileId.Value);
+            query = query.Where(l => l.StudentProfileId == studentProfileId.Value);
         }
 
         if (request.ClassId.HasValue)
@@ -28,6 +34,12 @@ public sealed class GetLeaveRequestsQueryHandler(IDbContext context)
         if (request.Status.HasValue)
         {
             query = query.Where(l => l.Status == request.Status.Value);
+        }
+
+        // Apply branch filter
+        if (request.BranchId.HasValue)
+        {
+            query = query.Where(l => l.Class.BranchId == request.BranchId.Value);
         }
 
         var total = await query.CountAsync(cancellationToken);

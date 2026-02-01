@@ -5,9 +5,7 @@ using Kidzgo.Domain.Common;
 
 namespace Kidzgo.Application.Services;
 
-/// <summary>
 /// Implementation của ISchedulePatternParser sử dụng iCal.Net để parse RRULE
-/// </summary>
 public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
 {
     public Result<List<DateTime>> ParseAndGenerateOccurrences(string rrulePattern, DateOnly startDate, DateOnly? endDate)
@@ -28,17 +26,29 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
                 pattern = "RRULE:" + pattern;
             }
 
+            // Tách DURATION ra khỏi pattern vì DURATION không phải là parameter hợp lệ của RRULE standard
+            // DURATION là custom parameter của chúng ta
+            var patternWithoutDuration = RemoveDurationParameter(pattern);
+
             // Parse BYHOUR và BYMINUTE từ pattern để set Start time đúng
-            var recurrencePattern = new RecurrencePattern(pattern);
-            var startDateTime = startDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            
-            // Nếu có BYHOUR và BYMINUTE trong pattern, sử dụng chúng
+            var recurrencePattern = new RecurrencePattern(patternWithoutDuration);
+
+            // Dùng timezone VN (UTC+7). Trên Windows: "SE Asia Standard Time"
+            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Tạo startDateTime ở timezone VN, rồi convert sang UTC
+            var startTimeOnly = TimeOnly.MinValue;
             if (recurrencePattern.ByHour.Count > 0 && recurrencePattern.ByMinute.Count > 0)
             {
                 var hour = recurrencePattern.ByHour.First();
                 var minute = recurrencePattern.ByMinute.First();
-                startDateTime = startDate.ToDateTime(new TimeOnly(hour, minute), DateTimeKind.Utc);
+                startTimeOnly = new TimeOnly(hour, minute);
             }
+
+            var startLocal = DateTime.SpecifyKind(
+                startDate.ToDateTime(startTimeOnly),
+                DateTimeKind.Unspecified);
+            var startDateTime = TimeZoneInfo.ConvertTimeToUtc(startLocal, vnTimeZone);
 
             // Tạo một CalendarEvent với RRULE
             var calendarEvent = new CalendarEvent
@@ -50,17 +60,26 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
                 }
             };
 
-            // Set end date nếu có
+            // Set end date nếu có (convert VN -> UTC)
             if (endDate.HasValue)
             {
-                var endDateTime = endDate.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+                var endLocal = DateTime.SpecifyKind(
+                    endDate.Value.ToDateTime(TimeOnly.MaxValue),
+                    DateTimeKind.Unspecified);
+                var endDateTime = TimeZoneInfo.ConvertTimeToUtc(endLocal, vnTimeZone);
                 calendarEvent.RecurrenceRules[0].Until = endDateTime;
             }
 
             // Generate occurrences
             var occurrences = calendarEvent.GetOccurrences(
-                startDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
-                endDate?.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc) ?? DateTime.MaxValue
+                startDateTime,
+                endDate.HasValue
+                    ? TimeZoneInfo.ConvertTimeToUtc(
+                        DateTime.SpecifyKind(
+                            endDate.Value.ToDateTime(TimeOnly.MaxValue),
+                            DateTimeKind.Unspecified),
+                        vnTimeZone)
+                    : DateTime.MaxValue
             ).ToList();
 
             // Convert sang UTC DateTime list và filter chỉ lấy trong khoảng startDate đến endDate
@@ -79,6 +98,86 @@ public sealed class RRuleSchedulePatternParser : ISchedulePatternParser
             return Result.Failure<List<DateTime>>(
                 Error.Validation("SchedulePattern.Invalid", $"Invalid RRULE pattern: {ex.Message}"));
         }
+    }
+
+    public int? ParseDuration(string rrulePattern)
+    {
+        if (string.IsNullOrWhiteSpace(rrulePattern))
+        {
+            return null;
+        }
+
+        try
+        {
+            // Parse RRULE pattern để tìm DURATION parameter
+            // RRULE format: "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=18;BYMINUTE=0;DURATION=90"
+            var pattern = rrulePattern.Trim();
+            
+            // Remove "RRULE:" prefix nếu có
+            if (pattern.StartsWith("RRULE:", StringComparison.OrdinalIgnoreCase))
+            {
+                pattern = pattern.Substring(6); // Remove "RRULE:"
+            }
+
+            // Split by semicolon để lấy các parameters
+            var parameters = pattern.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var param in parameters)
+            {
+                var parts = param.Split('=', 2);
+                if (parts.Length == 2 && 
+                    parts[0].Trim().Equals("DURATION", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(parts[1].Trim(), out var duration) && duration > 0)
+                    {
+                        return duration;
+                    }
+                }
+            }
+
+            return null; // Không tìm thấy DURATION trong pattern
+        }
+        catch
+        {
+            // Nếu có lỗi khi parse, trả về null (fallback về default duration)
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Remove DURATION parameter từ RRULE pattern để tránh lỗi khi parse với RecurrencePattern
+    /// </summary>
+    private static string RemoveDurationParameter(string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return pattern;
+        }
+
+        // Remove "RRULE:" prefix để xử lý
+        var hasPrefix = pattern.StartsWith("RRULE:", StringComparison.OrdinalIgnoreCase);
+        var patternWithoutPrefix = hasPrefix ? pattern.Substring(6) : pattern;
+
+        // Split by semicolon để lấy các parameters
+        var parameters = patternWithoutPrefix.Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !p.Trim().StartsWith("DURATION=", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Rebuild pattern
+        var cleanedPattern = string.Join(";", parameters);
+        
+        // Add prefix back nếu có
+        if (hasPrefix && !string.IsNullOrWhiteSpace(cleanedPattern))
+        {
+            cleanedPattern = "RRULE:" + cleanedPattern;
+        }
+        else if (hasPrefix && string.IsNullOrWhiteSpace(cleanedPattern))
+        {
+            // Nếu sau khi remove DURATION mà pattern rỗng, giữ lại "RRULE:"
+            cleanedPattern = "RRULE:";
+        }
+
+        return cleanedPattern;
     }
 }
 

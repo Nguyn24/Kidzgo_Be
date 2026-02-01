@@ -27,11 +27,9 @@ public class EnrollmentController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-067: Ghi danh học sinh vào Class
-    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateEnrollment(
         [FromBody] CreateEnrollmentRequest request,
         CancellationToken cancellationToken)
@@ -48,9 +46,7 @@ public class EnrollmentController : ControllerBase
         return result.MatchCreated(e => $"/api/enrollments/{e.Id}");
     }
 
-    /// <summary>
     /// UC-068: Xem danh sách học sinh trong Class
-    /// </summary>
     /// <param name="classId">Filter by class ID</param>
     /// <param name="studentProfileId">Filter by student profile ID</param>
     /// <param name="status">Enrollment status: Active, Paused, or Dropped</param>
@@ -85,9 +81,7 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-069: Xem chi tiết Enrollment
-    /// </summary>
     [HttpGet("{id:guid}")]
     // [Authorize(Roles = "Admin,Staff")]
     public async Task<IResult> GetEnrollmentById(
@@ -103,11 +97,9 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-070: Cập nhật Enrollment
-    /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateEnrollment(
         Guid id,
         [FromBody] UpdateEnrollmentRequest request,
@@ -124,11 +116,9 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-071: Tạm dừng Enrollment (PAUSED)
-    /// </summary>
     [HttpPatch("{id:guid}/pause")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> PauseEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -142,11 +132,9 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-072: Hủy Enrollment (DROPPED)
-    /// </summary>
     [HttpPatch("{id:guid}/drop")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DropEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -160,11 +148,9 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-073: Kích hoạt lại Enrollment
-    /// </summary>
     [HttpPatch("{id:guid}/reactivate")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ReactivateEnrollment(
         Guid id,
         CancellationToken cancellationToken)
@@ -178,11 +164,9 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-074: Gán Tuition Plan cho Enrollment
-    /// </summary>
     [HttpPatch("{id:guid}/assign-tuition-plan")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AssignTuitionPlan(
         Guid id,
         [FromBody] AssignTuitionPlanRequest request,
@@ -198,14 +182,12 @@ public class EnrollmentController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-075: Xem lịch sử Enrollment của học sinh
-    /// </summary>
     /// <param name="studentProfileId">Student profile ID</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet("student/{studentProfileId:guid}/history")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetStudentEnrollmentHistory(
         Guid studentProfileId,
         [FromQuery] int pageNumber = 1,

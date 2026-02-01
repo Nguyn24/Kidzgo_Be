@@ -20,9 +20,7 @@ public class NotificationController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-325-339: Xem danh sách Notifications
-    /// </summary>
     /// <param name="profileId">Filter by profile ID</param>
     /// <param name="unreadOnly">Filter unread notifications only</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
@@ -48,11 +46,9 @@ public class NotificationController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-325-339: Admin/Staff broadcast notification
-    /// </summary>
     [HttpPost("broadcast")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> BroadcastNotification(
         [FromBody] BroadcastNotificationRequest request,
         CancellationToken cancellationToken = default)
@@ -75,9 +71,7 @@ public class NotificationController : ControllerBase
         return result.MatchCreated(br => $"/api/notifications/broadcast/{br.CreatedCount}");
     }
 
-    /// <summary>
     /// Mark notification as read
-    /// </summary>
     /// <param name="id">Notification ID</param>
     [HttpPatch("{id:guid}/read")]
     [Authorize]

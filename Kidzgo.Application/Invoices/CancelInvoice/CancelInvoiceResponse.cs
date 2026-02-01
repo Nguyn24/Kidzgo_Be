@@ -5,6 +5,6 @@ namespace Kidzgo.Application.Invoices.CancelInvoice;
 public sealed class CancelInvoiceResponse
 {
     public Guid Id { get; init; }
-    public InvoiceStatus Status { get; init; }
+    public string Status { get; init; } = null!;
 }
 

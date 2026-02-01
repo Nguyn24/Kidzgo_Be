@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Infrastructure.Authentication;
+using Kidzgo.Infrastructure.BackgroundJobs;
 using Kidzgo.Infrastructure.Database;
 using Kidzgo.Infrastructure.Payments;
 using Kidzgo.Infrastructure.Services;
@@ -13,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Quartz;
 using What2Gift.Infrastructure.Shared;
 
 namespace Kidzgo.Infrastructure;
@@ -26,7 +28,67 @@ public static class DependencyInjection
             .AddClientUrl(configuration)            
             .AddMailService(configuration)
             .AddPayOSService(configuration)
-            .AddAuthenticationInternal(configuration);
+            .AddZaloService(configuration)
+            .AddAuthenticationInternal(configuration)
+            .AddBackgroundJobs(configuration);
+
+    private static IServiceCollection AddBackgroundJobs(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddQuartz(q =>
+        {
+            // Register SyncPlannedToActualSessionsJob
+            var syncJobKey = new JobKey(nameof(SyncPlannedToActualSessionsJob));
+            var syncCron = configuration["Quartz:Schedules:SyncPlannedToActualSessionsJob"];
+
+            q.AddJob<SyncPlannedToActualSessionsJob>(opts => opts.WithIdentity(syncJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(syncJobKey)
+                    .WithIdentity($"{nameof(SyncPlannedToActualSessionsJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(syncCron))
+                {
+                    opts.WithCronSchedule(syncCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi 1 phút
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(1)
+                        .RepeatForever());
+                }
+            });
+
+            // Register AutoConfirmRewardRedemptionJob
+            var autoConfirmJobKey = new JobKey(nameof(AutoConfirmRewardRedemptionJob));
+            var autoConfirmCron = configuration["Quartz:Schedules:AutoConfirmRewardRedemptionJob"];
+
+            q.AddJob<AutoConfirmRewardRedemptionJob>(opts => opts.WithIdentity(autoConfirmJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(autoConfirmJobKey)
+                    .WithIdentity($"{nameof(AutoConfirmRewardRedemptionJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(autoConfirmCron))
+                {
+                    opts.WithCronSchedule(autoConfirmCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi ngày lúc 2:00 AM UTC
+                    opts.WithCronSchedule("0 0 2 * * ?", x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+            });
+        });
+
+        services.AddQuartzHostedService(options =>
+        {
+            options.WaitForJobsToComplete = true;
+        });
+        return services;
+    }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
@@ -95,6 +157,13 @@ public static class DependencyInjection
         return services;
     }
 
+    private static IServiceCollection AddZaloService(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<Shared.ZaloSettings>(configuration.GetSection("Zalo"));
+        return services;
+    }
+
     private static IServiceCollection AddAuthenticationInternal(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -119,13 +188,12 @@ public static class DependencyInjection
         services.AddScoped<IUserContext, UserContext>();
         services.AddSingleton<ITokenProvider, TokenProvider>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
-
-        // services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<IMailService, MailService>();
         services.AddSingleton<IPayload, Payload>();
         services.AddScoped<ITemplateRenderer, TemplateRenderer>();
         services.AddScoped<IImageUploader, ImageUploader>();
         services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
+        services.AddScoped<Kidzgo.Application.Services.SessionGenerationService>();
         return services;
     }
 

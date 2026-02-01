@@ -27,11 +27,9 @@ public class InvoiceController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-253: Tạo Invoice
-    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreateInvoice(
         [FromBody] CreateInvoiceRequest request,
         CancellationToken cancellationToken)
@@ -60,41 +58,35 @@ public class InvoiceController : ControllerBase
         return result.MatchCreated(i => $"/api/invoices/{i.Id}");
     }
 
-    /// <summary>
     /// UC-254: Xem danh sách Invoices
-    /// </summary>
+    /// <param name="branchId">Filter by branch ID</param>
+    /// <param name="studentProfileId">Filter by student profile ID</param>
+    /// <param name="classId">Filter by class ID</param>
+    /// <param name="status">Invoice status: Pending, Paid, Overdue, or Cancelled</param>
+    /// <param name="type">Invoice type</param>
+    /// <param name="searchTerm">Search by student display name</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetInvoices(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
-        [FromQuery] string? status,
-        [FromQuery] string? type,
+        [FromQuery] InvoiceStatus? status,
+        [FromQuery] InvoiceType? type,
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        InvoiceStatus? invoiceStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsedStatus))
-        {
-            invoiceStatus = parsedStatus;
-        }
-
-        InvoiceType? invoiceType = null;
-        if (!string.IsNullOrWhiteSpace(type) && Enum.TryParse<InvoiceType>(type, true, out var parsedType))
-        {
-            invoiceType = parsedType;
-        }
-
         var query = new GetInvoicesQuery
         {
             BranchId = branchId,
             StudentProfileId = studentProfileId,
             ClassId = classId,
-            Status = invoiceStatus,
-            Type = invoiceType,
+            Status = status,
+            Type = type,
             SearchTerm = searchTerm,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -104,28 +96,20 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-254a: Xem danh sách Invoices của Parent
-    /// </summary>
     [HttpGet("parents/{parentProfileId:guid}")]
     [Authorize(Roles = "Parent")]
     public async Task<IResult> GetParentInvoices(
         Guid parentProfileId,
-        [FromQuery] string? status,
+        [FromQuery] InvoiceStatus? status,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        InvoiceStatus? invoiceStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsedStatus))
-        {
-            invoiceStatus = parsedStatus;
-        }
-
         var query = new GetParentInvoicesQuery
         {
             ParentProfileId = parentProfileId,
-            Status = invoiceStatus,
+            Status = status,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -134,9 +118,7 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-255: Xem chi tiết Invoice
-    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetInvoiceById(
         Guid id,
@@ -151,11 +133,9 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-256: Cập nhật Invoice
-    /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> UpdateInvoice(
         Guid id,
         [FromBody] UpdateInvoiceRequest request,
@@ -178,11 +158,9 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-257: Hủy Invoice
-    /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CancelInvoice(
         Guid id,
         CancellationToken cancellationToken)
@@ -196,11 +174,9 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-260/261: Sinh PayOS payment link và QR code
-    /// </summary>
     [HttpPost("{id:guid}/payos/create-link")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreatePayOSLink(
         Guid id,
         CancellationToken cancellationToken)
@@ -214,11 +190,9 @@ public class InvoiceController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-263: Đánh dấu Invoice OVERDUE
-    /// </summary>
     [HttpPatch("{id:guid}/mark-overdue")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> MarkInvoiceOverdue(
         Guid id,
         CancellationToken cancellationToken)

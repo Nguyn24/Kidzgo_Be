@@ -66,6 +66,7 @@ public interface IDbContext
     DbSet<RewardStoreItem> RewardStoreItems { get; }
     DbSet<StarTransaction> StarTransactions { get; }
     DbSet<StudentLevel> StudentLevels { get; }
+    DbSet<AttendanceStreak> AttendanceStreaks { get; }
 
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }
@@ -97,6 +98,7 @@ public interface IDbContext
     // Reports
     DbSet<MonthlyReportJob> MonthlyReportJobs { get; }
     DbSet<ReportComment> ReportComments { get; }
+    DbSet<SessionReport> SessionReports { get; }
     DbSet<StudentMonthlyReport> StudentMonthlyReports { get; }
 
     // Sessions

@@ -15,6 +15,8 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
 
         builder.Property(x => x.ClassId);
 
+        builder.Property(x => x.MissionId);
+
         builder.Property(x => x.Title)
             .HasMaxLength(255)
             .IsRequired();
@@ -45,6 +47,11 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         builder.HasOne(x => x.Class)
             .WithMany()
             .HasForeignKey(x => x.ClassId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Mission)
+            .WithMany(x => x.Exercises)
+            .HasForeignKey(x => x.MissionId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)

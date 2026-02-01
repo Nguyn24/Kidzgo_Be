@@ -13,12 +13,17 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
         {
             RuleFor(command => command.Role)
                 .Must(role => Enum.TryParse<UserRole>(role, true, out _))
-                .WithMessage("Role must be a valid value: Admin, Staff, Teacher, or Parent");
+                .WithMessage("Role must be a valid value: Admin, ManagementStaff, AccountantStaff, Teacher, or Parent");
         });
         
         When(command => !string.IsNullOrWhiteSpace(command.Email), () =>
         {
             RuleFor(command => command.Email).EmailAddress();
+        });
+
+        When(command => !string.IsNullOrWhiteSpace(command.PhoneNumber), () =>
+        {
+            RuleFor(command => command.PhoneNumber).MaximumLength(50);
         });
     }
 }

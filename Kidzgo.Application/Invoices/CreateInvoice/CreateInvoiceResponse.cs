@@ -8,11 +8,11 @@ public sealed class CreateInvoiceResponse
     public Guid BranchId { get; init; }
     public Guid StudentProfileId { get; init; }
     public Guid? ClassId { get; init; }
-    public InvoiceType Type { get; init; }
+    public string Type { get; init; } = null!;
     public decimal Amount { get; init; }
     public string Currency { get; init; } = null!;
     public DateOnly? DueDate { get; init; }
-    public InvoiceStatus Status { get; init; }
+    public string Status { get; init; } = null!;
     public string? Description { get; init; }
     public DateTime? IssuedAt { get; init; }
     public Guid? IssuedBy { get; init; }

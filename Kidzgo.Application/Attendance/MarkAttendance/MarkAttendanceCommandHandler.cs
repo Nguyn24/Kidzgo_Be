@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Attendance.MarkAttendance;
 
-public sealed class MarkAttendanceCommandHandler(IDbContext context, IUserContext userContext)
+public sealed class MarkAttendanceCommandHandler(
+    IDbContext context,
+    IUserContext userContext)
     : ICommandHandler<MarkAttendanceCommand, MarkAttendanceResponse>
 {
     public async Task<Result<MarkAttendanceResponse>> Handle(MarkAttendanceCommand command, CancellationToken cancellationToken)

@@ -12,10 +12,9 @@ public sealed class GetUsersQueryHandler(IDbContext context)
 {
     public async Task<Result<Page<GetUsersResponse>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var query = context.Users
+        IQueryable<User> query = context.Users
             .Include(u => u.Branch)
-            .Include(u => u.Profiles.Where(p => !p.IsDeleted))
-            .Where(u => !u.IsDeleted);
+            .Include(u => u.Profiles.Where(p => !p.IsDeleted));
 
         // Apply filters
         if (request.IsActive.HasValue)
@@ -44,11 +43,13 @@ public sealed class GetUsersQueryHandler(IDbContext context)
             Id = u.Id,
             Username = u.Username,
             Name = u.Name,
+            PhoneNumber = u.PhoneNumber,
             Email = u.Email,
             Role = u.Role.ToString(),
             BranchId = u.BranchId,
             BranchName = u.Branch != null ? u.Branch.Name : null,
             IsActive = u.IsActive,
+            IsDeleted = u.IsDeleted,
             CreatedAt = u.CreatedAt,
             UpdatedAt = u.UpdatedAt,
             Profiles = u.Profiles

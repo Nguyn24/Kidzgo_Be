@@ -34,6 +34,10 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
         user.Username = request.Username ?? user.Username;
         user.Name = request.FullName ?? user.Name;
         user.Email = request.Email ?? user.Email;
+        if (request.PhoneNumber != null)
+        {
+            user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+        }
         user.IsActive = request.IsActive ?? user.IsActive;
         user.IsDeleted = request.isDeleted ?? user.IsDeleted;
 

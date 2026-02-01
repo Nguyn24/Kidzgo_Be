@@ -1,44 +1,58 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.GetStudentTimetable;
 
 public sealed class GetStudentTimetableQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetStudentTimetableQuery, GetStudentTimetableResponse>
 {
     public async Task<Result<GetStudentTimetableResponse>> Handle(GetStudentTimetableQuery query, CancellationToken cancellationToken)
     {
+        // Get StudentId from context (token)
+        var studentId = userContext.StudentId;
+
+        if (!studentId.HasValue)
+        {
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
+        }
+
         // Verify student exists and is active
         var profile = await context.Profiles
-            .FirstOrDefaultAsync(p => p.Id == query.StudentId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == studentId.Value, cancellationToken);
 
         if (profile == null)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Student profile not found"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.NotFound(studentId.Value));
         }
 
         if (profile.ProfileType != Domain.Users.ProfileType.Student)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Profile is not a student"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
         }
 
         if (!profile.IsActive || profile.IsDeleted)
         {
-            return Result.Failure<GetStudentTimetableResponse>(
-                Error.NotFound("Student.NotFound", "Student profile is inactive or deleted"));
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
+        }
+
+        // Verify the student belongs to the current user
+        if (profile.UserId != userContext.UserId)
+        {
+            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
         }
 
         // Get sessions from classes where student is enrolled (Status = Active)
         var sessionsQuery = context.Sessions
             .Where(s => s.Class.ClassEnrollments
-                .Any(ce => ce.StudentProfileId == query.StudentId && ce.Status == EnrollmentStatus.Active))
+                .Any(ce => ce.StudentProfileId == studentId.Value && ce.Status == EnrollmentStatus.Active))
             .Where(s => s.Status != SessionStatus.Cancelled);
 
         // Filter by date range

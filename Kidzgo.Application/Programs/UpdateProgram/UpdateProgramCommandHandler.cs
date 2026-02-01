@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Programs.UpdateProgram;
@@ -16,8 +17,7 @@ public sealed class UpdateProgramCommandHandler(
 
         if (program is null)
         {
-            return Result.Failure<UpdateProgramResponse>(
-                Error.NotFound("Program.NotFound", "Program not found"));
+            return Result.Failure<UpdateProgramResponse>(ProgramErrors.NotFound(command.Id));
         }
 
         // Check if branch exists
@@ -26,8 +26,7 @@ public sealed class UpdateProgramCommandHandler(
 
         if (!branchExists)
         {
-            return Result.Failure<UpdateProgramResponse>(
-                Error.NotFound("Program.BranchNotFound", "Branch not found or inactive"));
+            return Result.Failure<UpdateProgramResponse>(ProgramErrors.BranchNotFound);
         }
 
         program.BranchId = command.BranchId;

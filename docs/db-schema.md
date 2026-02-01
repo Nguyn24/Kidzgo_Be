@@ -2253,6 +2253,8 @@ Khi phụ huynh xem kết quả:
 - `phone` (varchar(50)): Số điện thoại chính.
 - `zalo_id` (varchar(100), nullable): Zalo ID (nếu khác phone).
 - `email` (varchar(255), nullable): Email liên hệ.
+- `company` (varchar(255), nullable): Công ty/Trường học (từ form web).
+- `subject` (varchar(255), nullable): Tiêu đề form (từ form web).
 - `branch_preference` (uuid, FK → branches.id, nullable): Chi nhánh mong muốn.
 - `program_interest` (varchar(255)): Chương trình quan tâm ban đầu.
 - `notes` (text): Ghi chú tự do.

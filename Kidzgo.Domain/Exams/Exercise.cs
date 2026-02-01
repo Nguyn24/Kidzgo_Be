@@ -1,6 +1,7 @@
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Gamification;
 
 namespace Kidzgo.Domain.Exams;
 
@@ -8,6 +9,7 @@ public class Exercise : Entity
 {
     public Guid Id { get; set; }
     public Guid? ClassId { get; set; } // Optional: can be assigned to a specific class
+    public Guid? MissionId { get; set; } // Optional: link to mission for rewards
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public ExerciseType ExerciseType { get; set; } // READING, LISTENING, WRITING
@@ -19,6 +21,7 @@ public class Exercise : Entity
 
     // Navigation properties
     public Class? Class { get; set; }
+    public Mission? Mission { get; set; }
     public User CreatedByUser { get; set; } = null!;
     public ICollection<ExerciseQuestion> Questions { get; set; } = new List<ExerciseQuestion>();
     public ICollection<ExerciseSubmission> Submissions { get; set; } = new List<ExerciseSubmission>();
