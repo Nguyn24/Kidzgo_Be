@@ -12,8 +12,10 @@ public sealed class RewardRedemptionDto
     public Guid Id { get; init; }
     public Guid ItemId { get; init; }
     public string ItemName { get; init; } = null!;
+    public int Quantity { get; init; }
     public Guid StudentProfileId { get; init; }
     public string? StudentName { get; init; }
+    public string? BranchName { get; init; }
     public string Status { get; init; } = null!;
     public Guid? HandledBy { get; init; }
     public string? HandledByName { get; init; }

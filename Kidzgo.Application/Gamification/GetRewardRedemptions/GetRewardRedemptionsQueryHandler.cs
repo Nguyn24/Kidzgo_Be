@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Gamification;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +21,10 @@ public sealed class GetRewardRedemptionsQueryHandler(IDbContext context)
         var redemptionsQuery = context.RewardRedemptions
             .Include(r => r.StudentProfile)
                 .ThenInclude(p => p.User)
+            .Include(r => r.StudentProfile)
+                .ThenInclude(p => p.ClassEnrollments)
+                    .ThenInclude(e => e.Class)
+                        .ThenInclude(c => c.Branch)
             .Include(r => r.HandledByUser)
             .AsQueryable();
 
@@ -46,13 +51,27 @@ public sealed class GetRewardRedemptionsQueryHandler(IDbContext context)
         var redemptions = await redemptionsQuery
             .OrderByDescending(r => r.CreatedAt)
             .ApplyPagination(query.Page, query.PageSize)
-            .Select(r => new RewardRedemptionDto
+            .ToListAsync(cancellationToken);
+
+        var redemptionDtos = redemptions.Select(r =>
+        {
+            // Lấy branch name từ enrollment active gần nhất
+            var activeEnrollment = r.StudentProfile?.ClassEnrollments
+                .Where(e => e.Status == EnrollmentStatus.Active)
+                .OrderByDescending(e => e.EnrollDate)
+                .FirstOrDefault();
+
+            var branchName = activeEnrollment?.Class?.Branch?.Name;
+
+            return new RewardRedemptionDto
             {
                 Id = r.Id,
                 ItemId = r.ItemId,
                 ItemName = r.ItemName,
+                Quantity = r.Quantity,
                 StudentProfileId = r.StudentProfileId,
                 StudentName = r.StudentProfile != null ? (r.StudentProfile.DisplayName ?? (r.StudentProfile.User != null ? (r.StudentProfile.User.Name ?? r.StudentProfile.User.Email) : null)) : null,
+                BranchName = branchName,
                 Status = r.Status.ToString(),
                 HandledBy = r.HandledBy,
                 HandledByName = r.HandledByUser != null ? (r.HandledByUser.Name ?? r.HandledByUser.Email) : null,
@@ -60,10 +79,10 @@ public sealed class GetRewardRedemptionsQueryHandler(IDbContext context)
                 DeliveredAt = r.DeliveredAt,
                 ReceivedAt = r.ReceivedAt,
                 CreatedAt = r.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
+            };
+        }).ToList();
 
-        var page = new Page<RewardRedemptionDto>(redemptions, totalCount, query.Page, query.PageSize);
+        var page = new Page<RewardRedemptionDto>(redemptionDtos, totalCount, query.Page, query.PageSize);
 
         return Result.Success(new GetRewardRedemptionsResponse
         {

@@ -5,6 +5,7 @@ public sealed class RequestRewardRedemptionResponse
     public Guid Id { get; init; }
     public Guid ItemId { get; init; }
     public string ItemName { get; init; } = null!;
+    public int Quantity { get; init; }
     public Guid StudentProfileId { get; init; }
     public string Status { get; init; } = null!;
     public int StarsDeducted { get; init; }
