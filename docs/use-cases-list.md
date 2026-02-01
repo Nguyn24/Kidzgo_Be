@@ -18,7 +18,6 @@
 - UC-005: Chọn Profile Student (không cần PIN)
 - UC-006: Đăng nhập Portal nội bộ (Admin/Teacher/Staff)
 - UC-007: Xác thực PIN cho Parent Profile
-- UC-008: Xác thực PIN cho Admin/Teacher/Staff
 - UC-009: Đăng xuất
 - UC-010: Quên mật khẩu
 - UC-011: Đổi mật khẩu
@@ -194,7 +193,8 @@
 
 ### 8.2. Nộp và chấm Homework
 - UC-125: Học sinh nộp Homework (FILE/IMAGE/TEXT/LINK/QUIZ)
-- UC-126: Xem danh sách Homework đã nộp
+- UC-126: Xem danh sách Homework của bản thân 
+- UC-126a: Xem danh sách Homework đã nộp
 - UC-127: Xem chi tiết Homework submission
 - UC-128: Teacher chấm Homework (GRADED)
 - UC-129: Nhập điểm và feedback cho Homework
@@ -379,7 +379,6 @@
 ---
 
 ## 14. Finance Management 🔴
-**Role chính: AccountantStaff** (cùng với Admin và ManagementStaff)
 
 ### 14.1. Invoices
 - UC-253: Tạo Invoice (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE)
@@ -396,7 +395,6 @@
 - UC-263: Đánh dấu Invoice OVERDUE
 
 ### 14.2. Payments
-**Role: AccountantStaff, Admin, ManagementStaff**
 - UC-264: Thanh toán qua PayOS (webhook) - tự động update invoice status + ghi Cashbook Entry
 - UC-265: Thanh toán bằng tiền mặt
 - UC-266: Thanh toán chuyển khoản
@@ -615,4 +613,5 @@
 **Tổng**: 87 use cases
 
 
+**Tỷ lệ**: Dễ 25% | Trung bình 52% | Khó 22%
 

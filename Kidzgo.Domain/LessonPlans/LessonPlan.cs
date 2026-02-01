@@ -15,6 +15,7 @@ public class LessonPlan : Entity
     public string? TeacherNotes { get; set; }
     public Guid? SubmittedBy { get; set; }
     public DateTime? SubmittedAt { get; set; }
+    public bool IsDeleted { get; set; }
 
     // Navigation properties
     public Session Session { get; set; } = null!;
