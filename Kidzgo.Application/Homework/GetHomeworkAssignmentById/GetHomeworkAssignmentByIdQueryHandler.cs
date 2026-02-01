@@ -1,0 +1,73 @@
+using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Common;
+using Kidzgo.Domain.LessonPlans;
+using Kidzgo.Domain.LessonPlans.Errors;
+using Microsoft.EntityFrameworkCore;
+
+namespace Kidzgo.Application.Homework.GetHomeworkAssignmentById;
+
+public sealed class GetHomeworkAssignmentByIdQueryHandler(
+    IDbContext context
+) : IQueryHandler<GetHomeworkAssignmentByIdQuery, GetHomeworkAssignmentByIdResponse>
+{
+    public async Task<Result<GetHomeworkAssignmentByIdResponse>> Handle(
+        GetHomeworkAssignmentByIdQuery query,
+        CancellationToken cancellationToken)
+    {
+        var homework = await context.HomeworkAssignments
+            .Include(h => h.Class)
+            .Include(h => h.Session)
+            .Include(h => h.Mission)
+            .Include(h => h.HomeworkStudents)
+                .ThenInclude(hs => hs.StudentProfile)
+            .FirstOrDefaultAsync(h => h.Id == query.Id, cancellationToken);
+
+        if (homework is null)
+        {
+            return Result.Failure<GetHomeworkAssignmentByIdResponse>(
+                HomeworkErrors.NotFound(query.Id));
+        }
+
+        var response = new GetHomeworkAssignmentByIdResponse
+        {
+            Id = homework.Id,
+            ClassId = homework.ClassId,
+            ClassCode = homework.Class.Code,
+            ClassTitle = homework.Class.Title,
+            SessionId = homework.SessionId,
+            SessionTitle = homework.Session != null 
+                ? $"Session {homework.Session.PlannedDatetime:dd/MM/yyyy HH:mm}" 
+                : null,
+            Title = homework.Title,
+            Description = homework.Description,
+            DueAt = homework.DueAt,
+            Book = homework.Book,
+            Pages = homework.Pages,
+            Skills = homework.Skills,
+            SubmissionType = homework.SubmissionType.ToString(),
+            MaxScore = homework.MaxScore,
+            RewardStars = homework.RewardStars,
+            MissionId = homework.MissionId,
+            MissionTitle = homework.Mission?.Title,
+            Instructions = homework.Instructions,
+            ExpectedAnswer = homework.ExpectedAnswer,
+            Rubric = homework.Rubric,
+            CreatedAt = homework.CreatedAt,
+            Students = homework.HomeworkStudents.Select(hs => new HomeworkStudentDto
+            {
+                Id = hs.Id,
+                StudentProfileId = hs.StudentProfileId,
+                StudentName = hs.StudentProfile.DisplayName,
+                Status = hs.Status.ToString(),
+                SubmittedAt = hs.SubmittedAt,
+                GradedAt = hs.GradedAt,
+                Score = hs.Score,
+                TeacherFeedback = hs.TeacherFeedback
+            }).ToList()
+        };
+
+        return response;
+    }
+}
+

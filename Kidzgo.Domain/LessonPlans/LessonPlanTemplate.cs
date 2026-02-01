@@ -15,7 +15,7 @@ public class LessonPlanTemplate : Entity
     public bool IsDeleted { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
-
+    
     // Navigation properties
     public Program Program { get; set; } = null!;
     public User? CreatedByUser { get; set; }

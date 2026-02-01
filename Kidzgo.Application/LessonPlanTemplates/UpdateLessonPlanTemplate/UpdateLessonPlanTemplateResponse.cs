@@ -1,0 +1,11 @@
+namespace Kidzgo.Application.LessonPlanTemplates.UpdateLessonPlanTemplate;
+
+public sealed class UpdateLessonPlanTemplateResponse
+{
+    public Guid Id { get; init; }
+    public Guid ProgramId { get; init; }
+    public string? Level { get; init; }
+    public int SessionIndex { get; init; }
+    public string? StructureJson { get; init; }
+    public bool IsActive { get; init; }
+}

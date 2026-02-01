@@ -36,6 +36,8 @@ public class LessonPlanConfiguration : IEntityTypeConfiguration<LessonPlan>
 
         builder.Property(x => x.SubmittedAt);
 
+        builder.Property(x => x.IsDeleted);
+
         // Relationships
         builder.HasOne(x => x.Session)
             .WithOne(x => x.LessonPlan)
