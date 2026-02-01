@@ -20,6 +20,10 @@ public class RewardRedemptionConfiguration : IEntityTypeConfiguration<RewardRede
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.Quantity)
+            .IsRequired()
+            .HasDefaultValue(1);
+
         builder.Property(x => x.StudentProfileId)
             .IsRequired();
 

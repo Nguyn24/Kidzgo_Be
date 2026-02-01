@@ -51,16 +51,19 @@ public sealed class CancelRewardRedemptionCommandHandler(
 
         var now = DateTime.UtcNow;
 
+        // Calculate total cost based on quantity
+        var totalCostStars = item.CostStars * redemption.Quantity;
+
         // Restore item quantity
-        item.Quantity += 1;
+        item.Quantity += redemption.Quantity;
         item.UpdatedAt = now;
 
         // Refund stars to student
         var addStarsCommand = new AddStarsCommand
         {
             StudentProfileId = redemption.StudentProfileId,
-            Amount = item.CostStars, // Refund the cost
-            Reason = $"Refund for cancelled redemption: {redemption.ItemName}"
+            Amount = totalCostStars, // Refund the total cost based on quantity
+            Reason = $"Refund for cancelled redemption: {redemption.ItemName} x{redemption.Quantity}"
         };
 
         var addStarsResult = await mediator.Send(addStarsCommand, cancellationToken);

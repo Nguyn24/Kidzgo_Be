@@ -60,11 +60,21 @@ public sealed class RequestRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.ItemNotActive(command.ItemId));
         }
 
-        if (item.Quantity <= 0)
+        // Validate quantity
+        if (command.Quantity <= 0)
         {
             return Result.Failure<RequestRewardRedemptionResponse>(
-                RewardRedemptionErrors.InsufficientQuantity(command.ItemId, item.Quantity, 1));
+                RewardRedemptionErrors.InsufficientQuantity(command.ItemId, item.Quantity, command.Quantity));
         }
+
+        if (item.Quantity < command.Quantity)
+        {
+            return Result.Failure<RequestRewardRedemptionResponse>(
+                RewardRedemptionErrors.InsufficientQuantity(command.ItemId, item.Quantity, command.Quantity));
+        }
+
+        // Calculate total cost
+        var totalCostStars = item.CostStars * command.Quantity;
 
         // Check student has enough stars
         var currentBalance = await context.StarTransactions
@@ -73,18 +83,18 @@ public sealed class RequestRewardRedemptionCommandHandler(
             .Select(t => t.BalanceAfter)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (currentBalance < item.CostStars)
+        if (currentBalance < totalCostStars)
         {
             return Result.Failure<RequestRewardRedemptionResponse>(
-                RewardRedemptionErrors.InsufficientStars(studentProfileId, currentBalance, item.CostStars));
+                RewardRedemptionErrors.InsufficientStars(studentProfileId, currentBalance, totalCostStars));
         }
 
         // UC-237: Deduct stars
         var deductCommand = new DeductStarsCommand
         {
             StudentProfileId = studentProfileId,
-            Amount = item.CostStars,
-            Reason = $"Redeemed reward: {item.Title}"
+            Amount = totalCostStars,
+            Reason = $"Redeemed reward: {item.Title} x{command.Quantity}"
         };
 
         var deductResult = await mediator.Send(deductCommand, cancellationToken);
@@ -94,7 +104,7 @@ public sealed class RequestRewardRedemptionCommandHandler(
         }
 
         // Decrease item quantity
-        item.Quantity -= 1;
+        item.Quantity -= command.Quantity;
         item.UpdatedAt = DateTime.UtcNow;
 
         // UC-228 & UC-236: Create redemption with item name at redemption time
@@ -104,6 +114,7 @@ public sealed class RequestRewardRedemptionCommandHandler(
             Id = Guid.NewGuid(),
             ItemId = item.Id,
             ItemName = item.Title, // UC-236: Store item name at redemption time
+            Quantity = command.Quantity,
             StudentProfileId = studentProfileId,
             Status = RedemptionStatus.Requested,
             HandledBy = null,
@@ -121,9 +132,10 @@ public sealed class RequestRewardRedemptionCommandHandler(
             Id = redemption.Id,
             ItemId = redemption.ItemId,
             ItemName = redemption.ItemName,
+            Quantity = redemption.Quantity,
             StudentProfileId = redemption.StudentProfileId,
             Status = redemption.Status.ToString(),
-            StarsDeducted = item.CostStars,
+            StarsDeducted = totalCostStars,
             RemainingStars = deductResult.Value.NewBalance,
             CreatedAt = redemption.CreatedAt
         });
