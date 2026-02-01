@@ -25,6 +25,7 @@ using Kidzgo.Application.Gamification.GetMyRewardRedemptions;
 using Kidzgo.Application.Gamification.ApproveRewardRedemption;
 using Kidzgo.Application.Gamification.CancelRewardRedemption;
 using Kidzgo.Application.Gamification.MarkDeliveredRewardRedemption;
+using Kidzgo.Application.Gamification.BatchDeliverRewardRedemptions;
 using Kidzgo.Application.Gamification.ConfirmReceivedRewardRedemption;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -415,7 +416,8 @@ public class GamificationController : ControllerBase
     {
         var command = new RequestRewardRedemptionCommand
         {
-            ItemId = request.ItemId
+            ItemId = request.ItemId,
+            Quantity = request.Quantity
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -545,6 +547,27 @@ public class GamificationController : ControllerBase
         CancellationToken cancellationToken)
     {
         var command = new ConfirmReceivedRewardRedemptionCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Deliver hàng loạt các reward redemptions đã approved
+    /// Thường được chạy vào cuối tháng để deliver tất cả redemption đã approved trong tháng
+    /// </summary>
+    [HttpPatch("reward-redemptions/batch-deliver")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> BatchDeliverRewardRedemptions(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var command = new BatchDeliverRewardRedemptionsCommand
+        {
+            Year = year,
+            Month = month
+        };
+
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
