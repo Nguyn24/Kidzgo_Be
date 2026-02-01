@@ -1317,6 +1317,12 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ExpectedAnswer")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Instructions")
+                        .HasColumnType("text");
+
                     b.Property<decimal?>("MaxScore")
                         .HasColumnType("numeric");
 
@@ -1329,6 +1335,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<int?>("RewardStars")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Rubric")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("SessionId")
                         .HasColumnType("uuid");
@@ -1417,6 +1426,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<string>("ActualHomework")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PlannedContent")
                         .HasColumnType("jsonb");

@@ -21,6 +21,9 @@ public class HomeworkAssignment : Entity
     public decimal? MaxScore { get; set; }
     public int? RewardStars { get; set; }
     public Guid? MissionId { get; set; }
+    public string? Instructions { get; set; }
+    public string? ExpectedAnswer { get; set; }
+    public string? Rubric { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 
