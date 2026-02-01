@@ -47,6 +47,12 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
 
         builder.Property(x => x.MissionId);
 
+        builder.Property(x => x.Instructions);
+
+        builder.Property(x => x.ExpectedAnswer);
+
+        builder.Property(x => x.Rubric);
+
         builder.Property(x => x.CreatedBy);
 
         builder.Property(x => x.CreatedAt)
