@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.AssignTicket;
@@ -21,26 +22,23 @@ public sealed class AssignTicketCommandHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<AssignTicketResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<AssignTicketResponse>(TicketErrors.NotFound(command.Id));
         }
 
-        // Check if assigned user exists and is Staff or Teacher
+        // Check if assigned user exists and is ManagementStaff or Teacher
         var assignedUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == command.AssignedToUserId && 
-                (u.Role == Domain.Users.UserRole.Staff || u.Role == Domain.Users.UserRole.Teacher), cancellationToken);
+                (u.Role == Domain.Users.UserRole.ManagementStaff || u.Role == Domain.Users.UserRole.Teacher), cancellationToken);
 
         if (assignedUser is null)
         {
-            return Result.Failure<AssignTicketResponse>(
-                Error.NotFound("Ticket.AssignedUserNotFound", "Assigned user not found or is not Staff/Teacher"));
+            return Result.Failure<AssignTicketResponse>(TicketErrors.AssignedUserNotFound);
         }
 
         // Check if assigned user belongs to the same branch as the ticket
         if (assignedUser.BranchId != ticket.BranchId)
         {
-            return Result.Failure<AssignTicketResponse>(
-                Error.Conflict("Ticket.AssignedUserBranchMismatch", "Assigned user must belong to the same branch as the ticket"));
+            return Result.Failure<AssignTicketResponse>(TicketErrors.AssignedUserBranchMismatch);
         }
 
         ticket.AssignedToUserId = command.AssignedToUserId;
@@ -75,10 +73,10 @@ public sealed class AssignTicketCommandHandler(
             ClassId = ticketWithNav.ClassId,
             ClassCode = ticketWithNav.Class?.Code,
             ClassTitle = ticketWithNav.Class?.Title,
-            Category = ticketWithNav.Category,
+            Category = ticketWithNav.Category.ToString(),
             Subject = ticketWithNav.Subject,
             Message = ticketWithNav.Message,
-            Status = ticketWithNav.Status,
+            Status = ticketWithNav.Status.ToString(),
             AssignedToUserId = ticketWithNav.AssignedToUserId,
             AssignedToUserName = ticketWithNav.AssignedToUser?.Name,
             CreatedAt = ticketWithNav.CreatedAt,

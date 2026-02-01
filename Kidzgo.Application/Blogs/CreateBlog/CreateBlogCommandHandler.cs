@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Media;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.CreateBlog;
@@ -16,15 +17,14 @@ public sealed class CreateBlogCommandHandler(
     {
         var createdBy = userContext.UserId;
 
-        // Check if user exists and is Admin or Staff
+        // Check if user exists and is Admin or ManagementStaff
         var user = await context.Users
             .FirstOrDefaultAsync(u => u.Id == createdBy && 
-                (u.Role == Domain.Users.UserRole.Admin || u.Role == Domain.Users.UserRole.Staff), cancellationToken);
+                (u.Role == Domain.Users.UserRole.Admin || u.Role == Domain.Users.UserRole.ManagementStaff), cancellationToken);
 
         if (user is null)
         {
-            return Result.Failure<CreateBlogResponse>(
-                Error.NotFound("Blog.UserNotFound", "User not found or is not Admin/Staff"));
+            return Result.Failure<CreateBlogResponse>(BlogErrors.UserNotFound);
         }
 
         var now = DateTime.UtcNow;

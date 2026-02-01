@@ -19,9 +19,7 @@ public class LookupController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// Lấy danh sách Levels từ Programs
-    /// </summary>
     [HttpGet("levels")]
     [Authorize]
     public async Task<IResult> GetLevels(CancellationToken cancellationToken)
@@ -31,9 +29,7 @@ public class LookupController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy danh sách Roles (SessionRoleType)
-    /// </summary>
     [HttpGet("roles")]
     [Authorize]
     public async Task<IResult> GetRoles(CancellationToken cancellationToken)
@@ -43,9 +39,7 @@ public class LookupController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy tất cả enum values cho lookups (attendanceStatus, sessionType, classStatus, etc.)
-    /// </summary>
     [HttpGet("lookups")]
     [Authorize]
     public async Task<IResult> GetLookups(CancellationToken cancellationToken)

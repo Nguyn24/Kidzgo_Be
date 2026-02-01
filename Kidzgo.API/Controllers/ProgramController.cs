@@ -23,11 +23,9 @@ public class ProgramController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
     /// UC-039: Tạo Program
-    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateProgram(
         [FromBody] CreateProgramRequest request,
         CancellationToken cancellationToken)
@@ -47,11 +45,9 @@ public class ProgramController : ControllerBase
         return result.MatchCreated(p => $"/api/programs/{p.Id}");
     }
 
-    /// <summary>
     /// UC-040: Xem danh sách Programs
-    /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetPrograms(
         [FromQuery] Guid? branchId,
         [FromQuery] string? searchTerm,
@@ -73,9 +69,7 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Lấy danh sách tất cả Programs đang active (IsActive = true)
-    /// </summary>
     [HttpGet("active")]
     [AllowAnonymous]
     public async Task<IResult> GetActivePrograms(
@@ -98,9 +92,7 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-041: Xem chi tiết Program
-    /// </summary>
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IResult> GetProgramById(
@@ -116,11 +108,9 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-042: Cập nhật Program
-    /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateProgram(
         Guid id,
         [FromBody] UpdateProgramRequest request,
@@ -142,9 +132,7 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-043: Xóa mềm Program
-    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteProgram(
@@ -160,11 +148,9 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// UC-044: Kích hoạt/Vô hiệu hóa Program
-    /// </summary>
     [HttpPatch("{id:guid}/toggle-status")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ToggleProgramStatus(
         Guid id,
         CancellationToken cancellationToken)

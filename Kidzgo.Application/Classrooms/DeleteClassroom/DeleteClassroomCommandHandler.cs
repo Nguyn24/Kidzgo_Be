@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classrooms.DeleteClassroom;
@@ -16,8 +17,7 @@ public sealed class DeleteClassroomCommandHandler(
 
         if (classroom is null)
         {
-            return Result.Failure(
-                Error.NotFound("Classroom.NotFound", "Classroom not found"));
+            return Result.Failure(ClassroomErrors.NotFound(command.Id));
         }
 
         // Check if classroom is being used by any sessions (planned or actual)
@@ -26,8 +26,7 @@ public sealed class DeleteClassroomCommandHandler(
 
         if (hasSessions)
         {
-            return Result.Failure(
-                Error.Conflict("Classroom.HasSessions", "Cannot delete classroom that is being used in sessions"));
+            return Result.Failure(ClassroomErrors.HasSessions);
         }
 
         // Hard delete (Classroom doesn't have IsDeleted field)

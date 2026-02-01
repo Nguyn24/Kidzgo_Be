@@ -72,9 +72,16 @@ public class AuthenticateController : ControllerBase
     
     [Authorize]
     [HttpGet("profiles")]
-    public async Task<IResult> GetProfiles(CancellationToken cancellationToken)
+    public async Task<IResult> GetProfiles(
+        [FromQuery] string? profileType,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetProfilesQuery(), cancellationToken);
+        var query = new GetProfilesQuery
+        {
+            ProfileType = profileType
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
     
@@ -146,9 +153,7 @@ public class AuthenticateController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
     /// Request PIN reset for Parent profile (nếu có email flow)
-    /// </summary>
     [Authorize]
     [HttpPost("profiles/request-pin-reset")]
     public async Task<IResult> RequestParentPinReset([FromBody] RequestParentPinResetRequest request, CancellationToken cancellationToken)

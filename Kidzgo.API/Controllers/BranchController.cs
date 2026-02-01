@@ -3,6 +3,7 @@ using Kidzgo.API.Requests;
 using Kidzgo.Application.Branches.CreateBranch;
 using Kidzgo.Application.Branches.DeleteBranch;
 using Kidzgo.Application.Branches.GetBranchById;
+using Kidzgo.Application.Branches.GetAllBranches;
 using Kidzgo.Application.Branches.GetBranches;
 using Kidzgo.Application.Branches.ToggleBranchStatus;
 using Kidzgo.Application.Branches.UpdateBranch;
@@ -49,6 +50,18 @@ public class BranchController : ControllerBase
     public async Task<IResult> GetBranches(CancellationToken cancellationToken)
     {
         var query = new GetBranchesQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Lấy tất cả branch (không filter theo role - Admin và Staff đều có thể lấy hết)
+    /// </summary>
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff,Teacher")]
+    public async Task<IResult> GetAllBranches(CancellationToken cancellationToken)
+    {
+        var query = new GetAllBranchesQuery();
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }

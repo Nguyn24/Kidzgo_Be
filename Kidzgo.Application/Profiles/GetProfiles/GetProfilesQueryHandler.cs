@@ -16,9 +16,17 @@ public sealed class GetProfilesQueryHandler(
     {
         Guid userId = userContext.UserId;
 
-        List<Profile> profiles = await context.Profiles
+        var query = context.Profiles
             .Where(p => p.UserId == userId && !p.IsDeleted && p.IsActive)
-            .ToListAsync(cancellationToken);
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(request.ProfileType) &&
+            Enum.TryParse<ProfileType>(request.ProfileType, true, out var profileType))
+        {
+            query = query.Where(p => p.ProfileType == profileType);
+        }
+
+        List<Profile> profiles = await query.ToListAsync(cancellationToken);
 
         var response = profiles
             .Select(p => new GetProfilesResponse

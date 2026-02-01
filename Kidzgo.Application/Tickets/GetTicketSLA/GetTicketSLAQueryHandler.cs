@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.GetTicketSLA;
@@ -18,14 +19,13 @@ public sealed class GetTicketSLAQueryHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<GetTicketSLAResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<GetTicketSLAResponse>(TicketErrors.NotFound(query.TicketId));
         }
 
-        // Calculate first response time (time from ticket creation to first comment by Staff/Teacher)
+        // Calculate first response time (time from ticket creation to first comment by ManagementStaff/Teacher)
         DateTime? firstResponseAt = null;
         var firstStaffComment = ticket.TicketComments
-            .Where(c => c.CommenterUser.Role == Domain.Users.UserRole.Staff || 
+            .Where(c => c.CommenterUser.Role == Domain.Users.UserRole.ManagementStaff || 
                        c.CommenterUser.Role == Domain.Users.UserRole.Teacher)
             .OrderBy(c => c.CreatedAt)
             .FirstOrDefault();
@@ -49,13 +49,13 @@ public sealed class GetTicketSLAQueryHandler(
             (DateTime.UtcNow - ticket.CreatedAt).TotalHours > slaTargetHours;
 
         var staffCommentCount = ticket.TicketComments
-            .Count(c => c.CommenterUser.Role == Domain.Users.UserRole.Staff || 
+            .Count(c => c.CommenterUser.Role == Domain.Users.UserRole.ManagementStaff || 
                        c.CommenterUser.Role == Domain.Users.UserRole.Teacher);
 
         return new GetTicketSLAResponse
         {
             TicketId = ticket.Id,
-            TicketStatus = ticket.Status,
+            TicketStatus = ticket.Status.ToString(),
             CreatedAt = ticket.CreatedAt,
             FirstResponseAt = firstResponseAt,
             TimeToFirstResponseHours = timeToFirstResponse,

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Blogs.GetBlogById;
@@ -17,8 +18,7 @@ public sealed class GetBlogByIdQueryHandler(
 
         if (blog is null)
         {
-            return Result.Failure<GetBlogByIdResponse>(
-                Error.NotFound("Blog.NotFound", "Blog not found"));
+            return Result.Failure<GetBlogByIdResponse>(BlogErrors.NotFound(query.Id));
         }
 
         return new GetBlogByIdResponse

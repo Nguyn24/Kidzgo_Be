@@ -83,9 +83,7 @@ public sealed class CreatePayOSLinkCommandHandler(
         if (payOSResponse.Error != 0 || payOSResponse.Data == null)
         {
             return Result.Failure<CreatePayOSLinkResponse>(
-                Error.Problem(
-                    "PayOS.CreateLinkFailed",
-                    payOSResponse.Message ?? "Failed to create PayOS payment link"));
+                InvoiceErrors.PayOSCreateLinkFailed(payOSResponse.Message));
         }
 
         // Save PayOS data to invoice

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Programs.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Programs.ToggleProgramStatus;
@@ -16,8 +17,7 @@ public sealed class ToggleProgramStatusCommandHandler(
 
         if (program is null)
         {
-            return Result.Failure<ToggleProgramStatusResponse>(
-                Error.NotFound("Program.NotFound", "Program not found"));
+            return Result.Failure<ToggleProgramStatusResponse>(ProgramErrors.NotFound(command.Id));
         }
 
         program.IsActive = !program.IsActive;

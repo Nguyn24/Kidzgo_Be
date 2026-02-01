@@ -49,6 +49,11 @@ public sealed class UpdateCurrentUserCommandHandler(
             user.Email = command.Email;
         }
 
+        if (!string.IsNullOrWhiteSpace(command.PhoneNumber))
+        {
+            user.PhoneNumber = command.PhoneNumber.Trim();
+        }
+
         // AvatarUrl - TODO: Add AvatarUrl field to User entity if needed
         // For now, we just update the timestamp if any field was updated
 
@@ -94,6 +99,7 @@ public sealed class UpdateCurrentUserCommandHandler(
             Role = user.Role.ToString(),
             BranchId = user.BranchId,
             AvatarUrl = null, // TODO: Add AvatarUrl to User entity if needed
+            PhoneNumber = user.PhoneNumber,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,

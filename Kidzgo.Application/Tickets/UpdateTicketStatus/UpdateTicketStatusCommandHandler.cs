@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Tickets.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Tickets.UpdateTicketStatus;
@@ -21,8 +22,7 @@ public sealed class UpdateTicketStatusCommandHandler(
 
         if (ticket is null)
         {
-            return Result.Failure<UpdateTicketStatusResponse>(
-                Error.NotFound("Ticket.NotFound", "Ticket not found"));
+            return Result.Failure<UpdateTicketStatusResponse>(TicketErrors.NotFound(command.Id));
         }
 
         ticket.Status = command.Status;
@@ -41,10 +41,10 @@ public sealed class UpdateTicketStatusCommandHandler(
             ClassId = ticket.ClassId,
             ClassCode = ticket.Class?.Code,
             ClassTitle = ticket.Class?.Title,
-            Category = ticket.Category,
+            Category = ticket.Category.ToString(),
             Subject = ticket.Subject,
             Message = ticket.Message,
-            Status = ticket.Status,
+            Status = ticket.Status.ToString(),
             AssignedToUserId = ticket.AssignedToUserId,
             AssignedToUserName = ticket.AssignedToUser?.Name,
             CreatedAt = ticket.CreatedAt,

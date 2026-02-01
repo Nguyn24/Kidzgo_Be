@@ -25,6 +25,11 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.ChildName)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.ChildDateOfBirth);
+
         builder.Property(x => x.Phone)
             .HasMaxLength(50);
 
@@ -32,6 +37,12 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
             .HasMaxLength(100);
 
         builder.Property(x => x.Email)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.Company)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.Subject)
             .HasMaxLength(255);
 
         builder.Property(x => x.BranchPreference);

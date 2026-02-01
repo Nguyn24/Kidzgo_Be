@@ -23,8 +23,8 @@ public sealed class AssignBranchCommandHandler(IDbContext context)
             return Result.Failure<AssignBranchResponse>(UserErrors.NotFound(command.UserId));
         }
 
-        // Only Teacher and Staff can have branch assigned
-        if (user.Role != UserRole.Teacher && user.Role != UserRole.Staff)
+        // Only ManagementStaff, AccountantStaff, Teacher, and Parent can have branch assigned
+        if (user.Role != UserRole.Teacher && user.Role != UserRole.ManagementStaff && user.Role != UserRole.AccountantStaff && user.Role != UserRole.Parent)
         {
             return Result.Failure<AssignBranchResponse>(UserErrors.InvalidRoleForBranchAssignment);
         }

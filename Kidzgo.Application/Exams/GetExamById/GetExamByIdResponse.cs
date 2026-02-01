@@ -8,7 +8,7 @@ public sealed class GetExamByIdResponse
     public Guid ClassId { get; init; }
     public string ClassCode { get; init; } = null!;
     public string ClassTitle { get; init; } = null!;
-    public ExamType ExamType { get; init; }
+    public string ExamType { get; init; } = null!;
     public DateOnly Date { get; init; }
     public decimal? MaxScore { get; init; }
     public string? Description { get; init; }

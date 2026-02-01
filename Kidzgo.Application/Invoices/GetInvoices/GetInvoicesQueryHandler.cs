@@ -50,12 +50,12 @@ public sealed class GetInvoicesQueryHandler(
             invoicesQuery = invoicesQuery.Where(i => i.Type == query.Type.Value);
         }
 
-        // Filter by search term
+        // Filter by search term (search by student display name)
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
+            var searchTerm = query.SearchTerm.Trim().ToLower();
             invoicesQuery = invoicesQuery.Where(i =>
-                (i.Description != null && i.Description.Contains(query.SearchTerm)) ||
-                (i.StudentProfile.DisplayName != null && i.StudentProfile.DisplayName.Contains(query.SearchTerm)));
+                (i.StudentProfile.DisplayName != null && i.StudentProfile.DisplayName.ToLower().Contains(searchTerm)));
         }
 
         // Get total count
@@ -75,11 +75,11 @@ public sealed class GetInvoicesQueryHandler(
                 StudentName = i.StudentProfile.DisplayName ?? "Unknown",
                 ClassId = i.ClassId,
                 ClassCode = i.Class != null ? i.Class.Code : null,
-                Type = i.Type,
+                Type = i.Type.ToString(),
                 Amount = i.Amount,
                 Currency = i.Currency,
                 DueDate = i.DueDate,
-                Status = i.Status,
+                Status = i.Status.ToString(),
                 Description = i.Description,
                 IssuedAt = i.IssuedAt,
                 IssuedBy = i.IssuedBy,

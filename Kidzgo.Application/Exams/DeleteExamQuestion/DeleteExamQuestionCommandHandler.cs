@@ -30,8 +30,7 @@ public sealed class DeleteExamQuestionCommandHandler(
 
         if (hasSubmissions)
         {
-            return Result.Failure<DeleteExamQuestionResponse>(
-                Error.Conflict("ExamQuestion.HasSubmissions", "Cannot delete question that has submission answers"));
+            return Result.Failure<DeleteExamQuestionResponse>(ExamQuestionErrors.HasSubmissions);
         }
 
         context.ExamQuestions.Remove(question);

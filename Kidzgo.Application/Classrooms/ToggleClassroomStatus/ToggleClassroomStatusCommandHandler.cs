@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classrooms.ToggleClassroomStatus;
@@ -16,8 +17,7 @@ public sealed class ToggleClassroomStatusCommandHandler(
 
         if (classroom is null)
         {
-            return Result.Failure<ToggleClassroomStatusResponse>(
-                Error.NotFound("Classroom.NotFound", "Classroom not found"));
+            return Result.Failure<ToggleClassroomStatusResponse>(ClassroomErrors.NotFound(command.Id));
         }
 
         classroom.IsActive = !classroom.IsActive;
