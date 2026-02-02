@@ -3,11 +3,16 @@ using Kidzgo.API.Requests;
 using Kidzgo.Application.Leads.AddLeadNote;
 using Kidzgo.Application.Leads.AssignLead;
 using Kidzgo.Application.Leads.CreateLead;
+using Kidzgo.Application.Leads.SelfAssignLead;
+using Kidzgo.Application.Leads.CreateLeadChild;
+using Kidzgo.Application.Leads.DeleteLeadChild;
 using Kidzgo.Application.Leads.GetLeadActivities;
 using Kidzgo.Application.Leads.GetLeadById;
+using Kidzgo.Application.Leads.GetLeadChildren;
 using Kidzgo.Application.Leads.GetLeadSLA;
 using Kidzgo.Application.Leads.GetLeads;
 using Kidzgo.Application.Leads.UpdateLead;
+using Kidzgo.Application.Leads.UpdateLeadChild;
 using Kidzgo.Application.Leads.UpdateLeadStatus;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -67,17 +72,22 @@ public class LeadController : ControllerBase
             Source = request.Source,
             Campaign = request.Campaign,
             ContactName = request.ContactName,
-            ChildName = request.ChildName,
-            ChildDateOfBirth = request.ChildDateOfBirth,
             Phone = request.Phone,
             ZaloId = request.ZaloId,
             Email = request.Email,
             Company = request.Company,
             Subject = request.Subject,
             BranchPreference = request.BranchPreference,
-            ProgramInterest = request.ProgramInterest,
             Notes = request.Notes,
-            OwnerStaffId = request.OwnerStaffId
+            OwnerStaffId = request.OwnerStaffId,
+            Children = request.Children?.Select(c => new Kidzgo.Application.Leads.CreateLead.CreateLeadChildDto
+            {
+                ChildName = c.ChildName,
+                Dob = c.Dob,
+                Gender = c.Gender,
+                ProgramInterest = c.ProgramInterest,
+                Notes = c.Notes
+            }).ToList()
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -152,15 +162,12 @@ public class LeadController : ControllerBase
         {
             LeadId = id,
             ContactName = request.ContactName,
-            ChildName = request.ChildName,
-            ChildDateOfBirth = request.ChildDateOfBirth,
             Phone = request.Phone,
             ZaloId = request.ZaloId,
             Email = request.Email,
             Company = request.Company,
             Subject = request.Subject,
             BranchPreference = request.BranchPreference,
-            ProgramInterest = request.ProgramInterest,
             Notes = request.Notes
         };
 
@@ -182,6 +189,24 @@ public class LeadController : ControllerBase
         {
             LeadId = id,
             OwnerStaffId = request.OwnerStaffId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-020 (extension): ManagementStaff tự nhận Lead về mình (self-assign)
+    /// </summary>
+    [HttpPost("{id:guid}/self-assign")]
+    [Authorize(Roles = "ManagementStaff")]
+    public async Task<IResult> SelfAssignLead(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new SelfAssignLeadCommand
+        {
+            LeadId = id
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -279,6 +304,94 @@ public class LeadController : ControllerBase
             .ToList();
 
         return Results.Ok(new { statuses });
+    }
+
+    /// <summary>
+    /// UC-3.2: Xem danh sách children của Lead
+    /// </summary>
+    [HttpGet("{leadId:guid}/children")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
+    public async Task<IResult> GetLeadChildren(
+        Guid leadId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetLeadChildrenQuery
+        {
+            LeadId = leadId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-3.2: Tạo child mới cho Lead
+    /// </summary>
+    [HttpPost("{leadId:guid}/children")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
+    public async Task<IResult> CreateLeadChild(
+        Guid leadId,
+        [FromBody] CreateLeadChildRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateLeadChildCommand
+        {
+            LeadId = leadId,
+            ChildName = request.ChildName,
+            Dob = request.Dob,
+            Gender = request.Gender,
+            ProgramInterest = request.ProgramInterest,
+            Notes = request.Notes
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(c => $"/api/leads/{leadId}/children/{c.Id}");
+    }
+
+    /// <summary>
+    /// UC-3.2: Cập nhật thông tin child của Lead
+    /// </summary>
+    [HttpPut("{leadId:guid}/children/{childId:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
+    public async Task<IResult> UpdateLeadChild(
+        Guid leadId,
+        Guid childId,
+        [FromBody] UpdateLeadChildRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateLeadChildCommand
+        {
+            LeadId = leadId,
+            ChildId = childId,
+            ChildName = request.ChildName,
+            Dob = request.Dob,
+            Gender = request.Gender,
+            ProgramInterest = request.ProgramInterest,
+            Notes = request.Notes
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-3.2: Xóa child của Lead
+    /// </summary>
+    [HttpDelete("{leadId:guid}/children/{childId:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
+    public async Task<IResult> DeleteLeadChild(
+        Guid leadId,
+        Guid childId,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeleteLeadChildCommand
+        {
+            LeadId = leadId,
+            ChildId = childId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
     }
 }
 

@@ -5,6 +5,7 @@ using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Kidzgo.Application.Leads.CreateLead;
 
 namespace Kidzgo.Application.Leads.CreateLead;
 
@@ -79,17 +80,12 @@ public sealed class CreateLeadCommandHandler(
             Source = command.Source,
             Campaign = command.Campaign?.Trim(),
             ContactName = command.ContactName.Trim(),
-            ChildName = command.ChildName?.Trim(),
-            ChildDateOfBirth = command.ChildDateOfBirth.HasValue
-                ? DateTime.SpecifyKind(command.ChildDateOfBirth.Value.Date, DateTimeKind.Utc)
-                : null,
             Phone = command.Phone?.Trim(),
             ZaloId = command.ZaloId?.Trim(),
             Email = command.Email?.Trim(),
             Company = command.Company?.Trim(),
             Subject = command.Subject?.Trim(),
             BranchPreference = command.BranchPreference,
-            ProgramInterest = command.ProgramInterest?.Trim(),
             Notes = command.Notes?.Trim(),
             Status = LeadStatus.New,
             OwnerStaffId = command.OwnerStaffId,
@@ -100,13 +96,43 @@ public sealed class CreateLeadCommandHandler(
 
         context.Leads.Add(lead);
 
+        // Create LeadChild records only if children are explicitly provided
+        var childrenCreated = 0;
+        if (command.Children != null && command.Children.Any())
+        {
+            foreach (var childDto in command.Children)
+            {
+                var leadChild = new LeadChild
+                {
+                    Id = Guid.NewGuid(),
+                    LeadId = lead.Id,
+                    ChildName = childDto.ChildName.Trim(),
+                    Dob = childDto.Dob.HasValue
+                        ? DateTime.SpecifyKind(childDto.Dob.Value.Date, DateTimeKind.Utc)
+                        : null,
+                    Gender = childDto.Gender?.Trim(),
+                    ProgramInterest = childDto.ProgramInterest?.Trim(),
+                    Notes = childDto.Notes?.Trim(),
+                    Status = LeadChildStatus.New,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                context.LeadChildren.Add(leadChild);
+                childrenCreated++;
+            }
+        }
+
         // Create initial activity
+        var activityContent = childrenCreated > 0
+            ? $"Lead created from {command.Source} with {childrenCreated} child(ren)"
+            : $"Lead created from {command.Source}";
+
         var activity = new LeadActivity
         {
             Id = Guid.NewGuid(),
             LeadId = lead.Id,
             ActivityType = ActivityType.Note,
-            Content = $"Lead created from {command.Source}",
+            Content = activityContent,
             CreatedAt = now
         };
 
@@ -119,15 +145,12 @@ public sealed class CreateLeadCommandHandler(
             Source = lead.Source.ToString(),
             Campaign = lead.Campaign,
             ContactName = lead.ContactName,
-            ChildName = lead.ChildName,
-            ChildDateOfBirth = lead.ChildDateOfBirth,
             Phone = lead.Phone,
             ZaloId = lead.ZaloId,
             Email = lead.Email,
             Company = lead.Company,
             Subject = lead.Subject,
             BranchPreference = lead.BranchPreference,
-            ProgramInterest = lead.ProgramInterest,
             Notes = lead.Notes,
             Status = lead.Status.ToString(),
             OwnerStaffId = lead.OwnerStaffId,

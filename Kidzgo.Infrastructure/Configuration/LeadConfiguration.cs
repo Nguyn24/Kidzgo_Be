@@ -25,11 +25,6 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
             .HasMaxLength(255)
             .IsRequired();
 
-        builder.Property(x => x.ChildName)
-            .HasMaxLength(255);
-
-        builder.Property(x => x.ChildDateOfBirth);
-
         builder.Property(x => x.Phone)
             .HasMaxLength(50);
 
@@ -47,9 +42,6 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
 
         builder.Property(x => x.BranchPreference);
 
-        builder.Property(x => x.ProgramInterest)
-            .HasMaxLength(255);
-
         builder.Property(x => x.Notes);
 
         builder.Property(x => x.Status)
@@ -66,10 +58,6 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
 
         builder.Property(x => x.NextActionAt);
 
-        builder.Property(x => x.ConvertedStudentProfileId);
-
-        builder.Property(x => x.ConvertedAt);
-
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
@@ -85,11 +73,6 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
         builder.HasOne(x => x.OwnerStaffUser)
             .WithMany(x => x.OwnedLeads)
             .HasForeignKey(x => x.OwnerStaffId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.ConvertedStudentProfile)
-            .WithMany(x => x.ConvertedLeads)
-            .HasForeignKey(x => x.ConvertedStudentProfileId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.PlacementTests)

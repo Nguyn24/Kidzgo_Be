@@ -79,13 +79,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime?>("ChildDateOfBirth")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ChildName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<string>("Company")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -94,12 +87,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime?>("ConvertedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ConvertedStudentProfileId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -123,10 +110,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("ProgramInterest")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Source")
                         .IsRequired()
@@ -155,8 +138,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchPreference");
-
-                    b.HasIndex("ConvertedStudentProfileId");
 
                     b.HasIndex("OwnerStaffId");
 
@@ -198,6 +179,57 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("LeadActivities", "public");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.CRM.LeadChild", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChildName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("ConvertedStudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("Dob")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("LeadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProgramInterest")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConvertedStudentProfileId");
+
+                    b.HasIndex("LeadId");
+
+                    b.ToTable("LeadChildren", "public");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.CRM.PlacementTest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -214,6 +246,9 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("InvigilatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("LeadChildId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("LeadId")
@@ -268,6 +303,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ClassId");
 
                     b.HasIndex("InvigilatorUserId");
+
+                    b.HasIndex("LeadChildId");
 
                     b.HasIndex("LeadId");
 
@@ -3081,19 +3118,12 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasForeignKey("BranchPreference")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "ConvertedStudentProfile")
-                        .WithMany("ConvertedLeads")
-                        .HasForeignKey("ConvertedStudentProfileId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Kidzgo.Domain.Users.User", "OwnerStaffUser")
                         .WithMany("OwnedLeads")
                         .HasForeignKey("OwnerStaffId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BranchPreferenceNavigation");
-
-                    b.Navigation("ConvertedStudentProfile");
 
                     b.Navigation("OwnerStaffUser");
                 });
@@ -3116,6 +3146,24 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Lead");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.CRM.LeadChild", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "ConvertedStudentProfile")
+                        .WithMany()
+                        .HasForeignKey("ConvertedStudentProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.CRM.Lead", "Lead")
+                        .WithMany("LeadChildren")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConvertedStudentProfile");
+
+                    b.Navigation("Lead");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.CRM.PlacementTest", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
@@ -3126,6 +3174,11 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasOne("Kidzgo.Domain.Users.User", "InvigilatorUser")
                         .WithMany("InvigilatedPlacementTests")
                         .HasForeignKey("InvigilatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.CRM.LeadChild", "LeadChild")
+                        .WithMany("PlacementTests")
+                        .HasForeignKey("LeadChildId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Kidzgo.Domain.CRM.Lead", "Lead")
@@ -3143,6 +3196,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("InvigilatorUser");
 
                     b.Navigation("Lead");
+
+                    b.Navigation("LeadChild");
 
                     b.Navigation("StudentProfile");
                 });
@@ -4362,6 +4417,13 @@ namespace Kidzgo.Infrastructure.Migrations
                 {
                     b.Navigation("LeadActivities");
 
+                    b.Navigation("LeadChildren");
+
+                    b.Navigation("PlacementTests");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.CRM.LeadChild", b =>
+                {
                     b.Navigation("PlacementTests");
                 });
 
@@ -4556,8 +4618,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("ClassEnrollments");
-
-                    b.Navigation("ConvertedLeads");
 
                     b.Navigation("ExamResults");
 

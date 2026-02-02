@@ -91,7 +91,6 @@ public sealed class CreateLeadFromZaloCommandHandler(
             ZaloId = command.ZaloUserId,
             Email = command.Email,
             BranchPreference = command.BranchPreference,
-            ProgramInterest = command.ProgramInterest,
             Notes = command.Notes ?? $"Created from Zalo. Message: {command.Message}",
             Status = LeadStatus.New,
             TouchCount = 1,
@@ -100,6 +99,22 @@ public sealed class CreateLeadFromZaloCommandHandler(
         };
 
         context.Leads.Add(lead);
+
+        // Create default LeadChild (since Lead no longer stores child info)
+        var leadChild = new LeadChild
+        {
+            Id = Guid.NewGuid(),
+            LeadId = lead.Id,
+            ChildName = command.ContactName, // best-effort default
+            Dob = null,
+            Gender = null,
+            ProgramInterest = string.IsNullOrWhiteSpace(command.ProgramInterest) ? null : command.ProgramInterest.Trim(),
+            Notes = null,
+            Status = LeadChildStatus.New,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        context.LeadChildren.Add(leadChild);
 
         // Create Lead Activity để track
         var activity = new LeadActivity
