@@ -44,7 +44,6 @@ public class Profile : Entity
     public ICollection<PlacementTest> PlacementTests { get; set; } = new List<PlacementTest>();
     public ICollection<MediaAsset> MediaAssets { get; set; } = new List<MediaAsset>();
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-    public ICollection<Lead> ConvertedLeads { get; set; } = new List<Lead>();
     public ICollection<Notification> ReceivedNotifications { get; set; } = new List<Notification>();
     public ICollection<Ticket> OpenedTickets { get; set; } = new List<Ticket>();
     public ICollection<TicketComment> TicketComments { get; set; } = new List<TicketComment>();

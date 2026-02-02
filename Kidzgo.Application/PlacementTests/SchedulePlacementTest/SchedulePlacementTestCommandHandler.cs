@@ -18,14 +18,68 @@ public sealed class SchedulePlacementTestCommandHandler(
         SchedulePlacementTestCommand command,
         CancellationToken cancellationToken)
     {
-        // UC-027: Validate Lead exists
-        var lead = await context.Leads
-            .FirstOrDefaultAsync(l => l.Id == command.LeadId, cancellationToken);
+        Lead? lead = null;
+        LeadChild? leadChild = null;
 
-        if (lead is null)
+        // UC-027: Priority 1 - If LeadChildId is provided, use it
+        if (command.LeadChildId.HasValue)
+        {
+            leadChild = await context.LeadChildren
+                .Include(lc => lc.Lead)
+                .FirstOrDefaultAsync(lc => lc.Id == command.LeadChildId.Value, cancellationToken);
+
+            if (leadChild is null)
+            {
+                return Result.Failure<SchedulePlacementTestResponse>(
+                    Domain.Common.Error.NotFound("LeadChild", $"LeadChild with Id {command.LeadChildId.Value} not found"));
+            }
+
+            lead = leadChild.Lead;
+
+            // Validate LeadId matches if provided
+            if (command.LeadId.HasValue && command.LeadId.Value != lead.Id)
+            {
+                return Result.Failure<SchedulePlacementTestResponse>(
+                    Domain.Common.Error.Validation("LeadId", "LeadId does not match LeadChild's LeadId"));
+            }
+        }
+        // Priority 2 - If only LeadId is provided, use default LeadChild or create one
+        else if (command.LeadId.HasValue)
+        {
+            lead = await context.Leads
+                .Include(l => l.LeadChildren)
+                .FirstOrDefaultAsync(l => l.Id == command.LeadId.Value, cancellationToken);
+
+            if (lead is null)
+            {
+                return Result.Failure<SchedulePlacementTestResponse>(
+                    PlacementTestErrors.LeadNotFound(command.LeadId.Value));
+            }
+
+            // Get or create default LeadChild
+            leadChild = lead.LeadChildren.FirstOrDefault();
+            if (leadChild is null)
+            {
+                // Create default LeadChild for backward compatibility
+                var defaultNow = DateTime.UtcNow;
+                leadChild = new LeadChild
+                {
+                    Id = Guid.NewGuid(),
+                    LeadId = lead.Id,
+                    ChildName = lead.ContactName ?? "Child",
+                    Dob = null,
+                    ProgramInterest = null,
+                    Status = LeadChildStatus.New,
+                    CreatedAt = defaultNow,
+                    UpdatedAt = defaultNow
+                };
+                context.LeadChildren.Add(leadChild);
+            }
+        }
+        else
         {
             return Result.Failure<SchedulePlacementTestResponse>(
-                PlacementTestErrors.LeadNotFound(command.LeadId));
+                Domain.Common.Error.Validation("LeadId", "Either LeadId or LeadChildId must be provided"));
         }
 
         // Validate StudentProfile if provided
@@ -76,7 +130,8 @@ public sealed class SchedulePlacementTestCommandHandler(
         var placementTest = new PlacementTest
         {
             Id = Guid.NewGuid(),
-            LeadId = command.LeadId,
+            LeadId = lead.Id,
+            LeadChildId = leadChild.Id,
             StudentProfileId = command.StudentProfileId,
             ClassId = command.ClassId,
             ScheduledAt = scheduledAtUtc,
@@ -89,7 +144,14 @@ public sealed class SchedulePlacementTestCommandHandler(
 
         context.PlacementTests.Add(placementTest);
 
-        // Update Lead status to BOOKED_TEST
+        // Update LeadChild status to BookedTest
+        if (leadChild.Status != LeadChildStatus.BookedTest)
+        {
+            leadChild.Status = LeadChildStatus.BookedTest;
+            leadChild.UpdatedAt = now;
+        }
+
+        // Update Lead status to BOOKED_TEST (keep backward compatibility)
         if (lead.Status != LeadStatus.BookedTest)
         {
             lead.Status = LeadStatus.BookedTest;
@@ -102,6 +164,7 @@ public sealed class SchedulePlacementTestCommandHandler(
         {
             Id = placementTest.Id,
             LeadId = placementTest.LeadId,
+            LeadChildId = placementTest.LeadChildId,
             StudentProfileId = placementTest.StudentProfileId,
             ClassId = placementTest.ClassId,
             ScheduledAt = placementTest.ScheduledAt,

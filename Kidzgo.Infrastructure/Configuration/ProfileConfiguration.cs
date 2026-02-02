@@ -127,11 +127,6 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .HasForeignKey(x => x.StudentProfileId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(x => x.ConvertedLeads)
-            .WithOne(x => x.ConvertedStudentProfile)
-            .HasForeignKey(x => x.ConvertedStudentProfileId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasMany(x => x.ReceivedNotifications)
             .WithOne(x => x.RecipientProfile)
             .HasForeignKey(x => x.RecipientProfileId)

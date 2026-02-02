@@ -52,6 +52,7 @@ public sealed class GetPlacementTestsQueryHandler(
 
         var placementTests = await placementTestsQuery
             .Include(pt => pt.Lead)
+            .Include(pt => pt.LeadChild)
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
             .Include(pt => pt.InvigilatorUser)
@@ -62,7 +63,9 @@ public sealed class GetPlacementTestsQueryHandler(
             {
                 Id = pt.Id,
                 LeadId = pt.LeadId,
+                LeadChildId = pt.LeadChildId,
                 LeadContactName = pt.Lead != null ? pt.Lead.ContactName : null,
+                ChildName = pt.LeadChild != null ? pt.LeadChild.ChildName : null,
                 StudentProfileId = pt.StudentProfileId,
                 StudentName = pt.StudentProfile != null ? pt.StudentProfile.DisplayName : null,
                 ClassId = pt.ClassId,

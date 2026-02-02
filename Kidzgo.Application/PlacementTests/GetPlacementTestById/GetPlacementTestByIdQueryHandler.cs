@@ -18,6 +18,7 @@ public sealed class GetPlacementTestByIdQueryHandler(
         // UC-028: Get Placement Test by ID
         var placementTest = await context.PlacementTests
             .Include(pt => pt.Lead)
+            .Include(pt => pt.LeadChild)
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
             .Include(pt => pt.InvigilatorUser)
@@ -33,7 +34,9 @@ public sealed class GetPlacementTestByIdQueryHandler(
         {
             Id = placementTest.Id,
             LeadId = placementTest.LeadId,
+            LeadChildId = placementTest.LeadChildId,
             LeadContactName = placementTest.Lead?.ContactName,
+            ChildName = placementTest.LeadChild?.ChildName,
             StudentProfileId = placementTest.StudentProfileId,
             StudentName = placementTest.StudentProfile?.DisplayName,
             ClassId = placementTest.ClassId,

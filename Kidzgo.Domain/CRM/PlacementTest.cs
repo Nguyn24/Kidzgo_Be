@@ -8,6 +8,7 @@ public class PlacementTest : Entity
 {
     public Guid Id { get; set; }
     public Guid? LeadId { get; set; }
+    public Guid? LeadChildId { get; set; }
     public Guid? StudentProfileId { get; set; }
     public Guid? ClassId { get; set; }
     public DateTime? ScheduledAt { get; set; }
@@ -28,6 +29,7 @@ public class PlacementTest : Entity
 
     // Navigation properties
     public Lead? Lead { get; set; }
+    public LeadChild? LeadChild { get; set; }
     public Profile? StudentProfile { get; set; }
     public Class? Class { get; set; }
     public User? InvigilatorUser { get; set; }

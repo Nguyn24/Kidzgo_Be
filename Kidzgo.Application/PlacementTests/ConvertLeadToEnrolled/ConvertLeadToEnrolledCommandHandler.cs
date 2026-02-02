@@ -18,6 +18,7 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
         // UC-038: Convert Lead to ENROLLED after Placement Test
         var placementTest = await context.PlacementTests
             .Include(pt => pt.Lead)
+            .Include(pt => pt.LeadChild)
             .FirstOrDefaultAsync(pt => pt.Id == command.PlacementTestId, cancellationToken);
 
         if (placementTest is null)
@@ -33,9 +34,11 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
         }
 
         var lead = placementTest.Lead;
+        var isChildBasedFlow = placementTest.LeadChildId.HasValue && placementTest.LeadChild is not null;
 
-        // Check if lead is already enrolled
-        if (lead.Status == LeadStatus.Enrolled)
+        // Multi-children flow: Lead can be Enrolled because another child already enrolled.
+        // Only block if we're in legacy flow (no LeadChild).
+        if (!isChildBasedFlow && lead.Status == LeadStatus.Enrolled)
         {
             return Result.Failure<ConvertLeadToEnrolledResponse>(
                 PlacementTestErrors.LeadAlreadyEnrolled);
@@ -55,17 +58,73 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
 
             // Link student profile to placement test
             placementTest.StudentProfileId = command.StudentProfileId.Value;
-            
-            // Link student profile to lead
-            lead.ConvertedStudentProfileId = command.StudentProfileId.Value;
         }
 
         var now = DateTime.UtcNow;
 
-        // Update Lead status to ENROLLED
-        lead.Status = LeadStatus.Enrolled;
-        lead.ConvertedAt = now;
-        lead.UpdatedAt = now;
+        // Update LeadChild if LeadChildId exists
+        if (isChildBasedFlow)
+        {
+            var leadChild = placementTest.LeadChild;
+
+            // Check if child is already enrolled
+            if (leadChild.Status == LeadChildStatus.Enrolled)
+            {
+                return Result.Failure<ConvertLeadToEnrolledResponse>(
+                    Domain.Common.Error.Validation("LeadChild", "Child is already enrolled"));
+            }
+
+            // Link student profile to LeadChild
+            if (command.StudentProfileId.HasValue)
+            {
+                leadChild.ConvertedStudentProfileId = command.StudentProfileId.Value;
+            }
+
+            // Update LeadChild status to Enrolled
+            leadChild.Status = LeadChildStatus.Enrolled;
+            leadChild.UpdatedAt = now;
+
+            // Create activity for LeadChild
+            var childActivityContent = command.StudentProfileId.HasValue
+                ? $"Child '{leadChild.ChildName}' converted to ENROLLED (via enrollment API)"
+                : $"Child '{leadChild.ChildName}' converted to ENROLLED after Placement Test completion";
+
+            context.LeadActivities.Add(new LeadActivity
+            {
+                Id = Guid.NewGuid(),
+                LeadId = leadChild.LeadId,
+                ActivityType = ActivityType.Note,
+                Content = childActivityContent,
+                CreatedAt = now
+            });
+
+            // Update Lead status: if at least 1 child is Enrolled, Lead.Status = Enrolled
+            var hasEnrolledChild = await context.LeadChildren
+                .AnyAsync(lc => lc.LeadId == lead.Id && lc.Status == LeadChildStatus.Enrolled, cancellationToken);
+
+            if (hasEnrolledChild && lead.Status != LeadStatus.Enrolled)
+            {
+                lead.Status = LeadStatus.Enrolled;
+                lead.UpdatedAt = now;
+            }
+        }
+        else
+        {
+            // Backward compatibility: Update Lead directly if no LeadChild
+            // Update Lead status to ENROLLED
+            lead.Status = LeadStatus.Enrolled;
+            lead.UpdatedAt = now;
+
+            // Create activity for Lead
+            context.LeadActivities.Add(new LeadActivity
+            {
+                Id = Guid.NewGuid(),
+                LeadId = lead.Id,
+                ActivityType = ActivityType.Note,
+                Content = "Lead converted to ENROLLED after Placement Test completion",
+                CreatedAt = now
+            });
+        }
 
         // Update Placement Test status to Completed if not already
         if (placementTest.Status != PlacementTestStatus.Completed)
@@ -74,17 +133,6 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
             placementTest.UpdatedAt = now;
         }
 
-        // Create activity for Lead
-        var activity = new LeadActivity
-        {
-            Id = Guid.NewGuid(),
-            LeadId = lead.Id,
-            ActivityType = ActivityType.Note,
-            Content = "Lead converted to ENROLLED after Placement Test completion",
-            CreatedAt = now
-        };
-
-        context.LeadActivities.Add(activity);
         await context.SaveChangesAsync(cancellationToken);
 
         return new ConvertLeadToEnrolledResponse
@@ -93,8 +141,8 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
             LeadStatus = lead.Status.ToString(),
             PlacementTestId = placementTest.Id,
             PlacementTestStatus = placementTest.Status.ToString(),
-            StudentProfileId = lead.ConvertedStudentProfileId,
-            ConvertedAt = lead.ConvertedAt
+            StudentProfileId = placementTest.StudentProfileId,
+            LeadChildId = placementTest.LeadChildId
         };
     }
 }

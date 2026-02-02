@@ -43,6 +43,7 @@ public class PlacementTestController : ControllerBase
         var command = new SchedulePlacementTestCommand
         {
             LeadId = request.LeadId,
+            LeadChildId = request.LeadChildId,
             StudentProfileId = request.StudentProfileId,
             ClassId = request.ClassId,
             ScheduledAt = request.ScheduledAt,
