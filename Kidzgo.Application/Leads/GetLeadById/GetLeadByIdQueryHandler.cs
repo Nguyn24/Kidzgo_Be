@@ -31,8 +31,6 @@ public sealed class GetLeadByIdQueryHandler(
             Source = lead.Source.ToString(),
             Campaign = lead.Campaign,
             ContactName = lead.ContactName,
-            ChildName = lead.ChildName,
-            ChildDateOfBirth = lead.ChildDateOfBirth,
             Phone = lead.Phone,
             ZaloId = lead.ZaloId,
             Email = lead.Email,
@@ -40,7 +38,6 @@ public sealed class GetLeadByIdQueryHandler(
             Subject = lead.Subject,
             BranchPreference = lead.BranchPreference,
             BranchPreferenceName = lead.BranchPreferenceNavigation?.Name,
-            ProgramInterest = lead.ProgramInterest,
             Notes = lead.Notes,
             Status = lead.Status.ToString(),
             OwnerStaffId = lead.OwnerStaffId,
@@ -50,8 +47,6 @@ public sealed class GetLeadByIdQueryHandler(
             FirstResponseAt = lead.FirstResponseAt,
             TouchCount = lead.TouchCount,
             NextActionAt = lead.NextActionAt,
-            ConvertedStudentProfileId = lead.ConvertedStudentProfileId,
-            ConvertedAt = lead.ConvertedAt,
             CreatedAt = lead.CreatedAt,
             UpdatedAt = lead.UpdatedAt
         });

@@ -60,8 +60,6 @@ public sealed class GetLeadsQueryHandler(
                 Source = l.Source.ToString(),
                 Campaign = l.Campaign,
                 ContactName = l.ContactName,
-                ChildName = l.ChildName,
-                ChildDateOfBirth = l.ChildDateOfBirth,
                 Phone = l.Phone,
                 ZaloId = l.ZaloId,
                 Email = l.Email,
@@ -71,7 +69,6 @@ public sealed class GetLeadsQueryHandler(
                 BranchPreferenceName = l.BranchPreferenceNavigation != null
                     ? l.BranchPreferenceNavigation.Name
                     : null,
-                ProgramInterest = l.ProgramInterest,
                 Status = l.Status.ToString(),
                 OwnerStaffId = l.OwnerStaffId,
                 OwnerStaffName = l.OwnerStaffUser != null

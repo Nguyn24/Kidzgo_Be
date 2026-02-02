@@ -49,20 +49,6 @@ public sealed class UpdateLeadCommandHandler(
             lead.ContactName = command.ContactName.Trim();
         }
 
-        if (command.ChildName != null)
-        {
-            lead.ChildName = string.IsNullOrWhiteSpace(command.ChildName)
-                ? null
-                : command.ChildName.Trim();
-        }
-
-        if (command.ChildDateOfBirth.HasValue)
-        {
-            lead.ChildDateOfBirth = DateTime.SpecifyKind(
-                command.ChildDateOfBirth.Value.Date,
-                DateTimeKind.Utc);
-        }
-
         if (command.Phone != null)
         {
             lead.Phone = string.IsNullOrWhiteSpace(command.Phone) ? null : command.Phone.Trim();
@@ -93,13 +79,6 @@ public sealed class UpdateLeadCommandHandler(
             lead.BranchPreference = command.BranchPreference.Value;
         }
 
-        if (command.ProgramInterest != null)
-        {
-            lead.ProgramInterest = string.IsNullOrWhiteSpace(command.ProgramInterest)
-                ? null
-                : command.ProgramInterest.Trim();
-        }
-
         if (command.Notes != null)
         {
             lead.Notes = string.IsNullOrWhiteSpace(command.Notes) ? null : command.Notes.Trim();
@@ -113,15 +92,12 @@ public sealed class UpdateLeadCommandHandler(
         {
             Id = lead.Id,
             ContactName = lead.ContactName,
-            ChildName = lead.ChildName,
-            ChildDateOfBirth = lead.ChildDateOfBirth,
             Phone = lead.Phone,
             ZaloId = lead.ZaloId,
             Email = lead.Email,
             Company = lead.Company,
             Subject = lead.Subject,
             BranchPreference = lead.BranchPreference,
-            ProgramInterest = lead.ProgramInterest,
             Notes = lead.Notes,
             UpdatedAt = lead.UpdatedAt
         };

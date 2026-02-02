@@ -17,6 +17,7 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
     {
         // UC-032 to UC-036: Update Placement Test Results
         var placementTest = await context.PlacementTests
+            .Include(pt => pt.LeadChild)
             .FirstOrDefaultAsync(pt => pt.Id == command.PlacementTestId, cancellationToken);
 
         if (placementTest is null)
@@ -86,7 +87,29 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         {
             placementTest.Status = PlacementTestStatus.Completed;
 
-            // Auto-transition lead status to TestDone when test is completed
+            // Update LeadChild status if LeadChildId exists
+            if (placementTest.LeadChildId.HasValue && placementTest.LeadChild is not null)
+            {
+                var leadChild = placementTest.LeadChild;
+                if (leadChild.Status == LeadChildStatus.BookedTest)
+                {
+                    leadChild.Status = LeadChildStatus.TestDone;
+                    leadChild.UpdatedAt = now;
+
+                    // Create activity for LeadChild
+                    context.LeadActivities.Add(new LeadActivity
+                    {
+                        Id = Guid.NewGuid(),
+                        LeadId = leadChild.LeadId,
+                        ActivityType = ActivityType.Note,
+                        Content = $"Child '{leadChild.ChildName}' placement test completed -> status: TestDone",
+                        CreatedAt = now,
+                        CreatedBy = null
+                    });
+                }
+            }
+
+            // Auto-transition lead status to TestDone when test is completed (backward compatibility)
             if (placementTest.LeadId.HasValue)
             {
                 var lead = await context.Leads
@@ -97,15 +120,19 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                     lead.Status = LeadStatus.TestDone;
                     lead.UpdatedAt = now;
 
-                    context.LeadActivities.Add(new LeadActivity
+                    // Only create activity if LeadChild was not updated (to avoid duplicate)
+                    if (!placementTest.LeadChildId.HasValue || placementTest.LeadChild is null)
                     {
-                        Id = Guid.NewGuid(),
-                        LeadId = lead.Id,
-                        ActivityType = ActivityType.Note,
-                        Content = "Placement test completed -> Lead status: TestDone",
-                        CreatedAt = now,
-                        CreatedBy = null
-                    });
+                        context.LeadActivities.Add(new LeadActivity
+                        {
+                            Id = Guid.NewGuid(),
+                            LeadId = lead.Id,
+                            ActivityType = ActivityType.Note,
+                            Content = "Placement test completed -> Lead status: TestDone",
+                            CreatedAt = now,
+                            CreatedBy = null
+                        });
+                    }
                 }
             }
         }

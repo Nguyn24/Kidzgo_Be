@@ -45,6 +45,7 @@ public sealed class ApplicationDbContext(
     // CRM
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<LeadActivity> LeadActivities => Set<LeadActivity>();
+    public DbSet<LeadChild> LeadChildren => Set<LeadChild>();
     public DbSet<PlacementTest> PlacementTests => Set<PlacementTest>();
 
     // Exams
