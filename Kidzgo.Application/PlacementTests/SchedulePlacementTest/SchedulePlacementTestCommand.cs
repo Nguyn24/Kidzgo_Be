@@ -4,7 +4,8 @@ namespace Kidzgo.Application.PlacementTests.SchedulePlacementTest;
 
 public sealed class SchedulePlacementTestCommand : ICommand<SchedulePlacementTestResponse>
 {
-    public Guid LeadId { get; init; }
+    public Guid? LeadId { get; init; }
+    public Guid? LeadChildId { get; init; }
     public Guid? StudentProfileId { get; init; }
     public Guid? ClassId { get; init; }
     public DateTime ScheduledAt { get; init; }

@@ -7,6 +7,6 @@ public sealed class ConvertLeadToEnrolledResponse
     public Guid PlacementTestId { get; init; }
     public string PlacementTestStatus { get; init; } = null!;
     public Guid? StudentProfileId { get; init; }
-    public DateTime? ConvertedAt { get; init; }
+    public Guid? LeadChildId { get; init; }
 }
 

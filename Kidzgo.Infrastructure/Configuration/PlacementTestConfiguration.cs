@@ -15,6 +15,8 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
 
         builder.Property(x => x.LeadId);
 
+        builder.Property(x => x.LeadChildId);
+
         builder.Property(x => x.StudentProfileId);
 
         builder.Property(x => x.ScheduledAt);
@@ -64,6 +66,11 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.HasOne(x => x.Lead)
             .WithMany(x => x.PlacementTests)
             .HasForeignKey(x => x.LeadId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.LeadChild)
+            .WithMany(x => x.PlacementTests)
+            .HasForeignKey(x => x.LeadChildId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.StudentProfile)

@@ -13,7 +13,9 @@ public sealed class PlacementTestDto
 {
     public Guid Id { get; init; }
     public Guid? LeadId { get; init; }
+    public Guid? LeadChildId { get; init; }
     public string? LeadContactName { get; init; }
+    public string? ChildName { get; init; }
     public Guid? StudentProfileId { get; init; }
     public string? StudentName { get; init; }
     public Guid? ClassId { get; init; }

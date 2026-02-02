@@ -4,6 +4,7 @@ public sealed class SchedulePlacementTestResponse
 {
     public Guid Id { get; init; }
     public Guid? LeadId { get; init; }
+    public Guid? LeadChildId { get; init; }
     public Guid? StudentProfileId { get; init; }
     public Guid? ClassId { get; init; }
     public DateTime? ScheduledAt { get; init; }

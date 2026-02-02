@@ -40,6 +40,7 @@ public interface IDbContext
     // CRM
     DbSet<Lead> Leads { get; }
     DbSet<LeadActivity> LeadActivities { get; }
+    DbSet<LeadChild> LeadChildren { get; }
     DbSet<PlacementTest> PlacementTests { get; }
 
     // Exams
