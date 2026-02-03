@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -12,7 +13,8 @@ namespace Kidzgo.Application.Homework.SubmitHomework;
 
 public sealed class SubmitHomeworkCommandHandler(
     IDbContext context,
-    IUserContext userContext
+    IUserContext userContext,
+    IGamificationService gamificationService
 ) : ICommandHandler<SubmitHomeworkCommand, SubmitHomeworkResponse>
 {
     public async Task<Result<SubmitHomeworkResponse>> Handle(
@@ -142,6 +144,19 @@ public sealed class SubmitHomeworkCommandHandler(
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        // Auto award stars for on-time submission if homework has RewardStars configured
+        if (homeworkStudent.Status == HomeworkStatus.Submitted &&
+            homeworkStudent.Assignment.RewardStars.HasValue &&
+            homeworkStudent.Assignment.RewardStars.Value > 0)
+        {
+            await gamificationService.AddStarsForHomeworkCompletion(
+                homeworkStudent.StudentProfileId,
+                homeworkStudent.Assignment.RewardStars.Value,
+                homeworkStudent.AssignmentId,
+                reason: "On-time Homework Submission",
+                cancellationToken);
+        }
 
         return new SubmitHomeworkResponse
         {
