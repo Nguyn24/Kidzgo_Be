@@ -10,7 +10,6 @@ public sealed class GetAllProfilesQuery : IPageableQuery, IQuery<Page<GetAllProf
     public int PageSize { get; init; }
     public Guid? UserId { get; init; }
     public string? ProfileType { get; init; }
-    public bool? IsActive { get; init; }
     public string? SearchTerm { get; init; }
     public Guid? BranchId { get; init; }
 }

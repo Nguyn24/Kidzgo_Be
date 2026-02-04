@@ -6,6 +6,7 @@ using Kidzgo.Application.Profiles.CreateProfile;
 using Kidzgo.Application.Profiles.DeleteProfile;
 using Kidzgo.Application.Profiles.GetProfileById;
 using Kidzgo.Application.Profiles.LinkParentStudent;
+using Kidzgo.Application.Profiles.ReactivateProfile;
 using Kidzgo.Application.Profiles.UnlinkParentStudent;
 using Kidzgo.Application.Profiles.UpdateProfile;
 using Kidzgo.Domain.Users;
@@ -48,7 +49,6 @@ public class ProfileController : ControllerBase
  
     /// <param name="userId">Filter by user ID</param>
     /// <param name="profileType">Filter by profile type</param>
-    /// <param name="isActive">Filter by active status</param>
     /// <param name="searchTerm">Search by profile display name</param>
     /// <param name="branchId">Filter by branch ID (for students)</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
@@ -57,7 +57,6 @@ public class ProfileController : ControllerBase
     public async Task<IResult> GetProfiles(
         [FromQuery] Guid? userId,
         [FromQuery] string? profileType,
-        [FromQuery] bool? isActive,
         [FromQuery] string? searchTerm,
         [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
@@ -70,7 +69,6 @@ public class ProfileController : ControllerBase
             PageSize = pageSize,
             UserId = userId,
             ProfileType = profileType,
-            IsActive = isActive,
             SearchTerm = searchTerm,
             BranchId = branchId
         };
@@ -118,6 +116,23 @@ public class ProfileController : ControllerBase
         CancellationToken cancellationToken)
     {
         var command = new DeleteProfileCommand
+        {
+            Id = id
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Reactivate a soft-deleted profile
+    /// </summary>
+    [HttpPut("{id:guid}/reactivate")]
+    public async Task<IResult> ReactivateProfile(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateProfileCommand
         {
             Id = id
         };
