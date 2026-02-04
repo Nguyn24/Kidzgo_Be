@@ -43,5 +43,17 @@ public static class ProfileErrors
     public static readonly Error EmailNotSet = Error.Validation(
         "Profile.EmailNotSet",
         "Email is required for PIN reset.");
+
+    public static readonly Error StudentIdNotSelected = Error.NotFound(
+        "Profile.StudentIdNotSelected",
+        "No student selected in token");
+
+    public static readonly Error StudentNotLinkedToParent = Error.NotFound(
+        "Profile.StudentNotLinkedToParent",
+        "Student not linked to this parent");
+
+    public static readonly Error ProfileNotDeleted = Error.Validation(
+        "Profile.ProfileNotDeleted",
+        "Profile is not deleted and cannot be reactivated");
 }
 

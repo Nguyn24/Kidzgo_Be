@@ -6,6 +6,11 @@ using Kidzgo.Application.Homework.GetStudentHomeworks;
 using Kidzgo.Application.Homework.GetStudentHomeworkFeedback;
 using Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
 using Kidzgo.Application.Homework.SubmitHomework;
+using Kidzgo.Application.Exercises.Student.GetStudentExerciseById;
+using Kidzgo.Application.Exercises.Student.StartExerciseSubmission;
+using Kidzgo.Application.Exercises.Student.SaveExerciseAnswer;
+using Kidzgo.Application.Exercises.Student.GetMyExerciseResult;
+using Kidzgo.Application.Exercises.Submissions.SubmitExerciseSubmission;
 using Kidzgo.Application.Sessions.GetStudentTimetable;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
@@ -197,6 +202,76 @@ public class StudentController : ControllerBase
             PageSize = pageSize
         };
 
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-145: Học sinh làm Exercise (lấy đề - không trả correct_answer)
+    /// </summary>
+    [HttpGet("exercises/{exerciseId:guid}")]
+    public async Task<IResult> GetExerciseToDo(
+        Guid exerciseId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetStudentExerciseByIdQuery { ExerciseId = exerciseId };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-145: Học sinh làm Exercise (bắt đầu làm -> tạo submission nếu chưa có)
+    /// </summary>
+    [HttpPost("exercises/{exerciseId:guid}/submissions/start")]
+    public async Task<IResult> StartExerciseSubmission(
+        Guid exerciseId,
+        CancellationToken cancellationToken)
+    {
+        var command = new StartExerciseSubmissionCommand { ExerciseId = exerciseId };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-145: Học sinh làm Exercise (lưu câu trả lời)
+    /// </summary>
+    [HttpPut("exercises/submissions/answers")]
+    public async Task<IResult> SaveExerciseAnswer(
+        [FromBody] SaveExerciseAnswerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SaveExerciseAnswerCommand
+        {
+            SubmissionId = request.SubmissionId,
+            QuestionId = request.QuestionId,
+            Answer = request.Answer
+        };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-146: Học sinh nộp Exercise (UC-147 auto-grade MC chạy tự động khi submit)
+    /// </summary>
+    [HttpPost("exercises/submissions/{submissionId:guid}/submit")]
+    public async Task<IResult> SubmitExercise(
+        Guid submissionId,
+        CancellationToken cancellationToken)
+    {
+        var command = new SubmitExerciseSubmissionCommand { SubmissionId = submissionId };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Xem điểm + feedback (theo từng câu) của bản thân cho 1 submission
+    /// </summary>
+    [HttpGet("exercises/submissions/{submissionId:guid}/result")]
+    public async Task<IResult> GetMyExerciseResult(
+        Guid submissionId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetMyExerciseResultQuery { SubmissionId = submissionId };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }

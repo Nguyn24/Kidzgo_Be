@@ -81,6 +81,30 @@ public static class DependencyInjection
                     opts.WithCronSchedule("0 0 2 * * ?", x => x.WithMisfireHandlingInstructionDoNothing());
                 }
             });
+
+            // Register MarkOverdueHomeworkSubmissionsJob (UC-132)
+            var markOverdueHomeworkJobKey = new JobKey(nameof(MarkOverdueHomeworkSubmissionsJob));
+            var markOverdueHomeworkCron = configuration["Quartz:Schedules:MarkOverdueHomeworkSubmissionsJob"];
+
+            q.AddJob<MarkOverdueHomeworkSubmissionsJob>(opts => opts.WithIdentity(markOverdueHomeworkJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(markOverdueHomeworkJobKey)
+                    .WithIdentity($"{nameof(MarkOverdueHomeworkSubmissionsJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(markOverdueHomeworkCron))
+                {
+                    opts.WithCronSchedule(markOverdueHomeworkCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi 5 phút
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(5)
+                        .RepeatForever());
+                }
+            });
         });
 
         services.AddQuartzHostedService(options =>

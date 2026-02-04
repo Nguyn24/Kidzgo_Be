@@ -32,6 +32,12 @@ public class ExerciseSubmissionConfiguration : IEntityTypeConfiguration<Exercise
 
         builder.Property(x => x.GradedBy);
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .IsRequired();
+
         // Unique constraint: one submission per student per exercise
         builder.HasIndex(x => new { x.ExerciseId, x.StudentProfileId })
             .IsUnique()

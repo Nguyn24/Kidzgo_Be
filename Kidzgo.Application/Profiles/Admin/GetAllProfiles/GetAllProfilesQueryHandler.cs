@@ -14,7 +14,6 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
     {
         var query = context.Profiles
             .Include(p => p.User)
-            .Where(p => !p.IsDeleted)
             .AsQueryable();
 
         // Apply filters
@@ -27,11 +26,6 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
             Enum.TryParse<ProfileType>(request.ProfileType, true, out var profileType))
         {
             query = query.Where(p => p.ProfileType == profileType);
-        }
-
-        if (request.IsActive.HasValue)
-        {
-            query = query.Where(p => p.IsActive == request.IsActive.Value);
         }
 
         // Apply search by display name (for students)
@@ -63,6 +57,7 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
                 ProfileType = p.ProfileType.ToString(),
                 DisplayName = p.DisplayName,
                 IsActive = p.IsActive,
+                IsDeleted = p.IsDeleted,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             })
