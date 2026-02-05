@@ -1,0 +1,28 @@
+name: Deploy to Windows VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Cho phép chạy thủ công từ GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Windows VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: |
+            cd C:\Users\Administrator\Desktop\Projects\Kidzgo
+            powershell.exe -ExecutionPolicy Bypass -File .\deploy-win.ps1
+          script_stop: true
+
