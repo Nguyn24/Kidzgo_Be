@@ -36,6 +36,12 @@ public sealed class GetNotificationsQueryHandler(
             notificationsQuery = notificationsQuery.Where(n => n.ReadAt == null);
         }
 
+        // UC-338: Filter by status (PENDING/SENT/FAILED)
+        if (query.Status.HasValue)
+        {
+            notificationsQuery = notificationsQuery.Where(n => n.Status == query.Status.Value);
+        }
+
         // Get total count
         int totalCount = await notificationsQuery.CountAsync(cancellationToken);
 

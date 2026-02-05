@@ -1,0 +1,144 @@
+using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Domain.Notifications;
+using Kidzgo.Domain.Notifications.Events;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+
+namespace Kidzgo.Application.Notifications.SendPushNotification;
+
+/// <summary>
+/// UC-330: Gửi Notification qua Push real time
+/// </summary>
+public sealed class PushNotificationDomainEventHandler(
+    IDbContext context,
+    IPushNotificationService pushNotificationService,
+    ITemplateRenderer templateRenderer,
+    ILogger<PushNotificationDomainEventHandler> logger
+) : INotificationHandler<NotificationCreatedDomainEvent>
+{
+    public async Task Handle(NotificationCreatedDomainEvent notification, CancellationToken cancellationToken)
+    {
+        // Only handle Push channel notifications
+        if (notification.Channel != NotificationChannel.Push)
+        {
+            return;
+        }
+
+        var notificationRecord = await context.Notifications
+            .Include(n => n.RecipientUser)
+            .FirstOrDefaultAsync(n => n.Id == notification.NotificationId, cancellationToken);
+
+        if (notificationRecord is null || notificationRecord.RecipientUser is null)
+        {
+            return;
+        }
+
+        // If notification already sent or failed, skip
+        if (notificationRecord.Status != NotificationStatus.Pending)
+        {
+            return;
+        }
+
+        try
+        {
+            // Get active device tokens for the user
+            var deviceTokens = await context.DeviceTokens
+                .Where(dt => dt.UserId == notificationRecord.RecipientUserId && dt.IsActive)
+                .Select(dt => dt.Token)
+                .ToListAsync(cancellationToken);
+
+            if (deviceTokens.Count == 0)
+            {
+                logger.LogWarning(
+                    "No active device tokens found for user {UserId}. Push notification will not be sent.",
+                    notificationRecord.RecipientUserId);
+                notificationRecord.Status = NotificationStatus.Failed;
+                await context.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
+            string title = notificationRecord.Title;
+            string body = notificationRecord.Content ?? string.Empty;
+
+            // If template ID is provided, use template
+            if (!string.IsNullOrWhiteSpace(notificationRecord.TemplateId) &&
+                Guid.TryParse(notificationRecord.TemplateId, out var templateId))
+            {
+                var template = await context.NotificationTemplates
+                    .FirstOrDefaultAsync(t => t.Id == templateId && t.IsActive && !t.IsDeleted, cancellationToken);
+
+                if (template != null)
+                {
+                    var placeholders = new Dictionary<string, string>();
+
+                    if (!string.IsNullOrWhiteSpace(template.Placeholders))
+                    {
+                        try
+                        {
+                            var templatePlaceholders = JsonSerializer.Deserialize<Dictionary<string, string>>(template.Placeholders);
+                            if (templatePlaceholders != null)
+                            {
+                                placeholders = templatePlaceholders;
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore JSON parse errors
+                        }
+                    }
+
+                    title = templateRenderer.Render(template.Title, placeholders);
+                    body = templateRenderer.Render(template.Content ?? string.Empty, placeholders);
+                }
+            }
+
+            // Prepare data payload
+            var data = new Dictionary<string, string>
+            {
+                ["notification_id"] = notificationRecord.Id.ToString(),
+                ["type"] = "notification"
+            };
+
+            if (!string.IsNullOrWhiteSpace(notificationRecord.Deeplink))
+            {
+                data["deeplink"] = notificationRecord.Deeplink;
+            }
+
+            // Send push notification to all device tokens
+            var results = await pushNotificationService.SendPushNotificationsAsync(
+                deviceTokens,
+                title,
+                body,
+                data,
+                notificationRecord.Deeplink,
+                cancellationToken);
+
+            // Check if at least one notification was sent successfully
+            var successCount = results.Values.Count(success => success);
+            if (successCount > 0)
+            {
+                notificationRecord.Status = NotificationStatus.Sent;
+                notificationRecord.SentAt = DateTime.UtcNow;
+            }
+            else
+            {
+                notificationRecord.Status = NotificationStatus.Failed;
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Mark as failed on error
+            notificationRecord.Status = NotificationStatus.Failed;
+            await context.SaveChangesAsync(cancellationToken);
+            logger.LogError(ex, "Error sending push notification {NotificationId}", notificationRecord.Id);
+            throw;
+        }
+    }
+}
+

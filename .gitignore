@@ -32,6 +32,11 @@ logs/
 *.env.*
 secrets.*
 
+# Firebase Service Account (contains sensitive credentials)
+**/firebase-service-account.json
+**/*firebase*.json
+firebase-service-account.json
+
 # Others
 node_modules/
 wwwroot/lib/

@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Errors;
+using Kidzgo.Domain.Notifications.Events;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -149,6 +150,14 @@ public sealed class BroadcastNotificationCommandHandler(
                 Status = NotificationStatus.Pending,
                 CreatedAt = now
             };
+
+            // Raise domain event to trigger email/push/zalo sending
+            if (command.Channel == NotificationChannel.Email || 
+                command.Channel == NotificationChannel.Push ||
+                command.Channel == NotificationChannel.ZaloOa)
+            {
+                notification.Raise(new NotificationCreatedDomainEvent(notificationId, command.Channel));
+            }
 
             notifications.Add(notification);
             createdIds.Add(notificationId);
