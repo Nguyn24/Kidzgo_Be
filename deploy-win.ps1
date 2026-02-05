@@ -51,22 +51,44 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "`nStep 3/4: Publish Kidzgo.API (Release) to $PublishPath" -ForegroundColor Cyan
+Write-Host "`nStep 3/4: Stop service and publish Kidzgo.API (Release) to $PublishPath" -ForegroundColor Cyan
 
-if (-not (Test-Path $PublishPath)) {
-    New-Item -ItemType Directory -Path $PublishPath | Out-Null
+# QUAN TRỌNG: Stop service TRƯỚC khi publish để tránh file lock
+Stop-ServiceSafe -Name $ServiceName
+
+# Đợi thêm 2 giây để đảm bảo process đã release file lock
+Write-Host "Waiting 2 seconds for file locks to be released..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
+
+# Publish vào thư mục tạm trước
+$TempPublishPath = "$PublishPath-temp"
+if (Test-Path $TempPublishPath) {
+    Remove-Item -Path $TempPublishPath -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-dotnet publish ".\Kidzgo.API\Kidzgo.API.csproj" -c Release -o $PublishPath
+if (-not (Test-Path $TempPublishPath)) {
+    New-Item -ItemType Directory -Path $TempPublishPath | Out-Null
+}
+
+Write-Host "Publishing to temporary directory: $TempPublishPath" -ForegroundColor Yellow
+dotnet publish ".\Kidzgo.API\Kidzgo.API.csproj" -c Release -o $TempPublishPath
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: dotnet publish failed, aborting deploy." -ForegroundColor Red
+    # Start lại service nếu publish fail
+    Start-ServiceSafe -Name $ServiceName
     exit 1
 }
 
-Write-Host "`nStep 4/4: Restart Windows service '$ServiceName'" -ForegroundColor Cyan
+# Xóa thư mục cũ và copy thư mục mới
+Write-Host "Replacing old files with new ones..." -ForegroundColor Yellow
+if (Test-Path $PublishPath) {
+    Remove-Item -Path $PublishPath -Recurse -Force -ErrorAction SilentlyContinue
+}
+Move-Item -Path $TempPublishPath -Destination $PublishPath -Force
 
-Stop-ServiceSafe -Name $ServiceName
+Write-Host "`nStep 4/4: Start Windows service '$ServiceName'" -ForegroundColor Cyan
+
 Start-ServiceSafe -Name $ServiceName
 
 Write-Host "`n✅ Deploy completed successfully." -ForegroundColor Green
