@@ -28,6 +28,16 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
             query = query.Where(p => p.ProfileType == profileType);
         }
 
+        if (request.IsActive.HasValue)
+        {
+            query = query.Where(p => p.IsActive == request.IsActive.Value);
+        }
+
+        if (request.IsDeleted.HasValue)
+        {
+            query = query.Where(p => p.IsDeleted == request.IsDeleted.Value);
+        }
+
         // Apply search by display name (for students)
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {

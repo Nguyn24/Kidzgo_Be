@@ -13,5 +13,6 @@ public sealed class UpdateProfileRequest
 {
     public Guid Id { get; set; }
     public string? DisplayName { get; set; }
+    public bool? IsActive { get; set; }
 }
 
