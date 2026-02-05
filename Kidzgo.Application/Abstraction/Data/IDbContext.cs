@@ -28,6 +28,7 @@ public interface IDbContext
 
     DbSet<Profile> Profiles { get; }
     DbSet<ParentStudentLink> ParentStudentLinks { get; }
+    DbSet<DeviceToken> DeviceTokens { get; }
 
     // Schools
     DbSet<Branch> Branches { get; }

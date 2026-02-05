@@ -1833,6 +1833,86 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("NotificationTemplates", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Channel = "Email",
+                            Code = "SESSION_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Đây là thông báo nhắc nhở về buổi học sắp tới của bạn:</p>\n<ul>\n    <li><strong>Lớp học:</strong> {{class_name}}</li>\n    <li><strong>Thời gian:</strong> {{session_start_time}}</li>\n    <li><strong>Địa điểm:</strong> {{location}}</li>\n</ul>\n<p>Vui lòng có mặt đúng giờ để không bỏ lỡ buổi học.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"session_title\",\"session_start_time\",\"class_name\",\"location\"]",
+                            Title = "Nhắc nhở: Buổi học {{session_title}} sắp bắt đầu",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Channel = "Email",
+                            Code = "HOMEWORK_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Bạn có bài tập sắp đến hạn:</p>\n<ul>\n    <li><strong>Tên bài tập:</strong> {{homework_title}}</li>\n    <li><strong>Lớp học:</strong> {{class_name}}</li>\n    <li><strong>Hạn nộp:</strong> {{due_date}}</li>\n</ul>\n<p>Vui lòng hoàn thành và nộp bài tập trước thời hạn.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"homework_title\",\"due_date\",\"class_name\"]",
+                            Title = "Nhắc nhở: Bài tập {{homework_title}} sắp đến hạn",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Channel = "Email",
+                            Code = "TUITION_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Đây là thông báo nhắc nhở về học phí sắp đến hạn:</p>\n<ul>\n    <li><strong>Học sinh:</strong> {{student_name}}</li>\n    <li><strong>Số tiền:</strong> {{amount}} VNĐ</li>\n    <li><strong>Hạn thanh toán:</strong> {{due_date}}</li>\n</ul>\n<p>Vui lòng thanh toán học phí trước thời hạn để đảm bảo việc học không bị gián đoạn.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"amount\",\"due_date\"]",
+                            Title = "Nhắc nhở: Học phí của {{student_name}} sắp đến hạn",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                            Channel = "Email",
+                            Code = "MAKEUP_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Đây là thông báo nhắc nhở về buổi bù sắp tới:</p>\n<ul>\n    <li><strong>Lớp học:</strong> {{class_name}}</li>\n    <li><strong>Thời gian:</strong> {{session_start_time}}</li>\n    <li><strong>Địa điểm:</strong> {{location}}</li>\n</ul>\n<p>Vui lòng có mặt đúng giờ để tham gia buổi bù.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"session_title\",\"session_start_time\",\"class_name\",\"location\"]",
+                            Title = "Nhắc nhở: Buổi bù {{session_title}} sắp bắt đầu",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            Channel = "Email",
+                            Code = "MISSION_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Bạn có nhiệm vụ sắp đến hạn:</p>\n<ul>\n    <li><strong>Tên nhiệm vụ:</strong> {{mission_title}}</li>\n    <li><strong>Lớp học:</strong> {{class_name}}</li>\n    <li><strong>Hạn hoàn thành:</strong> {{due_date}}</li>\n</ul>\n<p>Vui lòng hoàn thành nhiệm vụ trước thời hạn để nhận phần thưởng.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"mission_title\",\"due_date\",\"class_name\"]",
+                            Title = "Nhắc nhở: Nhiệm vụ {{mission_title}} sắp kết thúc",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
+                            Channel = "Email",
+                            Code = "MEDIA_REMINDER",
+                            Content = "<p>Xin chào,</p>\n<p>Lớp học của bạn vừa có nội dung mới:</p>\n<ul>\n    <li><strong>Tiêu đề:</strong> {{media_title}}</li>\n    <li><strong>Loại:</strong> {{media_type}}</li>\n    <li><strong>Lớp học:</strong> {{class_name}}</li>\n</ul>\n<p>Hãy đăng nhập vào ứng dụng để xem nội dung mới này.</p>\n<p>Trân trọng,<br/>Kidzgo Team</p>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"media_title\",\"media_type\",\"class_name\"]",
+                            Title = "Thông báo: Có {{media_type}} mới từ lớp {{class_name}}",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Payroll.Contract", b =>
@@ -2890,6 +2970,53 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("TicketComments", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Users.DeviceToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("DeviceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.HasIndex("UserId", "DeviceId", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = true");
+
+                    b.ToTable("DeviceTokens", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Users.ParentPinResetToken", b =>
@@ -4344,6 +4471,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("CommenterUser");
 
                     b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Users.DeviceToken", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Users.ParentPinResetToken", b =>
