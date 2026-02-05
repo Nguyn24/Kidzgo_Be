@@ -6,5 +6,6 @@ public sealed class UpdateProfileCommand : ICommand<UpdateProfileResponse>
 {
     public Guid Id { get; init; }
     public string? DisplayName { get; init; }
+    public bool? IsActive { get; init; }
 }
 

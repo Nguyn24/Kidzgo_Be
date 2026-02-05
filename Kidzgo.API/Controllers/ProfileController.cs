@@ -59,6 +59,8 @@ public class ProfileController : ControllerBase
         [FromQuery] string? profileType,
         [FromQuery] string? searchTerm,
         [FromQuery] Guid? branchId,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? isDeleted,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -70,7 +72,9 @@ public class ProfileController : ControllerBase
             UserId = userId,
             ProfileType = profileType,
             SearchTerm = searchTerm,
-            BranchId = branchId
+            BranchId = branchId,
+            IsActive = isActive,
+            IsDeleted = isDeleted
         };
 
         var result = await _mediator.Send(query, cancellationToken);
@@ -102,7 +106,8 @@ public class ProfileController : ControllerBase
         var command = new UpdateProfileCommand
         {
             Id = id,
-            DisplayName = request.DisplayName
+            DisplayName = request.DisplayName,
+            IsActive = request.IsActive
         };
 
         var result = await _mediator.Send(command, cancellationToken);

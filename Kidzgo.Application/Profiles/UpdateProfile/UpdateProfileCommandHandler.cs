@@ -25,6 +25,11 @@ public sealed class UpdateProfileCommandHandler(IDbContext context)
             profile.DisplayName = command.DisplayName.Trim();
         }
 
+        if (command.IsActive.HasValue)
+        {
+            profile.IsActive = command.IsActive.Value;
+        }
+
         profile.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
