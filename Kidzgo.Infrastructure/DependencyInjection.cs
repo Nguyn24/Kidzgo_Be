@@ -2,6 +2,7 @@ using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Payments;
+using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Infrastructure.Authentication;
 using Kidzgo.Infrastructure.BackgroundJobs;
 using Kidzgo.Infrastructure.Database;
@@ -27,6 +28,7 @@ public static class DependencyInjection
             .AddHealthChecks(configuration)
             .AddClientUrl(configuration)            
             .AddMailService(configuration)
+            .AddPushNotificationService(configuration)
             .AddPayOSService(configuration)
             .AddZaloService(configuration)
             .AddAuthenticationInternal(configuration)
@@ -105,6 +107,30 @@ public static class DependencyInjection
                         .RepeatForever());
                 }
             });
+
+            // Register SendNotificationRemindersJob (UC-331-336)
+            var notificationRemindersJobKey = new JobKey(nameof(SendNotificationRemindersJob));
+            var notificationRemindersCron = configuration["Quartz:Schedules:SendNotificationRemindersJob"];
+
+            q.AddJob<SendNotificationRemindersJob>(opts => opts.WithIdentity(notificationRemindersJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(notificationRemindersJobKey)
+                    .WithIdentity($"{nameof(SendNotificationRemindersJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(notificationRemindersCron))
+                {
+                    opts.WithCronSchedule(notificationRemindersCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    // Fallback: mỗi giờ
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInHours(1)
+                        .RepeatForever());
+                }
+            });
         });
 
         services.AddQuartzHostedService(options =>
@@ -180,11 +206,19 @@ public static class DependencyInjection
 
         return services;
     }
+    
+    private static IServiceCollection AddPushNotificationService(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddSingleton<IPushNotificationService, PushNotificationService>();
+        return services;
+    }
 
     private static IServiceCollection AddZaloService(this IServiceCollection services,
         IConfiguration configuration)
     {
         services.Configure<Shared.ZaloSettings>(configuration.GetSection("Zalo"));
+        services.AddHttpClient<Application.Abstraction.Services.IZaloService, Services.ZaloService>();
         return services;
     }
 

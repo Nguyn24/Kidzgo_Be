@@ -484,15 +484,16 @@
 
 ### 16.1. Gửi thông báo
 - UC-325: Tạo Notification Template
-- UC-326: Xem danh sách Notification Templates
+- UC-326: Xem danh sách Notification Templates + xem chi tiết
 - UC-327: Cập nhật Notification Template
+- UC-327a: Xóa mềm Noti template
 - UC-328: Gửi Notification qua Zalo OA
-- UC-329: Gửi Notification qua Email
+- UC-329: Gửi Notification qua Email (event domain)
 - UC-330: Gửi Notification qua Push
 - UC-331: Gửi thông báo nhắc lịch học
 - UC-332: Gửi thông báo nhắc bài tập
 - UC-333: Gửi thông báo nhắc học phí
-- UC-334: Gửi thông báo buổi bù
+- UC-334: Gửi thông báo buổi bù (makeup)
 - UC-335: Gửi thông báo Mission
 - UC-336: Gửi thông báo Media
 - UC-337: Gửi thông báo Monthly Report
