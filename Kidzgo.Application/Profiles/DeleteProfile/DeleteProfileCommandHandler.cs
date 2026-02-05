@@ -19,8 +19,7 @@ public sealed class DeleteProfileCommandHandler(IDbContext context)
         {
             return Result.Failure(ProfileErrors.NotFound(command.Id));
         }
-
-        // Soft delete
+        
         profile.IsDeleted = true;
         profile.IsActive = false;
         profile.UpdatedAt = DateTime.UtcNow;

@@ -777,6 +777,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<string>("Answers")
                         .HasColumnType("jsonb");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid");
 
@@ -793,6 +796,9 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");

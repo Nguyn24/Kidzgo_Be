@@ -54,12 +54,7 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionAlreadySubmitted);
         }
 
-        // Cannot submit if status is MISSING
-        if (homeworkStudent.Status == HomeworkStatus.Missing)
-        {
-            return Result.Failure<SubmitHomeworkResponse>(
-                HomeworkErrors.SubmissionCannotSubmitMissing);
-        }
+        // Allow submitting even if status is MISSING (late submission).
 
         // Validate submission data based on submission type
         var submissionType = homeworkStudent.Assignment.SubmissionType;
@@ -92,7 +87,8 @@ public sealed class SubmitHomeworkCommandHandler(
         }
 
         // Check if due date has passed
-        if (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value)
+        if (homeworkStudent.Status == HomeworkStatus.Missing ||
+            (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value))
         {
             homeworkStudent.Status = HomeworkStatus.Late;
         }

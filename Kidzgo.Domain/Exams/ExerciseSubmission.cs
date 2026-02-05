@@ -13,6 +13,8 @@ public class ExerciseSubmission : Entity
     public DateTime SubmittedAt { get; set; }
     public DateTime? GradedAt { get; set; }
     public Guid? GradedBy { get; set; } // Teacher who graded (for writing exercises)
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public Exercise Exercise { get; set; } = null!;
