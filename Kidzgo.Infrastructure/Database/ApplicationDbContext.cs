@@ -33,6 +33,7 @@ public sealed class ApplicationDbContext(
     public DbSet<ParentPinResetToken> ParentPinResetTokens => Set<ParentPinResetToken>();
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ParentStudentLink> ParentStudentLinks => Set<ParentStudentLink>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     // Schools
     public DbSet<Branch> Branches => Set<Branch>();
