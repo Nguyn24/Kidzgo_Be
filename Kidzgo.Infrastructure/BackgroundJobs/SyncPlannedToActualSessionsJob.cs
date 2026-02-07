@@ -1,4 +1,5 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,7 @@ public sealed class SyncPlannedToActualSessionsJob(
                 !s.ActualDatetime.HasValue &&
                 s.PlannedDatetime <= now &&
                 s.PlannedDatetime >= from)
+            .Include(s => s.Class)
             .ToListAsync(cancellationToken);
 
         if (sessions.Count == 0)
@@ -48,6 +50,49 @@ public sealed class SyncPlannedToActualSessionsJob(
 
         await db.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Quartz job synced Planned* -> Actual* for {Count} sessions", sessions.Count);
+
+        // Update class status from Planned to Active when first session date arrives
+        // Find classes with Planned status that have their first session today or in the past
+        var plannedClassIds = await db.Classes
+            .Where(c => c.Status == ClassStatus.Planned)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+
+        if (plannedClassIds.Count == 0)
+        {
+            return;
+        }
+
+        // Get first session date for each planned class
+        var firstSessionDates = await db.Sessions
+            .Where(s => plannedClassIds.Contains(s.ClassId))
+            .GroupBy(s => s.ClassId)
+            .Select(g => new
+            {
+                ClassId = g.Key,
+                FirstSessionDate = g.Min(s => s.PlannedDatetime)
+            })
+            .Where(x => x.FirstSessionDate <= now)
+            .ToListAsync(cancellationToken);
+
+        if (firstSessionDates.Count == 0)
+        {
+            return;
+        }
+
+        var classIdsToActivate = firstSessionDates.Select(x => x.ClassId).ToList();
+        var classesToActivate = await db.Classes
+            .Where(c => classIdsToActivate.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+
+        foreach (var classEntity in classesToActivate)
+        {
+            classEntity.Status = ClassStatus.Active;
+            classEntity.UpdatedAt = now;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Quartz job updated {Count} classes from Planned to Active", classesToActivate.Count);
     }
 }
 

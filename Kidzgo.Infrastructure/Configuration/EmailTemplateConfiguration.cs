@@ -49,14 +49,14 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
         {
             Id = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
             Code = "FORGOT_PASSWORD",
-            Subject = "Kidzgo - Đặt lại mật khẩu của bạn",
+            Subject = "Rex English - Đặt lại mật khẩu của bạn",
             Body = """
                    <p>Xin chào {{user_name}},</p>
                    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
                    <p>Vui lòng bấm vào đường dẫn sau để đặt lại mật khẩu:</p>
                    <p><a href="{{reset_link}}">Đặt lại mật khẩu</a></p>
                    <p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
-                   <p>Trân trọng,<br/>Kidzgo Team</p>
+                   <p>Trân trọng,<br/>Rex English Team</p>
                    """,
             Placeholders = """["user_name","reset_link"]""",
             IsActive = true,

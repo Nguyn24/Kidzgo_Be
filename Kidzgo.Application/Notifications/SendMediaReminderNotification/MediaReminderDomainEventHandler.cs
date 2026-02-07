@@ -39,7 +39,8 @@ public sealed class MediaReminderDomainEventHandler(
         {
             ["media_title"] = notification.MediaTitle,
             ["media_type"] = notification.MediaType ?? "",
-            ["class_name"] = notification.ClassName ?? ""
+            ["class_name"] = notification.ClassName ?? "",
+            ["student_name"] = notification.StudentName ?? ""
         };
 
         if (!string.IsNullOrWhiteSpace(template.Placeholders))

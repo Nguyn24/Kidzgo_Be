@@ -58,16 +58,18 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Nhắc nhở: Buổi học {{session_title}} sắp bắt đầu",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Đây là thông báo nhắc nhở về buổi học sắp tới của bạn:</p>
+                     <p>Đây là thông báo nhắc nhở về buổi học sắp tới của học sinh <strong>{{student_name}}</strong>:</p>
                      <ul>
+                         <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Lớp học:</strong> {{class_name}}</li>
                          <li><strong>Thời gian:</strong> {{session_start_time}}</li>
-                         <li><strong>Địa điểm:</strong> {{location}}</li>
+                         <li><strong>Địa điểm:</strong> Rex English Center</li>
+                         <li><strong>Phòng học:</strong> {{classroom_name}}</li>
                      </ul>
                      <p>Vui lòng có mặt đúng giờ để không bỏ lỡ buổi học.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
-            Placeholders = """["session_title","session_start_time","class_name","location"]""",
+            Placeholders = """["session_title","session_start_time","class_name","location","student_name","classroom_name"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,
@@ -83,16 +85,17 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Nhắc nhở: Bài tập {{homework_title}} sắp đến hạn",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Bạn có bài tập sắp đến hạn:</p>
+                     <p>Học sinh <strong>{{student_name}}</strong> có bài tập sắp đến hạn:</p>
                      <ul>
+                         <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Tên bài tập:</strong> {{homework_title}}</li>
                          <li><strong>Lớp học:</strong> {{class_name}}</li>
                          <li><strong>Hạn nộp:</strong> {{due_date}}</li>
                      </ul>
                      <p>Vui lòng hoàn thành và nộp bài tập trước thời hạn.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
-            Placeholders = """["homework_title","due_date","class_name"]""",
+            Placeholders = """["homework_title","due_date","class_name","student_name"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,
@@ -108,14 +111,14 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Nhắc nhở: Học phí của {{student_name}} sắp đến hạn",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Đây là thông báo nhắc nhở về học phí sắp đến hạn:</p>
+                     <p>Đây là thông báo nhắc nhở về học phí sắp đến hạn của học sinh <strong>{{student_name}}</strong>:</p>
                      <ul>
                          <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Số tiền:</strong> {{amount}} VNĐ</li>
                          <li><strong>Hạn thanh toán:</strong> {{due_date}}</li>
                      </ul>
                      <p>Vui lòng thanh toán học phí trước thời hạn để đảm bảo việc học không bị gián đoạn.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
             Placeholders = """["student_name","amount","due_date"]""",
             IsActive = true,
@@ -133,16 +136,18 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Nhắc nhở: Buổi bù {{session_title}} sắp bắt đầu",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Đây là thông báo nhắc nhở về buổi bù sắp tới:</p>
+                     <p>Đây là thông báo nhắc nhở về buổi bù sắp tới của học sinh <strong>{{student_name}}</strong>:</p>
                      <ul>
+                         <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Lớp học:</strong> {{class_name}}</li>
                          <li><strong>Thời gian:</strong> {{session_start_time}}</li>
-                         <li><strong>Địa điểm:</strong> {{location}}</li>
+                         <li><strong>Địa điểm:</strong> Rex English Center</li>
+                         <li><strong>Phòng học:</strong> {{classroom_name}}</li>
                      </ul>
                      <p>Vui lòng có mặt đúng giờ để tham gia buổi bù.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
-            Placeholders = """["session_title","session_start_time","class_name","location"]""",
+            Placeholders = """["session_title","session_start_time","class_name","location","student_name","classroom_name"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,
@@ -158,16 +163,17 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Nhắc nhở: Nhiệm vụ {{mission_title}} sắp kết thúc",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Bạn có nhiệm vụ sắp đến hạn:</p>
+                     <p>Học sinh <strong>{{student_name}}</strong> có nhiệm vụ sắp đến hạn:</p>
                      <ul>
+                         <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Tên nhiệm vụ:</strong> {{mission_title}}</li>
                          <li><strong>Lớp học:</strong> {{class_name}}</li>
                          <li><strong>Hạn hoàn thành:</strong> {{due_date}}</li>
                      </ul>
                      <p>Vui lòng hoàn thành nhiệm vụ trước thời hạn để nhận phần thưởng.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
-            Placeholders = """["mission_title","due_date","class_name"]""",
+            Placeholders = """["mission_title","due_date","class_name","student_name"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,
@@ -183,16 +189,17 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             Title = "Thông báo: Có {{media_type}} mới từ lớp {{class_name}}",
             Content = """
                      <p>Xin chào,</p>
-                     <p>Lớp học của bạn vừa có nội dung mới:</p>
+                     <p>Lớp học của học sinh <strong>{{student_name}}</strong> vừa có nội dung mới:</p>
                      <ul>
+                         <li><strong>Học sinh:</strong> {{student_name}}</li>
                          <li><strong>Tiêu đề:</strong> {{media_title}}</li>
                          <li><strong>Loại:</strong> {{media_type}}</li>
                          <li><strong>Lớp học:</strong> {{class_name}}</li>
                      </ul>
                      <p>Hãy đăng nhập vào ứng dụng để xem nội dung mới này.</p>
-                     <p>Trân trọng,<br/>Kidzgo Team</p>
+                     <p>Trân trọng,<br/>Rex English Team</p>
                      """,
-            Placeholders = """["media_title","media_type","class_name"]""",
+            Placeholders = """["media_title","media_type","class_name","student_name"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,
