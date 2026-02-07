@@ -22,6 +22,11 @@ public sealed class CreateInvoiceCommandValidator : AbstractValidator<CreateInvo
             .NotEmpty().WithMessage("Currency is required.")
             .MaximumLength(10).WithMessage("Currency must not exceed 10 characters.");
 
+        RuleFor(x => x.DueDate)
+            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .WithMessage("Due date should not be in the past")
+            .When(x => x.DueDate.HasValue);
+
         RuleForEach(x => x.InvoiceLines)
             .SetValidator(new CreateInvoiceLineDtoValidator());
     }

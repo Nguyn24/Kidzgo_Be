@@ -8,6 +8,7 @@ public sealed record MediaReminderDomainEvent(
     Guid? RecipientProfileId,
     string MediaTitle,
     string? MediaType,
-    string? ClassName
+    string? ClassName,
+    string? StudentName
 ) : IDomainEvent;
 

@@ -50,6 +50,9 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
 
         builder.Property(x => x.ActualAssistantId);
 
+        builder.Property(x => x.Color)
+            .HasMaxLength(50);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

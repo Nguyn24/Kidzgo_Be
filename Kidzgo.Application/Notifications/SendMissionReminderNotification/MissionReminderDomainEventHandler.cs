@@ -39,7 +39,8 @@ public sealed class MissionReminderDomainEventHandler(
         {
             ["mission_title"] = notification.MissionTitle,
             ["due_date"] = notification.DueDate?.ToString("dd/MM/yyyy HH:mm") ?? "",
-            ["class_name"] = notification.ClassName ?? ""
+            ["class_name"] = notification.ClassName ?? "",
+            ["student_name"] = notification.StudentName ?? ""
         };
 
         if (!string.IsNullOrWhiteSpace(template.Placeholders))

@@ -42,7 +42,9 @@ public sealed class SessionReminderDomainEventHandler(
             ["session_title"] = notification.SessionTitle,
             ["session_start_time"] = notification.SessionStartTime.ToString("dd/MM/yyyy HH:mm"),
             ["class_name"] = notification.ClassName ?? "",
-            ["location"] = notification.Location ?? ""
+            ["location"] = notification.Location ?? "",
+            ["student_name"] = notification.StudentName ?? "",
+            ["classroom_name"] = notification.ClassroomName ?? ""
         };
 
         // If template has placeholders JSON, merge with defaults

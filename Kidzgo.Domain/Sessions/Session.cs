@@ -23,6 +23,7 @@ public class Session : Entity
     public Guid? ActualRoomId { get; set; }
     public Guid? ActualTeacherId { get; set; }
     public Guid? ActualAssistantId { get; set; }
+    public string? Color { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
