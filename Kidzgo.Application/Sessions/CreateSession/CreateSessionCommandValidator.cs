@@ -11,7 +11,9 @@ public sealed class CreateSessionCommandValidator : AbstractValidator<CreateSess
 
         RuleFor(c => c.PlannedDatetime)
             .NotEqual(default(DateTime))
-            .WithMessage("PlannedDatetime is required");
+            .WithMessage("PlannedDatetime is required")
+            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .WithMessage("PlannedDatetime cannot be in the past");
 
         RuleFor(c => c.DurationMinutes)
             .GreaterThan(0)
