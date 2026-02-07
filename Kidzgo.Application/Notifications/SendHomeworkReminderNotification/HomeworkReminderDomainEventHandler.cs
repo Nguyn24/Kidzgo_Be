@@ -39,7 +39,8 @@ public sealed class HomeworkReminderDomainEventHandler(
         {
             ["homework_title"] = notification.HomeworkTitle,
             ["due_date"] = notification.DueDate?.ToString("dd/MM/yyyy HH:mm") ?? "",
-            ["class_name"] = notification.ClassName ?? ""
+            ["class_name"] = notification.ClassName ?? "",
+            ["student_name"] = notification.StudentName ?? ""
         };
 
         if (!string.IsNullOrWhiteSpace(template.Placeholders))

@@ -9,6 +9,8 @@ public sealed record SessionReminderDomainEvent(
     string SessionTitle,
     DateTime SessionStartTime,
     string? ClassName,
-    string? Location
+    string? Location,
+    string? StudentName,
+    string? ClassroomName
 ) : IDomainEvent;
 
