@@ -1,10 +1,12 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Application.MonthlyReports.AddReportComment;
 using Kidzgo.Application.MonthlyReports.AggregateMonthlyReportData;
 using Kidzgo.Application.MonthlyReports.ApproveMonthlyReport;
 using Kidzgo.Application.MonthlyReports.CreateMonthlyReportJob;
 using Kidzgo.Application.MonthlyReports.GenerateMonthlyReportDraft;
+using Kidzgo.Application.MonthlyReports.GenerateMonthlyReportPdf;
 using Kidzgo.Application.MonthlyReports.GetMonthlyReportById;
 using Kidzgo.Application.MonthlyReports.GetMonthlyReportJobById;
 using Kidzgo.Application.MonthlyReports.GetMonthlyReportJobs;
@@ -306,5 +308,21 @@ public class MonthlyReportController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
+
+    /// <summary>
+    /// Generate or regenerate PDF for a Monthly Report (on-demand)
+    /// </summary>
+    [HttpPost("{reportId:guid}/generate-pdf")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(GenerateMonthlyReportPdfResponse))]
+    public async Task<IResult> GenerateMonthlyReportPdf(
+        [FromRoute] Guid reportId,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new GenerateMonthlyReportPdfCommand(reportId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
 }
 

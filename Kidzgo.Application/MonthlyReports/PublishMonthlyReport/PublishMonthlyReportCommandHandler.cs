@@ -1,10 +1,12 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
 using Kidzgo.Domain.Reports.Events;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Kidzgo.Application.MonthlyReports.PublishMonthlyReport;
 
@@ -12,7 +14,9 @@ namespace Kidzgo.Application.MonthlyReports.PublishMonthlyReport;
 /// UC-185: Publish Monthly Report
 /// </summary>
 public sealed class PublishMonthlyReportCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IFileStorageService fileStorage,
+    ILogger<PublishMonthlyReportCommandHandler> logger
 ) : ICommandHandler<PublishMonthlyReportCommand, PublishMonthlyReportResponse>
 {
     public async Task<Result<PublishMonthlyReportResponse>> Handle(
@@ -20,6 +24,7 @@ public sealed class PublishMonthlyReportCommandHandler(
         CancellationToken cancellationToken)
     {
         var report = await context.StudentMonthlyReports
+            .Include(r => r.StudentProfile)
             .FirstOrDefaultAsync(r => r.Id == command.ReportId, cancellationToken);
 
         if (report is null)
@@ -56,12 +61,29 @@ public sealed class PublishMonthlyReportCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
+        // Get download URL with force download flag if PDF exists
+        // Note: report.PdfUrl is stored without fl_attachment, we add it here for response
+        string? downloadUrl = null;
+        if (!string.IsNullOrWhiteSpace(report.PdfUrl))
+        {
+            try
+            {
+                downloadUrl = fileStorage.GetDownloadUrl(report.PdfUrl);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to generate download URL for PDF, using original URL");
+                downloadUrl = report.PdfUrl;
+            }
+        }
+
         return new PublishMonthlyReportResponse
         {
             Id = report.Id,
             Status = report.Status.ToString(),
             PublishedAt = report.PublishedAt,
-            UpdatedAt = report.UpdatedAt
+            UpdatedAt = report.UpdatedAt,
+            PdfUrl = downloadUrl
         };
     }
 }
