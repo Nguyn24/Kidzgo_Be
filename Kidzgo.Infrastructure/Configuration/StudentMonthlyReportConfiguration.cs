@@ -87,5 +87,9 @@ public class StudentMonthlyReportConfiguration : IEntityTypeConfiguration<Studen
             .WithOne(x => x.Report)
             .HasForeignKey(x => x.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique constraint: one report per student per month per year
+        builder.HasIndex(x => new { x.StudentProfileId, x.Month, x.Year })
+            .IsUnique();
     }
 }

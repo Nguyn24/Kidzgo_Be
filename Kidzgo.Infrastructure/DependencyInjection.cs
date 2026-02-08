@@ -264,6 +264,9 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMinutes(5);
         });
         
+        // Register PDF Report Generator
+        services.AddScoped<Application.Abstraction.Reports.IPdfReportGenerator, Reports.QuestPdfReportGenerator>();
+        
         return services;
     }
 
