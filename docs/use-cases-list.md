@@ -250,6 +250,8 @@
 
 ## 10. Session Reports 🟢
 
+**Lưu ý**: Session Reports được sử dụng làm nguồn dữ liệu chính cho Monthly Reports (Use Case 11). Khi tạo Monthly Report, hệ thống sẽ aggregate tất cả Session Reports trong tháng đó.
+
 ### 10.1. Báo cáo buổi học
 - UC-163: Teacher tạo Session Report
 - UC-164: Teacher ghi feedback cho từng học sinh
@@ -260,18 +262,24 @@
 - UC-169: Xem Session Reports của giáo viên trong tháng
 
 ### 10.2. Tổng hợp báo cáo tháng
-- UC-170: Tổng hợp Session Reports theo date range
-- UC-171: AI generate summary từ Session Reports
+- UC-170: Tổng hợp Session Reports theo date range (dùng cho Monthly Report)
+- UC-171: AI generate summary từ Session Reports (dùng cho Monthly Report)
 - UC-172: Teacher xem và chỉnh sửa AI summary
-- UC-173: Đánh dấu Session Report đã được tổng hợp (is_monthly_compiled)
+- UC-173: Đánh dấu Session Report đã được tổng hợp (is_monthly_compiled) - tự động khi tạo Monthly Report
 
 ---
 
 ## 11. Monthly Reports (AI) 🟡
 
+**Lưu ý**: Monthly Reports được tổng hợp từ nhiều nguồn dữ liệu, trong đó **Session Reports (Use Case 10)** là nguồn quan trọng nhất. Khi tạo Monthly Report, hệ thống sẽ:
+1. Aggregate Session Reports trong tháng (UC-170, UC-175)
+2. Aggregate attendance, homework, test, mission, notes (UC-175)
+3. AI generate draft từ dữ liệu đã aggregate (UC-176)
+4. Đánh dấu Session Reports đã được sử dụng (UC-173)
+
 ### 11.1. Tạo và quản lý Monthly Reports
 - UC-174: Tạo Monthly Report Job
-- UC-175: Gom dữ liệu cho Monthly Report (attendance, homework, test, mission, notes)
+- UC-175: Gom dữ liệu cho Monthly Report (session reports, attendance, homework, test, mission, notes)
 - UC-176: AI tạo draft Monthly Report
 - UC-177: Xem danh sách Monthly Report Jobs
 - UC-178: Xem trạng thái Monthly Report Job (PENDING/GENERATING/DONE/FAILED)

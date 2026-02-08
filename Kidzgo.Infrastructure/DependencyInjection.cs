@@ -3,6 +3,8 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Abstraction.Reports;
+using Kidzgo.Infrastructure.AI;
 using Kidzgo.Infrastructure.Authentication;
 using Kidzgo.Infrastructure.BackgroundJobs;
 using Kidzgo.Infrastructure.Database;
@@ -252,6 +254,16 @@ public static class DependencyInjection
         services.AddScoped<IImageUploader, ImageUploader>();
         services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
         services.AddScoped<Kidzgo.Application.Services.SessionGenerationService>();
+        services.AddScoped<Application.Abstraction.Reports.IMonthlyReportDataAggregator, MonthlyReportDataAggregator>();
+        
+        // Register AI Report Generator
+        services.AddHttpClient<IAiReportGenerator, HttpAiReportGenerator>(client =>
+        {
+            var baseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:8000";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromMinutes(5);
+        });
+        
         return services;
     }
 
