@@ -128,6 +128,8 @@ public sealed class SendNotificationRemindersJob(
                     session.Class.Title ?? "Lớp học",
                     session.PlannedDatetime,
                     session.Class.Title,
+                    "Rex English Center",
+                    studentProfile.DisplayName,
                     session.PlannedRoom?.Name
                 ));
             }
@@ -175,7 +177,8 @@ public sealed class SendNotificationRemindersJob(
                     studentProfile.Id,
                     homework.Title,
                     homework.DueAt,
-                    homework.Session?.Class?.Title
+                    homework.Session?.Class?.Title,
+                    studentProfile.DisplayName
                 ));
             }
         }
@@ -264,6 +267,8 @@ public sealed class SendNotificationRemindersJob(
                 session.Class?.Title ?? "Buổi bù",
                 session.PlannedDatetime,
                 session.Class?.Title,
+                "Rex English Center",
+                studentProfile.DisplayName,
                 session.PlannedRoom?.Name
             ));
         }
@@ -313,7 +318,8 @@ public sealed class SendNotificationRemindersJob(
                     studentProfile.Id,
                     mission.Title,
                     mission.EndAt,
-                    mission.TargetClass.Title
+                    mission.TargetClass.Title,
+                    studentProfile.DisplayName
                 ));
             }
         }
@@ -362,7 +368,8 @@ public sealed class SendNotificationRemindersJob(
                     studentProfile.Id,
                     mediaItem.Caption ?? "Media mới",
                     mediaItem.Type.ToString(),
-                    mediaItem.Class?.Title
+                    mediaItem.Class?.Title,
+                    studentProfile.DisplayName
                 ));
             }
         }

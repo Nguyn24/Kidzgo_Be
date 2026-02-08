@@ -8,6 +8,7 @@ public sealed record HomeworkReminderDomainEvent(
     Guid? RecipientProfileId,
     string HomeworkTitle,
     DateTime? DueDate,
-    string? ClassName
+    string? ClassName,
+    string? StudentName
 ) : IDomainEvent;
 

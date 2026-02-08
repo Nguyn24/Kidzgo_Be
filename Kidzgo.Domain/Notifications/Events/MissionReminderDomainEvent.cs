@@ -8,6 +8,7 @@ public sealed record MissionReminderDomainEvent(
     Guid? RecipientProfileId,
     string MissionTitle,
     DateTime? DueDate,
-    string? ClassName
+    string? ClassName,
+    string? StudentName
 ) : IDomainEvent;
 

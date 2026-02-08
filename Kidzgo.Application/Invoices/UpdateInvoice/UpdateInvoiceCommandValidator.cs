@@ -16,6 +16,11 @@ public sealed class UpdateInvoiceCommandValidator : AbstractValidator<UpdateInvo
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("Amount must be greater than 0.")
             .When(x => x.Amount.HasValue);
+
+        RuleFor(x => x.DueDate)
+            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .WithMessage("Due date should not be in the past")
+            .When(x => x.DueDate.HasValue);
     }
 }
 
