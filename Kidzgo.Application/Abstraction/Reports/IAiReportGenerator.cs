@@ -5,14 +5,14 @@ public interface IAiReportGenerator
 {
     /// Generate draft Monthly Report content from aggregated data
     /// <param name="dataJson">JSON string containing aggregated data (attendance, homework, test, mission, notes)</param>
-    /// <param name="studentName">Student name for personalization</param>
+    /// <param name="studentProfileId">Student profile ID for fetching student info and recent reports</param>
     /// <param name="month">Report month</param>
     /// <param name="year">Report year</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Generated draft content (HTML or markdown format)</returns>
+    /// <returns>Generated draft content (JSON string containing AI response)</returns>
     Task<string> GenerateDraftAsync(
         string dataJson,
-        string studentName,
+        Guid studentProfileId,
         int month,
         int year,
         CancellationToken cancellationToken = default);
