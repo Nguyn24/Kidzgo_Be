@@ -28,12 +28,28 @@ public sealed class PushNotificationDomainEventHandler(
             return;
         }
 
+        // Don't include RecipientUser to avoid enum conversion issues
+        // We only need RecipientUserId which is already available
         var notificationRecord = await context.Notifications
-            .Include(n => n.RecipientUser)
             .FirstOrDefaultAsync(n => n.Id == notification.NotificationId, cancellationToken);
 
-        if (notificationRecord is null || notificationRecord.RecipientUser is null)
+        if (notificationRecord is null || notificationRecord.RecipientUserId == default(Guid))
         {
+            return;
+        }
+
+        // Verify user exists and has valid role (skip if user has invalid role like 'Student')
+        var userExists = await context.Users
+            .Where(u => u.Id == notificationRecord.RecipientUserId)
+            .Select(u => u.Id)
+            .AnyAsync(cancellationToken);
+
+        if (!userExists)
+        {
+            logger.LogWarning("User {UserId} not found for notification {NotificationId}", 
+                notificationRecord.RecipientUserId, notification.NotificationId);
+            notificationRecord.Status = NotificationStatus.Failed;
+            await context.SaveChangesAsync(cancellationToken);
             return;
         }
 
