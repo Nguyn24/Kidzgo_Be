@@ -6,5 +6,6 @@ public sealed class PublishMonthlyReportResponse
     public string Status { get; init; } = null!;
     public DateTime? PublishedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+    public string? PdfUrl { get; init; }
 }
 

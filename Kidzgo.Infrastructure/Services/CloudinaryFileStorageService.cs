@@ -209,6 +209,67 @@ public class CloudinaryFileStorageService : IFileStorageService
         }
     }
 
+    /// <summary>
+    /// Get URL with force download flag (fl_attachment) for raw files like PDF
+    /// </summary>
+    public string GetDownloadUrl(string publicUrl)
+    {
+        try
+        {
+            // Check if it's a raw file (PDF, etc.)
+            var isRawFile = publicUrl.Contains("/raw/") || 
+                           publicUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ||
+                           publicUrl.EndsWith(".doc", StringComparison.OrdinalIgnoreCase) ||
+                           publicUrl.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) ||
+                           publicUrl.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
+                           publicUrl.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                           publicUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+
+            if (isRawFile)
+            {
+                // For raw files, add fl_attachment as query parameter
+                var uri = new Uri(publicUrl);
+                var query = uri.Query;
+                
+                // Check if fl_attachment already exists
+                if (query.Contains("fl_attachment"))
+                {
+                    return publicUrl;
+                }
+
+                // Add fl_attachment flag
+                if (string.IsNullOrEmpty(query))
+                {
+                    return $"{publicUrl}?fl_attachment";
+                }
+                else
+                {
+                    return $"{publicUrl}&fl_attachment";
+                }
+            }
+            else
+            {
+                // For images/videos, add fl_attachment to existing URL
+                var uri = new Uri(publicUrl);
+                var query = uri.Query;
+                if (string.IsNullOrEmpty(query))
+                {
+                    return $"{publicUrl}?fl_attachment";
+                }
+                else if (!query.Contains("fl_attachment"))
+                {
+                    return $"{publicUrl}&fl_attachment";
+                }
+                return publicUrl;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating download URL: {Url}", publicUrl);
+            return publicUrl; // Return original on error
+        }
+    }
+
     private string? ExtractPublicIdFromUrl(string url)
     {
         try
@@ -253,4 +314,3 @@ public class CloudinaryFileStorageService : IFileStorageService
         }
     }
 }
-

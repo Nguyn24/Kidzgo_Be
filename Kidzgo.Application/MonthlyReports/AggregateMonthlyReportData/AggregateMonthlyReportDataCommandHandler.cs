@@ -49,20 +49,33 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         int totalUpdated = 0;
         var now = DateTime.UtcNow;
 
+        // Track reports created in this transaction to avoid duplicates
+        // Key: (StudentProfileId, Month, Year), Value: Report
+        var reportsInMemory = new Dictionary<(Guid StudentProfileId, int Month, int Year), StudentMonthlyReport>();
+
+        // First, load all existing reports for these students
+        var studentProfileIds = enrollments.Select(e => e.StudentProfileId).Distinct().ToList();
+        var existingReports = await context.StudentMonthlyReports
+            .Where(r => studentProfileIds.Contains(r.StudentProfileId) &&
+                       r.Month == job.Month &&
+                       r.Year == job.Year)
+            .ToListAsync(cancellationToken);
+
+        // Add existing reports to memory dictionary
+        foreach (var existingReport in existingReports)
+        {
+            var key = (existingReport.StudentProfileId, existingReport.Month, existingReport.Year);
+            reportsInMemory[key] = existingReport;
+        }
+
         foreach (var enrollment in enrollments)
         {
-            // Check if report already exists
-            var existingReport = await context.StudentMonthlyReports
-                .FirstOrDefaultAsync(
-                    r => r.StudentProfileId == enrollment.StudentProfileId &&
-                         r.Month == job.Month &&
-                         r.Year == job.Year,
-                    cancellationToken);
+            var key = (enrollment.StudentProfileId, job.Month, job.Year);
 
-            StudentMonthlyReport report;
-            bool isNew = false;
-
-            if (existingReport is null)
+            // Check if report already exists (in database or in memory)
+            bool isNewReport = !reportsInMemory.TryGetValue(key, out var report);
+            
+            if (isNewReport)
             {
                 // Create new report
                 report = new StudentMonthlyReport
@@ -78,13 +91,12 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                     UpdatedAt = now
                 };
                 context.StudentMonthlyReports.Add(report);
-                isNew = true;
+                reportsInMemory[key] = report; // Track in memory
                 totalCreated++;
             }
             else
             {
                 // Update existing report
-                report = existingReport;
                 report.UpdatedAt = now;
                 totalUpdated++;
             }
@@ -145,8 +157,8 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                 reportData.NotesData = notes.GetRawText();
             }
 
-            // Mark session reports as compiled
-            if (isNew)
+            // Mark session reports as compiled (only for newly created reports)
+            if (isNewReport)
             {
                 var sessionReports = await context.SessionReports
                     .Where(sr => sr.StudentProfileId == enrollment.StudentProfileId &&
