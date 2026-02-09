@@ -1,11 +1,13 @@
 using Kidzgo.API.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
+
 
 namespace Kidzgo.API;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddEndpointsApiExplorer();
         // Swagger is already added in Program.cs via AddSwaggerGenWithAuth()
@@ -21,17 +23,21 @@ public static class DependencyInjection
         {
             options.FallbackPolicy = null; // Don't require auth by default
         });
+        
+        // ===== CORS =====
+        var clientUrls = configuration
+            .GetSection("ClientSettings:ClientUrls")
+            .Get<string[]>();
+
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowLocalAndProdFE", policy =>
-                policy.WithOrigins(
-                        "http://localhost:3000",
-                        "https://kidzgo-centre-pvjj.vercel.app",
-                        "http://103.146.22.206:8000"
-                    )
+            options.AddPolicy("AllowClients", policy =>
+            {
+                policy.WithOrigins(clientUrls!)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    .AllowCredentials());
+                    .AllowCredentials();
+            });
         });
         return services;
     }
