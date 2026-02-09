@@ -17,6 +17,11 @@ public interface IFileStorageService
         string resourceType = "auto",
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get URL with force download flag (fl_attachment) for raw files like PDF
+    /// </summary>
+    string GetDownloadUrl(string publicUrl);
+
     /// Delete a file from storage by its public URL
     /// <param name="publicUrl">Public URL of the file to delete</param>
     /// <param name="cancellationToken">Cancellation token</param>

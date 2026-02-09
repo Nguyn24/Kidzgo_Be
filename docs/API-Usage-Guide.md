@@ -24,6 +24,27 @@ Tài liệu này mô tả chi tiết cách sử dụng tất cả các API endpo
 18. [User Management APIs](#18-user-management-apis)
 19. [Lead APIs](#19-lead-apis)
 20. [Placement Test APIs](#20-placement-test-apis)
+21. [Monthly Report APIs](#21-monthly-report-apis)
+22. [Session Report APIs](#22-session-report-apis)
+23. [Homework APIs](#23-homework-apis)
+24. [Exercise APIs](#24-exercise-apis)
+25. [Mission APIs](#25-mission-apis)
+26. [Lesson Plan APIs](#26-lesson-plan-apis)
+27. [Lesson Plan Template APIs](#27-lesson-plan-template-apis)
+28. [Attendance APIs](#28-attendance-apis)
+29. [Invoice APIs](#29-invoice-apis)
+30. [Makeup Credit APIs](#30-makeup-credit-apis)
+31. [Leave Request APIs](#31-leave-request-apis)
+32. [Parent APIs](#32-parent-apis)
+33. [Profile APIs](#33-profile-apis)
+34. [Gamification APIs](#34-gamification-apis)
+35. [Branch APIs](#35-branch-apis)
+36. [User APIs](#36-user-apis)
+37. [Student APIs](#37-student-apis)
+38. [Teacher APIs](#38-teacher-apis)
+39. [Session Management APIs](#39-session-management-apis)
+40. [Notification Template APIs](#40-notification-template-apis)
+41. [Webhook APIs](#41-webhook-apis)
 
 ---
 
@@ -5055,3 +5076,349 @@ Base URL: `/api/placement-tests`
   "studentProfileId": "guid"
 }
 ```
+
+
+---
+
+## 21. Monthly Report APIs
+
+Base URL: `/api/monthly-reports`
+
+### 21.1. Create Monthly Report Job
+
+**Endpoint:** `POST /api/monthly-reports/jobs`
+
+**Mô tả:** UC-174: Tạo Monthly Report Job cho một branch trong tháng/năm cụ thể.
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Request Body:**
+```json
+{
+  "month": 1,
+  "year": 2026,
+  "branchId": "guid"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "branchId": "guid",
+    "month": 1,
+    "year": 2026,
+    "status": "Pending",
+    "createdAt": "2026-02-08T10:00:00Z"
+  }
+}
+```
+
+---
+
+### 21.2. Get Monthly Report Jobs
+
+**Endpoint:** `GET /api/monthly-reports/jobs`
+
+**Mô tả:** UC-177: Xem danh sách Monthly Report Jobs với phân trang và filter.
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Query Parameters:**
+- `branchId` (Guid?, optional): Lọc theo Branch ID
+- `month` (int?, optional): Lọc theo tháng
+- `year` (int?, optional): Lọc theo năm
+- `status` (string?, optional): Lọc theo status
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):** Trả về danh sách jobs với pagination
+
+---
+
+### 21.3. Get Monthly Report Job By ID
+
+**Endpoint:** `GET /api/monthly-reports/jobs/{jobId}`
+
+**Mô tả:** UC-178: Xem trạng thái Monthly Report Job.
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về chi tiết job
+
+---
+
+### 21.4. Aggregate Monthly Report Data
+
+**Endpoint:** `POST /api/monthly-reports/jobs/{jobId}/aggregate`
+
+**Mô tả:** UC-175: Gom dữ liệu cho Monthly Report (trigger cho tất cả students trong job).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về số lượng reports đã tạo/cập nhật
+
+---
+
+### 21.5. Get Monthly Reports
+
+**Endpoint:** `GET /api/monthly-reports`
+
+**Mô tả:** Xem danh sách Monthly Reports với filter và phân trang.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff, Parent)
+
+**Query Parameters:**
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile ID
+- `classId` (Guid?, optional): Lọc theo Class ID
+- `jobId` (Guid?, optional): Lọc theo Job ID
+- `month` (int?, optional): Lọc theo tháng
+- `year` (int?, optional): Lọc theo năm
+- `status` (string?, optional): Lọc theo status
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):** Trả về danh sách reports với pagination
+
+**Lưu ý:** 
+- Parent/Student chỉ xem được reports có status = Published
+- Teacher chỉ xem được reports của lớp mình
+
+---
+
+### 21.6. Get Monthly Report By ID
+
+**Endpoint:** `GET /api/monthly-reports/{reportId}`
+
+**Mô tả:** UC-179: Teacher xem draft Monthly Report. UC-186: Parent/Student xem Monthly Report.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff, Parent)
+
+**Response (200 OK):** Trả về chi tiết report
+
+---
+
+### 21.7. Generate Monthly Report Draft
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/generate-draft`
+
+**Mô tả:** UC-176: Generate draft Monthly Report bằng AI.
+
+**Authorization:** Required (Role: Teacher)
+
+**Response (200 OK):** Trả về report với DraftContent đã được generate
+
+---
+
+### 21.8. Update Monthly Report Draft
+
+**Endpoint:** `PUT /api/monthly-reports/{reportId}/draft`
+
+**Mô tả:** UC-180: Teacher chỉnh sửa draft Monthly Report.
+
+**Authorization:** Required (Role: Teacher)
+
+**Request Body:**
+```json
+{
+  "draftContent": "{\"overview\": \"...\", \"strengths\": [...], ...}"
+}
+```
+
+**Response (200 OK):** Trả về report đã được cập nhật
+
+**Lưu ý:** Có thể chỉnh sửa report có status = Rejected (sẽ tự động reset về Draft)
+
+---
+
+### 21.9. Submit Monthly Report
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/submit`
+
+**Mô tả:** UC-181: Teacher submit Monthly Report (chuyển từ Draft → Submitted).
+
+**Authorization:** Required (Role: Teacher)
+
+**Response (200 OK):** Trả về report với status = Submitted
+
+---
+
+### 21.10. Add Report Comment
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/comments`
+
+**Mô tả:** UC-182: Staff/Admin comment Monthly Report.
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Request Body:**
+```json
+{
+  "content": "Cần bổ sung thêm thông tin về điểm mạnh"
+}
+```
+
+**Response (201 Created):** Trả về comment đã tạo
+
+---
+
+### 21.11. Approve Monthly Report
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/approve`
+
+**Mô tả:** UC-183: Staff/Admin approve Monthly Report (chuyển từ Submitted → Approved).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về report với status = Approved
+
+---
+
+### 21.12. Reject Monthly Report
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/reject`
+
+**Mô tả:** UC-184: Staff/Admin reject Monthly Report (chuyển từ Submitted → Rejected).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về report với status = Rejected
+
+---
+
+### 21.13. Publish Monthly Report
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/publish`
+
+**Mô tả:** UC-185: Publish Monthly Report (chuyển từ Approved → Published).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về report với status = Published và PdfUrl (nếu có)
+
+---
+
+### 21.14. Generate Monthly Report PDF
+
+**Endpoint:** `POST /api/monthly-reports/{reportId}/generate-pdf`
+
+**Mô tả:** Generate hoặc regenerate PDF cho Monthly Report (on-demand).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff, Teacher)
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "reportId": "guid",
+    "pdfUrl": "https://res.cloudinary.com/.../monthly-report.pdf",
+    "pdfGeneratedAt": "2026-02-08T10:00:00Z"
+  }
+}
+```
+
+---
+
+## 22. Session Report APIs
+
+Base URL: `/api/session-reports`
+
+### 22.1. Create Session Report
+
+**Endpoint:** `POST /api/session-reports`
+
+**Mô tả:** UC-163: Teacher tạo Session Report. UC-164: Teacher ghi feedback cho từng học sinh.
+
+**Authorization:** Required (Role: Teacher)
+
+**Request Body:**
+```json
+{
+  "sessionId": "guid",
+  "studentProfileId": "guid",
+  "reportDate": "2026-02-08",
+  "feedback": "Học sinh làm bài tốt, cần cải thiện phát âm"
+}
+```
+
+**Response (201 Created):** Trả về session report đã tạo
+
+---
+
+### 22.2. Get Session Reports
+
+**Endpoint:** `GET /api/session-reports`
+
+**Mô tả:** UC-165: Xem danh sách Session Reports. UC-168: Filter Session Reports theo date range.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff)
+
+**Query Parameters:**
+- `sessionId` (Guid?, optional): Lọc theo Session ID
+- `studentProfileId` (Guid?, optional): Lọc theo Student Profile ID
+- `teacherUserId` (Guid?, optional): Lọc theo Teacher User ID
+- `classId` (Guid?, optional): Lọc theo Class ID
+- `fromDate` (DateOnly?, optional): Ngày bắt đầu
+- `toDate` (DateOnly?, optional): Ngày kết thúc
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):** Trả về danh sách session reports với pagination
+
+---
+
+### 22.3. Get Session Report By ID
+
+**Endpoint:** `GET /api/session-reports/{id}`
+
+**Mô tả:** UC-166: Xem chi tiết Session Report.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về chi tiết session report
+
+---
+
+### 22.4. Update Session Report
+
+**Endpoint:** `PUT /api/session-reports/{id}`
+
+**Mô tả:** UC-167: Cập nhật Session Report.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff)
+
+**Request Body:**
+```json
+{
+  "feedback": "Học sinh làm bài tốt, cần cải thiện phát âm - Updated"
+}
+```
+
+**Response (200 OK):** Trả về session report đã được cập nhật
+
+---
+
+### 22.5. Get Teacher Session Reports (Monthly)
+
+**Endpoint:** `GET /api/session-reports/teachers/{teacherUserId}/monthly`
+
+**Mô tả:** UC-169: Xem Session Reports của giáo viên trong tháng.
+
+**Authorization:** Required (Roles: Teacher, Admin, ManagementStaff)
+
+**Query Parameters:**
+- `year` (int, required): Năm
+- `month` (int, required): Tháng
+- `pageNumber` (int, default: 1): Số trang
+- `pageSize` (int, default: 10): Số lượng items mỗi trang
+
+**Response (200 OK):** Trả về danh sách session reports của teacher trong tháng
+
+---
+
+*Tài liệu này được cập nhật lần cuối: 2026-02-08*
+
+
