@@ -12,6 +12,7 @@ public sealed class PublicCreateLeadRequest
     public string? Phone { get; set; }
     public string? ZaloId { get; set; }
     public string? Email { get; set; }
+    public Guid? BranchPreference { get; set; }
 }
 
 

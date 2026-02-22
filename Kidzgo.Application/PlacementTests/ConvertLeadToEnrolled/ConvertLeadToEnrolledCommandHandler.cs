@@ -56,6 +56,20 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
                     PlacementTestErrors.StudentProfileNotFound(command.StudentProfileId));
             }
 
+            // Check if this StudentProfile is already assigned to another LeadChild
+            var existingAssignment = await context.LeadChildren
+                .FirstOrDefaultAsync(lc => lc.ConvertedStudentProfileId == command.StudentProfileId.Value, cancellationToken);
+
+            if (existingAssignment is not null)
+            {
+                // If it's assigned to a different LeadChild, return error
+                if (!isChildBasedFlow || existingAssignment.Id != placementTest.LeadChildId)
+                {
+                    return Result.Failure<ConvertLeadToEnrolledResponse>(
+                        PlacementTestErrors.StudentProfileAlreadyAssigned(command.StudentProfileId.Value, existingAssignment.Id));
+                }
+            }
+
             // Link student profile to placement test
             placementTest.StudentProfileId = command.StudentProfileId.Value;
         }
