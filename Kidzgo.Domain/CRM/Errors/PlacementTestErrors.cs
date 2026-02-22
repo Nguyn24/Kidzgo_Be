@@ -43,5 +43,9 @@ public static class PlacementTestErrors
     public static readonly Error LeadAlreadyEnrolled = Error.Conflict(
         "PlacementTest.LeadAlreadyEnrolled",
         "The lead has already been converted to enrollment");
+
+    public static Error StudentProfileAlreadyAssigned(Guid? profileId, Guid leadChildId) => Error.Conflict(
+        "PlacementTest.StudentProfileAlreadyAssigned",
+        $"The student profile with Id = '{profileId}' is already assigned to another child (LeadChildId = '{leadChildId}'). One profile can only be assigned to one child.");
 }
 
