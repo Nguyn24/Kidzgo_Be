@@ -51,6 +51,7 @@ public class LeadController : ControllerBase
             Phone = request.Phone,
             ZaloId = request.ZaloId,
             Email = request.Email,
+            BranchPreference = request.BranchPreference,
             OwnerStaffId = null // Không gán owner khi tạo từ form web
         };
 
