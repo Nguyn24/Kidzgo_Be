@@ -19,7 +19,7 @@ public class Program
         
         builder.Services
             .AddApplication()
-            .AddPresentation()
+            .AddPresentation(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
         
         builder.Services
@@ -46,7 +46,7 @@ public class Program
             ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
         });
 
-        app.UseCors("AllowLocalAndProdFE");
+        app.UseCors("AllowClients");
         app.UseRequestContextLogging();
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
