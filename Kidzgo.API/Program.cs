@@ -4,6 +4,7 @@ using Kidzgo.API.Extensions;
 using Kidzgo.Application;
 using Kidzgo.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Kidzgo.API;
 
@@ -12,8 +13,22 @@ public class Program
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-        
+
         builder.Configuration.AddEnvironmentVariables();
+
+        // Configure Kestrel server limits for long-running requests (e.g., Monthly Report aggregation)
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10);
+            options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
+        });
+
+        // Configure IHttpBodySizeFeature to allow larger request bodies if needed
+        builder.Services.Configure<KestrelServerOptions>(options =>
+        {
+            options.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100 MB
+            options.Limits.MaxRequestBufferSize = 100 * 1024 * 1024; // 100 MB
+        });
         
         builder.Services.AddSwaggerGenWithAuth(); 
         

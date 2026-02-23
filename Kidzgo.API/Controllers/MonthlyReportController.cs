@@ -56,12 +56,6 @@ public class MonthlyReportController : ControllerBase
     /// <summary>
     /// UC-177: Xem danh sách Monthly Report Jobs
     /// </summary>
-    /// <param name="branchId">Filter by branch ID</param>
-    /// <param name="month">Filter by month</param>
-    /// <param name="year">Filter by year</param>
-    /// <param name="status">Filter by status</param>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet("jobs")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetMonthlyReportJobs(
@@ -114,11 +108,7 @@ public class MonthlyReportController : ControllerBase
         [FromRoute] Guid jobId,
         CancellationToken cancellationToken = default)
     {
-        var command = new AggregateMonthlyReportDataCommand
-        {
-            JobId = jobId
-        };
-
+        var command = new AggregateMonthlyReportDataCommand { JobId = jobId };
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
@@ -126,14 +116,6 @@ public class MonthlyReportController : ControllerBase
     /// <summary>
     /// Get list of Monthly Reports with filters
     /// </summary>
-    /// <param name="studentProfileId">Filter by student profile ID</param>
-    /// <param name="classId">Filter by class ID</param>
-    /// <param name="jobId">Filter by job ID</param>
-    /// <param name="month">Filter by month</param>
-    /// <param name="year">Filter by year</param>
-    /// <param name="status">Filter by status</param>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
     [Authorize(Roles = "Teacher,Admin,ManagementStaff,Parent")]
     public async Task<IResult> GetMonthlyReports(
@@ -323,6 +305,4 @@ public class MonthlyReportController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-
 }
-
