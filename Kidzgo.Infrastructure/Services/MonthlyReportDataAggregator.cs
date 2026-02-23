@@ -61,6 +61,7 @@ public sealed class MonthlyReportDataAggregator(
             .Where(a => a.StudentProfileId == studentProfileId &&
                        a.Session.PlannedDatetime >= startDate &&
                        a.Session.PlannedDatetime <= endDate)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var total = attendances.Count;
@@ -92,6 +93,7 @@ public sealed class MonthlyReportDataAggregator(
             .Where(hs => hs.StudentProfileId == studentProfileId &&
                         hs.Assignment.CreatedAt >= startDate &&
                         hs.Assignment.CreatedAt <= endDate)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var total = homeworkSubmissions.Count;
@@ -136,6 +138,7 @@ public sealed class MonthlyReportDataAggregator(
                         er.Exam.Date >= DateOnly.FromDateTime(startDate) &&
                         er.Exam.Date <= DateOnly.FromDateTime(endDate))
             .OrderBy(er => er.Exam.Date)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var tests = examResults.Select(er => new
@@ -166,6 +169,7 @@ public sealed class MonthlyReportDataAggregator(
             .Where(mp => mp.StudentProfileId == studentProfileId &&
                         mp.Mission.StartAt >= startDate &&
                         mp.Mission.StartAt <= endDate)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var completed = missionProgresses.Count(mp => mp.Status == MissionProgressStatus.Completed);
@@ -185,8 +189,9 @@ public sealed class MonthlyReportDataAggregator(
             .Where(mp => mp.Mission.RewardExp.HasValue)
             .Sum(mp => mp.Mission.RewardExp!.Value);
 
-        // Get student level
+        // Get student level - use separate query with AsNoTracking
         var studentLevel = await context.StudentLevels
+            .AsNoTracking()
             .FirstOrDefaultAsync(sl => sl.StudentProfileId == studentProfileId, cancellationToken);
 
         return new
@@ -214,6 +219,7 @@ public sealed class MonthlyReportDataAggregator(
                         sr.ReportDate >= DateOnly.FromDateTime(startDate) &&
                         sr.ReportDate <= DateOnly.FromDateTime(endDate))
             .OrderBy(sr => sr.ReportDate)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         var reports = sessionReports.Select(sr => new

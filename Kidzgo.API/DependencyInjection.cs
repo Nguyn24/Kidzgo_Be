@@ -1,4 +1,5 @@
 using Kidzgo.API.Infrastructure;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 
@@ -17,6 +18,9 @@ public static class DependencyInjection
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+        
+        // Register aggregation service for Monthly Report
+        
         
         // Configure authorization to return proper status codes
         services.Configure<AuthorizationOptions>(options =>
