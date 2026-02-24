@@ -55,6 +55,11 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidDueDate);
         }
 
+        // Convert DueAt to UTC if provided (PostgreSQL requires UTC for timestamp with time zone)
+        var dueAtUtc = command.DueAt.HasValue
+            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
+            : (DateTime?)null;
+
         // Validate Title if provided
         if (command.Title != null && string.IsNullOrWhiteSpace(command.Title))
         {
@@ -89,7 +94,7 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
 
         if (command.DueAt.HasValue)
         {
-            homework.DueAt = command.DueAt;
+            homework.DueAt = dueAtUtc;
         }
 
         if (command.Book != null)
