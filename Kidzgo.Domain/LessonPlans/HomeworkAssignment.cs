@@ -24,6 +24,7 @@ public class HomeworkAssignment : Entity
     public string? Instructions { get; set; }
     public string? ExpectedAnswer { get; set; }
     public string? Rubric { get; set; }
+    public string? AttachmentUrl { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 
