@@ -18,6 +18,7 @@ public sealed class CreateHomeworkAssignmentResponse
     public string? Instructions { get; init; }
     public string? ExpectedAnswer { get; init; }
     public string? Rubric { get; init; }
+    public string? AttachmentUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public int AssignedStudentsCount { get; init; }
 }

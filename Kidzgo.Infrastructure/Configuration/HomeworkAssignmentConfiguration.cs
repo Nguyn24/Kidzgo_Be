@@ -53,6 +53,8 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
 
         builder.Property(x => x.Rubric);
 
+        builder.Property(x => x.AttachmentUrl);
+
         builder.Property(x => x.CreatedBy);
 
         builder.Property(x => x.CreatedAt)
