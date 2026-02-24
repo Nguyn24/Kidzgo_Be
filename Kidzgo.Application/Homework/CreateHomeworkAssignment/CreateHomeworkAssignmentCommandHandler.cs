@@ -90,6 +90,11 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidDueDate);
         }
 
+        // Convert DueAt to UTC if provided (PostgreSQL requires UTC for timestamp with time zone)
+        var dueAtUtc = command.DueAt.HasValue
+            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
+            : (DateTime?)null;
+
         // Get current user ID from context
         var currentUserId = userContext.UserId;
 
@@ -101,7 +106,7 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             SessionId = command.SessionId,
             Title = command.Title,
             Description = command.Description,
-            DueAt = command.DueAt,
+            DueAt = dueAtUtc,
             Book = command.Book,
             Pages = command.Pages,
             Skills = command.Skills,
