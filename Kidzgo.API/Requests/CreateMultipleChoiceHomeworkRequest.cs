@@ -1,0 +1,25 @@
+namespace Kidzgo.API.Requests;
+
+public sealed class CreateMultipleChoiceHomeworkRequest
+{
+    public Guid ClassId { get; init; }
+    public Guid? SessionId { get; init; }
+    public string Title { get; init; } = null!;
+    public string? Description { get; init; }
+    public DateTime? DueAt { get; init; }
+    public int? RewardStars { get; init; }
+    public Guid? MissionId { get; init; }
+    public string? Instructions { get; init; }
+    public List<CreateHomeworkQuestionRequest> Questions { get; init; } = new();
+}
+
+public class CreateHomeworkQuestionRequest
+{
+    public string QuestionText { get; init; } = null!;
+    public string QuestionType { get; init; } = null!; // "MultipleChoice" or "TextInput"
+    public List<string> Options { get; init; } = new();
+    public string CorrectAnswer { get; init; } = null!;
+    public int Points { get; init; } = 1;
+    public string? Explanation { get; init; }
+}
+

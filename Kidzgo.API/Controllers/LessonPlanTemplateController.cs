@@ -37,7 +37,7 @@ public class LessonPlanTemplateController : ControllerBase
             ProgramId = request.ProgramId,
             Level = request.Level,
             SessionIndex = request.SessionIndex,
-            StructureJson = request.StructureJson
+            Attachment = request.Attachment
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -97,6 +97,39 @@ public static class HomeworkErrors
     public static readonly Error InvalidStatusForMarking = Error.Validation(
         "Homework.InvalidStatusForMarking",
         "Status must be either 'LATE' or 'MISSING'");
+
+    // Multiple Choice Homework errors
+    public static readonly Error NoQuestionsProvided = Error.Validation(
+        "Homework.NoQuestionsProvided",
+        "At least one question is required for multiple choice homework");
+
+    public static Error InvalidQuestionText(int questionNumber) => Error.Validation(
+        "Homework.InvalidQuestionText",
+        $"Question {questionNumber} text cannot be empty");
+
+    public static Error InsufficientOptions(int questionNumber) => Error.Validation(
+        "Homework.InsufficientOptions",
+        $"Question {questionNumber} must have at least 2 options for multiple choice");
+
+    public static Error InvalidCorrectAnswer(int questionNumber) => Error.Validation(
+        "Homework.InvalidCorrectAnswer",
+        $"Question {questionNumber} has invalid correct answer index");
+
+    public static Error InvalidPoints(int questionNumber) => Error.Validation(
+        "Homework.InvalidPoints",
+        $"Question {questionNumber} points must be greater than 0");
+
+    public static readonly Error CannotSubmitMultipleChoice = Error.Validation(
+        "HomeworkSubmission.CannotSubmitMultipleChoice",
+        "This is a multiple choice homework, use the multiple choice submission endpoint");
+
+    public static readonly Error NoAnswersProvided = Error.Validation(
+        "HomeworkSubmission.NoAnswersProvided",
+        "At least one answer must be provided");
+
+    public static Error QuestionNotFound(Guid questionNumber) => Error.NotFound(
+        "HomeworkSubmission.QuestionNotFound",
+        $"Question {questionNumber}was not found");
 }
 
 

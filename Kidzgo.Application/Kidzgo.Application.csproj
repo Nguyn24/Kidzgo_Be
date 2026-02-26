@@ -36,4 +36,13 @@
       <Folder Include="Users\Admin\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net9.0\Kidzgo.Application.deps.json" />
+      <Content Include="bin\Debug\net9.0\Kidzgo.Application.dll" />
+      <Content Include="bin\Debug\net9.0\Kidzgo.Application.pdb" />
+      <Content Include="bin\Debug\net9.0\Kidzgo.Application.runtimeconfig.json" />
+      <Content Include="bin\Debug\net9.0\Kidzgo.Domain.dll" />
+      <Content Include="bin\Debug\net9.0\Kidzgo.Domain.pdb" />
+    </ItemGroup>
+
 </Project>
