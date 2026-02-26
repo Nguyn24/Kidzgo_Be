@@ -14,7 +14,10 @@ public class HomeworkStudent : Entity
     public decimal? Score { get; set; }
     public string? TeacherFeedback { get; set; }
     public string? AiFeedback { get; set; }
-    public string? Attachments { get; set; }
+    
+    // Student submission fields
+    public string? TextAnswer { get; set; }
+    public string? AttachmentUrl { get; set; }
 
     // Navigation properties
     public HomeworkAssignment Assignment { get; set; } = null!;

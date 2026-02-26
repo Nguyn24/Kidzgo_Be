@@ -1,9 +1,8 @@
-using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Domain.LessonPlans;
 
-namespace Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
+namespace Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
 
-public sealed class GetStudentHomeworkSubmissionResponse
+public sealed class GetHomeworkSubmissionDetailResponse
 {
     public Guid Id { get; init; }
     public Guid AssignmentId { get; init; }
@@ -30,5 +29,9 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string? LinkUrl { get; init; }
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
+
+    // Student info
+    public Guid StudentProfileId { get; init; }
+    public string StudentName { get; init; } = null!;
 }
 

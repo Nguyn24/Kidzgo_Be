@@ -40,8 +40,11 @@ public class HomeworkStudentConfiguration : IEntityTypeConfiguration<HomeworkStu
         builder.Property(x => x.AiFeedback)
             .HasColumnType("jsonb");
 
-        builder.Property(x => x.Attachments)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.TextAnswer)
+            .HasColumnType("text");
+
+        builder.Property(x => x.AttachmentUrl)
+            .HasColumnType("text");
 
         // Relationships
         builder.HasOne(x => x.Assignment)
