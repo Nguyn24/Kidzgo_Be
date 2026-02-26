@@ -7,7 +7,6 @@ using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace Kidzgo.Application.Homework.SubmitHomework;
 
@@ -21,7 +20,6 @@ public sealed class SubmitHomeworkCommandHandler(
         SubmitHomeworkCommand command,
         CancellationToken cancellationToken)
     {
-        // Get StudentId from context
         var studentId = userContext.StudentId;
 
         if (!studentId.HasValue)
@@ -29,7 +27,6 @@ public sealed class SubmitHomeworkCommandHandler(
             return Result.Failure<SubmitHomeworkResponse>(ProfileErrors.StudentNotFound);
         }
 
-        // Get homework submission
         var homeworkStudent = await context.HomeworkStudents
             .Include(hs => hs.Assignment)
             .FirstOrDefaultAsync(hs => hs.Id == command.HomeworkStudentId, cancellationToken);
@@ -40,23 +37,18 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionNotFound(command.HomeworkStudentId));
         }
 
-        // Verify the submission belongs to the current student
         if (homeworkStudent.StudentProfileId != studentId.Value)
         {
             return Result.Failure<SubmitHomeworkResponse>(
                 HomeworkErrors.SubmissionUnauthorized);
         }
 
-        // Check if already submitted or graded
         if (homeworkStudent.Status == HomeworkStatus.Submitted || homeworkStudent.Status == HomeworkStatus.Graded)
         {
             return Result.Failure<SubmitHomeworkResponse>(
                 HomeworkErrors.SubmissionAlreadySubmitted);
         }
 
-        // Allow submitting even if status is MISSING (late submission).
-
-        // Validate submission data based on submission type
         var submissionType = homeworkStudent.Assignment.SubmissionType;
         bool hasValidSubmission = false;
 
@@ -73,7 +65,6 @@ public sealed class SubmitHomeworkCommandHandler(
                 hasValidSubmission = !string.IsNullOrWhiteSpace(command.LinkUrl);
                 break;
             case SubmissionType.Quiz:
-                // Quiz submissions might be handled differently, but for now allow any submission
                 hasValidSubmission = command.AttachmentUrls != null && command.AttachmentUrls.Count > 0 ||
                                     !string.IsNullOrWhiteSpace(command.TextAnswer) ||
                                     !string.IsNullOrWhiteSpace(command.LinkUrl);
@@ -86,7 +77,6 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionInvalidData(submissionType.ToString()));
         }
 
-        // Check if due date has passed
         if (homeworkStudent.Status == HomeworkStatus.Missing ||
             (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value))
         {
@@ -97,7 +87,6 @@ public sealed class SubmitHomeworkCommandHandler(
             homeworkStudent.Status = HomeworkStatus.Submitted;
         }
 
-        // Set submission data
         homeworkStudent.SubmittedAt = DateTime.UtcNow;
 
         // Store submission data based on type
@@ -107,41 +96,32 @@ public sealed class SubmitHomeworkCommandHandler(
             case SubmissionType.Image:
                 if (command.AttachmentUrls != null && command.AttachmentUrls.Count > 0)
                 {
-                    homeworkStudent.Attachments = JsonSerializer.Serialize(command.AttachmentUrls);
+                    homeworkStudent.AttachmentUrl = command.AttachmentUrls[0];
                 }
                 break;
 
             case SubmissionType.Text:
-                if (!string.IsNullOrWhiteSpace(command.TextAnswer))
-                {
-                    var textData = new { text = command.TextAnswer };
-                    homeworkStudent.Attachments = JsonSerializer.Serialize(textData);
-                }
+                homeworkStudent.TextAnswer = command.TextAnswer;
                 break;
 
             case SubmissionType.Link:
-                if (!string.IsNullOrWhiteSpace(command.LinkUrl))
-                {
-                    var linkData = new { url = command.LinkUrl };
-                    homeworkStudent.Attachments = JsonSerializer.Serialize(linkData);
-                }
+                homeworkStudent.AttachmentUrl = command.LinkUrl;
                 break;
 
             case SubmissionType.Quiz:
-                // For quiz, store all provided data
-                var quizData = new
+                if (!string.IsNullOrWhiteSpace(command.TextAnswer))
                 {
-                    text = command.TextAnswer,
-                    attachments = command.AttachmentUrls,
-                    link = command.LinkUrl
-                };
-                homeworkStudent.Attachments = JsonSerializer.Serialize(quizData);
+                    homeworkStudent.TextAnswer = command.TextAnswer;
+                }
+                if (!string.IsNullOrWhiteSpace(command.LinkUrl))
+                {
+                    homeworkStudent.AttachmentUrl = command.LinkUrl;
+                }
                 break;
         }
 
         await context.SaveChangesAsync(cancellationToken);
 
-        // Auto award stars for on-time submission if homework has RewardStars configured
         if (homeworkStudent.Status == HomeworkStatus.Submitted &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)
@@ -163,4 +143,3 @@ public sealed class SubmitHomeworkCommandHandler(
         };
     }
 }
-

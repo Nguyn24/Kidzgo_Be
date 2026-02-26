@@ -72,6 +72,8 @@ public interface IDbContext
 
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }
+    DbSet<HomeworkQuestion> HomeworkQuestions { get; }
+
     DbSet<HomeworkStudent> HomeworkStudents { get; }
     DbSet<LessonPlan> LessonPlans { get; }
     DbSet<LessonPlanTemplate> LessonPlanTemplates { get; }

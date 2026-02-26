@@ -7,5 +7,5 @@ public sealed class CreateLessonPlanTemplateCommand : ICommand<CreateLessonPlanT
     public Guid ProgramId { get; init; }
     public string? Level { get; init; }
     public int SessionIndex { get; init; }
-    public string? StructureJson { get; init; }
+    public string? Attachment { get; init; }
 }

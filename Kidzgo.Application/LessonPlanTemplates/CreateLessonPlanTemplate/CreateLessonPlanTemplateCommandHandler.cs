@@ -57,7 +57,7 @@ public sealed class CreateLessonPlanTemplateCommandHandler(
             ProgramId = command.ProgramId,
             Level = command.Level,
             SessionIndex = command.SessionIndex,
-            StructureJson = command.StructureJson,
+            StructureJson = command.Attachment,
             IsActive = true,
             IsDeleted = false,
             CreatedBy = currentUserId,

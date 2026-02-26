@@ -1,53 +1,55 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
-using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
-namespace Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
+namespace Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
 
-public sealed class GetStudentHomeworkSubmissionQueryHandler(
+public sealed class GetHomeworkSubmissionDetailQueryHandler(
     IDbContext context,
     IUserContext userContext
-) : IQueryHandler<GetStudentHomeworkSubmissionQuery, GetStudentHomeworkSubmissionResponse>
+) : IQueryHandler<GetHomeworkSubmissionDetailQuery, GetHomeworkSubmissionDetailResponse>
 {
-    public async Task<Result<GetStudentHomeworkSubmissionResponse>> Handle(
-        GetStudentHomeworkSubmissionQuery query,
+    public async Task<Result<GetHomeworkSubmissionDetailResponse>> Handle(
+        GetHomeworkSubmissionDetailQuery query,
         CancellationToken cancellationToken)
     {
-        var studentId = userContext.StudentId;
-
-        if (!studentId.HasValue)
-        {
-            return Result.Failure<GetStudentHomeworkSubmissionResponse>(ProfileErrors.StudentNotFound);
-        }
+        var userId = userContext.UserId;
 
         var homeworkStudent = await context.HomeworkStudents
             .Include(hs => hs.Assignment)
                 .ThenInclude(a => a.Class)
+            .Include(hs => hs.StudentProfile)
             .FirstOrDefaultAsync(hs => hs.Id == query.HomeworkStudentId, cancellationToken);
 
         if (homeworkStudent is null)
         {
-            return Result.Failure<GetStudentHomeworkSubmissionResponse>(
+            return Result.Failure<GetHomeworkSubmissionDetailResponse>(
                 HomeworkErrors.SubmissionNotFound(query.HomeworkStudentId));
         }
 
-        if (homeworkStudent.StudentProfileId != studentId.Value)
+        var teacherClassIds = await context.Classes
+            .Where(c => c.MainTeacherId == userId || c.AssistantTeacherId == userId)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+
+        if (!teacherClassIds.Contains(homeworkStudent.Assignment.ClassId))
         {
-            return Result.Failure<GetStudentHomeworkSubmissionResponse>(
+            return Result.Failure<GetHomeworkSubmissionDetailResponse>(
                 HomeworkErrors.SubmissionUnauthorized);
         }
-        
+
         var now = DateTime.UtcNow;
         var isOverdue = homeworkStudent.Assignment.DueAt.HasValue && 
                        now > homeworkStudent.Assignment.DueAt.Value && 
                        (homeworkStudent.Status == HomeworkStatus.Assigned || homeworkStudent.Status == HomeworkStatus.Missing);
 
-        return new GetStudentHomeworkSubmissionResponse
+        return new GetHomeworkSubmissionDetailResponse
         {
             Id = homeworkStudent.Id,
             AssignmentId = homeworkStudent.AssignmentId,
@@ -72,7 +74,9 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             AttachmentUrls = homeworkStudent.AttachmentUrl,
             TextAnswer = homeworkStudent.TextAnswer,
             IsLate = homeworkStudent.Status == HomeworkStatus.Late,
-            IsOverdue = isOverdue
+            IsOverdue = isOverdue,
+            StudentProfileId = homeworkStudent.StudentProfileId,
+            StudentName = homeworkStudent.StudentProfile.DisplayName
         };
     }
 }
