@@ -41,142 +41,185 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
             throw new ArgumentException("Aggregated data JSON cannot be null or empty", nameof(dataJson));
         }
 
-        // Parse aggregated data JSON
-        JsonDocument doc;
+        // Parse aggregated data JSON (case-insensitive to handle CamelCase from reconstructed data)
+        JsonSerializerOptions parseOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        Dictionary<string, JsonElement>? aggregatedData;
         try
         {
-            doc = JsonDocument.Parse(dataJson);
+            aggregatedData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(dataJson, parseOptions);
         }
         catch (JsonException ex)
         {
             throw new ArgumentException($"Invalid JSON format in aggregated data: {ex.Message}", nameof(dataJson), ex);
         }
 
-        using (doc)
+        if (aggregatedData is null)
         {
-            var root = doc.RootElement;
+            throw new ArgumentException("Aggregated data JSON is empty", nameof(dataJson));
+        }
 
-            // Extract session feedbacks from notes data
-            var sessionFeedbacks = new List<A6SessionFeedback>();
-            if (root.TryGetProperty("notes", out var notesElement) &&
-                notesElement.TryGetProperty("sessionReports", out var sessionReportsElement))
+        // Extract session feedbacks from notes data (case-insensitive)
+        var sessionFeedbacks = new List<A6SessionFeedback>();
+        
+        // Try both lowercase and CamelCase for "notes" key
+        if (!aggregatedData.TryGetValue("notes", out var notesElement) &&
+            !aggregatedData.TryGetValue("Notes", out notesElement))
+        {
+            Console.WriteLine("[DEBUG] No 'notes' or 'Notes' key found in aggregated data");
+            // No notes data, return empty
+        }
+        else
+        {
+
+            if (notesElement.TryGetProperty("sessionReports", out var sessionReportsElement) ||
+                notesElement.TryGetProperty("SessionReports", out sessionReportsElement))
             {
                 foreach (var report in sessionReportsElement.EnumerateArray())
                 {
+                    string? feedback = null;
+                    
+                    // Try both lowercase and CamelCase
                     if (report.TryGetProperty("feedback", out var feedbackElement))
                     {
-                        var feedback = feedbackElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(feedback))
-                        {
-                            var reportDate = report.TryGetProperty("reportDate", out var dateElement)
-                                ? dateElement.GetString()
-                                : report.TryGetProperty("sessionDate", out var sessionDateElement)
-                                    ? sessionDateElement.GetString()
-                                    : DateTime.UtcNow.ToString("yyyy-MM-dd");
+                        feedback = feedbackElement.GetString();
+                    }
+                    else if (report.TryGetProperty("Feedback", out feedbackElement))
+                    {
+                        feedback = feedbackElement.GetString();
+                    }
 
-                            sessionFeedbacks.Add(new A6SessionFeedback
-                            {
-                                Date = reportDate ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                                Text = feedback
-                            });
+                    if (!string.IsNullOrWhiteSpace(feedback))
+                    {
+                        string? reportDate = null;
+                        
+                        if (report.TryGetProperty("reportDate", out var dateElement))
+                        {
+                            reportDate = dateElement.GetString();
                         }
+                        else if (report.TryGetProperty("sessionDate", out var sessionDateElement))
+                        {
+                            reportDate = sessionDateElement.GetString();
+                        }
+                        else if (report.TryGetProperty("ReportDate", out dateElement))
+                        {
+                            reportDate = dateElement.GetString();
+                        }
+                        else if (report.TryGetProperty("SessionDate", out sessionDateElement))
+                        {
+                            reportDate = sessionDateElement.GetString();
+                        }
+
+                        sessionFeedbacks.Add(new A6SessionFeedback
+                        {
+                            Date = reportDate ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
+                            Text = feedback
+                        });
+                        
                     }
                 }
             }
+        }
 
-            // Get student profile to extract student info
-            var studentProfile = await _context.Profiles
-                .FirstOrDefaultAsync(p => p.Id == studentProfileId, cancellationToken);
+        
 
-            if (studentProfile is null)
+        // Get student profile to extract student info
+        var studentProfile = await _context.Profiles
+            .FirstOrDefaultAsync(p => p.Id == studentProfileId, cancellationToken);
+
+        if (studentProfile is null)
+        {
+            throw new InvalidOperationException($"Student profile with ID {studentProfileId} not found");
+        }
+
+        var studentId = studentProfile.Id.ToString();
+        var studentName = studentProfile.DisplayName ?? "Unknown Student";
+        
+        // Get program from class enrollment (if any)
+        var enrollment = await _context.ClassEnrollments
+            .Include(e => e.Class)
+                .ThenInclude(c => c.Program)
+            .Where(e => e.StudentProfileId == studentProfileId && 
+                       e.Status == Domain.Classes.EnrollmentStatus.Active)
+            .OrderByDescending(e => e.EnrollDate)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        var programName = enrollment?.Class?.Program?.Name;
+
+        // Get recent reports (3 months before current month)
+        var recentReports = await GetRecentReportsAsync(
+            studentProfileId,
+            month,
+            year,
+            cancellationToken);
+
+        // Calculate date range
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        // Build request
+        var request = new A6MonthlyReportRequest
+        {
+            Student = new A6StudentInfo
             {
-                throw new InvalidOperationException($"Student profile with ID {studentProfileId} not found");
-            }
-
-            var studentId = studentProfile.Id.ToString();
-            var studentName = studentProfile.DisplayName ?? "Unknown Student";
-            
-            // Get program from class enrollment (if any)
-            var enrollment = await _context.ClassEnrollments
-                .Include(e => e.Class)
-                    .ThenInclude(c => c.Program)
-                .Where(e => e.StudentProfileId == studentProfileId && 
-                           e.Status == Domain.Classes.EnrollmentStatus.Active)
-                .OrderByDescending(e => e.EnrollDate)
-                .FirstOrDefaultAsync(cancellationToken);
-            
-            var programName = enrollment?.Class?.Program?.Name;
-
-            // Get recent reports (3 months before current month)
-            var recentReports = await GetRecentReportsAsync(
-                studentProfileId,
-                month,
-                year,
-                cancellationToken);
-
-            // Calculate date range
-            var startDate = new DateTime(year, month, 1);
-            var endDate = startDate.AddMonths(1).AddDays(-1);
-
-            // Build request
-            var request = new A6MonthlyReportRequest
+                StudentId = studentId,
+                Name = studentName,
+                Program = programName
+            },
+            Range = new A6ReportRange
             {
-                Student = new A6StudentInfo
-                {
-                    StudentId = studentId,
-                    Name = studentName,
-                    Program = programName
-                },
-                Range = new A6ReportRange
-                {
-                    FromDate = startDate.ToString("yyyy-MM-dd"),
-                    ToDate = endDate.ToString("yyyy-MM-dd")
-                },
-                SessionFeedbacks = sessionFeedbacks,
-                RecentReports = recentReports,
-                Language = "vi"
+                FromDate = startDate.ToString("yyyy-MM-dd"),
+                ToDate = endDate.ToString("yyyy-MM-dd")
+            },
+            SessionFeedbacks = sessionFeedbacks,
+            RecentReports = recentReports,
+            Language = "vi"
+        };
+
+        
+
+        // Call A6 API
+        try
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             };
 
-            // Call A6 API
-            try
+            var response = await _httpClient.PostAsJsonAsync(
+                $"{_baseUrl}/a6/generate-monthly-report",
+                request,
+                jsonOptions,
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
             {
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                };
-
-                var response = await _httpClient.PostAsJsonAsync(
-                    $"{_baseUrl}/a6/generate-monthly-report",
-                    request,
-                    jsonOptions,
-                    cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                    throw new InvalidOperationException(
-                        $"A6 API returned {response.StatusCode}: {errorContent}");
-                }
-
-                var result = await response.Content.ReadFromJsonAsync<A6MonthlyReportResponse>(
-                    jsonOptions,
-                    cancellationToken: cancellationToken);
-
-                if (result is null)
-                {
-                    throw new InvalidOperationException("A6 API returned null response");
-                }
-
-                // Serialize the full response to JSON string for storage (keep snake_case for consistency)
-                return JsonSerializer.Serialize(result, jsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 throw new InvalidOperationException(
-                    $"Failed to call A6 API: {ex.Message}. Make sure AI-KidzGo service is running at {_baseUrl}",
-                    ex);
+                    $"A6 API returned {response.StatusCode}: {errorContent}");
             }
+
+            var result = await response.Content.ReadFromJsonAsync<A6MonthlyReportResponse>(
+                jsonOptions,
+                cancellationToken: cancellationToken);
+
+            if (result is null)
+            {
+                throw new InvalidOperationException("A6 API returned null response");
+            }
+
+            // Serialize the full response to JSON string for storage (keep snake_case for consistency)
+            return JsonSerializer.Serialize(result, jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to call A6 API: {ex.Message}. Make sure AI-KidzGo service is running at {_baseUrl}",
+                ex);
         }
     }
 
@@ -226,14 +269,18 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                         Month = $"{targetYear}-{targetMonth:D2}"
                     };
 
-                    if (root.TryGetProperty("sections", out var sections))
+                    // Case-insensitive property access
+                    if (root.TryGetProperty("sections", out var sections) ||
+                        root.TryGetProperty("Sections", out sections))
                     {
-                        if (sections.TryGetProperty("overview", out var overview))
+                        if (sections.TryGetProperty("overview", out var overview) ||
+                            sections.TryGetProperty("Overview", out overview))
                         {
                             recentReport.Overview = overview.GetString();
                         }
 
-                        if (sections.TryGetProperty("strengths", out var strengths))
+                        if (sections.TryGetProperty("strengths", out var strengths) ||
+                            sections.TryGetProperty("Strengths", out strengths))
                         {
                             recentReport.Strengths = strengths.EnumerateArray()
                                 .Select(s => s.GetString() ?? string.Empty)
@@ -241,7 +288,8 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                                 .ToList();
                         }
 
-                        if (sections.TryGetProperty("improvements", out var improvements))
+                        if (sections.TryGetProperty("improvements", out var improvements) ||
+                            sections.TryGetProperty("Improvements", out improvements))
                         {
                             recentReport.Improvements = improvements.EnumerateArray()
                                 .Select(s => s.GetString() ?? string.Empty)
@@ -249,7 +297,8 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                                 .ToList();
                         }
 
-                        if (sections.TryGetProperty("highlights", out var highlights))
+                        if (sections.TryGetProperty("highlights", out var highlights) ||
+                            sections.TryGetProperty("Highlights", out highlights))
                         {
                             recentReport.Highlights = highlights.EnumerateArray()
                                 .Select(s => s.GetString() ?? string.Empty)
@@ -257,7 +306,8 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                                 .ToList();
                         }
 
-                        if (sections.TryGetProperty("goalsNextMonth", out var goals))
+                        if (sections.TryGetProperty("goalsNextMonth", out var goals) ||
+                            sections.TryGetProperty("GoalsNextMonth", out goals))
                         {
                             recentReport.GoalsNextMonth = goals.EnumerateArray()
                                 .Select(s => s.GetString() ?? string.Empty)
@@ -279,4 +329,3 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
         return recentReports;
     }
 }
-
