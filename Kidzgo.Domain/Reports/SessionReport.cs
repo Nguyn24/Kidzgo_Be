@@ -13,7 +13,27 @@ public class SessionReport : Entity
     public DateOnly ReportDate { get; set; } // Date of the session for filtering
     public string Feedback { get; set; } = null!; // Teacher's feedback/notes for the student
     public string? AiGeneratedSummary { get; set; } // AI-generated summary (for monthly compilation)
-    public bool IsMonthlyCompiled { get; set; } // Whether this has been included in monthly report
+
+    // ✅ NEW - Workflow status (Draft → Review → Approved/Rejected → Published)
+    public ReportStatus Status { get; set; } = ReportStatus.Draft;
+
+    // ✅ NEW - Content fields (similar to StudentMonthlyReport)
+    public string? DraftContent { get; set; }
+    public string? FinalContent { get; set; }
+
+    // ✅ NEW - Review workflow
+    public Guid? SubmittedByUserId { get; set; }
+    public Guid? ReviewedByUserId { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public DateTime? PublishedAt { get; set; }
+
+    // ✅ NEW - AI tracking
+    public string? AiVersion { get; set; }
+
+    // ✅ NEW - Monthly compilation tracking (keep existing)
+    public bool IsMonthlyCompiled { get; set; }
+
+    // Timestamps
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
@@ -21,5 +41,8 @@ public class SessionReport : Entity
     public Session Session { get; set; } = null!;
     public Profile StudentProfile { get; set; } = null!;
     public User TeacherUser { get; set; } = null!;
+    public User? SubmittedByUser { get; set; }
+    public User? ReviewedByUser { get; set; }
+    public ICollection<ReportComment> ReportComments { get; set; }= new List<ReportComment>();
 }
 
