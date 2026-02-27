@@ -15,7 +15,6 @@ namespace Kidzgo.API.Controllers;
 
 [Route("api/branches")]
 [ApiController]
-[Authorize]
 public class BranchController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -27,6 +26,7 @@ public class BranchController : ControllerBase
 
 
     [HttpPost]
+    [Authorize]
     public async Task<IResult> CreateBranch(
         [FromBody] CreateBranchRequest request,
         CancellationToken cancellationToken)
@@ -58,7 +58,7 @@ public class BranchController : ControllerBase
     /// Lấy tất cả branch (không filter theo role - Admin và Staff đều có thể lấy hết)
     /// </summary>
     [HttpGet("all")]
-    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff,Teacher")]
+    // [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff,Teacher")]
     public async Task<IResult> GetAllBranches(CancellationToken cancellationToken)
     {
         var query = new GetAllBranchesQuery();
@@ -84,6 +84,7 @@ public class BranchController : ControllerBase
 
   
     [HttpPut("{id:guid}")]
+    [Authorize]
     public async Task<IResult> UpdateBranch(
         Guid id,
         [FromBody] UpdateBranchRequest request,
@@ -105,6 +106,7 @@ public class BranchController : ControllerBase
 
    
     [HttpDelete("{id:guid}")]
+    [Authorize]
     public async Task<IResult> DeleteBranch(
         Guid id,
         CancellationToken cancellationToken)

@@ -6,6 +6,7 @@ using Kidzgo.Application.Homework.GetStudentHomeworks;
 using Kidzgo.Application.Homework.GetStudentHomeworkFeedback;
 using Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
 using Kidzgo.Application.Homework.SubmitHomework;
+using Kidzgo.Application.Homework.SubmitMultipleChoiceHomework;
 using Kidzgo.Application.Exercises.Student.GetStudentExerciseById;
 using Kidzgo.Application.Exercises.Student.StartExerciseSubmission;
 using Kidzgo.Application.Exercises.Student.SaveExerciseAnswer;
@@ -79,6 +80,30 @@ public class StudentController : ControllerBase
             TextAnswer = request.TextAnswer, 
             AttachmentUrls = request.AttachmentUrls, 
             LinkUrl = request.LinkUrl 
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Học sinh nộp Multiple Choice Homework
+    /// </summary>
+    [HttpPost("homework/multiple-choice/submit")]
+    public async Task<IResult> SubmitMultipleChoiceHomework(
+        [FromBody] SubmitMultipleChoiceHomeworkRequest request,
+        CancellationToken cancellationToken)
+    {
+        var answers = request.Answers.Select(a => new SubmitAnswerDto
+        {
+            QuestionId = a.QuestionId,
+            Answer = a.Answer
+        }).ToList();
+
+        var command = new SubmitMultipleChoiceHomeworkCommand
+        {
+            HomeworkStudentId = request.HomeworkStudentId,
+            Answers = answers
         };
 
         var result = await _mediator.Send(command, cancellationToken);

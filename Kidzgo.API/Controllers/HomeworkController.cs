@@ -1,9 +1,12 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Homework.CreateHomeworkAssignment;
+using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
 using Kidzgo.Application.Homework.DeleteHomeworkAssignment;
 using Kidzgo.Application.Homework.GetHomeworkAssignmentById;
 using Kidzgo.Application.Homework.GetHomeworkAssignments;
+using Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
+using Kidzgo.Application.Homework.GetHomeworkSubmissions;
 using Kidzgo.Application.Homework.GetStudentHomeworkHistory;
 using Kidzgo.Application.Homework.GradeHomework;
 using Kidzgo.Application.Homework.LinkHomeworkToMission;
@@ -60,13 +63,61 @@ public class HomeworkController : ControllerBase
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
-            Rubric = request.Rubric
+            Rubric = request.Rubric,
+            AttachmentUrl = request.Attachment
         };
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchCreated(r => $"/api/homework/{r.Id}");
     }
 
+    /// <summary>
+    /// Tạo Multiple Choice Homework Assignment
+    /// </summary>
+    [HttpPost("multiple-choice")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> CreateMultipleChoiceHomework(
+        [FromBody] CreateMultipleChoiceHomeworkRequest request,
+        CancellationToken cancellationToken)
+    {
+        var questions = new List<CreateHomeworkQuestionDto>();
+
+        for (int i = 0; i < request.Questions.Count; i++)
+        {
+            var q = request.Questions[i];
+            if (!Enum.TryParse<HomeworkQuestionType>(q.QuestionType, ignoreCase: true, out var questionType))
+            {
+                return Results.BadRequest($"Invalid question type: {q.QuestionType}");
+            }
+
+            questions.Add(new CreateHomeworkQuestionDto
+            {
+                QuestionText = q.QuestionText,
+                QuestionType = questionType,
+                Options = q.Options,
+                CorrectAnswer = q.CorrectAnswer,
+                Points = q.Points,
+                Explanation = q.Explanation
+            });
+        }
+
+        var command = new CreateMultipleChoiceHomeworkCommand
+        {
+            ClassId = request.ClassId,
+            SessionId = request.SessionId,
+            Title = request.Title,
+            Description = request.Description,
+            DueAt = request.DueAt,
+            RewardStars = request.RewardStars,
+            MissionId = request.MissionId,
+            Instructions = request.Instructions,
+            Questions = questions
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(r => $"/api/homework/{r.Id}");
+    }
+    
     /// <summary>
     /// UC-118: Xem danh sách Homework Assignments
     /// </summary>
@@ -282,6 +333,51 @@ public class HomeworkController : ControllerBase
             PageSize = pageSize
         };
 
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-134: Teacher xem danh sách bài nộp của học sinh (filter theo lớp mình dạy)
+    /// </summary>
+    [HttpGet("submissions")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> GetHomeworkSubmissions(
+        [FromQuery] Guid? classId,
+        [FromQuery] string? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        HomeworkStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<HomeworkStatus>(status, ignoreCase: true, out var tmpStatus))
+        {
+            parsedStatus = tmpStatus;
+        }
+
+        var query = new GetHomeworkSubmissionsQuery
+        {
+            ClassId = classId,
+            Status = parsedStatus,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-135: Teacher xem chi tiết bài nộp của học sinh
+    /// </summary>
+    [HttpGet("submissions/{homeworkStudentId:guid}")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> GetHomeworkSubmissionDetail(
+        Guid homeworkStudentId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetHomeworkSubmissionDetailQuery { HomeworkStudentId = homeworkStudentId };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }

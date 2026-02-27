@@ -90,6 +90,11 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidDueDate);
         }
 
+        // Convert DueAt to UTC if provided (PostgreSQL requires UTC for timestamp with time zone)
+        var dueAtUtc = command.DueAt.HasValue
+            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
+            : (DateTime?)null;
+
         // Get current user ID from context
         var currentUserId = userContext.UserId;
 
@@ -101,7 +106,7 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             SessionId = command.SessionId,
             Title = command.Title,
             Description = command.Description,
-            DueAt = command.DueAt,
+            DueAt = dueAtUtc,
             Book = command.Book,
             Pages = command.Pages,
             Skills = command.Skills,
@@ -130,21 +135,9 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.ClassHasNoActiveStudents(command.ClassId));
         }
 
-        // If session is specified, only assign to students in that session
+        // If session is specified, it's still assigned to all active students in the class
+        // (students who were absent still need to do homework)
         var studentIdsToAssign = activeEnrollments;
-        if (command.SessionId.HasValue)
-        {
-            var sessionAttendances = await context.Attendances
-                .Where(a => a.SessionId == command.SessionId.Value)
-                .Select(a => a.StudentProfileId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-
-            // Only assign to students who were in the session
-            studentIdsToAssign = activeEnrollments
-                .Where(id => sessionAttendances.Contains(id))
-                .ToList();
-        }
 
         var homeworkStudents = studentIdsToAssign.Select(studentId => new HomeworkStudent
         {
@@ -176,6 +169,7 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,
             Rubric = homework.Rubric,
+            AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count
         };

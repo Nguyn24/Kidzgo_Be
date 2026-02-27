@@ -19,5 +19,6 @@ public sealed class UpdateHomeworkAssignmentCommand : ICommand<UpdateHomeworkAss
     public string? Instructions { get; init; }
     public string? ExpectedAnswer { get; init; }
     public string? Rubric { get; init; }
+    public string? AttachmentUrl { get; init; }
 }
 

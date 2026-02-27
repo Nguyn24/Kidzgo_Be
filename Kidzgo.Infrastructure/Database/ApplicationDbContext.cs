@@ -78,6 +78,7 @@ public sealed class ApplicationDbContext(
     // Lesson Plans
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();
     public DbSet<HomeworkStudent> HomeworkStudents => Set<HomeworkStudent>();
+    public DbSet<HomeworkQuestion> HomeworkQuestions => Set<HomeworkQuestion>();
     public DbSet<LessonPlan> LessonPlans => Set<LessonPlan>();
     public DbSet<LessonPlanTemplate> LessonPlanTemplates => Set<LessonPlanTemplate>();
 
