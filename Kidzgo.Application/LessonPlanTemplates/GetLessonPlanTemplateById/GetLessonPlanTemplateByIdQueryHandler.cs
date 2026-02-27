@@ -37,7 +37,7 @@ public sealed class GetLessonPlanTemplateByIdQueryHandler(
             ProgramName = template.Program?.Name,
             Level = template.Level,
             SessionIndex = template.SessionIndex,
-            StructureJson = template.StructureJson,
+            Attachment = template.AttachmentUrl,
             IsActive = template.IsActive,
             CreatedBy = template.CreatedBy,
             CreatedByName = template.CreatedByUser?.Name,
