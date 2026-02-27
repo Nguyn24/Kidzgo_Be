@@ -22,8 +22,8 @@ public class LessonPlanTemplateConfiguration : IEntityTypeConfiguration<LessonPl
         builder.Property(x => x.SessionIndex)
             .IsRequired();
 
-        builder.Property(x => x.StructureJson)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.AttachmentUrl)
+            .IsRequired();
 
         builder.Property(x => x.IsActive)
             .IsRequired();

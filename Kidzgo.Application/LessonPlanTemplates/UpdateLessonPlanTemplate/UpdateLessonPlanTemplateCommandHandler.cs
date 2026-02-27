@@ -59,9 +59,9 @@ public sealed class UpdateLessonPlanTemplateCommandHandler(
             template.SessionIndex = command.SessionIndex.Value;
         }
 
-        if (command.StructureJson != null)
+        if (command.Attachment != null)
         {
-            template.StructureJson = command.StructureJson;
+            template.AttachmentUrl = command.Attachment;
         }
 
         if (command.IsActive.HasValue)
@@ -77,7 +77,7 @@ public sealed class UpdateLessonPlanTemplateCommandHandler(
             ProgramId = template.ProgramId,
             Level = template.Level,
             SessionIndex = template.SessionIndex,
-            StructureJson = template.StructureJson,
+            Attachment = template.AttachmentUrl,
             IsActive = template.IsActive
         };
     }
