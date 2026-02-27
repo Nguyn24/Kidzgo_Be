@@ -11,5 +11,8 @@ public static class SessionReportErrors
     public static readonly Error AlreadyExists = Error.Conflict(
         "SessionReport.AlreadyExists",
         "A session report already exists for this session and student. Use update instead.");
+    public static Error InvalidStatusForOperation(ReportStatus currentStatus, string operation) => Error.Validation(
+        "SessionReport.InvalidStatus",
+        $"Cannot {operation} session report in '{currentStatus}' status.");
 }
 

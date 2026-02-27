@@ -83,6 +83,7 @@ public sealed class CreateSessionReportCommandHandler(
             TeacherUserId = teacherUserId,
             ReportDate = command.ReportDate,
             Feedback = command.Feedback,
+            Status = ReportStatus.Draft,
             IsMonthlyCompiled = false,
             CreatedAt = now,
             UpdatedAt = now
@@ -110,10 +111,10 @@ public sealed class CreateSessionReportCommandHandler(
             TeacherName = reportWithNav.TeacherUser.Name,
             ReportDate = reportWithNav.ReportDate,
             Feedback = reportWithNav.Feedback,
+            Status = reportWithNav.Status,
             IsMonthlyCompiled = reportWithNav.IsMonthlyCompiled,
             CreatedAt = reportWithNav.CreatedAt,
             UpdatedAt = reportWithNav.UpdatedAt
         };
     }
 }
-

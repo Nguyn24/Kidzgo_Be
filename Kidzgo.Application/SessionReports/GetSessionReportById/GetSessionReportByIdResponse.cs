@@ -1,3 +1,4 @@
+using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 
 namespace Kidzgo.Application.SessionReports.GetSessionReportById;
@@ -9,7 +10,7 @@ public sealed class GetSessionReportByIdResponse
     public DateTime SessionDate { get; init; }
     public string SessionStatus { get; init; } = null!;
     public Guid ClassId { get; init; }
-    public string ClassCode { get; init; } = null!;
+    public string ClassCode { get; init; }= null!;
     public string ClassTitle { get; init; } = null!;
     public Guid BranchId { get; init; }
     public string BranchName { get; init; } = null!;
@@ -20,6 +21,12 @@ public sealed class GetSessionReportByIdResponse
     public DateOnly ReportDate { get; init; }
     public string Feedback { get; init; } = null!;
     public string? AiGeneratedSummary { get; init; }
+
+    // Workflow status
+    public string Status { get; init; }
+    public DateTime? PublishedAt { get; init; }
+    public string? AiVersion { get; init; }
+
     public bool IsMonthlyCompiled { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }

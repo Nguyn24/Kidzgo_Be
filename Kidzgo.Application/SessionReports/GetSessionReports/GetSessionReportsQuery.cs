@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Domain.Reports;
 
 namespace Kidzgo.Application.SessionReports.GetSessionReports;
 
@@ -11,7 +12,7 @@ public sealed class GetSessionReportsQuery : IQuery<GetSessionReportsResponse>, 
     public Guid? ClassId { get; init; }
     public DateOnly? FromDate { get; init; }
     public DateOnly? ToDate { get; init; }
+    public ReportStatus? Status { get; init; }
     public int PageNumber { get; init; } = 1;
     public int PageSize { get; init; } = 10;
 }
-

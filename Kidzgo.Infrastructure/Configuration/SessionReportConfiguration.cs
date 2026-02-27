@@ -36,7 +36,15 @@ public class SessionReportConfiguration : IEntityTypeConfiguration<SessionReport
 
         builder.Property(x => x.CreatedAt)
             .IsRequired();
+        
+        builder.Property(x => x.Status)
+            .HasConversion<string>()
+            .HasColumnType("varchar(20)")
+            .IsRequired();
 
+        builder.Property(x => x.CreatedAt)
+            .IsRequired();
+        
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
