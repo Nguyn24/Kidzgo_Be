@@ -31,7 +31,7 @@ public sealed class GetLessonPlanTemplateQueryHandler(
             TemplateId = lessonPlan.TemplateId,
             TemplateLevel = lessonPlan.Template?.Level,
             TemplateSessionIndex = lessonPlan.Template?.SessionIndex,
-            TemplateStructureJson = lessonPlan.Template?.StructureJson,
+            TemplateStructureJson = lessonPlan.Template?.AttachmentUrl,
             PlannedContent = lessonPlan.PlannedContent,
             IsReadOnly = true
         };

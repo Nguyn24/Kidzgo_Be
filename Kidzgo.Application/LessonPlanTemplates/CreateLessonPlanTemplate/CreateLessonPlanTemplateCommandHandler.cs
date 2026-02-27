@@ -57,7 +57,7 @@ public sealed class CreateLessonPlanTemplateCommandHandler(
             ProgramId = command.ProgramId,
             Level = command.Level,
             SessionIndex = command.SessionIndex,
-            StructureJson = command.Attachment,
+            AttachmentUrl = command.Attachment,
             IsActive = true,
             IsDeleted = false,
             CreatedBy = currentUserId,
@@ -73,7 +73,7 @@ public sealed class CreateLessonPlanTemplateCommandHandler(
             ProgramId = template.ProgramId,
             Level = template.Level,
             SessionIndex = template.SessionIndex,
-            StructureJson = template.StructureJson,
+            Attachment = template.AttachmentUrl,
             IsActive = template.IsActive,
             CreatedAt = template.CreatedAt
         };

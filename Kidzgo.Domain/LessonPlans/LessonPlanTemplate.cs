@@ -10,7 +10,7 @@ public class LessonPlanTemplate : Entity
     public Guid ProgramId { get; set; }
     public string? Level { get; set; }
     public int SessionIndex { get; set; }
-    public string? StructureJson { get; set; }
+    public string? AttachmentUrl { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public Guid? CreatedBy { get; set; }
