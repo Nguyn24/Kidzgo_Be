@@ -47,7 +47,7 @@ public sealed class AddReportCommentCommandHandler(
         return new AddReportCommentResponse
         {
             Id = comment.Id,
-            ReportId = comment.ReportId,
+            ReportId = comment.ReportId!.Value,
             CommenterId = comment.CommenterId,
             Content = comment.Content,
             CreatedAt = comment.CreatedAt

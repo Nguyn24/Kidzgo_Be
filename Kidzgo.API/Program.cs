@@ -13,7 +13,7 @@ public class Program
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
+        
         builder.Configuration.AddEnvironmentVariables();
 
         // Configure Kestrel server limits for long-running requests (e.g., Monthly Report aggregation)

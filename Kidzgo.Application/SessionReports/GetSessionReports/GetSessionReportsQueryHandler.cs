@@ -1,19 +1,36 @@
+using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Reports;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using ProfileType = Kidzgo.Domain.Users.ProfileType;
 
 namespace Kidzgo.Application.SessionReports.GetSessionReports;
 
 public sealed class GetSessionReportsQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetSessionReportsQuery, GetSessionReportsResponse>
 {
     public async Task<Result<GetSessionReportsResponse>> Handle(
         GetSessionReportsQuery query,
         CancellationToken cancellationToken)
     {
+        // Get current user
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<GetSessionReportsResponse>(
+                Error.NotFound("User.NotFound", "User not found"));
+        }
+
+        // Build base query
         var reportsQuery = context.SessionReports
             .Include(sr => sr.Session)
                 .ThenInclude(s => s.Class)
@@ -21,6 +38,79 @@ public sealed class GetSessionReportsQueryHandler(
             .Include(sr => sr.TeacherUser)
             .AsQueryable();
 
+        // Apply authorization filters based on user role
+        if (currentUser.Role == UserRole.Teacher)
+        {
+            // Teacher can only view reports of their classes
+            var teacherClassIds = await context.Classes
+                .Where(c => c.MainTeacherId == currentUser.Id || c.AssistantTeacherId == currentUser.Id)
+                .Select(c => c.Id)
+                .ToListAsync(cancellationToken);
+
+            if (!teacherClassIds.Any())
+            {
+                // Teacher has no classes, return empty page
+                var emptyPage = new Page<SessionReportListItemDto>(
+                    new List<SessionReportListItemDto>(),
+                    0,
+                    query.PageNumber,
+                    query.PageSize);
+                return new GetSessionReportsResponse { SessionReports = emptyPage };
+            }
+
+            reportsQuery = reportsQuery.Where(sr => teacherClassIds.Contains(sr.Session.ClassId));
+        }
+        else if (currentUser.Role == UserRole.Parent)
+        {
+            // Get user's profile
+            var parentProfile = await context.Profiles
+                .FirstOrDefaultAsync(p => p.UserId == currentUser.Id, cancellationToken);
+
+            if (parentProfile is null)
+            {
+                return Result.Failure<GetSessionReportsResponse>(
+                    Error.NotFound("SessionReport.Unauthorized", "User profile not found"));
+            }
+
+            // Get student profile IDs that belong to this parent
+            var studentProfileIds = await context.ParentStudentLinks
+                .Where(psl => psl.ParentProfileId == parentProfile.Id)
+                .Select(psl => psl.StudentProfileId)
+                .ToListAsync(cancellationToken);
+
+            if (!studentProfileIds.Any())
+            {
+                // Parent has no children, return empty page
+                var emptyPage = new Page<SessionReportListItemDto>(
+                    new List<SessionReportListItemDto>(),
+                    0,
+                    query.PageNumber,
+                    query.PageSize);
+                return new GetSessionReportsResponse { SessionReports = emptyPage };
+            }
+
+            // Parent can only see published reports of their children
+            reportsQuery = reportsQuery
+                .Where(sr => studentProfileIds.Contains(sr.StudentProfileId) && sr.Status == ReportStatus.Published);
+        }
+
+        // Check if user has Student profile type
+        var userProfile = await context.Profiles
+            .FirstOrDefaultAsync(p => p.UserId == currentUser.Id, cancellationToken);
+
+        if (userProfile != null && userProfile.ProfileType == ProfileType.Student)
+        {
+            // Student can only see their own published reports
+            // This overrides any previous filters for non-Staff/Admin users
+            if (currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.ManagementStaff)
+            {
+                reportsQuery = reportsQuery
+                    .Where(sr => sr.StudentProfileId == userProfile.Id && sr.Status == ReportStatus.Published);
+            }
+        }
+        // Staff/Admin can view all reports (no additional filter)
+
+        // Apply query filters
         if (query.SessionId.HasValue)
         {
             reportsQuery = reportsQuery.Where(sr => sr.SessionId == query.SessionId.Value);
@@ -51,6 +141,11 @@ public sealed class GetSessionReportsQueryHandler(
             reportsQuery = reportsQuery.Where(sr => sr.ReportDate <= query.ToDate.Value);
         }
 
+        if (query.Status.HasValue)
+        {
+            reportsQuery = reportsQuery.Where(sr => sr.Status == query.Status.Value);
+        }
+
         var totalCount = await reportsQuery.CountAsync(cancellationToken);
 
         var items = await reportsQuery
@@ -71,6 +166,7 @@ public sealed class GetSessionReportsQueryHandler(
                 TeacherName = sr.TeacherUser.Name,
                 ReportDate = sr.ReportDate,
                 Feedback = sr.Feedback,
+                Status = sr.Status.ToString(),
                 IsMonthlyCompiled = sr.IsMonthlyCompiled,
                 CreatedAt = sr.CreatedAt,
                 UpdatedAt = sr.UpdatedAt
@@ -89,4 +185,3 @@ public sealed class GetSessionReportsQueryHandler(
         };
     }
 }
-

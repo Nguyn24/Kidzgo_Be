@@ -13,8 +13,13 @@ public class ReportCommentConfiguration : IEntityTypeConfiguration<ReportComment
         builder.Property(x => x.Id)
             .IsRequired();
 
+        // ReportId is for StudentMonthlyReport (required)
         builder.Property(x => x.ReportId)
             .IsRequired();
+
+        // SessionReportId is for SessionReport (optional)
+        builder.Property(x => x.SessionReportId)
+            .IsRequired(false);
 
         builder.Property(x => x.CommenterId)
             .IsRequired();
@@ -25,10 +30,20 @@ public class ReportCommentConfiguration : IEntityTypeConfiguration<ReportComment
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
+        // Check that at least one of ReportId or SessionReportId is set
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_ReportComment_AtLeastOneReportId",
+            "(\"ReportId\" IS NOT NULL OR \"SessionReportId\" IS NOT NULL)"));
+
         // Relationships
         builder.HasOne(x => x.Report)
             .WithMany(x => x.ReportComments)
             .HasForeignKey(x => x.ReportId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.SessionReport)
+            .WithMany(x => x.ReportComments)
+            .HasForeignKey(x => x.SessionReportId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.CommenterUser)

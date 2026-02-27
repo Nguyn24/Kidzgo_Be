@@ -13,15 +13,6 @@ Khuyến khích con duy trì thói quen luyện nói và thuyết trình để g
 
 ____________________
 
-+ Response báo cáo tuần (được gom từ báo cáo buổi (bảng SessionReportss)): 
-
-Thái độ học tập 
-Nội dung đã học 
-Điểm đáng khen
-Điểm cần cải thiện 
-
-____________________
-
 + Response báo cáo bài test tháng:
 
 Listening ( điểm/ số câu đúng): đánh giá

@@ -248,7 +248,7 @@
 
 ---
 
-## 10. Session Reports 🟢
+## 10. Session Reports 🟡
 
 **Lưu ý**: Session Reports được sử dụng làm nguồn dữ liệu chính cho Monthly Reports (Use Case 11). Khi tạo Monthly Report, hệ thống sẽ aggregate tất cả Session Reports trong tháng đó.
 
@@ -267,343 +267,348 @@
 - UC-172: Teacher xem và chỉnh sửa AI summary
 - UC-173: Đánh dấu Session Report đã được tổng hợp (is_monthly_compiled) - tự động khi tạo Monthly Report
 
+### 10.3. Review và Publish Session Reports
+- UC-174: AI generate draft Session Report (từ feedback và summary)
+- UC-175: Teacher submit Session Report cho duyệt (DRAFT → REVIEW)
+- UC-176: Staff/Admin approve Session Report (REVIEW → APPROVED)
+- UC-177: Staff/Admin reject Session Report (REVIEW → REJECTED)
+- UC-178: Publish Session Report (APPROVED → PUBLISHED)
+- UC-179: Parent xem Session Report của con (chỉ xem các report đã PUBLISHED)
+- UC-180: Student xem Session Report của mình (chỉ xem các report đã PUBLISHED)
+- UC-180*: Admin/ManagementStaff comment trên Session Report
+
 ---
 
 ## 11. Monthly Reports (AI) 🟡
 
-**Lưu ý**: Monthly Reports được tổng hợp từ nhiều nguồn dữ liệu, trong đó **Session Reports (Use Case 10)** là nguồn quan trọng nhất. Khi tạo Monthly Report, hệ thống sẽ:
-1. Aggregate Session Reports trong tháng (UC-170, UC-175)
-2. Aggregate attendance, homework, test, mission, notes (UC-175)
-3. AI generate draft từ dữ liệu đã aggregate (UC-176)
-4. Đánh dấu Session Reports đã được sử dụng (UC-173)
+**Lưu ý**: Monthly Reports được tổng hợp từ nhiều nguồn dữ liệu, trong đó **Session Reports (Use Case 10)** là nguồn quan trọng nhất.
 
 ### 11.1. Tạo và quản lý Monthly Reports
-- UC-174: Tạo Monthly Report Job
-- UC-175: Gom dữ liệu cho Monthly Report (session reports, attendance, homework, test, mission, notes)
-- UC-176: AI tạo draft Monthly Report
-- UC-177: Xem danh sách Monthly Report Jobs
-- UC-178: Xem trạng thái Monthly Report Job (PENDING/GENERATING/DONE/FAILED)
+- UC-182: Tạo Monthly Report Job
+- UC-183: Gom dữ liệu cho Monthly Report (session reports, attendance, homework, test, mission, notes)
+- UC-184: AI tạo draft Monthly Report
+- UC-185: Xem danh sách Monthly Report Jobs
+- UC-186: Xem trạng thái Monthly Report Job (PENDING/GENERATING/DONE/FAILED)
 
 ### 11.2. Review và Publish Monthly Reports
-- UC-179: Teacher xem draft Monthly Report
-- UC-180: Teacher chỉnh sửa draft Monthly Report
-- UC-181: Teacher submit Monthly Report (REVIEW)
-- UC-182: Staff/Admin comment Monthly Report
-- UC-183: Staff/Admin approve Monthly Report
-- UC-184: Staff/Admin reject Monthly Report
-- UC-185: Publish Monthly Report
-- UC-186: Parent/Student xem Monthly Report
-- UC-187: Gửi thông báo khi publish Monthly Report
+- UC-187: Teacher xem draft Monthly Report
+- UC-188: Teacher chỉnh sửa draft Monthly Report
+- UC-189: Teacher submit Monthly Report (REVIEW)
+- UC-190: Staff/Admin approve Monthly Report
+- UC-191: Staff/Admin reject Monthly Report
+- UC-192: Publish Monthly Report
+- UC-193: Parent/Student xem Monthly Report
+- UC-194: Gửi thông báo khi publish Monthly Report
+- UC-195: Comment trên Monthly Report
 
 ---
 
 ## 12. Gamification 🟡
 
 ### 12.1. Missions
-- UC-188: Tạo Mission (CLASS/STUDENT/GROUP scope)
-- UC-189: Xem danh sách Missions
-- UC-190: Xem chi tiết Mission
-- UC-191: Cập nhật Mission
-- UC-192: Xóa Mission
-- UC-193: Thiết lập reward_stars cho Mission
-- UC-194: Thiết lập reward_exp cho Mission
-- UC-195: Thiết lập total_questions cho Mission
-- UC-196: Thiết lập progress_per_question cho Mission
-- UC-197: Track progress của Mission
-- UC-198: Hoàn thành Mission (COMPLETED)
-- UC-199: Xem progress bar của Mission
+- UC-195: Tạo Mission (CLASS/STUDENT/GROUP scope)
+- UC-196: Xem danh sách Missions
+- UC-197: Xem chi tiết Mission
+- UC-198: Cập nhật Mission
+- UC-199: Xóa Mission
+- UC-200: Thiết lập reward_stars cho Mission
+- UC-201: Thiết lập reward_exp cho Mission
+- UC-202: Thiết lập total_questions cho Mission
+- UC-203: Thiết lập progress_per_question cho Mission
+- UC-204: Track progress của Mission
+- UC-205: Hoàn thành Mission (COMPLETED)
+- UC-206: Xem progress bar của Mission
 
 ### 12.2. Stars & XP
-- UC-200: Cộng Stars khi hoàn thành Mission
-- UC-201: Cộng Stars khi hoàn thành Homework
-- UC-202: Cộng Stars khi điểm danh (Attendance Streak)
-- UC-203: Cộng XP khi hoàn thành Mission
-- UC-204: Cộng XP khi điểm danh (Attendance Streak)
-- UC-205: Teacher/Staff cộng Stars thủ công
-- UC-206: Teacher/Staff trừ Stars thủ công
-- UC-207: Teacher/Staff cộng XP thủ công
-- UC-208: Teacher/Staff trừ XP thủ công
-- UC-209: Xem lịch sử Star Transactions
-- UC-210: Xem balance Stars hiện tại
-- UC-211: Tính Level từ XP
-- UC-212: Xem Level và XP hiện tại
+- UC-207: Cộng Stars khi hoàn thành Mission
+- UC-208: Cộng Stars khi hoàn thành Homework
+- UC-209: Cộng Stars khi điểm danh (Attendance Streak)
+- UC-210: Cộng XP khi hoàn thành Mission
+- UC-211: Cộng XP khi điểm danh (Attendance Streak)
+- UC-212: Teacher/Staff cộng Stars thủ công
+- UC-213: Teacher/Staff trừ Stars thủ công
+- UC-214: Teacher/Staff cộng XP thủ công
+- UC-215: Teacher/Staff trừ XP thủ công
+- UC-216: Xem lịch sử Star Transactions
+- UC-217: Xem balance Stars hiện tại
+- UC-218: Tính Level từ XP
+- UC-219: Xem Level và XP hiện tại
 
 ### 12.3. Attendance Streak
-- UC-213: Học sinh điểm danh hàng ngày
-- UC-214: Tự động tạo Attendance Streak record
-- UC-215: Cộng Stars khi điểm danh (1 star)
-- UC-216: Cộng XP khi điểm danh (5 exp)
-- UC-217: Tính current_streak (số ngày liên tiếp)
-- UC-218: Cập nhật max_streak
-- UC-219: Xem Attendance Streak của học sinh
-- UC-220: Reset streak khi bỏ lỡ ngày
+- UC-220: Học sinh điểm danh hàng ngày
+- UC-221: Tự động tạo Attendance Streak record
+- UC-222: Cộng Stars khi điểm danh (1 star)
+- UC-223: Cộng XP khi điểm danh (5 exp)
+- UC-224: Tính current_streak (số ngày liên tiếp)
+- UC-225: Cập nhật max_streak
+- UC-226: Xem Attendance Streak của học sinh
+- UC-227: Reset streak khi bỏ lỡ ngày
 
 ### 12.4. Reward Store
-- UC-221: Tạo Reward Store Item
-- UC-222: Xem danh sách Reward Store Items
-- UC-223: Xem chi tiết Reward Store Item
-- UC-224: Cập nhật Reward Store Item
-- UC-225: Xóa mềm Reward Store Item
-- UC-226: Thiết lập cost_stars cho Item
-- UC-227: Quản lý quantity của Item
+- UC-228: Tạo Reward Store Item
+- UC-229: Xem danh sách Reward Store Items
+- UC-230: Xem chi tiết Reward Store Item
+- UC-231: Cập nhật Reward Store Item
+- UC-232: Xóa mềm Reward Store Item
+- UC-233: Thiết lập cost_stars cho Item
+- UC-234: Quản lý quantity của Item
 
 ### 12.5. Reward Redemption
-- UC-228: Học sinh đổi quà (Request)
-- UC-229: Xem danh sách Reward Redemptions
-- UC-230: Xem chi tiết Reward Redemption
-- UC-231: Staff duyệt Reward Redemption (APPROVED)
-- UC-232: Staff từ chối Reward Redemption (CANCELLED)
-- UC-233: Staff trao quà (DELIVERED)
-- UC-234: Học sinh xác nhận nhận quà (RECEIVED)
-- UC-235: Tự động xác nhận sau 3 ngày (nếu không xác nhận)
-- UC-236: Lưu item_name tại thời điểm đổi
-- UC-237: Trừ Stars khi đổi quà
+- UC-235: Học sinh đổi quà (Request)
+- UC-236: Xem danh sách Reward Redemptions
+- UC-237: Xem chi tiết Reward Redemption
+- UC-238: Staff duyệt Reward Redemption (APPROVED)
+- UC-239: Staff từ chối Reward Redemption (CANCELLED)
+- UC-240: Staff trao quà (DELIVERED)
+- UC-241: Học sinh xác nhận nhận quà (RECEIVED)
+- UC-242: Tự động xác nhận sau 3 ngày (nếu không xác nhận)
+- UC-243: Lưu item_name tại thời điểm đổi
+- UC-244: Trừ Stars khi đổi quà
 
 ---
 
 ## 13. Media Management 🟢
 
 ### 13.1. Upload và quản lý Media
-- UC-238: Teacher/Staff upload ảnh/video
-- UC-238a: Generate presigned URL for upload (S3/Cloud Storage)
-- UC-239: Gắn tag Class cho Media
-- UC-240: Gắn tag Student cho Media
-- UC-241: Gắn tag Tháng (YYYY-MM) cho Media
-- UC-241a: Gắn tag Type cho Media (HOMEWORK/REPORT/TEST/ALBUM/CLASS_PHOTO)
-- UC-242: Thiết lập visibility (CLASS_ONLY/PERSONAL/PUBLIC_PARENT)
-- UC-243: Xem danh sách Media
-- UC-244: Xem chi tiết Media
-- UC-245: Cập nhật Media
-- UC-246: Xóa Media
-- UC-247: Staff/Admin duyệt Media
-- UC-248: Publish Media lên gallery
+- UC-245: Teacher/Staff upload ảnh/video
+- UC-245a: Generate presigned URL for upload (S3/Cloud Storage)
+- UC-246: Gắn tag Class cho Media
+- UC-247: Gắn tag Student cho Media
+- UC-248: Gắn tag Tháng (YYYY-MM) cho Media
+- UC-248a: Gắn tag Type cho Media (HOMEWORK/REPORT/TEST/ALBUM/CLASS_PHOTO)
+- UC-249: Thiết lập visibility (CLASS_ONLY/PERSONAL/PUBLIC_PARENT)
+- UC-250: Xem danh sách Media
+- UC-251: Xem chi tiết Media
+- UC-252: Cập nhật Media
+- UC-253: Xóa Media
+- UC-254: Staff/Admin duyệt Media
+- UC-255: Publish Media lên gallery
 
 ### 13.2. Xem Media
-- UC-249: Parent/Student xem album lớp
-- UC-250: Parent/Student xem album cá nhân
-- UC-251: Filter Media theo tháng
-- UC-252: Download Media (nếu được phép)
+- UC-256: Parent/Student xem album lớp
+- UC-257: Parent/Student xem album cá nhân
+- UC-258: Filter Media theo tháng
+- UC-259: Download Media (nếu được phép)
 
 ---
 
 ## 14. Finance Management 🔴
 
 ### 14.1. Invoices
-- UC-253: Tạo Invoice (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE)
-- UC-254: Xem danh sách Invoices
-- UC-254a: Xem danh sách Invoices của Parent (filter theo parentId, status)
-- UC-255: Xem chi tiết Invoice
-- UC-256: Cập nhật Invoice
-- UC-257: Hủy Invoice (CANCELLED)
-- UC-258: Tạo Invoice Lines
-- UC-259: Gắn session_ids vào Invoice Line
-- UC-260: Sinh PayOS payment link
-- UC-261: Sinh PayOS QR code
-- UC-262: Xem trạng thái Invoice (PENDING/PAID/OVERDUE)
-- UC-263: Đánh dấu Invoice OVERDUE
+- UC-260: Tạo Invoice (MAIN_TUITION/EXTRA_CLASS/MATERIAL/EVENT/MAKEUP_FEE)
+- UC-261: Xem danh sách Invoices
+- UC-261a: Xem danh sách Invoices của Parent (filter theo parentId, status)
+- UC-262: Xem chi tiết Invoice
+- UC-263: Cập nhật Invoice
+- UC-264: Hủy Invoice (CANCELLED)
+- UC-265: Tạo Invoice Lines
+- UC-266: Gắn session_ids vào Invoice Line
+- UC-267: Sinh PayOS payment link
+- UC-268: Sinh PayOS QR code
+- UC-269: Xem trạng thái Invoice (PENDING/PAID/OVERDUE)
+- UC-270: Đánh dấu Invoice OVERDUE
 
 ### 14.2. Payments
-- UC-264: Thanh toán qua PayOS (webhook) - tự động update invoice status + ghi Cashbook Entry
-- UC-265: Thanh toán bằng tiền mặt
-- UC-266: Thanh toán chuyển khoản
-- UC-267: Xác nhận thanh toán (Staff)
-- UC-268: Upload chứng từ thanh toán
-- UC-269: Cập nhật Invoice status sau thanh toán
-- UC-270: Xem lịch sử Payments của Invoice
-- UC-270a: Xem lịch sử Payments của Parent (filter theo from/to)
+- UC-271: Thanh toán qua PayOS (webhook) - tự động update invoice status + ghi Cashbook Entry
+- UC-272: Thanh toán bằng tiền mặt
+- UC-273: Thanh toán chuyển khoản
+- UC-274: Xác nhận thanh toán (Staff)
+- UC-275: Upload chứng từ thanh toán
+- UC-276: Cập nhật Invoice status sau thanh toán
+- UC-277: Xem lịch sử Payments của Invoice
+- UC-277a: Xem lịch sử Payments của Parent (filter theo from/to)
 
 ### 14.3. Cashbook
 **Role: AccountantStaff, Admin, ManagementStaff**
-- UC-271: Tạo Cashbook Entry (CASH_IN/CASH_OUT)
-- UC-272: Xem danh sách Cashbook Entries
-- UC-273: Xem chi tiết Cashbook Entry
-- UC-274: Gắn Cashbook Entry với Invoice (CASH_IN)
-- UC-275: Gắn Cashbook Entry với Payroll Payment (CASH_OUT)
-- UC-276: Gắn Cashbook Entry với Expense (CASH_OUT)
-- UC-277: Filter Cashbook theo date range
-- UC-278: Xem tổng thu/chi theo tháng
+- UC-278: Tạo Cashbook Entry (CASH_IN/CASH_OUT)
+- UC-279: Xem danh sách Cashbook Entries
+- UC-280: Xem chi tiết Cashbook Entry
+- UC-281: Gắn Cashbook Entry với Invoice (CASH_IN)
+- UC-282: Gắn Cashbook Entry với Payroll Payment (CASH_OUT)
+- UC-283: Gắn Cashbook Entry với Expense (CASH_OUT)
+- UC-284: Filter Cashbook theo date range
+- UC-285: Xem tổng thu/chi theo tháng
 
 ### 14.4. Công nợ
 **Role: AccountantStaff, Admin, ManagementStaff**
-- UC-279: Xem danh sách công nợ
-- UC-280: Xem công nợ của học sinh
-- UC-281: Xem tuổi nợ
-- UC-282: Báo cáo công nợ
-- UC-283: Gửi nhắc nhở công nợ
+- UC-286: Xem danh sách công nợ
+- UC-287: Xem công nợ của học sinh
+- UC-288: Xem tuổi nợ
+- UC-289: Báo cáo công nợ
+- UC-290: Gửi nhắc nhở công nợ
 
 ---
 
 ## 15. Payroll Management 🔴
 
 ### 15.1. Contracts
-- UC-284: Tạo Contract
-- UC-285: Xem danh sách Contracts
-- UC-286: Xem chi tiết Contract
-- UC-287: Cập nhật Contract
-- UC-288: Thiết lập base_salary
-- UC-289: Thiết lập hourly_rate
-- UC-290: Thiết lập minimum_monthly_hours
-- UC-291: Thiết lập overtime_rate_multiplier
-- UC-292: Thiết lập allowance_fixed
-- UC-293: Thiết lập social_insurance_salary
-- UC-294: Kích hoạt/Vô hiệu hóa Contract
+- UC-291: Tạo Contract
+- UC-292: Xem danh sách Contracts
+- UC-293: Xem chi tiết Contract
+- UC-294: Cập nhật Contract
+- UC-295: Thiết lập base_salary
+- UC-296: Thiết lập hourly_rate
+- UC-297: Thiết lập minimum_monthly_hours
+- UC-298: Thiết lập overtime_rate_multiplier
+- UC-299: Thiết lập allowance_fixed
+- UC-300: Thiết lập social_insurance_salary
+- UC-301: Kích hoạt/Vô hiệu hóa Contract
 
 ### 15.2. Shift Attendance (Staff)
-- UC-295: Tạo Shift Attendance
-- UC-296: Xem danh sách Shift Attendance
-- UC-297: Xem chi tiết Shift Attendance
-- UC-298: Cập nhật Shift Attendance
-- UC-299: Duyệt Shift Attendance
-- UC-300: Tính regular_hours từ Shift Attendance
+- UC-302: Tạo Shift Attendance
+- UC-303: Xem danh sách Shift Attendance
+- UC-304: Xem chi tiết Shift Attendance
+- UC-305: Cập nhật Shift Attendance
+- UC-306: Duyệt Shift Attendance
+- UC-307: Tính regular_hours từ Shift Attendance
 
 ### 15.3. Monthly Work Hours
-- UC-301: Tạo Monthly Work Hours
-- UC-302: Tính teaching_hours từ Sessions (Teacher)
-- UC-303: Tính regular_hours từ Shift Attendance (Staff)
-- UC-304: Tính total_hours
-- UC-305: Tính overtime_hours
-- UC-306: Lock Monthly Work Hours (is_locked)
-- UC-307: Xem Monthly Work Hours
-- UC-308: Cập nhật Monthly Work Hours (trước khi lock)
+- UC-308: Tạo Monthly Work Hours
+- UC-309: Tính teaching_hours từ Sessions (Teacher)
+- UC-310: Tính regular_hours từ Shift Attendance (Staff)
+- UC-311: Tính total_hours
+- UC-312: Tính overtime_hours
+- UC-313: Lock Monthly Work Hours (is_locked)
+- UC-314: Xem Monthly Work Hours
+- UC-315: Cập nhật Monthly Work Hours (trước khi lock)
 
 ### 15.4. Payroll Runs
-- UC-309: Tạo Payroll Run (DRAFT)
-- UC-310: Xem danh sách Payroll Runs
-- UC-311: Xem chi tiết Payroll Run
-- UC-312: Tính Payroll Lines từ Session Roles (Teacher)
-- UC-313: Tính Payroll Lines từ Contracts (Staff)
-- UC-314: Tính Payroll Lines Overtime từ Monthly Work Hours
-- UC-315: Thêm Payroll Line ALLOWANCE
-- UC-316: Thêm Payroll Line DEDUCTION
-- UC-317: Duyệt Payroll Run (APPROVED)
-- UC-318: Xem tổng lương của nhân viên
+- UC-316: Tạo Payroll Run (DRAFT)
+- UC-317: Xem danh sách Payroll Runs
+- UC-318: Xem chi tiết Payroll Run
+- UC-319: Tính Payroll Lines từ Session Roles (Teacher)
+- UC-320: Tính Payroll Lines từ Contracts (Staff)
+- UC-321: Tính Payroll Lines Overtime từ Monthly Work Hours
+- UC-322: Thêm Payroll Line ALLOWANCE
+- UC-323: Thêm Payroll Line DEDUCTION
+- UC-324: Duyệt Payroll Run (APPROVED)
+- UC-325: Xem tổng lương của nhân viên
 
 ### 15.5. Payroll Payments
-- UC-319: Tạo Payroll Payment
-- UC-320: Thanh toán lương (BANK_TRANSFER/CASH)
-- UC-321: Ghi Cashbook Entry cho Payroll Payment
-- UC-322: Cập nhật Payroll Lines là đã thanh toán
-- UC-323: Đánh dấu Payroll Run đã thanh toán (PAID)
-- UC-324: Xem lịch sử Payroll Payments
+- UC-326: Tạo Payroll Payment
+- UC-327: Thanh toán lương (BANK_TRANSFER/CASH)
+- UC-328: Ghi Cashbook Entry cho Payroll Payment
+- UC-329: Cập nhật Payroll Lines là đã thanh toán
+- UC-330: Đánh dấu Payroll Run đã thanh toán (PAID)
+- UC-331: Xem lịch sử Payroll Payments
 
 ---
 
 ## 16. Notifications 🔴
 
 ### 16.1. Gửi thông báo
-- UC-325: Tạo Notification Template
-- UC-326: Xem danh sách Notification Templates + xem chi tiết
-- UC-327: Cập nhật Notification Template
-- UC-327a: Xóa mềm Noti template
-- UC-328: Gửi Notification qua Zalo OA
-- UC-329: Gửi Notification qua Email (event domain)
-- UC-330: Gửi Notification qua Push
-- UC-331: Gửi thông báo nhắc lịch học
-- UC-332: Gửi thông báo nhắc bài tập
-- UC-333: Gửi thông báo nhắc học phí
-- UC-334: Gửi thông báo buổi bù (makeup)
-- UC-335: Gửi thông báo Mission
-- UC-336: Gửi thông báo Media
-- UC-337: Gửi thông báo Monthly Report
-- UC-338: Xem trạng thái Notification (PENDING/SENT/FAILED)
-- UC-339: Retry Notification nếu FAILED
+- UC-332: Tạo Notification Template
+- UC-333: Xem danh sách Notification Templates + xem chi tiết
+- UC-334: Cập nhật Notification Template
+- UC-334a: Xóa mềm Noti template
+- UC-335: Gửi Notification qua Zalo OA
+- UC-336: Gửi Notification qua Email (event domain)
+- UC-337: Gửi Notification qua Push
+- UC-338: Gửi thông báo nhắc lịch học
+- UC-339: Gửi thông báo nhắc bài tập
+- UC-340: Gửi thông báo nhắc học phí
+- UC-341: Gửi thông báo buổi bù (makeup)
+- UC-342: Gửi thông báo Mission
+- UC-343: Gửi thông báo Media
+- UC-344: Gửi thông báo Monthly Report
+- UC-345: Xem trạng thái Notification (PENDING/SENT/FAILED)
+- UC-346: Retry Notification nếu FAILED
 
 ---
 
 ## 17. Tickets & Support 🟢
 
 ### 17.1. Quản lý Tickets
-- UC-340: Parent/Student tạo Ticket
-- UC-341: Xem danh sách Tickets
-- UC-342: Xem chi tiết Ticket
-- UC-343: Gán Ticket cho Staff/Teacher
-- UC-344: Cập nhật trạng thái Ticket (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
-- UC-345: Thêm comment vào Ticket
-- UC-346: Upload attachment vào Ticket
-- UC-347: Xem lịch sử Ticket
-- UC-348: Theo dõi SLA phản hồi Ticket
+- UC-347: Parent/Student tạo Ticket
+- UC-348: Xem danh sách Tickets
+- UC-349: Xem chi tiết Ticket
+- UC-350: Gán Ticket cho Staff/Teacher
+- UC-351: Cập nhật trạng thái Ticket (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
+- UC-352: Thêm comment vào Ticket
+- UC-353: Upload attachment vào Ticket
+- UC-354: Xem lịch sử Ticket
+- UC-355: Theo dõi SLA phản hồi Ticket
 
 ---
 
 ## 18. Blog Management 🟢
 
 ### 18.1. Quản lý Blog Posts
-- UC-349: Admin/Staff tạo Blog Post
-- UC-350: Xem danh sách Blog Posts
-- UC-351: Xem chi tiết Blog Post
-- UC-352: Cập nhật Blog Post
-- UC-353: Xóa mềm Blog Post
-- UC-354: Publish Blog Post
-- UC-355: Unpublish Blog Post
-- UC-356: Hiển thị Blog Post trên Landing Page
-- UC-357: Upload featured image cho Blog Post
+- UC-356: Admin/Staff tạo Blog Post
+- UC-357: Xem danh sách Blog Posts
+- UC-358: Xem chi tiết Blog Post
+- UC-359: Cập nhật Blog Post
+- UC-360: Xóa mềm Blog Post
+- UC-361: Publish Blog Post
+- UC-362: Unpublish Blog Post
+- UC-363: Hiển thị Blog Post trên Landing Page
+- UC-364: Upload featured image cho Blog Post
 
 ---
 
 ## 19. Dashboard & Reports 🟡
 
 ### 19.1. Dashboard
-- UC-358: Xem Dashboard học vụ (attendance, homework completion, MakeUpCredit usage)
-- UC-359: Xem Dashboard tài chính (doanh thu, PayOS vs cash, công nợ)
-- UC-360: Xem Dashboard nhân sự (payroll, work hours)
-- UC-361: Xem Dashboard Lead (conversion, no-show, touch count)
-- UC-362: Filter Dashboard theo Branch
-- UC-363: Filter Dashboard theo date range
+- UC-365: Xem Dashboard học vụ (attendance, homework completion, MakeUpCredit usage)
+- UC-366: Xem Dashboard tài chính (doanh thu, PayOS vs cash, công nợ)
+- UC-367: Xem Dashboard nhân sự (payroll, work hours)
+- UC-368: Xem Dashboard Lead (conversion, no-show, touch count)
+- UC-369: Filter Dashboard theo Branch
+- UC-370: Filter Dashboard theo date range
 
 ### 19.2. Audit & Logs
-- UC-364: Xem Audit Logs
-- UC-365: Filter Audit Logs theo actor
-- UC-366: Filter Audit Logs theo entity
-- UC-367: Xem data_before và data_after trong Audit Log
-- UC-368: Backup dữ liệu
-- UC-369: Restore dữ liệu
+- UC-371: Xem Audit Logs
+- UC-372: Filter Audit Logs theo actor
+- UC-373: Filter Audit Logs theo entity
+- UC-374: Xem data_before và data_after trong Audit Log
+- UC-375: Backup dữ liệu
+- UC-376: Restore dữ liệu
 
 ---
 
 ## 20. System Administration 🟢
 
 ### 20.1. User Management
-- UC-370: Tạo User
-- UC-371: Xem danh sách Users
-- UC-372: Xem chi tiết User
-- UC-373: Cập nhật User
-- UC-374: Xóa User
-- UC-375: Gán role cho User
-- UC-376: Gán branch cho Teacher/Staff
+- UC-377: Tạo User
+- UC-378: Xem danh sách Users
+- UC-379: Xem chi tiết User
+- UC-380: Cập nhật User
+- UC-381: Xóa User
+- UC-382: Gán role cho User
+- UC-383: Gán branch cho Teacher/Staff
 
 ### 20.2. Profile Management
-- UC-377: Tạo Profile (Parent/Student)
-- UC-378: Xem danh sách Profiles
-- UC-379: Xem chi tiết Profile
-- UC-380: Cập nhật Profile
-- UC-381: Xóa Profile
-- UC-382: Link Parent với Student
-- UC-383: Unlink Parent với Student
+- UC-384: Tạo Profile (Parent/Student)
+- UC-385: Xem danh sách Profiles
+- UC-386: Xem chi tiết Profile
+- UC-387: Cập nhật Profile
+- UC-388: Xóa Profile
+- UC-389: Link Parent với Student
+- UC-390: Unlink Parent với Student
 
 ### 20.3. Branch Management
-- UC-384: Tạo Branch
-- UC-385: Xem danh sách Branches
-- UC-386: Xem chi tiết Branch
-- UC-387: Cập nhật Branch
-- UC-388: Xóa Branch
-- UC-389: Kích hoạt/Vô hiệu hóa Branch
+- UC-391: Tạo Branch
+- UC-392: Xem danh sách Branches
+- UC-393: Xem chi tiết Branch
+- UC-394: Cập nhật Branch
+- UC-395: Xóa Branch
+- UC-396: Kích hoạt/Vô hiệu hóa Branch
 
 ---
 
-**Tổng số Use Cases**: 389
+**Tổng số Use Cases**: 397
 
 ### 🟢 Dễ (CRUD cơ bản, logic đơn giản)
 - Program & Class Management: 28
 - Enrollment: 9
 - Exams & Test Results: 11
-- Session Reports: 11
+- Session Reports: 19
 - Media Management: 15
 - Tickets & Support: 9
 - Blog Management: 9
 - System Administration: 20
-**Tổng**: 112 use cases
 
-### 🟡 Trung bình (Logic nghiệp vụ phức tạp, tích hợp hệ thống, AI đã có người cover)
+### 🟡 Trung bình (Logic nghiệp vụ phức tạp, tích hợp hệ thống)
 - Authentication & Authorization: 12
 - CRM & Lead Management: 26
 - Session & Schedule Management: 15
@@ -611,16 +616,10 @@
 - Makeup Credit Management: 12
 - Homework & Exercises: 35
 - Monthly Reports (AI): 14
-- Gamification: 49
+- Gamification: 38
 - Dashboard & Reports: 12
-**Tổng**: 189 use cases
 
 ### 🔴 Khó (Tính toán phức tạp, workflow nhiều bước, tích hợp bên ngoài)
 - Finance Management: 31
 - Notifications: 15
 - Payroll Management: 41
-**Tổng**: 87 use cases
-
-
-**Tỷ lệ**: Dễ 25% | Trung bình 52% | Khó 22%
-
