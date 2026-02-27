@@ -5,6 +5,11 @@ using Kidzgo.Application.SessionReports.GetSessionReportById;
 using Kidzgo.Application.SessionReports.GetSessionReports;
 using Kidzgo.Application.SessionReports.GetTeacherSessionReports;
 using Kidzgo.Application.SessionReports.UpdateSessionReport;
+using Kidzgo.Application.SessionReports.SubmitSessionReport;
+using Kidzgo.Application.SessionReports.ApproveSessionReport;
+using Kidzgo.Application.SessionReports.RejectSessionReport;
+using Kidzgo.Application.SessionReports.PublishSessionReport;
+using Kidzgo.Application.SessionReports.AddSessionReportComment;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,7 +51,7 @@ public class SessionReportController : ControllerBase
     /// UC-165: Xem danh sách Session Reports
     /// UC-168: Filter Session Reports theo date range
     [HttpGet]
-    [Authorize(Roles = "Teacher,Admin,ManagementStaff")]
+    [Authorize(Roles = "Teacher,Admin,ManagementStaff,Parent")]
     public async Task<IResult> GetSessionReports(
         [FromQuery] Guid? sessionId,
         [FromQuery] Guid? studentProfileId,
@@ -76,7 +81,7 @@ public class SessionReportController : ControllerBase
 
     /// UC-166: Xem chi tiết Session Report
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Teacher,Admin,ManagementStaff")]
+    [Authorize(Roles = "Teacher,Admin,ManagementStaff,Parent")]
     public async Task<IResult> GetSessionReportById(
         Guid id,
         CancellationToken cancellationToken)
@@ -131,5 +136,70 @@ public class SessionReportController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
-}
 
+    /// UC-175: Teacher submit Session Report cho duyet (DRAFT -> REVIEW)
+    [HttpPost("{id:guid}/submit")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<IResult> SubmitSessionReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new SubmitSessionReportCommand(id);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// UC-176: Staff/Admin approve Session Report (REVIEW -> APPROVED)
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> ApproveSessionReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApproveSessionReportCommand(id);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// UC-177: Staff/Admin reject Session Report (REVIEW -> REJECTED)
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> RejectSessionReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new RejectSessionReportCommand(id);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// UC-178: Publish Session Report (APPROVED -> PUBLISHED)
+    [HttpPost("{id:guid}/publish")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> PublishSessionReport(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new PublishSessionReportCommand(id);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// UC-180*: Admin/ManagementStaff comment tren Session Report
+    [HttpPost("{id:guid}/comments")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> AddComment(
+        Guid id,
+        [FromBody] AddSessionReportCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AddSessionReportCommentCommand(id, request.Content);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(c => $"/api/session-reports/{id}/comments/{c.Id}");
+    }
+}
