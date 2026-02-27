@@ -7,6 +7,6 @@ public sealed class UpdateLessonPlanTemplateCommand : ICommand<UpdateLessonPlanT
     public Guid Id { get; init; }
     public string? Level { get; init; }
     public int? SessionIndex { get; init; }
-    public string? StructureJson { get; init; }
+    public string? Attachment { get; init; }
     public bool? IsActive { get; init; }
 }

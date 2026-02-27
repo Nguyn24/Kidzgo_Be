@@ -105,7 +105,7 @@ public class LessonPlanTemplateController : ControllerBase
             Id = id,
             Level = request.Level,
             SessionIndex = request.SessionIndex,
-            StructureJson = request.StructureJson,
+            Attachment = request.Attachment,
             IsActive = request.IsActive
         };
 
