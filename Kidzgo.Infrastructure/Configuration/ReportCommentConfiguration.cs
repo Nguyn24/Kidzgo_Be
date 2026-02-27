@@ -13,9 +13,9 @@ public class ReportCommentConfiguration : IEntityTypeConfiguration<ReportComment
         builder.Property(x => x.Id)
             .IsRequired();
 
-        // ReportId is for StudentMonthlyReport (required)
+        // ReportId is for StudentMonthlyReport (optional - check constraint handles validation)
         builder.Property(x => x.ReportId)
-            .IsRequired();
+            .IsRequired(false);
 
         // SessionReportId is for SessionReport (optional)
         builder.Property(x => x.SessionReportId)
