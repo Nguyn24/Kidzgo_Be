@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Reports;
 
 namespace Kidzgo.Application.SessionReports.GetSessionReports;
 
@@ -22,8 +23,8 @@ public sealed class SessionReportListItemDto
     public string TeacherName { get; init; } = null!;
     public DateOnly ReportDate { get; init; }
     public string Feedback { get; init; } = null!;
+    public string Status { get; init; }
     public bool IsMonthlyCompiled { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
-
