@@ -7,7 +7,7 @@ public sealed class GetLessonPlanTemplateByIdResponse
     public string? ProgramName { get; init; }
     public string? Level { get; init; }
     public int SessionIndex { get; init; }
-    public string? StructureJson { get; init; }
+    public string? Attachment { get; init; }
     public bool IsActive { get; init; }
     public Guid? CreatedBy { get; init; }
     public string? CreatedByName { get; init; }

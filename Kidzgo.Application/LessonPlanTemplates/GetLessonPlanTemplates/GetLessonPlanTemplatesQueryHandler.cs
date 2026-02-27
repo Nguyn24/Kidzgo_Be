@@ -58,7 +58,7 @@ public sealed class GetLessonPlanTemplatesQueryHandler(
                 ProgramName = t.Program != null ? t.Program.Name : null,
                 Level = t.Level,
                 SessionIndex = t.SessionIndex,
-                StructureJson = t.StructureJson,
+                Attachment = t.AttachmentUrl,
                 IsActive = t.IsActive,
                 CreatedBy = t.CreatedBy,
                 CreatedByName = t.CreatedByUser != null ? t.CreatedByUser.Name : null,
