@@ -403,3 +403,252 @@ _logger.LogWarning("Using Mock AI Service. Set AiService:UseMock=false to use re
 - FE vẫn có thể test flow: Generate → Review → Edit → Submit → Approve → Publish
 - Khi có Python API, chỉ cần đổi `UseMock: false` là xong!
 
+---
+
+## Ví dụ: UC-174 - AI enhance draft feedback
+
+### Luồng thực tế (khi có Python API):
+
+```
+1. Teacher viết draft feedback (tự nhiên, không formal)
+   ↓
+2. Gọi API: POST /api/session-reports/ai/enhance-feedback
+   {
+     "draft": "Hôm nay em học tốt lắm, làm bài đầy đủ"
+   }
+   ↓
+3. BE gọi Python AI service (ví dụ: /a9/enhance-feedback)
+   ↓
+4. AI trả về:
+   {
+     "enhanced": "Học sinh đã có buổi học hiệu quả, hoàn thành đầy đủ bài tập"
+   }
+   ↓
+5. FE hiển thị kết quả cho Teacher preview
+   ↓
+6. Teacher edit nếu cần, rồi submit chính thức
+```
+
+### Luồng Mock (development):
+
+```
+1. Teacher viết draft feedback
+   ↓
+2. Gọi API: POST /api/session-reports/ai/enhance-feedback
+   ↓
+3. BE gọi Mock Service (thay vì Python API)
+   ↓
+4. Mock Service trả về enhanced version (template-based):
+   {
+     "enhanced": "[MOCK] Học sinh đã có buổi học hiệu quả, hoàn thành đầy đủ các bài tập được giao"
+   }
+   ↓
+5. FE hiển thị kết quả (vẫn hoạt động bình thường!)
+```
+
+---
+
+## Implementation Code (UC-174)
+
+### 1. Interface
+
+```csharp
+// Kidzgo.Application/Abstraction/Reports/IAiFeedbackEnhancer.cs
+namespace Kidzgo.Application.Abstraction.Reports;
+
+public interface IAiFeedbackEnhancer
+{
+    Task<EnhancedFeedbackResult> EnhanceAsync(
+        string draft,
+        string? sessionId = null,
+        string? studentProfileId = null,
+        string? studentName = null,
+        CancellationToken cancellationToken = default);
+}
+
+public class EnhancedFeedbackResult
+{
+    public string EnhancedFeedback { get; set; } = string.Empty;
+    public string OriginalFeedback { get; set; } = string.Empty;
+    public bool IsMock { get; set; }
+}
+```
+
+### 2. Mock Implementation
+
+```csharp
+// Kidzgo.Infrastructure/AI/MockAiFeedbackEnhancer.cs
+namespace Kidzgo.Infrastructure.AI;
+
+public class MockAiFeedbackEnhancer : IAiFeedbackEnhancer
+{
+    public Task<EnhancedFeedbackResult> EnhanceAsync(
+        string draft,
+        string? sessionId = null,
+        string? studentProfileId = null,
+        string? studentName = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Mock logic: simple template-based enhancement
+        var enhanced = EnhanceTemplate(draft, studentName);
+
+        return Task.FromResult(new EnhancedFeedbackResult
+        {
+            OriginalFeedback = draft,
+            EnhancedFeedback = enhanced,
+            IsMock = true
+        });
+    }
+
+    private string EnhanceTemplate(string draft, string? studentName)
+    {
+        var result = draft;
+
+        // Simple word replacements (mock)
+        var replacements = new Dictionary<string, string>
+        {
+            { "hôm nay", "trong buổi học" },
+            { "em", studentName ?? "học sinh" },
+            { "tốt lắm", "có tiến bộ" },
+            { "lắm", "cao" },
+            { "làm bài", "hoàn thành bài tập" },
+            { "đầy đủ", "đầy đủ các nội dung được giao" },
+            { "chăm chỉ", "thể hiện sự chăm chỉ trong học tập" },
+            { "học tốt", "có kết quả học tập tốt" },
+            { "ngoan", "có thái độ học tập tích cực" },
+            { "được", "đạt được" }
+        };
+
+        foreach (var (key, value) in replacements)
+        {
+            result = result.Replace(key, value, StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (!result.EndsWith(".") && !result.EndsWith("!") && !result.EndsWith("?"))
+        {
+            result += ".";
+        }
+
+        return $"[MOCK] {char.ToUpper(result[0])}{result.Substring(1)}";
+    }
+}
+```
+
+### 3. Real Implementation (Production)
+
+```csharp
+// Kidzgo.Infrastructure/AI/HttpAiFeedbackEnhancer.cs
+namespace Kidzgo.Infrastructure.AI;
+
+public class HttpAiFeedbackEnhancer : IAiFeedbackEnhancer
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl;
+
+    public HttpAiFeedbackEnhancer(HttpClient httpClient, IConfiguration configuration)
+    {
+        _httpClient = httpClient;
+        _baseUrl = configuration["AiService:BaseUrl"] ?? throw new InvalidOperationException();
+    }
+
+    public async Task<EnhancedFeedbackResult> EnhanceAsync(
+        string draft,
+        string? sessionId = null,
+        string? studentProfileId = null,
+        string? studentName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new
+        {
+            draft = draft,
+            student_name = studentName,
+            language = "vi"
+        };
+
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}/a9/enhance-feedback",
+            request,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<EnhanceResponse>(cancellationToken: cancellationToken);
+
+        return new EnhancedFeedbackResult
+        {
+            OriginalFeedback = draft,
+            EnhancedFeedback = result.Enhanced,
+            IsMock = false
+        };
+    }
+}
+```
+
+### 4. Controller
+
+```csharp
+// Kidzgo.Api/Controllers/SessionReportsController.cs
+[ApiController]
+[Route("api/session-reports")]
+public class SessionReportsController : ControllerBase
+{
+    private readonly IAiFeedbackEnhancer _feedbackEnhancer;
+
+    [HttpPost("ai/enhance-feedback")]
+    public async Task<IActionResult> EnhanceFeedback(
+        [FromBody] EnhanceFeedbackRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _feedbackEnhancer.EnhanceAsync(
+            request.Draft,
+            request.SessionId,
+            request.StudentProfileId,
+            request.StudentName,
+            cancellationToken);
+
+        return Ok(new
+        {
+            isSuccess = true,
+            data = new
+            {
+                enhancedFeedback = result.EnhancedFeedback,
+                originalFeedback = result.OriginalFeedback,
+                isMock = result.IsMock
+            }
+        });
+    }
+}
+
+public class EnhanceFeedbackRequest
+{
+    public string Draft { get; set; } = string.Empty;
+    public string? SessionId { get; set; }
+    public string? StudentProfileId { get; set; }
+    public string? StudentName { get; set; }
+}
+```
+
+### 5. Configuration
+
+```json
+// appsettings.json
+{
+  "AiService": {
+    "UseMock": true,
+    "BaseUrl": "https://your-python-api.com"
+  }
+}
+```
+
+---
+
+## Tóm tắt
+
+**UC-174 - AI Enhance Feedback:**
+- ✅ Preview API - KHÔNG lưu vào DB
+- Teacher gọi nhiều lần để test different versions
+- Khi ưng ý → submit chính thức (lưu DB)
+
+**Mock Implementation:**
+- Simple template-based replacement
+- Dễ dàng switch sang real API (chỉ đổi config)
