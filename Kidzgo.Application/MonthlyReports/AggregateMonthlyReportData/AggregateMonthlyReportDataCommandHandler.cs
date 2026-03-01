@@ -180,6 +180,10 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                 {
                     reportData.NotesData = notes.GetRawText();
                 }
+                if (root.TryGetProperty("topics", out var topics))
+                {
+                    reportData.TopicsData = topics.GetRawText();
+                }
 
                 // Mark session reports as compiled (only for newly created reports)
                 if (isNewReport)
