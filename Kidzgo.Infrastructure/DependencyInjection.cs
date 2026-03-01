@@ -263,6 +263,14 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromMinutes(5);
         });
+
+        // Register AI Feedback Enhancer (UC-174)
+        services.AddHttpClient<IAiFeedbackEnhancer, HttpAiFeedbackEnhancer>(client =>
+        {
+            var baseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:8000";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
         
         // Register PDF Report Generator
         services.AddScoped<Application.Abstraction.Reports.IPdfReportGenerator, Reports.QuestPdfReportGenerator>();
