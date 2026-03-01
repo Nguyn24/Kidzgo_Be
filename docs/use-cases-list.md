@@ -269,9 +269,9 @@
 
 ### 10.3. Review và Publish Session Reports
 - UC-174: AI enhance draft feedback (trước khi teacher submit feedback chính thức)
-- UC-174a: Teacher submit Session Report cho duyệt (DRAFT → REVIEW)
-- UC-175: Staff/Admin approve Session Report (REVIEW → APPROVED)
-- UC-176: Staff/Admin reject Session Report (REVIEW → REJECTED)
+- UC-175: Teacher submit Session Report cho duyệt (DRAFT → REVIEW)
+- UC-176: Staff/Admin approve Session Report (REVIEW → APPROVED)
+- UC-1777: Staff/Admin reject Session Report (REVIEW → REJECTED)
 - UC-178: Publish Session Report (APPROVED → PUBLISHED)
 - UC-179: Parent xem Session Report của con (chỉ xem các report đã PUBLISHED)
 - UC-180: Student xem Session Report của mình (chỉ xem các report đã PUBLISHED)
