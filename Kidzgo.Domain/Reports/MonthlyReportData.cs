@@ -17,6 +17,7 @@ public class MonthlyReportData : Entity
     public string? TestData { get; set; }        // JSON: { tests: [{ type, score, maxScore, date, comment }] }
     public string? MissionData { get; set; }     // JSON: { completed, total, stars, xp, achievements }
     public string? NotesData { get; set; }       // JSON: { sessionReports: [{ sessionId, date, notes, feedback }] }
+    public string? TopicsData { get; set; }      // JSON: { topics: [...], lessonContents: [...] }
     
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

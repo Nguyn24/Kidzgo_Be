@@ -33,6 +33,7 @@ public sealed class MonthlyReportDataAggregator(
         var test = await AggregateTestDataAsync(studentProfileId, startDate, endDate, cancellationToken);
         var mission = await AggregateMissionDataAsync(studentProfileId, startDate, endDate, cancellationToken);
         var notes = await AggregateSessionReportsDataAsync(studentProfileId, startDate, endDate, cancellationToken);
+        var topics = await AggregateTopicsCoveredAsync(studentProfileId, startDate, endDate, cancellationToken);
 
         var aggregatedData = new
         {
@@ -40,7 +41,8 @@ public sealed class MonthlyReportDataAggregator(
             homework,
             test,
             mission,
-            notes
+            notes,
+            topics
         };
 
         return JsonSerializer.Serialize(aggregatedData, new JsonSerializerOptions
@@ -236,6 +238,45 @@ public sealed class MonthlyReportDataAggregator(
         {
             total = reports.Count,
             sessionReports = reports
+        };
+    }
+
+    private async Task<object> AggregateTopicsCoveredAsync(
+        Guid studentProfileId,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken)
+    {
+        // Get sessions with lesson plans for the student in the given period
+        var sessionsWithLessonPlans = await context.Sessions
+            .Include(s => s.LessonPlan)
+            .ThenInclude(lp => lp!.Template)
+            .Where(s => s.Attendances.Any(a => a.StudentProfileId == studentProfileId) &&
+                       s.PlannedDatetime >= startDate &&
+                       s.PlannedDatetime <= endDate &&
+                       s.LessonPlan != null &&
+                       s.LessonPlan.Template != null)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        // Extract unique topics from lesson plan templates
+        var topics = sessionsWithLessonPlans
+            .Where(s => s.LessonPlan?.Template?.Level != null)
+            .Select(s => s.LessonPlan!.Template!.Level!)
+            .Distinct()
+            .ToList();
+
+        // Get all lesson plan contents (planned/actual content)
+        var lessonContents = sessionsWithLessonPlans
+            .Where(s => !string.IsNullOrWhiteSpace(s.LessonPlan?.PlannedContent))
+            .Select(s => s.LessonPlan!.PlannedContent!)
+            .ToList();
+
+        return new
+        {
+            total = topics.Count,
+            topics,
+            lessonContents
         };
     }
 }
