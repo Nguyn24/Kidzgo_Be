@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Abstraction.Reports;
 using Kidzgo.Application.SessionReports.CreateSessionReport;
 using Kidzgo.Application.SessionReports.GetSessionReportById;
 using Kidzgo.Application.SessionReports.GetSessionReports;
@@ -22,14 +23,40 @@ namespace Kidzgo.API.Controllers;
 public class SessionReportController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly IAiFeedbackEnhancer _feedbackEnhancer;
 
-    public SessionReportController(ISender mediator)
+    public SessionReportController(ISender mediator, IAiFeedbackEnhancer feedbackEnhancer)
     {
         _mediator = mediator;
+        _feedbackEnhancer = feedbackEnhancer;
+    }
+
+    /// UC-174: AI enhance draft feedback (preview - KHONG luu DB)
+    [HttpPost("ai/enhance-feedback")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<IResult> EnhanceFeedback(
+        [FromBody] EnhanceFeedbackRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Draft))
+        {
+            return Results.BadRequest(new { isSuccess = false, message = "Draft cannot be empty" });
+        }
+
+        var result = await _feedbackEnhancer.EnhanceAsync(request.Draft, cancellationToken);
+
+        return Results.Ok(new
+        {
+            isSuccess = true,
+            data = new
+            {
+                enhancedFeedback = result.EnhancedFeedback,
+                originalFeedback = result.OriginalFeedback
+            }
+        });
     }
 
     /// UC-163: Teacher tạo Session Report
-    /// UC-164: Teacher ghi feedback cho từng học sinh
     [HttpPost]
     [Authorize(Roles = "Teacher")]
     public async Task<IResult> CreateSessionReport(
