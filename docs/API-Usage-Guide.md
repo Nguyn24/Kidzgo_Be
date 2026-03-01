@@ -5419,6 +5419,104 @@ Base URL: `/api/session-reports`
 
 ---
 
+### 22.6. AI Enhance Draft Feedback
+
+**Endpoint:** `POST /api/session-reports/ai/enhance-feedback`
+
+**Mô tả:** UC-174: AI enhance draft feedback trước khi teacher submit feedback chính thức. Teacher gửi draft feedback (viết tự nhiên), AI sẽ chỉnh sửa văn phong formal hơn. Đây là preview API, KHÔNG lưu vào DB.
+
+**Authorization:** Required (Role: Teacher)
+
+**Request Body:**
+```json
+{
+  "draft": "Hôm nay em học tốt lắm, làm bài đầy đủ, chăm chỉ lắm"
+}
+```
+
+**Request Body (optional - nếu muốn AI personalize hơn):**
+```json
+{
+  "draft": "Hôm nay em học tốt lắm, làm bài đầy đủ, chăm chỉ lắm",
+  "sessionId": "guid",
+  "studentProfileId": "guid",
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "enhancedFeedback": "Học sinh đã có buổi học hiệu quả, hoàn thành đầy đủ các bài tập được giao và thể hiện sự chăm chỉ trong học tập.",
+    "originalFeedback": "Hôm nay em học tốt lắm, làm bài đầy đủ, chăm chỉ lắm",
+    "isMock": true
+  }
+}
+```
+
+**Lưu ý:**
+- Đây là preview API - KHÔNG lưu vào DB
+- Teacher có thể gọi nhiều lần để test different versions
+- Sau khi ưng ý, teacher submit chính thức (sẽ lưu vào DB)
+
+---
+
+### 22.7. Submit Session Report for Review
+
+**Endpoint:** `POST /api/session-reports/{id}/submit`
+
+**Mô tả:** UC-174a: Teacher submit Session Report cho duyệt (DRAFT → REVIEW).
+
+**Authorization:** Required (Role: Teacher)
+
+**Response (200 OK):** Trả về session report với status = REVIEW
+
+---
+
+### 22.8. Approve Session Report
+
+**Endpoint:** `POST /api/session-reports/{id}/approve`
+
+**Mô tả:** UC-175: Staff/Admin approve Session Report (REVIEW → APPROVED).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về session report với status = APPROVED
+
+---
+
+### 22.9. Reject Session Report
+
+**Endpoint:** `POST /api/session-reports/{id}/reject`
+
+**Mô tả:** UC-176: Staff/Admin reject Session Report (REVIEW → REJECTED).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Request Body:**
+```json
+{
+  "reason": "Feedback chưa đủ chi tiết, cần bổ sung thêm thông tin về bài học"
+}
+```
+
+**Response (200 OK):** Trả về session report với status = REJECTED
+
+---
+
+### 22.10. Publish Session Report
+
+**Endpoint:** `POST /api/session-reports/{id}/publish`
+
+**Mô tả:** UC-177: Publish Session Report (APPROVED → PUBLISHED). Sau khi publish, Parent/Student có thể xem được.
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Response (200 OK):** Trả về session report với status = PUBLISHED
+
+---
+
 *Tài liệu này được cập nhật lần cuối: 2026-02-08*
 
 
