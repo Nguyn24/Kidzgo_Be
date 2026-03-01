@@ -70,11 +70,9 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
             !aggregatedData.TryGetValue("Notes", out notesElement))
         {
             Console.WriteLine("[DEBUG] No 'notes' or 'Notes' key found in aggregated data");
-            // No notes data, return empty
         }
         else
         {
-
             if (notesElement.TryGetProperty("sessionReports", out var sessionReportsElement) ||
                 notesElement.TryGetProperty("SessionReports", out sessionReportsElement))
             {
@@ -82,7 +80,6 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                 {
                     string? feedback = null;
                     
-                    // Try both lowercase and CamelCase
                     if (report.TryGetProperty("feedback", out var feedbackElement))
                     {
                         feedback = feedbackElement.GetString();
@@ -118,13 +115,121 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                             Date = reportDate ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
                             Text = feedback
                         });
-                        
                     }
                 }
             }
         }
 
-        
+        // Extract attendance data
+        A6AttendanceData? attendanceData = null;
+        if (aggregatedData.TryGetValue("attendance", out var attElement) ||
+            aggregatedData.TryGetValue("Attendance", out attElement))
+        {
+            attendanceData = new A6AttendanceData
+            {
+                Total = attElement.TryGetProperty("total", out var t) ? t.GetInt32() : 0,
+                Present = attElement.TryGetProperty("present", out var p) ? p.GetInt32() : 0,
+                Absent = attElement.TryGetProperty("absent", out var a) ? a.GetInt32() : 0,
+                Makeup = attElement.TryGetProperty("makeup", out var m) ? m.GetInt32() : 0,
+                NotMarked = attElement.TryGetProperty("notMarked", out var nm) ? nm.GetInt32() : 0,
+                Percentage = attElement.TryGetProperty("percentage", out var pct) ? pct.GetSingle() : 0
+            };
+        }
+
+        // Extract homework data
+        A6HomeworkData? homeworkData = null;
+        if (aggregatedData.TryGetValue("homework", out var hwElement) ||
+            aggregatedData.TryGetValue("Homework", out hwElement))
+        {
+            homeworkData = new A6HomeworkData
+            {
+                Total = hwElement.TryGetProperty("total", out var t) ? t.GetInt32() : 0,
+                Completed = hwElement.TryGetProperty("completed", out var c) ? c.GetInt32() : 0,
+                Submitted = hwElement.TryGetProperty("submitted", out var s) ? s.GetInt32() : 0,
+                Pending = hwElement.TryGetProperty("pending", out var p) ? p.GetInt32() : 0,
+                Late = hwElement.TryGetProperty("late", out var l) ? l.GetInt32() : 0,
+                Missing = hwElement.TryGetProperty("missing", out var m) ? m.GetInt32() : 0,
+                Average = hwElement.TryGetProperty("average", out var avg) ? avg.GetSingle() : 0,
+                CompletionRate = hwElement.TryGetProperty("completionRate", out var cr) ? cr.GetSingle() : 0
+            };
+        }
+
+        // Extract test data
+        A6TestData? testData = null;
+        if (aggregatedData.TryGetValue("test", out var testElement) ||
+            aggregatedData.TryGetValue("Test", out testElement))
+        {
+            testData = new A6TestData
+            {
+                Total = testElement.TryGetProperty("total", out var t) ? t.GetInt32() : 0,
+                Tests = new List<A6TestResult>()
+            };
+
+            if (testElement.TryGetProperty("tests", out var testsElement) ||
+                testElement.TryGetProperty("Tests", out testsElement))
+            {
+                foreach (var test in testsElement.EnumerateArray())
+                {
+                    testData.Tests.Add(new A6TestResult
+                    {
+                        ExamId = test.TryGetProperty("examId", out var eid) ? eid.GetString() ?? "" : "",
+                        Type = test.TryGetProperty("type", out var typ) ? typ.GetString() ?? "" : "",
+                        Score = test.TryGetProperty("score", out var sc) ? sc.GetSingle() : 0,
+                        MaxScore = test.TryGetProperty("maxScore", out var ms) ? ms.GetSingle() : 0,
+                        Date = test.TryGetProperty("date", out var dt) ? dt.GetString() ?? "" : "",
+                        Comment = test.TryGetProperty("comment", out var cm) ? cm.GetString() : null
+                    });
+                }
+            }
+        }
+
+        // Extract mission data
+        A6MissionData? missionData = null;
+        if (aggregatedData.TryGetValue("mission", out var missionElement) ||
+            aggregatedData.TryGetValue("Mission", out missionElement))
+        {
+            missionData = new A6MissionData
+            {
+                Completed = missionElement.TryGetProperty("completed", out var c) ? c.GetInt32() : 0,
+                Total = missionElement.TryGetProperty("total", out var t) ? t.GetInt32() : 0,
+                InProgress = missionElement.TryGetProperty("inProgress", out var ip) ? ip.GetInt32() : 0,
+                Stars = missionElement.TryGetProperty("stars", out var s) ? s.GetInt32() : 0,
+                Xp = missionElement.TryGetProperty("xp", out var x) ? x.GetInt32() : 0,
+                CurrentLevel = missionElement.TryGetProperty("currentLevel", out var cl) ? cl.GetString() ?? "0" : "0",
+                CurrentXp = missionElement.TryGetProperty("currentXp", out var cxp) ? cxp.GetInt32() : 0
+            };
+        }
+
+        // Extract topics data
+        A6TopicsData? topicsData = null;
+        if (aggregatedData.TryGetValue("topics", out var topicsElement) ||
+            aggregatedData.TryGetValue("Topics", out topicsElement))
+        {
+            topicsData = new A6TopicsData
+            {
+                Total = topicsElement.TryGetProperty("total", out var t) ? t.GetInt32() : 0,
+                Topics = new List<string>(),
+                LessonContents = new List<string>()
+            };
+
+            if (topicsElement.TryGetProperty("topics", out var topicsList) ||
+                topicsElement.TryGetProperty("Topics", out topicsList))
+            {
+                topicsData.Topics = topicsList.EnumerateArray()
+                    .Select(t => t.GetString() ?? "")
+                    .Where(t => !string.IsNullOrEmpty(t))
+                    .ToList();
+            }
+
+            if (topicsElement.TryGetProperty("lessonContents", out var contentsList) ||
+                topicsElement.TryGetProperty("LessonContents", out contentsList))
+            {
+                topicsData.LessonContents = contentsList.EnumerateArray()
+                    .Select(c => c.GetString() ?? "")
+                    .Where(c => !string.IsNullOrEmpty(c))
+                    .ToList();
+            }
+        }
 
         // Get student profile to extract student info
         var studentProfile = await _context.Profiles
@@ -174,6 +279,11 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                 FromDate = startDate.ToString("yyyy-MM-dd"),
                 ToDate = endDate.ToString("yyyy-MM-dd")
             },
+            Attendance = attendanceData,
+            Homework = homeworkData,
+            Test = testData,
+            Mission = missionData,
+            Topics = topicsData,
             SessionFeedbacks = sessionFeedbacks,
             RecentReports = recentReports,
             Language = "vi"
