@@ -40,6 +40,9 @@ public class MonthlyReportDataConfiguration : IEntityTypeConfiguration<MonthlyRe
         builder.Property(x => x.NotesData)
             .HasColumnType("jsonb");
 
+        builder.Property(x => x.TopicsData)
+            .HasColumnType("jsonb");
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
