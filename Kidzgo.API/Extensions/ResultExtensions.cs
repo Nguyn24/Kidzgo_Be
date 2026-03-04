@@ -51,4 +51,12 @@ public static class ResultExtensions
         return CustomResults.Problem(result);;
     }
 
+    public static Result<TOut> Map<TIn, TOut>(this Result<TIn> result, Func<TIn, TOut> mapper)
+    {
+        if (result.IsSuccess)
+        {
+            return Result.Success(mapper(result.Value));
+        }
+        return Result.Failure<TOut>(result.Error);
+    }
 }
