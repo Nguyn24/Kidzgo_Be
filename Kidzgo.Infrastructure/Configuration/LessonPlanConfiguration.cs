@@ -13,8 +13,14 @@ public class LessonPlanConfiguration : IEntityTypeConfiguration<LessonPlan>
         builder.Property(x => x.Id)
             .IsRequired();
 
+        builder.Property(x => x.ClassId)
+            .IsRequired();
+
         builder.Property(x => x.SessionId)
             .IsRequired();
+
+        builder.HasIndex(x => x.ClassId)
+            .HasDatabaseName("IX_LessonPlans_ClassId");
 
         builder.HasIndex(x => x.SessionId)
             .IsUnique()
@@ -59,6 +65,11 @@ public class LessonPlanConfiguration : IEntityTypeConfiguration<LessonPlan>
         builder.Property(x => x.IsDeleted);
 
         // Relationships
+        builder.HasOne(x => x.Class)
+            .WithMany(x => x.LessonPlans)
+            .HasForeignKey(x => x.ClassId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(x => x.Session)
             .WithOne(x => x.LessonPlan)
             .HasForeignKey<LessonPlan>(x => x.SessionId)

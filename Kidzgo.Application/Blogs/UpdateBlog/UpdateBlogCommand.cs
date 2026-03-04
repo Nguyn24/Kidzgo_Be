@@ -9,5 +9,7 @@ public sealed class UpdateBlogCommand : ICommand<UpdateBlogResponse>
     public string? Summary { get; init; }
     public string Content { get; init; } = null!;
     public string? FeaturedImageUrl { get; init; }
+    public string? AttachmentImageUrl { get; init; }
+    public string? AttachmentFileUrl { get; init; }
 }
 

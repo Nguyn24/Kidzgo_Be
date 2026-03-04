@@ -1,13 +1,19 @@
+using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Files.Errors;
+using Kidzgo.Domain.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Kidzgo.Application.Files.UploadFile;
 
 public sealed class UploadFileCommandHandler(
     IFileStorageService fileStorageService,
+    IDbContext context,
+    IUserContext userContext,
     ILogger<UploadFileCommandHandler> logger
 ) : ICommandHandler<UploadFileCommand, UploadFileResponse>
 {
@@ -62,6 +68,11 @@ public sealed class UploadFileCommandHandler(
                 command.Folder,
                 resourceType,
                 cancellationToken);
+            
+            if (command.UpdateUserAvatar || command.UpdateProfileAvatar)
+            {
+                await UpdateAvatarAsync(command, url, cancellationToken);
+            }
 
             logger.LogInformation("File uploaded successfully: {FileName} -> {Url}", command.FileName, url);
 
@@ -78,6 +89,58 @@ public sealed class UploadFileCommandHandler(
         {
             logger.LogError(ex, "Error uploading file: {FileName}", command.FileName);
             return Result.Failure<UploadFileResponse>(FileErrors.UploadFailed(ex.Message));
+        }
+    }
+
+    private async Task UpdateAvatarAsync(UploadFileCommand command, string url, CancellationToken cancellationToken)
+    {
+        var userId = userContext.UserId;
+        var hasChanges = false;
+
+        if (command.UpdateUserAvatar)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            if (user is not null)
+            {
+                user.AvatarUrl = url;
+                user.AvatarMimeType = command.ContentType;
+                user.AvatarFileSize = command.FileSize;
+                user.UpdatedAt = DateTime.UtcNow;
+                hasChanges = true;
+            }
+        }
+
+        if (command.UpdateProfileAvatar)
+        {
+            var targetProfileId = command.TargetProfileId ?? userContext.StudentId;
+
+            Profile? profile;
+            if (targetProfileId.HasValue)
+            {
+                profile = await context.Profiles
+                    .FirstOrDefaultAsync(p => p.Id == targetProfileId.Value && !p.IsDeleted, cancellationToken);
+            }
+            else
+            {
+                profile = await context.Profiles
+                    .Where(p => p.UserId == userId && p.IsActive && !p.IsDeleted)
+                    .OrderBy(p => p.ProfileType == ProfileType.Student ? 1 : 0)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
+            if (profile is not null)
+            {
+                profile.AvatarUrl = url;
+                profile.AvatarMimeType = command.ContentType;
+                profile.AvatarFileSize = command.FileSize;
+                profile.UpdatedAt = DateTime.UtcNow;
+                hasChanges = true;
+            }
+        }
+
+        if (hasChanges)
+        {
+            await context.SaveChangesAsync(cancellationToken);
         }
     }
 

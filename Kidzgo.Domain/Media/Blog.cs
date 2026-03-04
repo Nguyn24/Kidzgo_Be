@@ -10,6 +10,8 @@ public class Blog : Entity
     public string? Summary { get; set; } // Short summary for preview
     public string Content { get; set; } = null!; // Full blog content (can be HTML/Markdown)
     public string? FeaturedImageUrl { get; set; } // Featured image URL
+    public string? AttachmentImageUrl { get; set; } // Additional image URL uploaded for blog body
+    public string? AttachmentFileUrl { get; set; } // Attached file URL (pdf/doc/etc.)
     public Guid CreatedBy { get; set; } // Admin/Staff who created
     public bool IsPublished { get; set; } // Whether published on landing page
     public bool IsDeleted { get; set; }
