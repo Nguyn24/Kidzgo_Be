@@ -37,6 +37,7 @@ public class Class : Entity
     public User? AssistantTeacher { get; set; }
     public ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
+    public ICollection<LessonPlan> LessonPlans { get; set; } = new List<LessonPlan>();
     public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
     public ICollection<HomeworkAssignment> HomeworkAssignments { get; set; } = new List<HomeworkAssignment>();
     public ICollection<Exam> Exams { get; set; } = new List<Exam>();

@@ -74,6 +74,7 @@ public class FileUploadController : ControllerBase
     [RequestSizeLimit(5_242_880)]
     public async Task<IResult> UploadAvatar(
         IFormFile file,
+        [FromQuery] Guid? profileId = null,
         CancellationToken cancellationToken = default)
     {
         if (file == null || file.Length == 0)
@@ -81,11 +82,7 @@ public class FileUploadController : ControllerBase
             return Results.BadRequest(new { error = "No file provided" });
         }
 
-        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Results.Unauthorized();
-        }
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "current-user";
 
         var command = new UploadFileCommand
         {
@@ -93,6 +90,10 @@ public class FileUploadController : ControllerBase
             FileSize = file.Length,
             Folder = $"avatars/{userId}",
             ResourceType = "image",
+            ContentType = file.ContentType,
+            UpdateUserAvatar = true,
+            UpdateProfileAvatar = true,
+            TargetProfileId = profileId,
             FileStream = file.OpenReadStream()
         };
 

@@ -16,6 +16,7 @@ public sealed class GetLessonPlanByIdQueryHandler(
         CancellationToken cancellationToken)
     {
         var lessonPlan = await context.LessonPlans
+            .Include(lp => lp.Class)
             .Include(lp => lp.Session)
             .Include(lp => lp.Template)
             .Include(lp => lp.SubmittedByUser)
@@ -30,6 +31,8 @@ public sealed class GetLessonPlanByIdQueryHandler(
         return new GetLessonPlanByIdResponse
         {
             Id = lessonPlan.Id,
+            ClassId = lessonPlan.ClassId,
+            ClassCode = lessonPlan.Class?.Code,
             SessionId = lessonPlan.SessionId,
             SessionTitle = lessonPlan.Session != null
                 ? $"Session {lessonPlan.Session.PlannedDatetime:dd/MM/yyyy HH:mm}"

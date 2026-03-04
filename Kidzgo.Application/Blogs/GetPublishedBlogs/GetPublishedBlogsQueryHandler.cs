@@ -30,6 +30,8 @@ public sealed class GetPublishedBlogsQueryHandler(
                 Title = b.Title,
                 Summary = b.Summary,
                 FeaturedImageUrl = b.FeaturedImageUrl,
+                AttachmentImageUrl = b.AttachmentImageUrl,
+                AttachmentFileUrl = b.AttachmentFileUrl,
                 CreatedBy = b.CreatedBy,
                 CreatedByName = b.CreatedByUser.Name,
                 PublishedAt = b.PublishedAt ?? b.CreatedAt,
