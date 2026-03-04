@@ -13,6 +13,16 @@ public class LessonPlan : Entity
     public string? ActualContent { get; set; }
     public string? ActualHomework { get; set; }
     public string? TeacherNotes { get; set; }
+    
+    // Media/Attachment fields
+    public string? CoverImageUrl { get; set; }  // Ảnh cover của giáo án
+    public string? CoverImageMimeType { get; set; }
+    public long? CoverImageFileSize { get; set; }
+    public string? MediaUrl { get; set; }  // Video/media đính kèm
+    public string? MediaMimeType { get; set; }
+    public long? MediaFileSize { get; set; }
+    public string? MediaType { get; set; }  // "image" hoặc "video"
+    
     public Guid? SubmittedBy { get; set; }
     public DateTime? SubmittedAt { get; set; }
     public bool IsDeleted { get; set; }

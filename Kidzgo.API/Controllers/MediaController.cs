@@ -42,6 +42,11 @@ public class MediaController : ControllerBase
             request.Type,
             request.ContentType,
             request.Url,
+            request.MimeType,
+            request.FileSize,
+            request.OriginalFileName,
+            request.DisplayOrder,
+            request.OwnershipScope,
             request.Caption,
             request.Visibility
         );
