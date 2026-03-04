@@ -41,6 +41,25 @@ public class DashboardController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
+    
+    [HttpGet("student")]
+    [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff,Teacher")]
+    public async Task<IResult> GetStudentDashboard(
+        [FromQuery] Guid? branchId = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetDashboardQuery
+        {
+            BranchId = branchId,
+            StartDate = startDate,
+            EndDate = endDate
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.Map(r => r.Students).MatchOk();
+    }
 
     /// <summary>
     /// Get academic dashboard (attendance, homework, leave, makeup)
