@@ -16,6 +16,7 @@ public class Ticket : Entity
     public string Subject { get; set; } = null!;
     public string Message { get; set; } = null!;
     public TicketStatus Status { get; set; }
+    public TicketType Type { get; set; }
     public Guid? AssignedToUserId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

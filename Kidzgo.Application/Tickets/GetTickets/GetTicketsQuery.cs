@@ -8,7 +8,7 @@ public sealed class GetTicketsQuery : IQuery<GetTicketsResponse>, IPageableQuery
 {
     public bool? Mine { get; init; }
     public Guid? BranchId { get; init; }
-    public Guid? OpenedByUserId { get; init; }
+    public Guid? OpenedByProfileId { get; init; }
     public Guid? AssignedToUserId { get; init; }
     public TicketStatus? Status { get; init; }
     public TicketCategory? Category { get; init; }

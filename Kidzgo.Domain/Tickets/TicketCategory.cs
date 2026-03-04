@@ -5,5 +5,6 @@ public enum TicketCategory
     Homework,
     Finance,
     Schedule,
-    Tech
+    Tech,
+    Other
 }
