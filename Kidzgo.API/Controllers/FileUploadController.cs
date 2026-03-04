@@ -1,4 +1,5 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Application.Files.UploadFile;
 using MediatR;
@@ -13,15 +14,18 @@ public class FileUploadController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IUserContext _userContext;
     private readonly ILogger<FileUploadController> _logger;
 
     public FileUploadController(
         ISender mediator,
         IFileStorageService fileStorageService,
+        IUserContext userContext,
         ILogger<FileUploadController> logger)
     {
         _mediator = mediator;
         _fileStorageService = fileStorageService;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -74,7 +78,6 @@ public class FileUploadController : ControllerBase
     [RequestSizeLimit(5_242_880)]
     public async Task<IResult> UploadAvatar(
         IFormFile file,
-        [FromQuery] Guid? profileId = null,
         CancellationToken cancellationToken = default)
     {
         if (file == null || file.Length == 0)
@@ -82,7 +85,7 @@ public class FileUploadController : ControllerBase
             return Results.BadRequest(new { error = "No file provided" });
         }
 
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "current-user";
+        var userId = _userContext.UserId;
 
         var command = new UploadFileCommand
         {
@@ -93,7 +96,6 @@ public class FileUploadController : ControllerBase
             ContentType = file.ContentType,
             UpdateUserAvatar = true,
             UpdateProfileAvatar = true,
-            TargetProfileId = profileId,
             FileStream = file.OpenReadStream()
         };
 

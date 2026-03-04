@@ -21,4 +21,13 @@ internal static class ClaimsPrincipalExtensions
             parsedStudentId :
             null;
     }
+    
+    public static Guid? GetParentId(this ClaimsPrincipal? principal)
+    {
+        string? parentId = principal?.FindFirstValue("ParentId");
+
+        return Guid.TryParse(parentId, out Guid parsedParentId) ?
+            parsedParentId :
+            null;
+    }
 }
