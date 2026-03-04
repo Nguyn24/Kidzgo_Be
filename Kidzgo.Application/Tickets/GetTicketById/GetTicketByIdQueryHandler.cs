@@ -45,6 +45,7 @@ public sealed class GetTicketByIdQueryHandler(
             Subject = ticket.Subject,
             Message = ticket.Message,
             Status = ticket.Status.ToString(),
+            Type = ticket.Type.ToString(),
             AssignedToUserId = ticket.AssignedToUserId,
             AssignedToUserName = ticket.AssignedToUser?.Name,
             CreatedAt = ticket.CreatedAt,

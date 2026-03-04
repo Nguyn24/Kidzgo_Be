@@ -40,6 +40,11 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(x => x.Type)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.Property(x => x.AssignedToUserId);
 
         builder.Property(x => x.CreatedAt)

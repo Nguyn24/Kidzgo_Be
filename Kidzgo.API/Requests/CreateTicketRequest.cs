@@ -10,4 +10,6 @@ public sealed class CreateTicketRequest
     public TicketCategory Category { get; set; }
     public string Subject { get; set; } = null!;
     public string Message { get; set; } = null!;
+    public TicketType Type { get; set; }
+    public Guid? AssignedToUserId { get; set; }
 }
