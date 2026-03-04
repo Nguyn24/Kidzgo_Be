@@ -32,6 +32,26 @@ public class LessonPlanConfiguration : IEntityTypeConfiguration<LessonPlan>
 
         builder.Property(x => x.TeacherNotes);
 
+        // Media/Attachment fields
+        builder.Property(x => x.CoverImageUrl)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.CoverImageMimeType)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.CoverImageFileSize);
+
+        builder.Property(x => x.MediaUrl)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.MediaMimeType)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.MediaFileSize);
+
+        builder.Property(x => x.MediaType)
+            .HasMaxLength(20);
+
         builder.Property(x => x.SubmittedBy);
 
         builder.Property(x => x.SubmittedAt);

@@ -1,5 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.Application.Abstraction.Storage;
+using Kidzgo.Application.Files.UploadFile;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,28 +11,29 @@ namespace Kidzgo.API.Controllers;
 [ApiController]
 public class FileUploadController : ControllerBase
 {
+    private readonly ISender _mediator;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<FileUploadController> _logger;
 
     public FileUploadController(
+        ISender mediator,
         IFileStorageService fileStorageService,
         ILogger<FileUploadController> logger)
     {
+        _mediator = mediator;
         _fileStorageService = fileStorageService;
         _logger = logger;
     }
 
-    /// Upload a file (image or video) to cloud storage
-    /// <param name="file">File to upload</param>
-    /// <param name="folder">Folder name (e.g., "tickets", "media", "blog"). Default: "uploads"</param>
-    /// <param name="resourceType">Resource type: "image", "video", or "auto" (detect from extension). Default: "auto"</param>
-    /// <returns>Public URL of the uploaded file</returns>
+    /// <summary>
+    /// Upload any file (auto-detect type from extension)
+    /// </summary>
     [HttpPost("upload")]
     [Authorize]
-    [RequestSizeLimit(100_000_000)] // 100MB max
+    [RequestSizeLimit(100_000_000)]
     public async Task<IResult> UploadFile(
         IFormFile file,
-        [FromQuery] string folder = "uploads",
+        [FromQuery] string folder = "general",
         [FromQuery] string resourceType = "auto",
         CancellationToken cancellationToken = default)
     {
@@ -39,53 +42,279 @@ public class FileUploadController : ControllerBase
             return Results.BadRequest(new { error = "No file provided" });
         }
 
-        // Validate file size (100MB max)
-        const long maxFileSize = 100_000_000; // 100MB
-        if (file.Length > maxFileSize)
+        var command = new UploadFileCommand
         {
-            return Results.BadRequest(new { error = $"File size exceeds maximum allowed size of {maxFileSize / 1_000_000}MB" });
-        }
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = folder,
+            ResourceType = resourceType,
+            FileStream = file.OpenReadStream()
+        };
 
-        // Validate file extension
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".mp4", ".mov", ".avi", ".wmv", ".flv", ".webm" };
-        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!allowedExtensions.Contains(fileExtension))
-        {
-            return Results.BadRequest(new { error = $"File type not allowed. Allowed types: {string.Join(", ", allowedExtensions)}" });
-        }
-
-        try
-        {
-            using var stream = file.OpenReadStream();
-            var url = await _fileStorageService.UploadFileAsync(
-                stream,
-                file.FileName,
-                folder,
-                resourceType,
-                cancellationToken);
-
-            _logger.LogInformation("File uploaded successfully: {FileName} -> {Url}", file.FileName, url);
-
-            return Results.Ok(new
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
             {
-                url = url,
-                fileName = file.FileName,
-                size = file.Length,
-                folder = folder
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error uploading file: {FileName}", file.FileName);
-            return Results.Problem(
-                title: "File upload failed",
-                detail: ex.Message,
-                statusCode: 500);
-        }
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
     }
 
-    /// Delete a file from cloud storage
-    /// <param name="url">Public URL of the file to delete</param>
+    /// <summary>
+    /// Upload avatar for user
+    /// </summary>
+    [HttpPost("avatar")]
+    [Authorize]
+    [RequestSizeLimit(5_242_880)]
+    public async Task<IResult> UploadAvatar(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = $"avatars/{userId}",
+            ResourceType = "image",
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Upload blog media (image or video)
+    /// </summary>
+    [HttpPost("blog")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(100_000_000)]
+    public async Task<IResult> UploadBlogMedia(
+        IFormFile file,
+        [FromQuery] bool isVideo = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var folder = isVideo ? "blog/videos" : "blog/images";
+        var resourceType = isVideo ? "video" : "image";
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = folder,
+            ResourceType = resourceType,
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Upload lesson plan media (image or video)
+    /// </summary>
+    [HttpPost("lesson-plan/media")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(100_000_000)]
+    public async Task<IResult> UploadLessonPlanMedia(
+        IFormFile file,
+        [FromQuery] bool isVideo = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var folder = isVideo ? "lesson-plans/videos" : "lesson-plans/images";
+        var resourceType = isVideo ? "video" : "image";
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = folder,
+            ResourceType = resourceType,
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Upload lesson plan template document
+    /// </summary>
+    [HttpPost("lesson-plan/template")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(52_428_800)]
+    public async Task<IResult> UploadLessonPlanTemplate(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = "lesson-plan-templates",
+            ResourceType = "document",
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Upload lesson plan materials
+    /// </summary>
+    [HttpPost("lesson-plan/materials")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(52_428_800)]
+    public async Task<IResult> UploadLessonPlanMaterials(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = "lesson-plan-materials",
+            ResourceType = "document",
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Upload monthly Errorreport (Excel)
+    /// </summary>
+    [HttpPost("reports/monthly")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(20_971_520)]
+    public async Task<IResult> UploadMonthlyReport(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var command = new UploadFileCommand
+        {
+            FileName = file.FileName,
+            FileSize = file.Length,
+            Folder = "reports/monthly",
+            ResourceType = "excel",
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.Match(
+            success => Results.Ok(new
+            {
+                url = success.Url,
+                fileName = success.FileName,
+                size = success.Size,
+                folder = success.Folder,
+                resourceType = success.ResourceType
+            }),
+            failure => Results.BadRequest(new { error = failure.Error.Description })
+        );
+    }
+
+    /// <summary>
+    /// Delete a file from storage
+    /// </summary>
     [HttpDelete]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DeleteFile(
@@ -111,19 +340,13 @@ public class FileUploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting file: {Url}", url);
-            return Results.Problem(
-                title: "File deletion failed",
-                detail: ex.Message,
-                statusCode: 500);
+            return Results.Problem(title: "Deletion failed", detail: ex.Message, statusCode: 500);
         }
     }
 
-    /// Get transformed/optimized URL for an image
-    /// <param name="url">Original public URL</param>
-    /// <param name="width">Desired width (optional)</param>
-    /// <param name="height">Desired height (optional)</param>
-    /// <param name="format">Desired format: "webp", "jpg", "png" (optional)</param>
-    /// <returns>Transformed URL</returns>
+    /// <summary>
+    /// Get transformed URL for image
+    /// </summary>
     [HttpGet("transform")]
     [AllowAnonymous]
     public IResult GetTransformedUrl(
@@ -145,11 +368,31 @@ public class FileUploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating transformed URL: {Url}", url);
-            return Results.Problem(
-                title: "URL transformation failed",
-                detail: ex.Message,
-                statusCode: 500);
+            return Results.Problem(title: "Transformation failed", detail: ex.Message, statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Get download URL for a file
+    /// </summary>
+    [HttpGet("download")]
+    [AllowAnonymous]
+    public IResult GetDownloadUrl([FromQuery] string url)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return Results.BadRequest(new { error = "URL is required" });
+        }
+
+        try
+        {
+            var downloadUrl = _fileStorageService.GetDownloadUrl(url);
+            return Results.Ok(new { url = downloadUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating download URL: {Url}", url);
+            return Results.Problem(title: "Download URL generation failed", detail: ex.Message, statusCode: 500);
         }
     }
 }
-

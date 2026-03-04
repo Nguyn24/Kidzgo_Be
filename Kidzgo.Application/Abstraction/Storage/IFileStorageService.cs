@@ -28,6 +28,18 @@ public interface IFileStorageService
     /// <returns>True if deleted successfully, false otherwise</returns>
     Task<bool> DeleteFileAsync(string publicUrl, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Validate file before upload (extension, size, MIME type)
+    /// </summary>
+    /// <param name="fileName">Original file name</param>
+    /// <param name="fileSize">File size in bytes</param>
+    /// <param name="mimeType">MIME type (optional, auto-detected from extension if not provided)</param>
+    /// <returns>Tuple of (IsValid, ErrorMessage, ResourceType)</returns>
+    (bool IsValid, string? Error, string? ResourceType) ValidateFile(
+        string fileName,
+        long fileSize,
+        string? mimeType = null);
+
     /// Get optimized/transformed URL for an image (e.g., resize, format conversion)
     /// <param name="publicUrl">Original public URL</param>
     /// <param name="width">Desired width (optional)</param>

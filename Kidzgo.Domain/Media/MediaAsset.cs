@@ -16,6 +16,11 @@ public class MediaAsset : Entity
     public MediaType Type { get; set; }
     public MediaContentType ContentType { get; set; }
     public string Url { get; set; } = null!;
+    public string? MimeType { get; set; }      // ví dụ: "image/jpeg", "video/mp4", "application/pdf"
+    public long FileSize { get; set; }          // bytes
+    public string? OriginalFileName { get; set; } // Tên file gốc khi upload
+    public int? DisplayOrder { get; set; }     // Thứ tự hiển thị trong gallery
+    public MediaOwnershipScope OwnershipScope { get; set; } = MediaOwnershipScope.Personal; // Quy mô sở hữu: Personal, Class, Branch
     public string? Caption { get; set; }
     public Visibility Visibility { get; set; }
     public ApprovalStatus ApprovalStatus { get; set; }

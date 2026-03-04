@@ -11,6 +11,11 @@ public sealed record CreateMediaCommand(
     MediaType Type,
     MediaContentType ContentType,
     string Url,
+    string? MimeType,
+    long FileSize,
+    string? OriginalFileName,
+    int? DisplayOrder,
+    MediaOwnershipScope OwnershipScope,
     string? Caption,
     Visibility Visibility
 ) : ICommand<CreateMediaResponse>;

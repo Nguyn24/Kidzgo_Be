@@ -39,6 +39,21 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
         builder.Property(x => x.Url)
             .IsRequired();
 
+        builder.Property(x => x.MimeType)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.FileSize);
+
+        builder.Property(x => x.OriginalFileName)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.DisplayOrder);
+
+        builder.Property(x => x.OwnershipScope)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.Property(x => x.Caption);
 
         builder.Property(x => x.Visibility)

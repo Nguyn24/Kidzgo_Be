@@ -4,6 +4,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Application.Abstraction.Reports;
+using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Infrastructure.AI;
 using Kidzgo.Infrastructure.Authentication;
 using Kidzgo.Infrastructure.BackgroundJobs;
@@ -252,7 +253,19 @@ public static class DependencyInjection
         services.AddSingleton<IPayload, Payload>();
         services.AddScoped<ITemplateRenderer, TemplateRenderer>();
         services.AddScoped<IImageUploader, ImageUploader>();
-        services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        
+        // Register FileStorageService - Local hoặc Cloudinary dựa trên config
+        var fileStorageProvider = configuration["FileStorage:Provider"] ?? "Cloudinary";
+        if (fileStorageProvider.Equals("Local", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<Application.Abstraction.Storage.IFileStorageService, LocalFileStorageService>();
+        }
+        // else
+        // {
+        //     services.AddScoped<Application.Abstraction.Storage.IFileStorageService, CloudinaryFileStorageService>();
+        // }
+        
         services.AddScoped<Kidzgo.Application.Services.SessionGenerationService>();
         services.AddScoped<Application.Abstraction.Reports.IMonthlyReportDataAggregator, MonthlyReportDataAggregator>();
         
