@@ -39,7 +39,9 @@ public class TicketController : ControllerBase
             ClassId = request.ClassId,
             Category = request.Category,
             Subject = request.Subject,
-            Message = request.Message
+            Message = request.Message,
+            Type = request.Type,
+            AssignedToUserId = request.AssignedToUserId
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -48,7 +50,7 @@ public class TicketController : ControllerBase
 
     /// UC-341: Xem danh sách Tickets
     /// <param name="branchId">Filter by branch ID</param>
-    /// <param name="openedByUserId">Filter by opened by user ID</param>
+    /// <param name="openedByProfileId">Filter by opened by profile ID</param>
     /// <param name="assignedToUserId">Filter by assigned to user ID</param>
     /// <param name="status">Ticket status: Open, InProgress, Resolved, or Closed</param>
     /// <param name="category">Ticket category: Homework, Finance, Schedule, or Tech</param>
@@ -60,7 +62,7 @@ public class TicketController : ControllerBase
     public async Task<IResult> GetTickets(
         [FromQuery] bool? mine,
         [FromQuery] Guid? branchId,
-        [FromQuery] Guid? openedByUserId,
+        [FromQuery] Guid? openedByProfileId,
         [FromQuery] Guid? assignedToUserId,
         [FromQuery] TicketStatus? status,
         [FromQuery] TicketCategory? category,
@@ -73,7 +75,7 @@ public class TicketController : ControllerBase
         {
             Mine = mine,
             BranchId = branchId,
-            OpenedByUserId = openedByUserId,
+            OpenedByProfileId = openedByProfileId,
             AssignedToUserId = assignedToUserId,
             Status = status,
             Category = category,

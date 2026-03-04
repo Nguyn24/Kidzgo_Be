@@ -23,7 +23,7 @@ public sealed class GetTicketsQueryHandler(
             .Include(t => t.TicketComments)
             .AsQueryable();
 
-        // Filter by mine (tickets of current user)
+        // Filter by mine (tickets of current user via profile)
         if (query.Mine == true)
         {
             var currentUserId = userContext.UserId;
@@ -38,10 +38,10 @@ public sealed class GetTicketsQueryHandler(
             ticketsQuery = ticketsQuery.Where(t => t.BranchId == query.BranchId.Value);
         }
 
-        // Filter by opened by user
-        if (query.OpenedByUserId.HasValue)
+        // Filter by opened by profile
+        if (query.OpenedByProfileId.HasValue)
         {
-            ticketsQuery = ticketsQuery.Where(t => t.OpenedByUserId == query.OpenedByUserId.Value);
+            ticketsQuery = ticketsQuery.Where(t => t.OpenedByProfileId == query.OpenedByProfileId.Value);
         }
 
         // Filter by assigned to user
@@ -91,6 +91,7 @@ public sealed class GetTicketsQueryHandler(
                 Subject = t.Subject,
                 Message = t.Message,
                 Status = t.Status.ToString(),
+                Type = t.Type.ToString(),
                 AssignedToUserId = t.AssignedToUserId,
                 AssignedToUserName = t.AssignedToUser != null ? t.AssignedToUser.Name : null,
                 CreatedAt = t.CreatedAt,
@@ -111,4 +112,3 @@ public sealed class GetTicketsQueryHandler(
         };
     }
 }
-

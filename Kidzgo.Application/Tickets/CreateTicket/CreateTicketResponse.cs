@@ -18,7 +18,9 @@ public sealed class CreateTicketResponse
     public string Subject { get; init; } = null!;
     public string Message { get; init; } = null!;
     public string Status { get; init; } = null!;
+    public string Type { get; init; } = null!;
     public Guid? AssignedToUserId { get; init; }
+    public string? AssignedToUserName { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
