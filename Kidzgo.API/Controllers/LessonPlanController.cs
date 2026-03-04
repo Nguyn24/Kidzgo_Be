@@ -36,6 +36,7 @@ public class LessonPlanController : ControllerBase
     {
         var command = new CreateLessonPlanCommand
         {
+            ClassId = request.ClassId,
             SessionId = request.SessionId,
             TemplateId = request.TemplateId,
             PlannedContent = request.PlannedContent,

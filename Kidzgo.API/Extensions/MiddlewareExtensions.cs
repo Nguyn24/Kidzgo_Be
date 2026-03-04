@@ -34,15 +34,17 @@ public static class MiddlewareExtensions
         app.UseMiddleware<AuthorizationMiddleware>();
         app.ApplyMigrations();
 
-        var storageBasePath = app.Configuration["FileStorage:Local:BasePath"];
-        if (!string.IsNullOrWhiteSpace(storageBasePath))
+        var storageBasePath = app.Configuration["FileStorage:Local:BasePath"] ?? "/var/www/kidzgo/storage";
+        if (!Directory.Exists(storageBasePath))
         {
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(storageBasePath),
-                RequestPath = "/storage"
-            });
+            Directory.CreateDirectory(storageBasePath);
         }
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(storageBasePath),
+            RequestPath = "/storage"
+        });
 
         app.MapControllers();
         return app;

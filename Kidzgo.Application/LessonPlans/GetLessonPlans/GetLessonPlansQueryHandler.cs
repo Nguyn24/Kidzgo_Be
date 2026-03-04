@@ -15,8 +15,8 @@ public sealed class GetLessonPlansQueryHandler(
         CancellationToken cancellationToken)
     {
         var lessonPlanQuery = context.LessonPlans
+            .Include(lp => lp.Class)
             .Include(lp => lp.Session)
-                .ThenInclude(s => s.Class)
             .Include(lp => lp.Template)
             .Include(lp => lp.SubmittedByUser)
             .AsQueryable();
@@ -36,7 +36,7 @@ public sealed class GetLessonPlansQueryHandler(
         // Filter by class
         if (query.ClassId.HasValue)
         {
-            lessonPlanQuery = lessonPlanQuery.Where(lp => lp.Session.ClassId == query.ClassId.Value);
+            lessonPlanQuery = lessonPlanQuery.Where(lp => lp.ClassId == query.ClassId.Value);
         }
 
         // Filter by template
@@ -79,8 +79,8 @@ public sealed class GetLessonPlansQueryHandler(
                     ? $"Session {lp.Session.PlannedDatetime:dd/MM/yyyy HH:mm}"
                     : null,
                 SessionDate = lp.Session != null ? lp.Session.PlannedDatetime : null,
-                ClassId = lp.Session != null ? lp.Session.ClassId : null,
-                ClassCode = lp.Session != null && lp.Session.Class != null ? lp.Session.Class.Code : null,
+                ClassId = lp.ClassId,
+                ClassCode = lp.Class != null ? lp.Class.Code : null,
                 TemplateId = lp.TemplateId,
                 TemplateLevel = lp.Template != null ? lp.Template.Level : null,
                 TemplateSessionIndex = lp.Template != null ? lp.Template.SessionIndex : null,

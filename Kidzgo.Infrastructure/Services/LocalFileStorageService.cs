@@ -12,6 +12,7 @@ public class LocalFileStorageService : IFileStorageService
 {
     private readonly string _basePath;
     private readonly string _baseUrl;
+    private readonly string _publicPathPrefix;
     private readonly ILogger<LocalFileStorageService> _logger;
     private readonly long _maxFileSize;
     private readonly Dictionary<string, string[]> _allowedExtensions;
@@ -26,6 +27,7 @@ public class LocalFileStorageService : IFileStorageService
         var fileStorageConfig = configuration.GetSection("FileStorage:Local");
         _basePath = fileStorageConfig["BasePath"] ?? "/var/www/kidzgo/storage";
         _baseUrl = fileStorageConfig["BaseUrl"] ?? "/storage";
+        _publicPathPrefix = ResolvePublicPathPrefix(_baseUrl);
         
         // Max file sizes in bytes
         _maxFileSize = long.Parse(configuration["FileStorage:MaxFileSize:Default"] ?? "104857600"); // 100MB default
@@ -107,7 +109,7 @@ public class LocalFileStorageService : IFileStorageService
         await fileStream.CopyToAsync(outputStream, cancellationToken);
 
         // Build public URL
-        var publicUrl = $"{_baseUrl}/{folder}/{uniqueFileName}";
+        var publicUrl = $"{_publicPathPrefix}/{folder}/{uniqueFileName}";
 
         _logger.LogInformation(
             "File uploaded successfully: {FileName} -> {Url} ({Size} bytes)",
@@ -232,5 +234,27 @@ public class LocalFileStorageService : IFileStorageService
             _logger.LogError(ex, "Error parsing URL to local path: {Url}", publicUrl);
             return null;
         }
+    }
+
+    private static string ResolvePublicPathPrefix(string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            return "/storage";
+        }
+
+        if (Uri.TryCreate(baseUrl, UriKind.Absolute, out var absoluteUri))
+        {
+            var absolutePath = absoluteUri.AbsolutePath.TrimEnd('/');
+            return string.IsNullOrWhiteSpace(absolutePath) ? "/storage" : absolutePath;
+        }
+
+        var normalized = baseUrl.TrimEnd('/');
+        if (!normalized.StartsWith('/'))
+        {
+            normalized = "/" + normalized;
+        }
+
+        return normalized;
     }
 }
