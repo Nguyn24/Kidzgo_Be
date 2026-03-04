@@ -11,6 +11,9 @@ public class LessonPlanTemplate : Entity
     public string? Level { get; set; }
     public int SessionIndex { get; set; }
     public string? AttachmentUrl { get; set; }
+    public string? AttachmentMimeType { get; set; }  // MIME type: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, etc.
+    public long? AttachmentFileSize { get; set; }  // Kích thước file (bytes)
+    public string? AttachmentOriginalFileName { get; set; }  // Tên file gốc
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public Guid? CreatedBy { get; set; }

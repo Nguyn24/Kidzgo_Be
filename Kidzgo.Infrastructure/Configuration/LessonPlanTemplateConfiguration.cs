@@ -23,7 +23,15 @@ public class LessonPlanTemplateConfiguration : IEntityTypeConfiguration<LessonPl
             .IsRequired();
 
         builder.Property(x => x.AttachmentUrl)
-            .IsRequired();
+            .HasMaxLength(500);
+
+        builder.Property(x => x.AttachmentMimeType)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.AttachmentFileSize);
+
+        builder.Property(x => x.AttachmentOriginalFileName)
+            .HasMaxLength(255);
 
         builder.Property(x => x.IsActive)
             .IsRequired();
