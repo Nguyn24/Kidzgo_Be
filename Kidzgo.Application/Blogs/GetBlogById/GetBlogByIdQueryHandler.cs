@@ -28,6 +28,8 @@ public sealed class GetBlogByIdQueryHandler(
             Summary = blog.Summary,
             Content = blog.Content,
             FeaturedImageUrl = blog.FeaturedImageUrl,
+            AttachmentImageUrl = blog.AttachmentImageUrl,
+            AttachmentFileUrl = blog.AttachmentFileUrl,
             CreatedBy = blog.CreatedBy,
             CreatedByName = blog.CreatedByUser.Name,
             IsPublished = blog.IsPublished,

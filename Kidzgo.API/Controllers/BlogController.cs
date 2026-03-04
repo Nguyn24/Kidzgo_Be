@@ -37,7 +37,9 @@ public class BlogController : ControllerBase
             Title = request.Title,
             Summary = request.Summary,
             Content = request.Content,
-            FeaturedImageUrl = request.FeaturedImageUrl
+            FeaturedImageUrl = request.FeaturedImageUrl,
+            AttachmentImageUrl = request.AttachmentImageUrl,
+            AttachmentFileUrl = request.AttachmentFileUrl
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -98,7 +100,9 @@ public class BlogController : ControllerBase
             Title = request.Title,
             Summary = request.Summary,
             Content = request.Content,
-            FeaturedImageUrl = request.FeaturedImageUrl
+            FeaturedImageUrl = request.FeaturedImageUrl,
+            AttachmentImageUrl = request.AttachmentImageUrl,
+            AttachmentFileUrl = request.AttachmentFileUrl
         };
 
         var result = await _mediator.Send(command, cancellationToken);

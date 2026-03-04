@@ -1,4 +1,5 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Users;
 
@@ -7,6 +8,7 @@ namespace Kidzgo.Domain.LessonPlans;
 public class LessonPlan : Entity
 {
     public Guid Id { get; set; }
+    public Guid ClassId { get; set; }
     public Guid SessionId { get; set; }
     public Guid? TemplateId { get; set; }
     public string? PlannedContent { get; set; }
@@ -28,6 +30,7 @@ public class LessonPlan : Entity
     public bool IsDeleted { get; set; }
 
     // Navigation properties
+    public Class Class { get; set; } = null!;
     public Session Session { get; set; } = null!;
     public LessonPlanTemplate? Template { get; set; }
     public User? SubmittedByUser { get; set; }

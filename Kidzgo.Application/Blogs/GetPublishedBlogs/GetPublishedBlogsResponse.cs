@@ -13,6 +13,8 @@ public sealed class PublishedBlogDto
     public string Title { get; init; } = null!;
     public string? Summary { get; init; }
     public string? FeaturedImageUrl { get; init; }
+    public string? AttachmentImageUrl { get; init; }
+    public string? AttachmentFileUrl { get; init; }
     public Guid CreatedBy { get; init; }
     public string CreatedByName { get; init; } = null!;
     public DateTime? PublishedAt { get; init; }

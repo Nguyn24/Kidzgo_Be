@@ -30,6 +30,8 @@ public sealed class UpdateBlogCommandHandler(
         blog.Summary = command.Summary;
         blog.Content = command.Content;
         blog.FeaturedImageUrl = command.FeaturedImageUrl;
+        blog.AttachmentImageUrl = command.AttachmentImageUrl;
+        blog.AttachmentFileUrl = command.AttachmentFileUrl;
         blog.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -41,6 +43,8 @@ public sealed class UpdateBlogCommandHandler(
             Summary = blog.Summary,
             Content = blog.Content,
             FeaturedImageUrl = blog.FeaturedImageUrl,
+            AttachmentImageUrl = blog.AttachmentImageUrl,
+            AttachmentFileUrl = blog.AttachmentFileUrl,
             CreatedBy = blog.CreatedBy,
             CreatedByName = blog.CreatedByUser.Name,
             IsPublished = blog.IsPublished,

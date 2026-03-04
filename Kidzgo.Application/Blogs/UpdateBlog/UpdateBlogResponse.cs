@@ -7,6 +7,8 @@ public sealed class UpdateBlogResponse
     public string? Summary { get; init; }
     public string Content { get; init; } = null!;
     public string? FeaturedImageUrl { get; init; }
+    public string? AttachmentImageUrl { get; init; }
+    public string? AttachmentFileUrl { get; init; }
     public Guid CreatedBy { get; init; }
     public string CreatedByName { get; init; } = null!;
     public bool IsPublished { get; init; }

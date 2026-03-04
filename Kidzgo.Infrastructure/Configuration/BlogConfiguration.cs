@@ -25,6 +25,12 @@ public class BlogConfiguration : IEntityTypeConfiguration<Blog>
 
         builder.Property(x => x.FeaturedImageUrl)
             .HasMaxLength(500);
+        
+        builder.Property(x => x.AttachmentImageUrl)
+            .HasMaxLength(500);
+        
+        builder.Property(x => x.AttachmentFileUrl)
+            .HasMaxLength(500);
 
         builder.Property(x => x.CreatedBy)
             .IsRequired();

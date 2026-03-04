@@ -12,6 +12,14 @@ public static class LessonPlanErrors
         "LessonPlan.SessionNotFound",
         $"Session with Id = '{sessionId}' was not found");
 
+    public static Error ClassNotFound(Guid? classId) => Error.NotFound(
+        "LessonPlan.ClassNotFound",
+        $"Class with Id = '{classId}' was not found");
+
+    public static Error SessionClassMismatch(Guid? sessionId, Guid? classId) => Error.Validation(
+        "LessonPlan.SessionClassMismatch",
+        $"Session with Id = '{sessionId}' does not belong to class '{classId}'");
+
     public static Error TemplateNotFound(Guid? templateId) => Error.NotFound(
         "LessonPlan.TemplateNotFound",
         $"Lesson plan template with Id = '{templateId}' was not found");

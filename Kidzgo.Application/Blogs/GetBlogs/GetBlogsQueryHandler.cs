@@ -48,6 +48,8 @@ public sealed class GetBlogsQueryHandler(
                 Summary = b.Summary,
                 Content = b.Content,
                 FeaturedImageUrl = b.FeaturedImageUrl,
+                AttachmentImageUrl = b.AttachmentImageUrl,
+                AttachmentFileUrl = b.AttachmentFileUrl,
                 CreatedBy = b.CreatedBy,
                 CreatedByName = b.CreatedByUser.Name,
                 IsPublished = b.IsPublished,

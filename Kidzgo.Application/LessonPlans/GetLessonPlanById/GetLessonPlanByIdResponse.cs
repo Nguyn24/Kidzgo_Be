@@ -3,6 +3,8 @@ namespace Kidzgo.Application.LessonPlans.GetLessonPlanById;
 public sealed class GetLessonPlanByIdResponse
 {
     public Guid Id { get; init; }
+    public Guid ClassId { get; init; }
+    public string? ClassCode { get; init; }
     public Guid SessionId { get; init; }
     public string? SessionTitle { get; init; }
     public DateTime? SessionDate { get; init; }

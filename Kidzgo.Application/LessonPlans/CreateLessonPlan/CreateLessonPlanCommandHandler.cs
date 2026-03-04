@@ -18,6 +18,16 @@ public sealed class CreateLessonPlanCommandHandler(
         CreateLessonPlanCommand command,
         CancellationToken cancellationToken)
     {
+        // Validate class exists
+        var classExists = await context.Classes
+            .AnyAsync(c => c.Id == command.ClassId, cancellationToken);
+
+        if (!classExists)
+        {
+            return Result.Failure<CreateLessonPlanResponse>(
+                LessonPlanErrors.ClassNotFound(command.ClassId));
+        }
+
         // Validate session exists
         var session = await context.Sessions
             .FirstOrDefaultAsync(s => s.Id == command.SessionId, cancellationToken);
@@ -26,6 +36,13 @@ public sealed class CreateLessonPlanCommandHandler(
         {
             return Result.Failure<CreateLessonPlanResponse>(
                 SessionErrors.NotFound(command.SessionId));
+        }
+
+        // Validate session belongs to class
+        if (session.ClassId != command.ClassId)
+        {
+            return Result.Failure<CreateLessonPlanResponse>(
+                LessonPlanErrors.SessionClassMismatch(command.SessionId, command.ClassId));
         }
 
         // Check if session already has a lesson plan (not deleted)
@@ -57,6 +74,7 @@ public sealed class CreateLessonPlanCommandHandler(
         var lessonPlan = new LessonPlan
         {
             Id = Guid.NewGuid(),
+            ClassId = command.ClassId,
             SessionId = command.SessionId,
             TemplateId = command.TemplateId,
             PlannedContent = command.PlannedContent,
@@ -72,6 +90,7 @@ public sealed class CreateLessonPlanCommandHandler(
         return new CreateLessonPlanResponse
         {
             Id = lessonPlan.Id,
+            ClassId = lessonPlan.ClassId,
             SessionId = lessonPlan.SessionId,
             TemplateId = lessonPlan.TemplateId,
             PlannedContent = lessonPlan.PlannedContent,
