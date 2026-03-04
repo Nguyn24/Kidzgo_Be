@@ -35,18 +35,6 @@ public sealed class CreateTicketCommandHandler(
             return Result.Failure<CreateTicketResponse>(TicketErrors.BranchNotFound);
         }
 
-        // Check if class exists (if provided)
-        if (command.ClassId.HasValue)
-        {
-            var classExists = await context.Classes
-                .AnyAsync(c => c.Id == command.ClassId.Value, cancellationToken);
-
-            if (!classExists)
-            {
-                return Result.Failure<CreateTicketResponse>(TicketErrors.ClassNotFound);
-            }
-        }
-
         // Check if profile exists (if provided)
         if (command.OpenedByProfileId.HasValue)
         {
@@ -56,6 +44,67 @@ public sealed class CreateTicketCommandHandler(
             if (profile is null)
             {
                 return Result.Failure<CreateTicketResponse>(TicketErrors.ProfileNotFound);
+            }
+        }
+
+        // Validate for DirectToTeacher ticket
+        Guid? assignedToUserId = null;
+        var ticketType = command.Type;
+
+        if (command.Type == TicketType.DirectToTeacher)
+        {
+            // ClassId is required for DirectToTeacher
+            if (!command.ClassId.HasValue)
+            {
+                return Result.Failure<CreateTicketResponse>(TicketErrors.ClassIdRequiredForDirectToTeacher);
+            }
+
+            // AssignedToUserId is required for DirectToTeacher
+            if (!command.AssignedToUserId.HasValue)
+            {
+                return Result.Failure<CreateTicketResponse>(TicketErrors.AssignedUserRequiredForDirectToTeacher);
+            }
+
+            // Validate: Assigned user must be the MainTeacher of the class
+            var classEntity = await context.Classes
+                .FirstOrDefaultAsync(c => c.Id == command.ClassId.Value, cancellationToken);
+
+            if (classEntity is null)
+            {
+                return Result.Failure<CreateTicketResponse>(TicketErrors.ClassNotFound);
+            }
+
+            if (classEntity.MainTeacherId != command.AssignedToUserId.Value)
+            {
+                return Result.Failure<CreateTicketResponse>(TicketErrors.MustBeMainTeacherOfClass);
+            }
+
+            // Validate: Student must be enrolled in this class
+            if (command.OpenedByProfileId.HasValue)
+            {
+                var isEnrolled = await context.ClassEnrollments
+                    .AnyAsync(ce => ce.ClassId == command.ClassId.Value 
+                        && ce.StudentProfileId == command.OpenedByProfileId.Value
+                        && ce.Status == Domain.Classes.EnrollmentStatus.Active, cancellationToken);
+
+                if (!isEnrolled)
+                {
+                    return Result.Failure<CreateTicketResponse>(TicketErrors.NotEnrolledInClass);
+                }
+            }
+
+            assignedToUserId = command.AssignedToUserId;
+        }
+
+        // Check if class exists (if provided) - for General tickets
+        if (command.ClassId.HasValue && command.Type == TicketType.General)
+        {
+            var classExists = await context.Classes
+                .AnyAsync(c => c.Id == command.ClassId.Value, cancellationToken);
+
+            if (!classExists)
+            {
+                return Result.Failure<CreateTicketResponse>(TicketErrors.ClassNotFound);
             }
         }
 
@@ -71,7 +120,8 @@ public sealed class CreateTicketCommandHandler(
             Subject = command.Subject,
             Message = command.Message,
             Status = TicketStatus.Open,
-            AssignedToUserId = null,
+            Type = ticketType,
+            AssignedToUserId = assignedToUserId,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -85,6 +135,7 @@ public sealed class CreateTicketCommandHandler(
             .Include(t => t.OpenedByProfile)
             .Include(t => t.Branch)
             .Include(t => t.Class)
+            .Include(t => t.AssignedToUser)
             .FirstOrDefaultAsync(t => t.Id == ticket.Id, cancellationToken);
 
         return new CreateTicketResponse
@@ -103,7 +154,9 @@ public sealed class CreateTicketCommandHandler(
             Subject = ticketWithNav.Subject,
             Message = ticketWithNav.Message,
             Status = ticketWithNav.Status.ToString(),
+            Type = ticketWithNav.Type.ToString(),
             AssignedToUserId = ticketWithNav.AssignedToUserId,
+            AssignedToUserName = ticketWithNav.AssignedToUser?.Name,
             CreatedAt = ticketWithNav.CreatedAt,
             UpdatedAt = ticketWithNav.UpdatedAt
         };

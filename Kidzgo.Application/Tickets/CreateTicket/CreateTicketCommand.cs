@@ -11,4 +11,6 @@ public sealed class CreateTicketCommand : ICommand<CreateTicketResponse>
     public TicketCategory Category { get; init; }
     public string Subject { get; init; } = null!;
     public string Message { get; init; } = null!;
+    public TicketType Type { get; init; }
+    public Guid? AssignedToUserId { get; init; }
 }
