@@ -43,7 +43,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         job.UpdatedAt = DateTime.UtcNow;
         await context.SaveChangesAsync(cancellationToken);
 
-        // Get all active enrollments in the branch for the month
+        // Get all enrollments in the branch (Active or Paused) for the month
         var startDate = new DateTime(job.Year, job.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
@@ -51,9 +51,16 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
             .Include(e => e.Class)
             .Include(e => e.StudentProfile)
             .Where(e => e.Class.BranchId == job.BranchId &&
-                       e.Status == EnrollmentStatus.Active)
+                       (e.Status == EnrollmentStatus.Active || e.Status == EnrollmentStatus.Paused) &&
+                       e.EnrollDate <= DateOnly.FromDateTime(endDate))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        // Deduplicate: Only keep the latest enrollment for each student (by EnrollDate descending)
+        var latestEnrollments = enrollments
+            .GroupBy(e => e.StudentProfileId)
+            .Select(g => g.OrderByDescending(e => e.EnrollDate).First())
+            .ToList();
 
         var reportIds = new List<Guid>();
         int totalCreated = 0;
@@ -61,7 +68,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         var now = DateTime.UtcNow;
 
         // Load ALL existing reports and report data ONCE at the beginning
-        var studentProfileIds = enrollments.Select(e => e.StudentProfileId).Distinct().ToList();
+        var studentProfileIds = latestEnrollments.Select(e => e.StudentProfileId).Distinct().ToList();
         
         var existingReports = await context.StudentMonthlyReports
             .Where(r => studentProfileIds.Contains(r.StudentProfileId) &&
@@ -83,10 +90,10 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         var reportDataInMemory = existingReportData
             .ToDictionary(rd => rd.ReportId, rd => rd);
 
-        logger.LogInformation("Processing {Count} enrollments for JobId: {JobId}", 
-            enrollments.Count, command.JobId);
+        logger.LogInformation("Processing {Count} enrollments for JobId: {JobId}",
+            latestEnrollments.Count, command.JobId);
 
-        foreach (var enrollment in enrollments)
+        foreach (var enrollment in latestEnrollments)
         {
             try
             {
@@ -202,7 +209,11 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                     }
                 }
 
-                reportIds.Add(report.Id);
+                // Avoid duplicate report IDs in response
+                if (!reportIds.Contains(report.Id))
+                {
+                    reportIds.Add(report.Id);
+                }
 
                 // Save every 10 records to avoid large transactions
                 if ((totalCreated + totalUpdated) % 10 == 0)
@@ -240,8 +251,9 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
             TotalReportsUpdated = totalUpdated,
             ReportIds = reportIds,
             DurationMs = stopwatch.ElapsedMilliseconds,
-            TotalEnrollmentsProcessed = enrollments.Count
+            TotalEnrollmentsProcessed = latestEnrollments.Count
         };
     }
 }
+
 
