@@ -59,6 +59,7 @@ public sealed class GetMonthlyReportJobByIdQueryHandler(
             CreatedByName = job.CreatedByUser?.Name,
             CreatedAt = job.CreatedAt,
             UpdatedAt = job.UpdatedAt,
+            ReportCount = job.Reports.Count,
             Reports = reports
         };
     }
