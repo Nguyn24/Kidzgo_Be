@@ -75,6 +75,7 @@ public sealed class UpdateLessonPlanTemplateCommandHandler(
         {
             Id = template.Id,
             ProgramId = template.ProgramId,
+            Title = template.Title,
             Level = template.Level,
             SessionIndex = template.SessionIndex,
             Attachment = template.AttachmentUrl,

@@ -9,6 +9,7 @@ public class LessonPlanTemplate : Entity
     public Guid Id { get; set; }
     public Guid ProgramId { get; set; }
     public string? Level { get; set; }
+    public string? Title { get; set; }
     public int SessionIndex { get; set; }
     public string? AttachmentUrl { get; set; }
     public string? AttachmentMimeType { get; set; }  // MIME type: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, etc.
