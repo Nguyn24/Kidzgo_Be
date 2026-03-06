@@ -68,5 +68,10 @@ public static class FileErrors
         Error.Validation(
             "File.Unauthorized",
             "Unauthorized to perform this operation");
+
+    public static Error ParentProfileSelectionRequired() =>
+        Error.Validation(
+            "File.ParentProfileSelectionRequired",
+            "Parent account must select a student profile before updating avatar");
 }
 

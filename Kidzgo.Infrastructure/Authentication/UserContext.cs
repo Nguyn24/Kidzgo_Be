@@ -23,4 +23,10 @@ public class UserContext : IUserContext
             .HttpContext?
             .User
             .GetStudentId();
+
+    public Guid? ParentId =>
+        _httpContextAccessor
+            .HttpContext?
+            .User
+            .GetParentId();
 }
