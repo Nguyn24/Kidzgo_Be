@@ -36,6 +36,11 @@ public sealed class GetLessonPlanTemplatesQueryHandler(
         {
             templateQuery = templateQuery.Where(t => t.Level == query.Level);
         }
+        
+        if (query.ProgramId.HasValue)
+        {
+            templateQuery = templateQuery.Where(t => t.Title.ToLower() == query.Title.ToLower());
+        }
 
         // Filter by IsActive
         if (query.IsActive.HasValue)
@@ -57,6 +62,7 @@ public sealed class GetLessonPlanTemplatesQueryHandler(
                 ProgramId = t.ProgramId,
                 ProgramName = t.Program != null ? t.Program.Name : null,
                 Level = t.Level,
+                Title = t.Title,
                 SessionIndex = t.SessionIndex,
                 Attachment = t.AttachmentUrl,
                 IsActive = t.IsActive,

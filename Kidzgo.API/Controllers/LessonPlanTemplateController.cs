@@ -7,6 +7,7 @@ using Kidzgo.Application.LessonPlanTemplates.GetLessonPlanTemplates;
 using Kidzgo.Application.LessonPlanTemplates.UpdateLessonPlanTemplate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kidzgo.API.Controllers;
@@ -35,6 +36,7 @@ public class LessonPlanTemplateController : ControllerBase
         var command = new CreateLessonPlanTemplateCommand
         {
             ProgramId = request.ProgramId,
+            Title = request.Title,
             Level = request.Level,
             SessionIndex = request.SessionIndex,
             Attachment = request.Attachment
@@ -70,6 +72,7 @@ public class LessonPlanTemplateController : ControllerBase
     public async Task<IResult> GetLessonPlanTemplates(
         [FromQuery] Guid? programId,
         [FromQuery] string? level,
+        [FromQuery] string? title,
         [FromQuery] bool? isActive,
         [FromQuery] bool includeDeleted = false,
         [FromQuery] int pageNumber = 1,
@@ -80,6 +83,7 @@ public class LessonPlanTemplateController : ControllerBase
         {
             ProgramId = programId,
             Level = level,
+            Title = title,
             IsActive = isActive,
             IncludeDeleted = includeDeleted,
             PageNumber = pageNumber,
@@ -104,6 +108,7 @@ public class LessonPlanTemplateController : ControllerBase
         {
             Id = id,
             Level = request.Level,
+            Title = request.Title,
             SessionIndex = request.SessionIndex,
             Attachment = request.Attachment,
             IsActive = request.IsActive
