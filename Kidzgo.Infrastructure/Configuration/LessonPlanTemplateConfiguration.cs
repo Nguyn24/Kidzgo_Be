@@ -16,6 +16,10 @@ public class LessonPlanTemplateConfiguration : IEntityTypeConfiguration<LessonPl
         builder.Property(x => x.ProgramId)
             .IsRequired();
 
+        builder.Property(x => x.Title)
+            .HasMaxLength(255)
+            .IsRequired();
+
         builder.Property(x => x.Level)
             .HasMaxLength(100);
 
