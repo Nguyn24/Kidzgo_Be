@@ -60,6 +60,15 @@ public sealed class UploadFileCommandHandler(
                 FileErrors.InvalidFileType(resourceType, allowedExts));
         }
 
+        if (command.UpdateUserAvatar || command.UpdateProfileAvatar)
+        {
+            var avatarContextResult = await ValidateAvatarUpdateContextAsync(cancellationToken);
+            if (avatarContextResult.IsFailure)
+            {
+                return Result.Failure<UploadFileResponse>(avatarContextResult.Error);
+            }
+        }
+
         try
         {
             var url = await fileStorageService.UploadFileAsync(
@@ -90,6 +99,27 @@ public sealed class UploadFileCommandHandler(
             logger.LogError(ex, "Error uploading file: {FileName}", command.FileName);
             return Result.Failure<UploadFileResponse>(FileErrors.UploadFailed(ex.Message));
         }
+    }
+
+    private async Task<Result> ValidateAvatarUpdateContextAsync(CancellationToken cancellationToken)
+    {
+        var user = await context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                u => u.Id == userContext.UserId && u.IsActive && !u.IsDeleted,
+                cancellationToken);
+
+        if (user is null)
+        {
+            return Result.Failure(FileErrors.Unauthorized());
+        }
+
+        if (user.Role == UserRole.Parent && !userContext.StudentId.HasValue)
+        {
+            return Result.Failure(FileErrors.ParentProfileSelectionRequired());
+        }
+
+        return Result.Success();
     }
 
     private async Task UpdateAvatarAsync(UploadFileCommand command, string url, CancellationToken cancellationToken)
