@@ -28,11 +28,9 @@ public class LessonPlanConfiguration : IEntityTypeConfiguration<LessonPlan>
 
         builder.Property(x => x.TemplateId);
 
-        builder.Property(x => x.PlannedContent)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.PlannedContent);
 
-        builder.Property(x => x.ActualContent)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.ActualContent);
 
         builder.Property(x => x.ActualHomework);
 

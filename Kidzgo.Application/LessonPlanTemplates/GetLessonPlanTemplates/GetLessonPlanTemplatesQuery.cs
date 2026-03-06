@@ -6,6 +6,7 @@ public sealed class GetLessonPlanTemplatesQuery : IQuery<GetLessonPlanTemplatesR
 {
     public Guid? ProgramId { get; init; }
     public string? Level { get; init; }
+    public string? Title { get; init; }
     public bool? IsActive { get; init; }
     public bool IncludeDeleted { get; init; } = false;
     public int PageNumber { get; init; } = 1;

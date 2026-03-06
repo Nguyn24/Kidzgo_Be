@@ -6,6 +6,7 @@ public sealed class GetLessonPlanTemplateByIdResponse
     public Guid ProgramId { get; init; }
     public string? ProgramName { get; init; }
     public string? Level { get; init; }
+    public string? Title { get; init; }
     public int SessionIndex { get; init; }
     public string? Attachment { get; init; }
     public bool IsActive { get; init; }
