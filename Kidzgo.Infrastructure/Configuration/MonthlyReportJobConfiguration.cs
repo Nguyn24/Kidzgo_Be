@@ -56,5 +56,10 @@ public class MonthlyReportJobConfiguration : IEntityTypeConfiguration<MonthlyRep
             .WithMany(x => x.MonthlyReportJobs)
             .HasForeignKey(x => x.BranchId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(x => x.Reports)
+            .WithOne(r => r.Job)
+            .HasForeignKey(r => r.JobId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

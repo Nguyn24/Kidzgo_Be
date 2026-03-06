@@ -16,6 +16,7 @@ public sealed class GetMonthlyReportJobByIdResponse
     public string? CreatedByName { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+    public int ReportCount { get; init; }
     public List<ReportSummaryDto> Reports { get; init; } = new();
 }
 
