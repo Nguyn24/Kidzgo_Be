@@ -27,5 +27,4 @@ public class Mission : Entity
     public User? CreatedByUser { get; set; }
     public ICollection<MissionProgress> MissionProgresses { get; set; } = new List<MissionProgress>();
     public ICollection<HomeworkAssignment> HomeworkAssignments { get; set; } = new List<HomeworkAssignment>();
-    public ICollection<Exercise> Exercises { get; set; } = new List<Exercise>();
 }

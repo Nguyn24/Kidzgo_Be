@@ -55,11 +55,7 @@ public sealed class ApplicationDbContext(
     public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();
     public DbSet<ExamSubmission> ExamSubmissions => Set<ExamSubmission>();
     public DbSet<ExamSubmissionAnswer> ExamSubmissionAnswers => Set<ExamSubmissionAnswer>();
-    public DbSet<Exercise> Exercises => Set<Exercise>();
-    public DbSet<ExerciseQuestion> ExerciseQuestions => Set<ExerciseQuestion>();
-    public DbSet<ExerciseSubmission> ExerciseSubmissions => Set<ExerciseSubmission>();
-    public DbSet<ExerciseSubmissionAnswer> ExerciseSubmissionAnswers => Set<ExerciseSubmissionAnswer>();
-
+  
     // Finance
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
