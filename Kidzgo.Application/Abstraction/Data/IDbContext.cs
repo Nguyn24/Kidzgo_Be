@@ -50,10 +50,6 @@ public interface IDbContext
     DbSet<ExamQuestion> ExamQuestions { get; }
     DbSet<ExamSubmission> ExamSubmissions { get; }
     DbSet<ExamSubmissionAnswer> ExamSubmissionAnswers { get; }
-    DbSet<Exercise> Exercises { get; }
-    DbSet<ExerciseQuestion> ExerciseQuestions { get; }
-    DbSet<ExerciseSubmission> ExerciseSubmissions { get; }
-    DbSet<ExerciseSubmissionAnswer> ExerciseSubmissionAnswers { get; }
 
     // Finance
     DbSet<Invoice> Invoices { get; }
