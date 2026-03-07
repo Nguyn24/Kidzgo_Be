@@ -68,9 +68,6 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .HasForeignKey(x => x.MissionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(x => x.Exercises)
-            .WithOne(x => x.Mission)
-            .HasForeignKey(x => x.MissionId)
-            .OnDelete(DeleteBehavior.Restrict);
+       
     }
 }
