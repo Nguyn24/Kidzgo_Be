@@ -5,6 +5,7 @@ using Kidzgo.Application.Users.Admin.AssignBranch;
 using Kidzgo.Application.Users.Admin.CreateUser;
 using Kidzgo.Application.Users.Admin.GetAllUser;
 using Kidzgo.Application.Users.Admin.GetUserById;
+using Kidzgo.Application.Users.Admin.ReactivateUser;
 using Kidzgo.Application.Users.Admin.UpdateUser;
 using Kidzgo.Domain.Users;
 using MediatR;
@@ -158,6 +159,21 @@ public class AdminUserController : ControllerBase
         {
             ProfileId = profileId,
             NewPin = request.NewPin
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+
+    [HttpPatch("{id:guid}/reactivate")]
+    public async Task<IResult> ReactivateUser(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateUserCommand
+        {
+            UserId = id
         };
 
         var result = await _mediator.Send(command, cancellationToken);
