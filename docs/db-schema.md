@@ -2659,3 +2659,140 @@ Khi phụ huynh xem kết quả:
 - Media: upload kèm tag class/student/month để render album theo tháng cho phụ huynh.
 - Notification: `notifications` lưu deeplink tới màn hình mini app/web (TKB, invoice, report, mission, media…).
 
+---
+
+# ⚠️ CẬP NHẬT: Các thay đổi giữa Schema và Code thực tế
+
+> Ngày cập nhật: 2026-02-05
+> Phát hiện qua việc quét code Domain Entities
+
+## 1. UserRole Enum - SAI
+
+**Trong Schema định nghĩa:**
+```
+role: PARENT | STUDENT | ADMIN | TEACHER | STAFF
+```
+
+**Trong Code thực tế (Kidzgo.Domain.Users.UserRole):**
+```
+Admin, ManagementStaff, AccountantStaff, Teacher, Parent
+```
+
+**Chi tiết sai khác:**
+- ❌ Không có `STUDENT` role - học sinh dùng Profile với `ProfileType = Student`
+- ❌ Không có `STAFF` chung chung - thay bằng `ManagementStaff` và `AccountantStaff`
+- ✅ Có `Parent` - đúng
+- ✅ Có `Teacher` - đúng
+- ✅ Có `Admin` - đúng
+
+**Tác động:** Cần cập nhật phần 2.1 và 2.2 trong schema để phản ánh đúng UserRole thực tế.
+
+## 2. Enum Case Sensitivity
+
+**Schema dùng UPPER_SNAKE_CASE:**
+- `SCHEDULED`, `COMPLETED`, `CANCELLED`
+- `MAIN`, `MAKEUP`, `EXTRA_PAID`, `FREE`, `TRIAL`
+- `PLANNED`, `ACTIVE`, `CLOSED`
+- `PRESENT`, `ABSENT`, `MAKEUP`, `NOT_MARKED`
+
+**Code dùng PascalCase:**
+- `Scheduled`, `Completed`, `Cancelled`
+- `Main`, `Makeup`, `ExtraPaid`, `Free`, `Trial`
+- `Planned`, `Active`, `Closed`
+- `Present`, `Absent`, `Makeup`, `NotMarked`
+
+**Tác động:** Chỉ là convention đặt tên, không ảnh hưởng logic. Khuyến nghị thống nhất PascalCase.
+
+## 3. Các Entity/Services mới chưa có trong Schema
+
+### 3.1. Reports - Báo cáo
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `MonthlyReportJob` | Job tổng hợp báo cáo tháng tự động | ❌ Chưa có trong schema |
+| `MonthlyReportData` | Dữ liệu báo cáo tháng (topics, attendance...) | ❌ Chưa có trong schema |
+| `SessionReport` | Báo cáo buổi học chi tiết (feedback, AI summary, workflow Draft→Review→Approved→Published) | ❌ Chưa có trong schema |
+
+### 3.2. Tickets - Hệ thống hỗ trợ
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `Ticket` | Ticket hỗ trợ phụ huynh/học sinh | ❌ Chưa có trong schema |
+| `TicketComment` | Comment trong ticket | ❌ Chưa có trong schema |
+| `TicketType` | Loại ticket | ❌ Chưa có trong schema |
+| `TicketCategory` | Danh mục ticket | ❌ Chưa có trong schema |
+
+### 3.3. Audit & Media
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `AuditLog` | Log kiểm tra hoạt động (ai tạo, sửa, xóa gì) | ❌ Chưa có trong schema |
+| `MediaAsset` | File media (Cloudinary/Local storage) | ❌ Chưa có trong schema |
+| `Blog` | Blog/News công khai | ❌ Chưa có trong schema |
+
+### 3.4. Templates & Notifications
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `NotificationTemplate` | Template push notification | ❌ Chưa có trong schema |
+| `EmailTemplate` | Template email | ❌ Chưa có trong schema |
+| `LessonPlanTemplate` | Template giáo án theo chương trình | ✅ Có trong schema |
+| `LessonPlan` | Giáo án buổi học | ✅ Có trong schema |
+
+### 3.5. Gamification mở rộng
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `RewardStoreItem` | Item trong shop thưởng | ❌ Chưa có trong schema |
+| `AttendanceStreak` | Streak điểm danh liên tiếp | ❌ Chưa có trong schema |
+
+### 3.6. Homework mở rộng
+| Entity | Mô tả | Trạng thái |
+|--------|-------|-------------|
+| `HomeworkQuestion` | Câu hỏi trong bài tập trắc nghiệm | ❌ Chưa có trong schema |
+
+## 4. Invoice mở rộng - PayOS Integration
+
+**Thêm các trường trong `invoices`:**
+```csharp
+public string? PayosPaymentLink { get; set; }  // Link thanh toán PayOS
+public string? PayosQr { get; set; }           // QR code PayOS
+public long? PayosOrderCode { get; set; }      // Order code từ PayOS
+```
+
+**Schema cần cập nhật:** Thêm các trường PayOS vào phần 6.1 (invoices).
+
+## 5. SessionReport Workflow mới
+
+**SessionReport có workflow hoàn chỉnh:**
+```
+Draft → Submitted → Reviewed (Approved/Rejected) → Published
+```
+
+**Các trường mới:**
+```csharp
+public ReportStatus Status { get; set; } = ReportStatus.Draft;
+public string? DraftContent { get; set; }
+public string? FinalContent { get; set; }
+public Guid? SubmittedByUserId { get; set; }
+public Guid? ReviewedByUserId { get; set; }
+public DateTime? ReviewedAt { get; set; }
+public DateTime? PublishedAt { get; set; }
+public string? AiVersion { get; set; }
+public bool IsMonthlyCompiled { get; set; }
+```
+
+## 6. Contract mở rộng
+
+**Thêm các trường trong `contracts`:**
+```csharp
+public decimal? MinimumMonthlyHours { get; set; }    // Số giờ tối thiểu/tháng
+public decimal? OvertimeRateMultiplier { get; set; }   // Hệ số overtime (1.5x, 2x)
+```
+
+---
+
+## Tổng kết hành động cần thiết
+
+1. **Cập nhật UserRole** trong phần 2.1 và 2.2
+2. **Thêm mục mới** cho Reports (MonthlyReportJob, SessionReport)
+3. **Thêm mục mới** cho Tickets
+4. **Thêm mục mới** cho Audit & Media
+5. **Thêm mục mới** cho Templates & Notifications  
+6. **Cập nhật Invoice** thêm PayOS fields
+7. **Thống nhất convention** enum (khuyến nghị PascalCase)
