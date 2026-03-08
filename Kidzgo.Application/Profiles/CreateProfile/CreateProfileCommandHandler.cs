@@ -34,7 +34,7 @@ public sealed class CreateProfileCommandHandler(
             PinHash = !string.IsNullOrWhiteSpace(command.PinHash) 
                 ? passwordHasher.Hash(command.PinHash) 
                 : null,
-            IsActive = true,
+            IsActive = false,
             IsDeleted = false,
             CreatedAt = now,
             UpdatedAt = now
@@ -104,4 +104,3 @@ public sealed class CreateProfileCommandHandler(
         };
     }
 }
-
