@@ -23,5 +23,9 @@ public static class LeaveRequestErrors
     public static Error SessionNotFound(Guid classId, DateOnly sessionDate) => Error.NotFound(
         "LeaveRequest.SessionNotFound",
         $"No session found for class '{classId}' on date '{sessionDate:yyyy-MM-dd}'.");
+
+    public static Error ExceededMonthlyLeaveLimit(int maxLeavesPerMonth) => Error.Validation(
+        "LeaveRequest.ExceededMonthlyLeaveLimit",
+        $"Student has exceeded the maximum of {maxLeavesPerMonth} leaves per month.");
 }
 

@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Leads.CreateLeadFromZalo;
@@ -107,7 +108,7 @@ public sealed class CreateLeadFromZaloCommandHandler(
             LeadId = lead.Id,
             ChildName = command.ContactName, // best-effort default
             Dob = null,
-            Gender = null,
+            Gender = Gender.Male,
             ProgramInterest = string.IsNullOrWhiteSpace(command.ProgramInterest) ? null : command.ProgramInterest.Trim(),
             Notes = null,
             Status = LeadChildStatus.New,

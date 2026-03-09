@@ -55,5 +55,13 @@ public static class ProfileErrors
     public static readonly Error ProfileNotDeleted = Error.Validation(
         "Profile.ProfileNotDeleted",
         "Profile is not deleted and cannot be reactivated");
+
+    public static readonly Error UserMustBeParentOrStudent = Error.Validation(
+        "Profile.UserMustBeParentOrStudent",
+        "User must be a parent or student");
+
+    public static readonly Error ProfileAlreadyApproved = Error.Conflict(
+        "Profile.ProfileAlreadyApproved",
+        "Profile is already approved");
 }
 

@@ -74,7 +74,7 @@ public class CreateUserCommandHandler(
             PasswordHash = hashedPassword,
             Role = role,
             BranchId = command.BranchId,
-            IsActive = false,
+            IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
