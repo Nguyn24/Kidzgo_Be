@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
+using Kidzgo.Application.Profiles.ApproveProfile;
 using Kidzgo.Application.Users.Admin.AssignBranch;
 using Kidzgo.Application.Users.Admin.CreateUser;
 using Kidzgo.Application.Users.Admin.GetAllUser;
@@ -174,6 +175,21 @@ public class AdminUserController : ControllerBase
         var command = new ReactivateUserCommand
         {
             UserId = id
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+    
+    [HttpPut("{profileId:guid}/approve")]
+    public async Task<IResult> ApproveProfile(
+        Guid profileId,
+        [FromBody] ApproveProfileCommand request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApproveProfileCommand
+        {
+            Id = profileId,
         };
 
         var result = await _mediator.Send(command, cancellationToken);

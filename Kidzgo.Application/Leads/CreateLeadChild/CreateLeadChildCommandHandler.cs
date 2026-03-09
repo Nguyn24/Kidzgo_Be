@@ -68,7 +68,7 @@ public sealed class CreateLeadChildCommandHandler(
             LeadId = leadChild.LeadId,
             ChildName = leadChild.ChildName,
             Dob = leadChild.Dob,
-            Gender = leadChild.Gender,
+            Gender = leadChild.Gender.ToString(),
             ProgramInterest = leadChild.ProgramInterest,
             Notes = leadChild.Notes,
             Status = leadChild.Status.ToString(),
