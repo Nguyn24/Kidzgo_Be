@@ -8,7 +8,7 @@ public sealed class UpdateLeadChildResponse
     public Guid LeadId { get; init; }
     public string ChildName { get; init; } = null!;
     public DateOnly? Dob { get; init; }
-    public Gender Gender { get; init; }
+    public string? Gender { get; init; }
     public string? ProgramInterest { get; init; }
     public string? Notes { get; init; }
     public string Status { get; init; } = null!;
