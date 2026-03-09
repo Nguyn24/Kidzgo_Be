@@ -1,9 +1,4 @@
-# Makeup Credit Flow - Tài liệu API
-
-## Tổng quan
-
-Tài liệu này ghi lại các thay đổi và thêm mới cho flow makeup credit theo yêu cầu nghiệp vụ mới.
-
+# Makeup Credit Flow 
 ---
 
 ## 1. Giới hạn nghỉ tối đa 2 buổi/tháng
