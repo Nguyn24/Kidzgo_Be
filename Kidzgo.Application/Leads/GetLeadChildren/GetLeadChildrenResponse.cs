@@ -10,7 +10,7 @@ public sealed class LeadChildDto
     public Guid Id { get; init; }
     public Guid LeadId { get; init; }
     public string ChildName { get; init; } = null!;
-    public DateTime? Dob { get; init; }
+    public DateOnly? Dob { get; init; }
     public string? Gender { get; init; }
     public string? ProgramInterest { get; init; }
     public string? Notes { get; init; }

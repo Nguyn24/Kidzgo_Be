@@ -107,10 +107,8 @@ public sealed class CreateLeadCommandHandler(
                     Id = Guid.NewGuid(),
                     LeadId = lead.Id,
                     ChildName = childDto.ChildName.Trim(),
-                    Dob = childDto.Dob.HasValue
-                        ? DateTime.SpecifyKind(childDto.Dob.Value.Date, DateTimeKind.Utc)
-                        : null,
-                    Gender = childDto.Gender?.Trim(),
+                    Dob = childDto.Dob,
+                    Gender = childDto.Gender,
                     ProgramInterest = childDto.ProgramInterest?.Trim(),
                     Notes = childDto.Notes?.Trim(),
                     Status = LeadChildStatus.New,

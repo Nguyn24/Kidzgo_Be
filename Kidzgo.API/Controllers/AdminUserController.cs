@@ -166,8 +166,8 @@ public class AdminUserController : ControllerBase
     }
 
 
-    [HttpPatch("{id:guid}/reactivate")]
-    public async Task<IResult> ReactivateUser(
+    [HttpPatch("profile/{id:guid}/reactivate")]
+    public async Task<IResult> ReactivateProfile(
         Guid id,
         CancellationToken cancellationToken)
     {

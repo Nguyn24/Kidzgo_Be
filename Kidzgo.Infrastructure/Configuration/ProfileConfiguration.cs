@@ -26,6 +26,16 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.FullName)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.DateOfBirth);
+
+        builder.Property(x => x.Gender)
+            .HasConversion<string>();
+
+        builder.Property(x => x.ZaloId);
+
         builder.Property(x => x.PinHash)
             .HasMaxLength(97); // PBKDF2-SHA512 format: 64-char hash + '-' + 32-char salt = 97 chars
 
@@ -33,6 +43,9 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .IsRequired();
 
         builder.Property(x => x.IsDeleted)
+            .IsRequired();
+        
+        builder.Property(x => x.IsApproved)
             .IsRequired();
 
         builder.Property(x => x.CreatedAt)

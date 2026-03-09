@@ -33,7 +33,7 @@ public sealed class GetLeadChildrenQueryHandler(
                 LeadId = lc.LeadId,
                 ChildName = lc.ChildName,
                 Dob = lc.Dob,
-                Gender = lc.Gender,
+                Gender = lc.Gender.ToString(),
                 ProgramInterest = lc.ProgramInterest,
                 Notes = lc.Notes,
                 Status = lc.Status.ToString(),
