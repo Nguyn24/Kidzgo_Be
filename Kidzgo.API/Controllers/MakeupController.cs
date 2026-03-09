@@ -100,6 +100,7 @@ public class MakeupController : ControllerBase
         var command = new UseMakeupCreditCommand
         {
             MakeupCreditId = id,
+            StudentProfileId = request.StudentProfileId,
             ClassId = request.ClassId,
             TargetSessionId = request.TargetSessionId
         };
@@ -122,11 +123,8 @@ public class MakeupController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-112/113: Đề xuất buổi bù
-    /// <param name="id">Makeup credit id</param>
-    /// <param name="makeupDate">Ngày mong muốn học bù (DateOnly)</param>
-    /// <param name="timeOfDay">Buổi trong ngày: morning | afternoon | evening (optional)</param>
-    [HttpGet("{id:guid}/suggestions")]
+ 
+    [HttpGet("{id:guid}/parent/get-available-sessions")]
     public async Task<IResult> Suggest(
         Guid id,
         [FromQuery] DateOnly makeupDate,

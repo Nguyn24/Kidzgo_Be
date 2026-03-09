@@ -23,6 +23,7 @@ public class LeadChildConfiguration : IEntityTypeConfiguration<LeadChild>
         builder.Property(x => x.Dob);
 
         builder.Property(x => x.Gender)
+            .HasConversion<string>()
             .HasMaxLength(20);
 
         builder.Property(x => x.ProgramInterest)

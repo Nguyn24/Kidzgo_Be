@@ -10,6 +10,7 @@ public sealed class CreateMakeupCreditRequest
 
 public sealed class UseMakeupCreditRequest
 {
+    public Guid? StudentProfileId { get; set; }
     public Guid ClassId { get; set; }
     public Guid TargetSessionId { get; set; }
 }

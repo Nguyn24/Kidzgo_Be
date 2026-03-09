@@ -20,10 +20,15 @@ public class Profile : Entity
     public Guid UserId { get; set; }
     public ProfileType ProfileType { get; set; }
     public string DisplayName { get; set; } = null!;
+    public string? FullName { get; set; }
+    public Gender? Gender { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
+    public string? ZaloId { get; set; }
     public string? PinHash { get; set; }
     public string? AvatarUrl { get; set; }  // Avatar cho profile (học sinh/phụ huynh)
     public string? AvatarMimeType { get; set; }  // MIME type của avatar
     public long? AvatarFileSize { get; set; }  // Kích thước avatar (bytes)
+    public bool IsApproved { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
