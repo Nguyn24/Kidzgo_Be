@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Leads.UpdateLeadChild;
@@ -40,20 +41,20 @@ public sealed class UpdateLeadChildCommandHandler(
             leadChild.ChildName = command.ChildName.Trim();
         }
 
-        if (command.Dob.HasValue)
-        {
-            leadChild.Dob = DateTime.SpecifyKind(command.Dob.Value.Date, DateTimeKind.Utc);
-        }
+        // if (command.Dob.HasValue)
+        // {
+        //     leadChild.Dob = DateOnly(command.Dob.Value.Date, DateTimeKind.Utc);
+        // }
         else if (command.Dob == null && command.Dob.HasValue == false)
         {
             // Explicit null - clear the value
             leadChild.Dob = null;
         }
 
-        if (command.Gender is not null)
-        {
-            leadChild.Gender = string.IsNullOrWhiteSpace(command.Gender) ? null : command.Gender.Trim();
-        }
+        // if (command.Gender is not null)
+        // {
+        //     leadChild.Gender = string.IsNullOrWhiteSpace(command.Gender.ToString())  : (Gender)command.Gender;
+        // }
 
         if (command.ProgramInterest is not null)
         {

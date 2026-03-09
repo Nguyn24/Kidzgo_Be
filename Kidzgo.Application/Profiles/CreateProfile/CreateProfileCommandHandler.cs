@@ -2,15 +2,19 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
+using Kidzgo.Domain.Users.Events;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Profiles.CreateProfile;
 
 public sealed class CreateProfileCommandHandler(
     IDbContext context,
-    IPasswordHasher passwordHasher
+    IPasswordHasher passwordHasher,
+    IMediator mediator
 ) : ICommandHandler<CreateProfileCommand, CreateProfileResponse>
 {
     public async Task<Result<CreateProfileResponse>> Handle(CreateProfileCommand command, CancellationToken cancellationToken)
@@ -25,6 +29,7 @@ public sealed class CreateProfileCommandHandler(
         }
 
         var now = DateTime.UtcNow;
+        
         var profile = new Profile
         {
             Id = Guid.NewGuid(),
@@ -34,14 +39,44 @@ public sealed class CreateProfileCommandHandler(
             PinHash = !string.IsNullOrWhiteSpace(command.PinHash) 
                 ? passwordHasher.Hash(command.PinHash) 
                 : null,
+            IsApproved = false,
             IsActive = false,
             IsDeleted = false,
             CreatedAt = now,
             UpdatedAt = now
         };
 
+        // Auto-fill student data from LeadChild if creating Student profile
+        if (command.ProfileType == ProfileType.Student)
+        {
+            var leadChild = await context.LeadChildren
+                .Include(lc => lc.Lead)
+                .Where(lc => lc.Lead.Email == user.Email && lc.ChildName.Contains(command.DisplayName.Trim()))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (leadChild != null)
+            {
+                profile.FullName = leadChild.ChildName;
+                profile.Gender = leadChild.Gender;
+                profile.DateOfBirth = leadChild.Dob;
+            }
+        }
+
+        if (command.ProfileType == ProfileType.Parent)
+        {
+            var lead = await context.Leads
+                .Where(l=>l.Email == user.Email || l.Phone == user.PhoneNumber && l.ContactName.Contains(command.DisplayName.Trim()))
+                .FirstOrDefaultAsync(cancellationToken);
+            
+            if (lead != null)
+            {
+                profile.FullName = lead.ContactName;
+                profile.ZaloId = lead.ZaloId;
+            }
+        }
+
         context.Profiles.Add(profile);
-        
+
         // Automatically link profiles with the same UserId
         // If creating a Parent profile, link with existing Student profiles
         // If creating a Student profile, link with existing Parent profiles

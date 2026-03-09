@@ -38,10 +38,8 @@ public sealed class CreateLeadChildCommandHandler(
             Id = Guid.NewGuid(),
             LeadId = command.LeadId,
             ChildName = command.ChildName.Trim(),
-            Dob = command.Dob.HasValue
-                ? DateTime.SpecifyKind(command.Dob.Value.Date, DateTimeKind.Utc)
-                : null,
-            Gender = command.Gender?.Trim(),
+            Dob = command.Dob,
+            Gender = command.Gender,
             ProgramInterest = command.ProgramInterest?.Trim(),
             Notes = command.Notes?.Trim(),
             Status = LeadChildStatus.New,

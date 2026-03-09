@@ -8,8 +8,8 @@ public class LeadChild : Entity
     public Guid Id { get; set; }
     public Guid LeadId { get; set; }
     public string ChildName { get; set; } = null!;
-    public DateTime? Dob { get; set; }
-    public string? Gender { get; set; }
+    public DateOnly? Dob { get; set; }
+    public Gender Gender { get; set; }
     public string? ProgramInterest { get; set; }
     public string? Notes { get; set; }
     public LeadChildStatus Status { get; set; }

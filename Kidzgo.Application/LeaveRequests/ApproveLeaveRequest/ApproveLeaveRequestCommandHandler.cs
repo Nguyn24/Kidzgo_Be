@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -66,11 +67,81 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
                     CreatedAt = DateTime.UtcNow
                 };
                 context.MakeupCredits.Add(credit);
+
+                // Tự động xếp lịch bù vào T7/CN của tuần student nghỉ
+                await AutoScheduleMakeupForWeekendAsync(context, credit, session, leave.SessionDate, cancellationToken);
             }
         }
 
         await context.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Tự động xếp lịch bù vào T7/CN của tuần student nghỉ
+    /// </summary>
+    private async Task AutoScheduleMakeupForWeekendAsync(
+        IDbContext context,
+        MakeupCredit credit,
+        Session sourceSession,
+        DateOnly leaveDate,
+        CancellationToken cancellationToken)
+    {
+        // Tìm thứ 7 và chủ nhật của tuần student nghỉ
+        var dayOfWeek = (int)leaveDate.DayOfWeek;
+        var saturday = leaveDate.AddDays(DayOfWeek.Saturday - (DayOfWeek)dayOfWeek);
+        var sunday = saturday.AddDays(1);
+
+        // Lấy thông tin class gốc để biết program level và branch
+        var classInfo = await context.Classes
+            .Include(c => c.Program)
+            .FirstOrDefaultAsync(c => c.Id == sourceSession.ClassId, cancellationToken);
+
+        if (classInfo == null) return;
+
+        // Tìm các session T7/CN cùng tuần, cùng level, cùng branch, khác class
+        var weekendSessions = await context.Sessions
+            .Include(s => s.Class)
+            .ThenInclude(c => c.Program)
+            .Where(s => s.BranchId == sourceSession.BranchId)
+            .Where(s => s.ClassId != sourceSession.ClassId)
+            .Where(s => s.Status == SessionStatus.Scheduled)
+            .Where(s => s.PlannedDatetime >= DateTime.UtcNow)
+            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) == saturday ||
+                        DateOnly.FromDateTime(s.PlannedDatetime) == sunday)
+            .ToListAsync(cancellationToken);
+
+        // Random shuffle để chọn ngẫu nhiên
+        var random = new Random();
+        var shuffledSessions = weekendSessions.OrderBy(_ => random.Next()).ToList();
+
+        // Tìm session còn slot và tạo MakeupAllocation
+        foreach (var weekendSession in shuffledSessions)
+        {
+            // Kiểm tra xem session còn slot không
+            var enrolledCount = await context.ClassEnrollments
+                .CountAsync(e => e.ClassId == weekendSession.ClassId &&
+                                 e.Status == EnrollmentStatus.Active, cancellationToken);
+
+            if (enrolledCount < weekendSession.Class.Capacity)
+            {
+                // Tạo MakeupAllocation
+                var allocation = new MakeupAllocation
+                {
+                    Id = Guid.NewGuid(),
+                    MakeupCreditId = credit.Id,
+                    TargetSessionId = weekendSession.Id,
+                    AssignedAt = DateTime.UtcNow
+                };
+                context.MakeupAllocations.Add(allocation);
+
+                // Cập nhật trạng thái makeup credit đã được sử dụng
+                credit.Status = MakeupCreditStatus.Used;
+                credit.UsedSessionId = weekendSession.Id;
+
+                break; // Chỉ assign vào 1 session đầu tiên còn slot
+            }
+        }
     }
 }
 

@@ -1,7 +1,9 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Profiles.Admin.GetAllProfiles;
 using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
+using Kidzgo.Application.Profiles.ApproveProfile;
 using Kidzgo.Application.Profiles.CreateProfile;
 using Kidzgo.Application.Profiles.DeleteProfile;
 using Kidzgo.Application.Profiles.GetProfileById;
@@ -10,6 +12,7 @@ using Kidzgo.Application.Profiles.ReactivateProfile;
 using Kidzgo.Application.Profiles.UnlinkParentStudent;
 using Kidzgo.Application.Profiles.UpdateProfile;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +24,7 @@ namespace Kidzgo.API.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
+    private const string FrontendUrl = "https://kidzgo-centre-pvjj.vercel.app/vi";
     private readonly ISender _mediator;
 
     public ProfileController(ISender mediator)
@@ -146,7 +150,26 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
-    
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/reactivate-and-update")]
+    public async Task<IResult> ReactivateAndRedirectToUpdate(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateProfileCommand
+        {
+            Id = id
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure && result.Error.Code != ProfileErrors.ProfileNotDeleted.Code)
+        {
+            return CustomResults.Problem(result);
+        }
+
+        return Results.Redirect($"{FrontendUrl}/profile/update?profileId={id}");
+    }
     [HttpPost("link")]
     public async Task<IResult> LinkParentStudent(
         [FromBody] LinkParentStudentRequest request,
@@ -178,4 +201,3 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 }
-
