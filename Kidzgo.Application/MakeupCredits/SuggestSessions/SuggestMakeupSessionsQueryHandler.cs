@@ -58,9 +58,13 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
         // - Cùng chi nhánh
         // - Khác lớp với buổi nguồn
         // - Trạng thái Scheduled và thời gian trong tương lai
-        // - Không trùng/ quá sát giờ với các buổi mà học sinh đang học (cách nhau tối thiểu 2 tiếng)
-        // Lọc theo ngày mong muốn học bù và buổi trong ngày (nếu có)
-        var targetDate = query.MakeupDate;
+        // - Chỉ lấy các buổi T7 và CN
+        // - Lọc theo ngày bắt đầu - kết thúc và buổi trong ngày (nếu có)
+
+        // Determine date range (default to current week if not specified)
+        var fromDate = query.FromDate ?? DateOnly.FromDateTime(now);
+        var toDate = query.ToDate ?? fromDate.AddDays(7);
+
         string? timeOfDay = query.TimeOfDay?.ToLower().Trim();
 
         var rawSuggestionsQuery = context.Sessions
@@ -69,7 +73,11 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             .ThenInclude(c => c.Program)
             .Where(s => s.Id != sourceSession.Id)
             .Where(s => s.Status == SessionStatus.Scheduled && s.PlannedDatetime >= now)
-            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) == targetDate)
+            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) >= fromDate)
+            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) <= toDate)
+            // Only Saturday and Sunday
+            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Saturday ||
+                        DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Sunday)
             .Where(s => s.BranchId == sourceSession.BranchId)
             .Where(s => s.Class.Program.Level == sourceProgram.Level)
             .Where(s => s.ClassId != sourceSession.ClassId);
