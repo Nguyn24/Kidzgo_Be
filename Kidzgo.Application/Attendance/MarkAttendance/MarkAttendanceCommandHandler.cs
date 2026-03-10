@@ -21,78 +21,87 @@ public sealed class MarkAttendanceCommandHandler(
             return Result.Failure<MarkAttendanceResponse>(AttendanceErrors.NotFound(command.SessionId));
         }
 
-        var attendance = await context.Attendances
-            .FirstOrDefaultAsync(a => a.SessionId == command.SessionId && a.StudentProfileId == command.StudentProfileId,
-                cancellationToken);
+        var results = new List<AttendanceResultItem>();
 
-        if (attendance is null)
+        foreach (var item in command.Attendances)
         {
-            attendance = new Domain.Sessions.Attendance
+            var attendance = await context.Attendances
+                .FirstOrDefaultAsync(a => a.SessionId == command.SessionId && a.StudentProfileId == item.StudentProfileId,
+                    cancellationToken);
+
+            if (attendance is null)
             {
-                Id = Guid.NewGuid(),
-                SessionId = command.SessionId,
-                StudentProfileId = command.StudentProfileId,
-            };
-            context.Attendances.Add(attendance);
-        }
-
-        if (command.Note is not null)
-        {
-            attendance.Note = command.Note;
-        }
-
-        attendance.AttendanceStatus = command.AttendanceStatus;
-
-        if (command.AttendanceStatus == AttendanceStatus.Absent)
-        {
-            var absenceType = await ResolveAbsenceType(command.StudentProfileId, session, cancellationToken);
-            attendance.AbsenceType = absenceType;
-
-            // Create makeup credit for WITH_NOTICE_24H
-            if (absenceType == AbsenceType.WithNotice24H)
-            {
-                bool creditExists = await context.MakeupCredits
-                    .AnyAsync(c => c.StudentProfileId == command.StudentProfileId &&
-                                   c.SourceSessionId == session.Id &&
-                                   c.CreatedReason == CreatedReason.ApprovedLeave24H,
-                        cancellationToken);
-
-                if (!creditExists)
+                attendance = new Domain.Sessions.Attendance
                 {
-                    var credit = new MakeupCredit
+                    Id = Guid.NewGuid(),
+                    SessionId = command.SessionId,
+                    StudentProfileId = item.StudentProfileId,
+                };
+                context.Attendances.Add(attendance);
+            }
+
+            if (item.Note is not null)
+            {
+                attendance.Note = item.Note;
+            }
+
+            attendance.AttendanceStatus = item.AttendanceStatus;
+
+            if (item.AttendanceStatus == AttendanceStatus.Absent)
+            {
+                var absenceType = await ResolveAbsenceType(item.StudentProfileId, session, cancellationToken);
+                attendance.AbsenceType = absenceType;
+
+                if (absenceType == AbsenceType.WithNotice24H)
+                {
+                    bool creditExists = await context.MakeupCredits
+                        .AnyAsync(c => c.StudentProfileId == item.StudentProfileId &&
+                                       c.SourceSessionId == session.Id &&
+                                       c.CreatedReason == CreatedReason.ApprovedLeave24H,
+                            cancellationToken);
+
+                    if (!creditExists)
                     {
-                        Id = Guid.NewGuid(),
-                        StudentProfileId = command.StudentProfileId,
-                        SourceSessionId = session.Id,
-                        Status = MakeupCreditStatus.Available,
-                        CreatedReason = CreatedReason.ApprovedLeave24H,
-                        ExpiresAt = null,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    context.MakeupCredits.Add(credit);
+                        var credit = new MakeupCredit
+                        {
+                            Id = Guid.NewGuid(),
+                            StudentProfileId = item.StudentProfileId,
+                            SourceSessionId = session.Id,
+                            Status = MakeupCreditStatus.Available,
+                            CreatedReason = CreatedReason.ApprovedLeave24H,
+                            ExpiresAt = null,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        context.MakeupCredits.Add(credit);
+                    }
                 }
             }
-        }
-        else
-        {
-            attendance.AbsenceType = null;
-        }
+            else
+            {
+                attendance.AbsenceType = null;
+            }
 
-        attendance.MarkedBy = userContext.UserId;
-        attendance.MarkedAt = DateTime.UtcNow;
+            attendance.MarkedBy = userContext.UserId;
+            attendance.MarkedAt = DateTime.UtcNow;
+
+            results.Add(new AttendanceResultItem
+            {
+                Id = attendance.Id,
+                SessionId = attendance.SessionId,
+                StudentProfileId = attendance.StudentProfileId,
+                AttendanceStatus = attendance.AttendanceStatus.ToString(),
+                AbsenceType = attendance.AbsenceType.HasValue ? attendance.AbsenceType.Value.ToString() : null,
+                MarkedAt = attendance.MarkedAt,
+                Note = attendance.Note
+            });
+        }
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return new MarkAttendanceResponse
+        return Result.Success(new MarkAttendanceResponse()
         {
-            Id = attendance.Id,
-            SessionId = attendance.SessionId,
-            StudentProfileId = attendance.StudentProfileId,
-            AttendanceStatus = attendance.AttendanceStatus.ToString(),
-            AbsenceType = attendance.AbsenceType.HasValue ? attendance.AbsenceType.Value.ToString() : null,
-            MarkedAt = attendance.MarkedAt,
-            Note = attendance.Note
-        };
+            Results = results
+        });
     }
 
     private async Task<AbsenceType> ResolveAbsenceType(Guid studentProfileId, Session session, CancellationToken cancellationToken)
