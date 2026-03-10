@@ -127,14 +127,16 @@ public class MakeupController : ControllerBase
     [HttpGet("{id:guid}/parent/get-available-sessions")]
     public async Task<IResult> Suggest(
         Guid id,
-        [FromQuery] DateOnly makeupDate,
+        [FromQuery] DateOnly? fromDate,
+        [FromQuery] DateOnly? toDate,
         [FromQuery] string? timeOfDay,
         CancellationToken cancellationToken = default)
     {
         var query = new SuggestMakeupSessionsQuery
         {
             MakeupCreditId = id,
-            MakeupDate = makeupDate,
+            FromDate = fromDate,
+            ToDate = toDate,
             TimeOfDay = timeOfDay
         };
 

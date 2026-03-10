@@ -172,9 +172,7 @@ POST /api/leave-requests
 ### Student tự đổi lịch bù
 
 1. **Xem các buổi bù gợi ý**:
-```bash
-GET /api/makeup-credits/{makeupCreditId}/suggestions?makeupDate=2025-01-25
-```
+
 
 2. **Đăng ký vào buổi bù mới**:
 ```bash
