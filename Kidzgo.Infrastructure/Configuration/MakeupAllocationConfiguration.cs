@@ -19,9 +19,14 @@ public class MakeupAllocationConfiguration : IEntityTypeConfiguration<MakeupAllo
         builder.Property(x => x.TargetSessionId)
             .IsRequired();
 
+        builder.Property(x => x.Status)
+            .HasConversion<string>();
+
         builder.Property(x => x.AssignedBy);
 
         builder.Property(x => x.AssignedAt);
+
+        builder.Property(x => x.CreatedAt);
 
         // Relationships
         builder.HasOne(x => x.MakeupCredit)

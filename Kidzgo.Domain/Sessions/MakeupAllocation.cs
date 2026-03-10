@@ -8,8 +8,10 @@ public class MakeupAllocation : Entity
     public Guid Id { get; set; }
     public Guid MakeupCreditId { get; set; }
     public Guid TargetSessionId { get; set; }
+    public MakeupAllocationStatus Status { get; set; }
     public Guid? AssignedBy { get; set; }
     public DateTime? AssignedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     // Navigation properties
     public MakeupCredit MakeupCredit { get; set; } = null!;

@@ -11,7 +11,7 @@ public sealed class CreateLeaveRequestResponse
     public DateOnly? EndDate { get; init; }
     public string? Reason { get; init; }
     public int? NoticeHours { get; init; }
-    public LeaveRequestStatus Status { get; init; }
+    public string? Status { get; init; }
     public DateTime RequestedAt { get; init; }
     public DateTime? ApprovedAt { get; init; }
 }
