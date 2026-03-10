@@ -184,7 +184,6 @@ public class AdminUserController : ControllerBase
     [HttpPut("{profileId:guid}/approve")]
     public async Task<IResult> ApproveProfile(
         Guid profileId,
-        [FromBody] ApproveProfileCommand request,
         CancellationToken cancellationToken)
     {
         var command = new ApproveProfileCommand

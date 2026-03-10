@@ -12,18 +12,19 @@ public sealed class SuggestMakeupSessionsQuery : IQuery<IEnumerable<SuggestedSes
     public Guid MakeupCreditId { get; set; }
 
     /// <summary>
-    /// Ngày mong muốn học bù (DateOnly).
+    /// Ngày bắt đầu muốn tìm buổi bù (DateOnly).
     /// </summary>
-    public DateOnly MakeupDate { get; set; }
+    public DateOnly? FromDate { get; set; }
 
     /// <summary>
-    /// Buổi trong ngày mong muốn (vd: \"morning\", \"afternoon\", \"evening\").
+    /// Ngày kết thúc muốn tìm buổi bù (DateOnly).
+    /// </summary>
+    public DateOnly? ToDate { get; set; }
+
+    /// <summary>
+    /// Buổi trong ngày mong muốn (vd: "morning", "afternoon", "evening").
     /// Nếu null hoặc rỗng thì không lọc theo buổi.
     /// </summary>
     public string? TimeOfDay { get; set; }
 }
-
-
-
-
 
