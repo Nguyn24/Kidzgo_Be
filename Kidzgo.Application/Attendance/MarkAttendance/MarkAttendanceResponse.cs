@@ -4,6 +4,11 @@ namespace Kidzgo.Application.Attendance.MarkAttendance;
 
 public sealed class MarkAttendanceResponse
 {
+    public List<AttendanceResultItem> Results { get; init; } = new();
+}
+
+public sealed class AttendanceResultItem
+{
     public Guid Id { get; init; }
     public Guid SessionId { get; init; }
     public Guid StudentProfileId { get; init; }
@@ -12,4 +17,3 @@ public sealed class MarkAttendanceResponse
     public DateTime? MarkedAt { get; init; }
     public string? Note { get; init; }
 }
-
