@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.LeaveRequests.ApproveLeaveRequest;
+using Kidzgo.Application.LeaveRequests.CancelLeaveRequest;
 using Kidzgo.Application.LeaveRequests.CreateLeaveRequest;
 using Kidzgo.Application.LeaveRequests.GetLeaveRequestById;
 using Kidzgo.Application.LeaveRequests.GetLeaveRequests;
@@ -40,7 +41,7 @@ public class LeaveRequestController : ControllerBase
         };
 
         var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchCreated(r => $"/api/leave-requests/{r.Id}");
+        return result.MatchCreated(r => $"/api/leave-requests/{r.LeaveRequests.First().Id}");
     }
 
     /// UC-093: Danh sách Leave Requests
