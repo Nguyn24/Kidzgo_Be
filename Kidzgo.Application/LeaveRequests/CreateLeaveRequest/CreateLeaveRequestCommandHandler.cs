@@ -105,6 +105,10 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
         // sessionDate và endDate cách nhau bao nhiêu ngày thì tạo bấy nhiêu LeaveRequest
         foreach (var sessionDate in sessionDatesInRange)
         {
+            // Compute notice hours for each session date
+            var sessionDateTime = sessionDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var noticeHoursAfter = (int)Math.Floor((sessionDateTime - DateTime.UtcNow).TotalHours);
+
             var leave = new LeaveRequest
             {
                 Id = Guid.NewGuid(),
@@ -113,7 +117,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                 SessionDate = sessionDate,
                 EndDate = null, // Each leave request is for a single day
                 Reason = command.Reason,
-                NoticeHours = noticeHours,
+                NoticeHours = noticeHoursAfter,
                 Status = status,
                 RequestedAt = DateTime.UtcNow
             };
