@@ -17,6 +17,7 @@ public class LeaveRequest : Entity
     public DateTime RequestedAt { get; set; }
     public Guid? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
 
     // Navigation properties
     public Profile StudentProfile { get; set; } = null!;

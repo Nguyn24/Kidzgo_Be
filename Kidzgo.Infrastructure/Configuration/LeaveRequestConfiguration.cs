@@ -40,6 +40,8 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
 
         builder.Property(x => x.ApprovedAt);
 
+        builder.Property(x => x.CancelledAt);
+
         // Relationships
         builder.HasOne(x => x.StudentProfile)
             .WithMany(x => x.LeaveRequests)
