@@ -20,10 +20,10 @@ public sealed class ReactivateProfileCommandHandler(IDbContext context)
             return Result.Failure(ProfileErrors.NotFound(command.Id));
         }
 
-        if (!profile.IsDeleted)
-        {
-            return Result.Failure(ProfileErrors.ProfileNotDeleted);
-        }
+        // if (!profile.IsDeleted)
+        // {
+        //     return Result.Failure(ProfileErrors.ProfileNotDeleted);
+        // }
 
         // Reactivate: set IsDeleted = false and IsActive = true
         profile.IsDeleted = false;
