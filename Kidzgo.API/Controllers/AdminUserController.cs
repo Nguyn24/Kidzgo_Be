@@ -183,12 +183,12 @@ public class AdminUserController : ControllerBase
     
     [HttpPut("{profileId:guid}/approve")]
     public async Task<IResult> ApproveProfile(
-        List<Guid>? profileId,
+        ApproveProfileRequest request,
         CancellationToken cancellationToken)
     {
         var command = new ApproveProfileCommand
         {
-            Id = profileId,
+            Id = request.ProfileId,
         };
 
         var result = await _mediator.Send(command, cancellationToken);

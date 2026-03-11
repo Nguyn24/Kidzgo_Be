@@ -33,7 +33,8 @@ public sealed class GetProfilesQueryHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
-                ProfileType = p.ProfileType.ToString()
+                ProfileType = p.ProfileType.ToString(),
+                IsApproved = p.IsApproved,
             })
             .ToList();
 
