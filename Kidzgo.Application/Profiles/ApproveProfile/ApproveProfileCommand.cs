@@ -2,7 +2,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 
 namespace Kidzgo.Application.Profiles.ApproveProfile;
 
-public sealed class ApproveProfileCommand : ICommand
+public sealed class ApproveProfileCommand : ICommand<ApproveProfileResponse>
 {
-    public Guid Id { get; init; }
+    public List<Guid>? Id { get; init; }
 }

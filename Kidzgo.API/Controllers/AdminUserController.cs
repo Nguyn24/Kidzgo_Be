@@ -81,7 +81,7 @@ public class AdminUserController : ControllerBase
         var command = new CreateUserCommand
         {
             Username = request.Username,
-            Name = request.Name,
+            // Name = request.Name,
             Email = request.Email,
             Password = request.Password,
             Role = request.Role,
@@ -183,7 +183,7 @@ public class AdminUserController : ControllerBase
     
     [HttpPut("{profileId:guid}/approve")]
     public async Task<IResult> ApproveProfile(
-        Guid profileId,
+        List<Guid>? profileId,
         CancellationToken cancellationToken)
     {
         var command = new ApproveProfileCommand

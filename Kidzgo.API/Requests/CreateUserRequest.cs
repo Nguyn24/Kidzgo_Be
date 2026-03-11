@@ -8,8 +8,8 @@ public sealed class CreateUserRequest
     [Required]
     public string Username { get; set; } = null!;
 
-    [Required]
-    public string Name { get; set; } = null!;
+    
+    // public string Name { get; set; } = null!;
     
     [Required]
     [EmailAddress]
