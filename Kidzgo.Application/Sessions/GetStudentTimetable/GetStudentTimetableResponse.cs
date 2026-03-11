@@ -14,8 +14,8 @@ public sealed class TimetableItemDto
     public DateTime PlannedDatetime { get; init; }
     public DateTime? ActualDatetime { get; init; }
     public int DurationMinutes { get; init; }
-    public Domain.Sessions.ParticipationType ParticipationType { get; init; }
-    public Domain.Sessions.SessionStatus Status { get; init; }
+    public string? ParticipationType { get; init; }
+    public string? Status { get; init; }
     public Guid? PlannedRoomId { get; init; }
     public string? PlannedRoomName { get; init; }
     public Guid? ActualRoomId { get; init; }
@@ -28,5 +28,10 @@ public sealed class TimetableItemDto
     public string? PlannedAssistantName { get; init; }
     public Guid? LessonPlanId { get; init; }
     public string? LessonPlanLink { get; init; }
+    
+    // Attendance information
+    public string? AttendanceStatus { get; init; }
+    public string? AbsenceType { get; init; }
+    public DateTime? AttendanceMarkedAt { get; init; }
 }
 

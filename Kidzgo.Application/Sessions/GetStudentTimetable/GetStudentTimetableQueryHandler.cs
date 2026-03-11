@@ -86,8 +86,8 @@ public sealed class GetStudentTimetableQueryHandler(
                 PlannedDatetime = s.PlannedDatetime,
                 ActualDatetime = s.ActualDatetime,
                 DurationMinutes = s.DurationMinutes,
-                ParticipationType = s.ParticipationType,
-                Status = s.Status,
+                ParticipationType = s.ParticipationType.ToString(),
+                Status = s.Status.ToString(),
                 PlannedRoomId = s.PlannedRoomId,
                 PlannedRoomName = s.PlannedRoom != null ? s.PlannedRoom.Name : null,
                 ActualRoomId = s.ActualRoomId,
@@ -99,7 +99,21 @@ public sealed class GetStudentTimetableQueryHandler(
                 PlannedAssistantId = s.PlannedAssistantId,
                 PlannedAssistantName = s.PlannedAssistant != null ? s.PlannedAssistant.Name : null,
                 LessonPlanId = s.LessonPlan != null ? s.LessonPlan.Id : null,
-                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null
+                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null,
+                
+                // Attendance information for this student
+                AttendanceStatus = s.Attendances
+                    .Where(a => a.StudentProfileId == studentId.Value)
+                    .Select(a => a.AttendanceStatus.ToString())
+                    .FirstOrDefault(),
+                AbsenceType = s.Attendances
+                    .Where(a => a.StudentProfileId == studentId.Value)
+                    .Select(a => a.AbsenceType.ToString())
+                    .FirstOrDefault(),
+                AttendanceMarkedAt = s.Attendances
+                    .Where(a => a.StudentProfileId == studentId.Value)
+                    .Select(a => a.MarkedAt)
+                    .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
 

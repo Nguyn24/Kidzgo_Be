@@ -32,9 +32,7 @@ public class AttendanceController : ControllerBase
         var command = new MarkAttendanceCommand
         {
             SessionId = sessionId,
-            StudentProfileId = request.StudentProfileId,
-            AttendanceStatus = request.AttendanceStatus,
-            Note = request.Comment,
+            Attendances = request.Attendances
         };
 
         var result = await _mediator.Send(command, cancellationToken);
