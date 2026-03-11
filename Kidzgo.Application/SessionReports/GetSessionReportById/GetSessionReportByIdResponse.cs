@@ -30,5 +30,16 @@ public sealed class GetSessionReportByIdResponse
     public bool IsMonthlyCompiled { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+
+    public List<SessionReportCommentDto> Comments { get; init; } = new();
+}
+
+public sealed class SessionReportCommentDto
+{
+    public Guid Id { get; init; }
+    public Guid CommenterId { get; init; }
+    public string CommenterName { get; init; } = null!;
+    public string Content { get; init; } = null!;
+    public DateTime CreatedAt { get; init; }
 }
 
