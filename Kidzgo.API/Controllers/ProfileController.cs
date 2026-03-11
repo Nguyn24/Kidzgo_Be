@@ -167,7 +167,7 @@ public class ProfileController : ControllerBase
         {
             return CustomResults.Problem(result);
         }
-
+        //để đây sửa lại endpoint sau
         return Results.Redirect($"{FrontendUrl}/profile/update?profileId={id}");
     }
     [HttpPost("link")]

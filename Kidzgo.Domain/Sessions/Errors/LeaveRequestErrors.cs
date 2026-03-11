@@ -31,5 +31,13 @@ public static class LeaveRequestErrors
     public static Error ExceededMonthlyLeaveLimit(int maxLeavesPerMonth) => Error.Validation(
         "LeaveRequest.ExceededMonthlyLeaveLimit",
         $"Student has exceeded the maximum of {maxLeavesPerMonth} leaves per month.");
+
+    public static Error CannotCancelPastSession(DateOnly sessionDate) => Error.Validation(
+        "LeaveRequest.CannotCancelPastSession",
+        $"Cannot cancel leave request for session on {sessionDate:yyyy-MM-dd} as it has already passed.");
+
+    public static Error AlreadyCancelled => Error.Conflict(
+        "LeaveRequest.AlreadyCancelled",
+        "Leave request has already been cancelled.");
 }
 
