@@ -10,44 +10,84 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Profiles.ApproveProfile;
 
 public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator mediator)
-    : ICommandHandler<ApproveProfileCommand>
+    : ICommandHandler<ApproveProfileCommand, ApproveProfileResponse>
 {
-    public async Task<Result> Handle(ApproveProfileCommand command, CancellationToken cancellationToken)
+    public async Task<Result<ApproveProfileResponse>> Handle(ApproveProfileCommand command, CancellationToken cancellationToken)
     {
-        var profile = await context.Profiles
+        var result = new ApproveProfileResponse();
+
+        if (command.Id == null || !command.Id.Any())
+            return Result.Success(result);
+
+        var ids = command.Id.Distinct().ToList();
+        var profiles = await context.Profiles
+            .AsNoTracking()
+            .Where(p => ids.Contains(p.Id))
+            .Select(p => new
+            {
+                p.Id,
+                p.IsApproved
+            })
+            .ToListAsync(cancellationToken);
+
+        var foundIds = profiles.Select(p => p.Id).ToHashSet();
+
+        result.NotFound = ids
+            .Where(id => !foundIds.Contains(id))
+            .ToList();
+
+        var alreadyApproved = profiles
+            .Where(p => p.IsApproved)
+            .Select(p => p.Id)
+            .ToList();
+
+        result.AlreadyApproved = alreadyApproved;
+
+        var idsToApprove = profiles
+            .Where(p => !p.IsApproved)
+            .Select(p => p.Id)
+            .ToList();
+
+        if (!idsToApprove.Any())
+            return Result.Success(result);
+
+        var now = DateTime.UtcNow;
+
+        // BULK UPDATE (1 SQL query)
+        var updatedCount = await context.Profiles
+            .Where(p => idsToApprove.Contains(p.Id))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.IsApproved, true)
+                .SetProperty(p => p.UpdatedAt, now),
+                cancellationToken);
+
+        result.ApprovedCount = updatedCount;
+
+        // Query lại profile vừa approve để publish event
+        var approvedProfiles = await context.Profiles
             .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken);
+            .Where(p => idsToApprove.Contains(p.Id))
+            .ToListAsync(cancellationToken);
 
-        if (profile is null)
-        {
-            return Result.Failure(ProfileErrors.NotFound(command.Id));
-        }
+        await Task.WhenAll(
+            approvedProfiles.Select(profile =>
+                mediator.Publish(new ProfileCreatedDomainEvent(
+                    profile.Id,
+                    profile.UserId,
+                    profile.ProfileType.ToString(),
+                    profile.DisplayName,
+                    profile.FullName ?? string.Empty,
+                    profile.Gender?.ToString() ?? string.Empty,
+                    profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
+                    profile.ZaloId ?? string.Empty,
+                    profile.User?.Email ?? string.Empty,
+                    profile.User?.PhoneNumber ?? string.Empty,
+                    profile.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                ), cancellationToken)
+            )
+        );
 
-        if (profile.IsApproved)
-        {
-            return Result.Failure(ProfileErrors.ProfileAlreadyApproved);
-        }
-        profile.IsApproved = true;
-        profile.UpdatedAt = DateTime.UtcNow;
-
-        await context.SaveChangesAsync(cancellationToken);
-
-        // Publish domain event for sending welcome email after profile is approved
-        await mediator.Publish(new ProfileCreatedDomainEvent(
-            profile.Id,
-            profile.UserId,
-            profile.ProfileType.ToString(),
-            profile.DisplayName,
-            profile.FullName ?? string.Empty,
-            profile.Gender?.ToString() ?? string.Empty,
-            profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
-            profile.ZaloId ?? string.Empty,
-            profile.User?.Email ?? string.Empty,
-            profile.User?.PhoneNumber ?? string.Empty,
-            profile.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-        ), cancellationToken);
-
-        return Result.Success();
+        return Result.Success(result);
     }
 }
 

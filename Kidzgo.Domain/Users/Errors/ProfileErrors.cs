@@ -12,6 +12,10 @@ public static class ProfileErrors
         "Profile.NotFound",
         $"The profile with the Id = '{profileId}' was not found");
     
+    public static Error NotFoundList(List<Guid>? profileId) => Error.NotFound(
+        "Profile.NotFound",
+        $"The profile with the Id = '{profileId}' was not found");
+    
     public static readonly Error DisplayNameRequired = Error.Validation(
         "Profile.DisplayNameRequired",
         "Display name is required");

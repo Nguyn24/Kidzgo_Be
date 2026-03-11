@@ -34,7 +34,7 @@ public sealed class ProfileCreatedDomainEventHandler(
         }
 
         var verifyLink = $"{FrontendUrl}/activate-profile?id={notification.ProfileId}";
-        var updateLink = $"{ApiUrl}/api/profiles/{notification.ProfileId}/reactivate-and-update";
+        // var updateLink = $"{ApiUrl}/api/profiles/{notification.ProfileId}/reactivate-and-update";
 
         var placeholders = new Dictionary<string, string>
         {
@@ -47,7 +47,7 @@ public sealed class ProfileCreatedDomainEventHandler(
             ["birth_day"] = notification.Birthday,
             ["zalo_id"] = notification.ZaloId,
             ["verify_link"] = verifyLink,
-            ["update_link"] = updateLink,
+            // ["update_link"] = updateLink,
             ["created_at"] = notification.CreatedAt
         };
 
