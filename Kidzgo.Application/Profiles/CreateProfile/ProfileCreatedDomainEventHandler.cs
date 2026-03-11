@@ -33,7 +33,7 @@ public sealed class ProfileCreatedDomainEventHandler(
             return;
         }
 
-        var verifyLink = $"{FrontendUrl}/profile/verify?profileId={notification.ProfileId}";
+        var verifyLink = $"{FrontendUrl}/activate-profile?id={notification.ProfileId}";
         var updateLink = $"{ApiUrl}/api/profiles/{notification.ProfileId}/reactivate-and-update";
 
         var placeholders = new Dictionary<string, string>
