@@ -68,6 +68,7 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
                 DisplayName = p.DisplayName,
                 IsActive = p.IsActive,
                 IsDeleted = p.IsDeleted,
+                IsApproved = p.IsApproved,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             })
