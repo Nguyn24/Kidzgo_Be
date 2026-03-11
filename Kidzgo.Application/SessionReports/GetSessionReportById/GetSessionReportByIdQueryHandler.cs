@@ -108,6 +108,28 @@ public sealed class GetSessionReportByIdQueryHandler(
         }
         // Admin/ManagementStaff can view all reports (no additional check)
 
+        // Get comments - query directly from ReportComments table to handle both old data 
+        // (where ReportId might be set) and new data (where SessionReportId is set)
+        var comments = await context.ReportComments
+            .Where(c => c.SessionReportId == sessionReport.Id)
+            .OrderBy(c => c.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        // Get commenter names separately
+        var commenterIds = comments.Select(c => c.CommenterId).Distinct().ToList();
+        var commenters = await context.Users
+            .Where(u => commenterIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
+
+        var commentDtos = comments.Select(c => new SessionReportCommentDto
+        {
+            Id = c.Id,
+            CommenterId = c.CommenterId,
+            CommenterName = commenters.GetValueOrDefault(c.CommenterId) ?? "Unknown",
+            Content = c.Content,
+            CreatedAt = c.CreatedAt
+        }).ToList();
+
         return new GetSessionReportByIdResponse
         {
             Id = sessionReport.Id,
@@ -130,7 +152,8 @@ public sealed class GetSessionReportByIdQueryHandler(
             AiGeneratedSummary = sessionReport.AiGeneratedSummary,
             IsMonthlyCompiled = sessionReport.IsMonthlyCompiled,
             CreatedAt = sessionReport.CreatedAt,
-            UpdatedAt = sessionReport.UpdatedAt
+            UpdatedAt = sessionReport.UpdatedAt,
+            Comments = commentDtos
         };
     }
 }
