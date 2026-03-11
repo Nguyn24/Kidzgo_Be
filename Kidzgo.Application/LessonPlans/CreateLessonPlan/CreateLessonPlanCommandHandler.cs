@@ -81,6 +81,8 @@ public sealed class CreateLessonPlanCommandHandler(
             ActualContent = command.ActualContent,
             ActualHomework = command.ActualHomework,
             TeacherNotes = command.TeacherNotes,
+            SubmittedBy = currentUserId,
+            SubmittedAt = DateTime.Now,
             IsDeleted = false,
         };
 
