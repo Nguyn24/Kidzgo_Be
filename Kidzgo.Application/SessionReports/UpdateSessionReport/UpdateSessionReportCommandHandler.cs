@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,9 +27,28 @@ public sealed class UpdateSessionReportCommandHandler(
             return Result.Failure<UpdateSessionReportResponse>(SessionReportErrors.NotFound(command.Id));
         }
 
+        // Validate: Can edit when status is Draft, Review, or Rejected
+        // Rejected reports can be edited to allow teacher to fix and resubmit
+        if (sessionReport.Status != ReportStatus.Draft &&
+            sessionReport.Status != ReportStatus.Review &&
+            sessionReport.Status != ReportStatus.Rejected)
+        {
+            return Result.Failure<UpdateSessionReportResponse>(
+                SessionReportErrors.InvalidStatusForOperation(sessionReport.Status, "edit"));
+        }
+
         // Update feedback
         sessionReport.Feedback = command.Feedback;
         sessionReport.UpdatedAt = DateTime.UtcNow;
+
+        // If report was Rejected, change status back to Draft so teacher can resubmit
+        if (sessionReport.Status == ReportStatus.Rejected)
+        {
+            sessionReport.Status = ReportStatus.Draft;
+            // Clear review information since it's being edited again
+            sessionReport.ReviewedByUserId = null;
+            sessionReport.ReviewedAt = null;
+        }
 
         await context.SaveChangesAsync(cancellationToken);
 
