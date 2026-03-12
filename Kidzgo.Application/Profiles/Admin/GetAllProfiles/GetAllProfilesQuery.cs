@@ -14,5 +14,6 @@ public sealed class GetAllProfilesQuery : IPageableQuery, IQuery<Page<GetAllProf
     public Guid? BranchId { get; init; }
     public bool? IsActive { get; init; }
     public bool? IsDeleted { get; init; }
+    public bool? IsApproved { get; init; }
 }
 
