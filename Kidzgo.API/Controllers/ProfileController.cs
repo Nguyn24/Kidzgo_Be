@@ -65,6 +65,7 @@ public class ProfileController : ControllerBase
         [FromQuery] Guid? branchId,
         [FromQuery] bool? isActive,
         [FromQuery] bool? isDeleted,
+        [FromQuery] bool? isApproved,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -78,7 +79,8 @@ public class ProfileController : ControllerBase
             SearchTerm = searchTerm,
             BranchId = branchId,
             IsActive = isActive,
-            IsDeleted = isDeleted
+            IsDeleted = isDeleted,
+            IsApproved = isApproved,
         };
 
         var result = await _mediator.Send(query, cancellationToken);
