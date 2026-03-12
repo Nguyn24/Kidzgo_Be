@@ -21,7 +21,7 @@ public sealed class GetProgramByIdQueryHandler(
                 BranchId = p.BranchId,
                 BranchName = p.Branch.Name,
                 Name = p.Name,
-                Level = p.Level,
+                Code = p.Code,
                 TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,

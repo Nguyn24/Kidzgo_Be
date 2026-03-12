@@ -13,7 +13,7 @@ public sealed class ProgramDto
     public Guid BranchId { get; init; }
     public string BranchName { get; init; } = null!;
     public string Name { get; init; } = null!;
-    public string? Level { get; init; }
+    public string? Code { get; init; }
     public int TotalSessions { get; init; }
     public decimal DefaultTuitionAmount { get; init; }
     public decimal UnitPriceSession { get; init; }

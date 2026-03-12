@@ -20,8 +20,8 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
             .HasMaxLength(255)
             .IsRequired();
 
-        builder.Property(x => x.Level)
-            .HasMaxLength(100);
+        builder.Property(x => x.Code)
+            .HasMaxLength(10);
 
         builder.Property(x => x.TotalSessions)
             .IsRequired();

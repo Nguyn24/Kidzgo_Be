@@ -12,8 +12,8 @@ public sealed class GetLevelsQueryHandler(
     public async Task<Result<GetLevelsResponse>> Handle(GetLevelsQuery query, CancellationToken cancellationToken)
     {
         var levels = await context.Programs
-            .Where(p => p.IsActive && !p.IsDeleted && !string.IsNullOrEmpty(p.Level))
-            .Select(p => p.Level!)
+            .Where(p => p.IsActive && !p.IsDeleted && !string.IsNullOrEmpty(p.Code))
+            .Select(p => p.Code!)
             .Distinct()
             .OrderBy(l => l)
             .ToListAsync(cancellationToken);

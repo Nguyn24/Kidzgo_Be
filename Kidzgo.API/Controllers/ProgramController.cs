@@ -34,7 +34,7 @@ public class ProgramController : ControllerBase
         {
             BranchId = request.BranchId,
             Name = request.Name,
-            Level = request.Level,
+            Code = request.Code,
             TotalSessions = request.TotalSessions,
             DefaultTuitionAmount = request.DefaultTuitionAmount,
             UnitPriceSession = request.UnitPriceSession,
@@ -121,7 +121,7 @@ public class ProgramController : ControllerBase
             Id = id,
             BranchId = request.BranchId,
             Name = request.Name,
-            Level = request.Level,
+            Code = request.Code,
             TotalSessions = request.TotalSessions,
             DefaultTuitionAmount = request.DefaultTuitionAmount,
             UnitPriceSession = request.UnitPriceSession,
