@@ -6,7 +6,7 @@ public sealed class CreateProgramCommand : ICommand<CreateProgramResponse>
 {
     public Guid BranchId { get; init; }
     public string Name { get; init; } = null!;
-    public string? Level { get; init; }
+    public string Code { get; init; } = null!;
     public int TotalSessions { get; init; }
     public decimal DefaultTuitionAmount { get; init; }
     public decimal UnitPriceSession { get; init; }

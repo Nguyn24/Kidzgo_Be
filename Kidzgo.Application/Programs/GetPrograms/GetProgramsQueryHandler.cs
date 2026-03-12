@@ -27,7 +27,7 @@ public sealed class GetProgramsQueryHandler(
         {
             programsQuery = programsQuery.Where(p =>
                 p.Name.Contains(query.SearchTerm) ||
-                (p.Level != null && p.Level.Contains(query.SearchTerm)) ||
+                (p.Code != null && p.Code.Contains(query.SearchTerm)) ||
                 (p.Description != null && p.Description.Contains(query.SearchTerm)));
         }
 
@@ -52,7 +52,7 @@ public sealed class GetProgramsQueryHandler(
                 BranchId = p.BranchId,
                 BranchName = p.Branch.Name,
                 Name = p.Name,
-                Level = p.Level,
+                Code = p.Code,
                 TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,

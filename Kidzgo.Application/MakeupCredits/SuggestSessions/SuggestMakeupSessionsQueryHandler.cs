@@ -79,7 +79,6 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             .Where(s => DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Saturday ||
                         DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Sunday)
             .Where(s => s.BranchId == sourceSession.BranchId)
-            .Where(s => s.Class.Program.Level == sourceProgram.Level)
             .Where(s => s.ClassId != sourceSession.ClassId);
 
         if (!string.IsNullOrWhiteSpace(timeOfDay))
@@ -130,7 +129,7 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
                 ClassCode = s.Class.Code,
                 ClassTitle = s.Class.Title,
                 ProgramName = s.Class.Program.Name,
-                ProgramLevel = s.Class.Program.Level,
+                ProgramCode = s.Class.Program.Code,
                 PlannedDatetime = s.PlannedDatetime,
                 PlannedEndDatetime = s.PlannedDatetime.AddMinutes(s.DurationMinutes),
                 BranchId = s.BranchId

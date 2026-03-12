@@ -16,10 +16,6 @@ public sealed class UpdateProgramCommandValidator : AbstractValidator<UpdateProg
             .NotEmpty().WithMessage("Program name is required")
             .MaximumLength(255).WithMessage("Program name must not exceed 255 characters");
 
-        RuleFor(command => command.Level)
-            .MaximumLength(100).WithMessage("Level must not exceed 100 characters")
-            .When(command => !string.IsNullOrEmpty(command.Level));
-
         RuleFor(command => command.TotalSessions)
             .GreaterThan(0).WithMessage("Total sessions must be greater than 0");
 
