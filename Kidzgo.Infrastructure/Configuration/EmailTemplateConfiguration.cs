@@ -69,7 +69,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
         {
             Id = Guid.Parse("b9f6c8a1-3f57-45c6-8f4b-9f0c2b7d7f10"),
             Code = "PROFILE_CREATED",
-            Subject = "KidzGo | Hồ sơ {{profile_name}} đã được tạo thành công",
+            Subject = "KidzGo | Hồ sơ đã được tạo thành công",
             Body = """
                    <div style="margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#1f2937;">
                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;">
@@ -90,7 +90,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
                              <tr>
                                <td style="padding:26px 30px 12px 30px;">
                                  <p style="margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#475569;">
-                                   Vui lòng kiểm tra thông tin bên dưới. Nếu cần chỉnh sửa, bạn có thể cập nhật nhanh chỉ với 1 lần nhấp.
+                                   Vui lòng kiểm tra thông tin bên dưới. Nếu cần chỉnh sửa, sau khi xác nhận có thể chỉnh sửa thông tin. Mật khẩu đăng nhập tài khoản và mã pin của phụ huynh là mặc định vui lòng thay đổi sau khi nhận được tài khoản.
                                  </p>
                                </td>
                              </tr>

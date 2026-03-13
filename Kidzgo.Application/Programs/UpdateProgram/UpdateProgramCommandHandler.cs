@@ -32,6 +32,7 @@ public sealed class UpdateProgramCommandHandler(
         program.BranchId = command.BranchId;
         program.Name = command.Name;
         program.Code = command.Code;
+        program.IsMakeup = command.IsMakeup;
         program.TotalSessions = command.TotalSessions;
         program.DefaultTuitionAmount = command.DefaultTuitionAmount;
         program.UnitPriceSession = command.UnitPriceSession;
@@ -46,6 +47,7 @@ public sealed class UpdateProgramCommandHandler(
             BranchId = program.BranchId,
             Name = program.Name,
             Code = program.Code,
+            IsMakeup = program.IsMakeup,
             TotalSessions = program.TotalSessions,
             DefaultTuitionAmount = program.DefaultTuitionAmount,
             UnitPriceSession = program.UnitPriceSession,
