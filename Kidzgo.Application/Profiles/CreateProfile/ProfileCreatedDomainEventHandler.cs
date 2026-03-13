@@ -41,6 +41,8 @@ public sealed class ProfileCreatedDomainEventHandler(
             ["profile_name"] = notification.DisplayName,
             ["profile_type"] = notification.ProfileType,
             ["email"] = notification.Email,
+            ["password"] = notification.Password,
+            ["pin"] = notification.Pin,
             ["phone"] = notification.Phone,
             ["full_name"] = notification.FullName,
             ["gender"] = notification.Gender,

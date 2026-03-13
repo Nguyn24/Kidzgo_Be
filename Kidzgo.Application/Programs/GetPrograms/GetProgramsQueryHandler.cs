@@ -36,6 +36,12 @@ public sealed class GetProgramsQueryHandler(
         {
             programsQuery = programsQuery.Where(p => p.IsActive == query.IsActive.Value);
         }
+        
+        // Filter by IsMakeup
+        if (query.IsMakeup.HasValue)
+        {
+            programsQuery = programsQuery.Where(p => p.IsMakeup == query.IsMakeup.Value);
+        }
 
         // Get total count
         int totalCount = await programsQuery.CountAsync(cancellationToken);
@@ -53,6 +59,7 @@ public sealed class GetProgramsQueryHandler(
                 BranchName = p.Branch.Name,
                 Name = p.Name,
                 Code = p.Code,
+                IsMakeup = p.IsMakeup,
                 TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,

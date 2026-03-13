@@ -52,7 +52,7 @@ public sealed class ForgetPasswordDomainEventHandler(
         var placeholders = new Dictionary<string, string>
         {
             ["user_name"] = user.Username ?? user.Email,
-            ["reset_link"] = $"https://kidzgo-centre.vercel.app/vi/auth/reset-password?token={token}"
+            ["reset_link"] = $"https://kidzgo-centre-pvjj.vercel.app/vi/auth/reset-password?token={token}"
         };
 
         string subject = template.Subject;

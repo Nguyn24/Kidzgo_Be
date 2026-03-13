@@ -197,6 +197,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
             .Where(s => s.BranchId == originalClass.BranchId
                         && s.ClassId != originalClass.Id
                         && s.Class.Status == ClassStatus.Active
+                        && s.Class.Program.IsMakeup == true
                         && (DateOnly.FromDateTime(s.PlannedDatetime) == saturday 
                             || DateOnly.FromDateTime(s.PlannedDatetime) == sunday))
             .ToListAsync(cancellationToken);

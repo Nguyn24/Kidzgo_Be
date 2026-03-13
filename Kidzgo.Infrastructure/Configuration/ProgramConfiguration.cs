@@ -47,6 +47,9 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
 
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
+        
+        builder.Property(x=>x.IsMakeup)
+            .IsRequired();
 
         // Relationships
         builder.HasOne(x => x.Branch)

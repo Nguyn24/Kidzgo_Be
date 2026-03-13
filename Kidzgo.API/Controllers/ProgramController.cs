@@ -35,6 +35,7 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
+            IsMakeup = request.IsMakeup,
             TotalSessions = request.TotalSessions,
             DefaultTuitionAmount = request.DefaultTuitionAmount,
             UnitPriceSession = request.UnitPriceSession,
@@ -52,6 +53,7 @@ public class ProgramController : ControllerBase
         [FromQuery] Guid? branchId,
         [FromQuery] string? searchTerm,
         [FromQuery] bool? isActive,
+        [FromQuery] bool? isMakeup,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -61,6 +63,7 @@ public class ProgramController : ControllerBase
             BranchId = branchId,
             SearchTerm = searchTerm,
             IsActive = isActive,
+            IsMakeup = isMakeup,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -122,6 +125,7 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
+            IsMakeup = request.IsMakeup,
             TotalSessions = request.TotalSessions,
             DefaultTuitionAmount = request.DefaultTuitionAmount,
             UnitPriceSession = request.UnitPriceSession,
