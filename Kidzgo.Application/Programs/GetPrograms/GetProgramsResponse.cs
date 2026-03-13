@@ -14,6 +14,7 @@ public sealed class ProgramDto
     public string BranchName { get; init; } = null!;
     public string Name { get; init; } = null!;
     public string? Code { get; init; }
+    public bool IsMakeup { get; init; }
     public int TotalSessions { get; init; }
     public decimal DefaultTuitionAmount { get; init; }
     public decimal UnitPriceSession { get; init; }

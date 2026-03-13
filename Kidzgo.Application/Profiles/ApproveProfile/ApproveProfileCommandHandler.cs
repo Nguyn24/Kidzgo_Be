@@ -69,6 +69,8 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
             .Where(p => idsToApprove.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
+        const string defaultPassword = "123456";
+        const string defaultPin = "1234";
         await Task.WhenAll(
             approvedProfiles.Select(profile =>
                 mediator.Publish(new ProfileCreatedDomainEvent(
@@ -77,6 +79,8 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
                     profile.ProfileType.ToString(),
                     profile.DisplayName,
                     profile.FullName ?? string.Empty,
+                    defaultPassword,
+                    defaultPin,
                     profile.Gender?.ToString() ?? string.Empty,
                     profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
                     profile.ZaloId ?? string.Empty,

@@ -181,7 +181,7 @@ public class AdminUserController : ControllerBase
         return result.MatchOk();
     }
     
-    [HttpPut("{profileId:guid}/approve")]
+    [HttpPut("/approve")]
     public async Task<IResult> ApproveProfile(
         ApproveProfileRequest request,
         CancellationToken cancellationToken)

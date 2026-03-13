@@ -8,6 +8,8 @@ public sealed record ProfileCreatedDomainEvent(
     string ProfileType,
     string DisplayName,
     string FullName,
+    string Password,
+    string Pin,
     string Gender,
     string Birthday,
     string ZaloId,
