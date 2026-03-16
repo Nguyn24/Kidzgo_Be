@@ -24,6 +24,7 @@ public class AttendanceController : ControllerBase
 
     /// UC-099: Điểm danh học sinh
     [HttpPost("{sessionId:guid}")]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<IResult> Mark(
         Guid sessionId,
         [FromBody] MarkAttendanceRequest request,
@@ -41,6 +42,7 @@ public class AttendanceController : ControllerBase
 
     /// UC-100: Danh sách điểm danh của Session
     [HttpGet("{sessionId:guid}")]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<IResult> GetSessionAttendance(Guid sessionId, CancellationToken cancellationToken)
     {
         var query = new GetSessionAttendanceQuery { SessionId = sessionId };
@@ -50,6 +52,7 @@ public class AttendanceController : ControllerBase
 
     /// UC-101: Lịch sử điểm danh học sinh (studentId lấy từ token)
     [HttpGet("students")]
+    [Authorize(Roles = "Admin,Teacher,Parent,Student")]
     public async Task<IResult> GetStudentHistory(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -67,6 +70,7 @@ public class AttendanceController : ControllerBase
 
     /// UC-104: Cập nhật điểm danh
     [HttpPut("{sessionId:guid}/students/{studentProfileId:guid}")]
+    [Authorize(Roles = "Admin,Teacher")]
     public async Task<IResult> Update(
         Guid sessionId,
         Guid studentProfileId,
@@ -78,6 +82,7 @@ public class AttendanceController : ControllerBase
             SessionId = sessionId,
             StudentProfileId = studentProfileId,
             AttendanceStatus = request.AttendanceStatus,
+            Note = request.Note,
             IsAdmin = User.IsInRole("Admin")
         };
 
