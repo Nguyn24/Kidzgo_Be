@@ -18,6 +18,13 @@ public class Notification : Entity
     public string? TemplateId { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    // Push notification metadata
+    public string? TargetRole { get; set; } // Role nhận notification: Parent, Student, Teacher, Staff
+    public string? Kind { get; set; } // Loại notification: report, attendance, homework, message, payment
+    public string? Priority { get; set; } // Độ ưu tiên: high, normal, low
+    public string? SenderRole { get; set; } // Role người gửi: System, Teacher, Admin, Staff
+    public string? SenderName { get; set; } // Tên người gửi/hệ thống
+
     // Navigation properties
     public User RecipientUser { get; set; } = null!;
     public Profile? RecipientProfile { get; set; }

@@ -10,7 +10,7 @@ using Kidzgo.Application.NotificationTemplates.GetNotificationTemplateById;
 using Kidzgo.Application.NotificationTemplates.UpdateNotificationTemplate;
 using Kidzgo.Application.Notifications.RetryNotification;
 using Kidzgo.Application.Users.RegisterDeviceToken;
-using Kidzgo.API.Requests;
+using Kidzgo.Application.Users.DeleteDeviceToken;
 using Kidzgo.Domain.Notifications;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
