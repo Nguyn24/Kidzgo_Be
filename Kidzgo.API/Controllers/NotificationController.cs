@@ -217,7 +217,6 @@ public class NotificationController : ControllerBase
     }
 
     /// Register device token for push notifications
-    /// <param name="request">Device token information</param>
     [HttpPost("device-token")]
     [Authorize]
     public async Task<IResult> RegisterDeviceToken(
@@ -228,6 +227,27 @@ public class NotificationController : ControllerBase
         {
             Token = request.Token,
             DeviceType = request.DeviceType,
+            DeviceId = request.DeviceId,
+            Role = request.Role,
+            Browser = request.Browser,
+            Locale = request.Locale,
+            BranchId = request.BranchId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Delete device token for push notifications (logout or change device)
+    [HttpDelete("device-token")]
+    [Authorize]
+    public async Task<IResult> DeleteDeviceToken(
+        [FromBody] DeleteDeviceTokenRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DeleteDeviceTokenCommand
+        {
+            Token = request.Token,
             DeviceId = request.DeviceId
         };
 

@@ -26,6 +26,14 @@ public class DeviceTokenConfiguration : IEntityTypeConfiguration<DeviceToken>
         builder.Property(x => x.DeviceId)
             .HasMaxLength(200);
 
+        builder.Property(x => x.Role);
+
+        builder.Property(x => x.Browser);
+
+        builder.Property(x => x.BranchId);
+
+        builder.Property(x => x.Locale);
+
         builder.Property(x => x.IsActive)
             .IsRequired();
 
