@@ -9,5 +9,7 @@ public sealed class UpdateAttendanceResponse
     public Guid StudentProfileId { get; init; }
     public string AttendanceStatus { get; init; } = null!;
     public string? AbsenceType { get; init; }
+    public string? Note { get; init; }
+    public DateTime? UpdatedAt { get; init; }
 }
 
