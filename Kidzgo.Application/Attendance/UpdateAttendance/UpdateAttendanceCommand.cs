@@ -8,6 +8,7 @@ public sealed class UpdateAttendanceCommand : ICommand<UpdateAttendanceResponse>
     public Guid SessionId { get; init; }
     public Guid StudentProfileId { get; init; }
     public AttendanceStatus AttendanceStatus { get; init; }
+    public string? Note { get; init; }
     public bool IsAdmin { get; init; }
 }
 
