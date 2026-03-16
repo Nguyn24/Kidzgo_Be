@@ -30,9 +30,17 @@ public sealed class RegisterDeviceTokenCommandHandler(
 
         if (existingToken != null)
         {
-            // Update last used time
+            // Update last used time and other metadata
             existingToken.LastUsedAt = now;
             existingToken.UpdatedAt = now;
+            if (!string.IsNullOrWhiteSpace(command.Role))
+                existingToken.Role = command.Role;
+            if (!string.IsNullOrWhiteSpace(command.Browser))
+                existingToken.Browser = command.Browser;
+            if (!string.IsNullOrWhiteSpace(command.Locale))
+                existingToken.Locale = command.Locale;
+            if (command.BranchId.HasValue)
+                existingToken.BranchId = command.BranchId;
             
             await context.SaveChangesAsync(cancellationToken);
 
@@ -67,6 +75,10 @@ public sealed class RegisterDeviceTokenCommandHandler(
             Token = command.Token,
             DeviceType = command.DeviceType,
             DeviceId = command.DeviceId,
+            Role = command.Role,
+            Browser = command.Browser,
+            Locale = command.Locale,
+            BranchId = command.BranchId,
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now,
