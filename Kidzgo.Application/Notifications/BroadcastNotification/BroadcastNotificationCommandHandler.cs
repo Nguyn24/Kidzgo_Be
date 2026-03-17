@@ -76,16 +76,82 @@ public sealed class BroadcastNotificationCommandHandler(
                 recipientUserIds.Add(userId);
             }
         }
-        // Filter by role
+        // Filter by role (supports multiple roles like "Admin,Staff" or "Parent+Student")
         else if (!string.IsNullOrWhiteSpace(command.Role))
         {
-            var userIdsFromRole = await context.Users
-                .Where(u => u.Role.ToString() == command.Role)
-                .Select(u => u.Id)
-                .ToListAsync(cancellationToken);
-            foreach (var userId in userIdsFromRole)
+            // Parse roles - handle both comma and plus separators
+            var roleParts = command.Role.Split(new[] { ',', '+' }, StringSplitOptions.RemoveEmptyEntries);
+            var roles = roleParts.Select(r => r.Trim()).ToList();
+
+            // Track which ProfileTypes we need to query
+            var profileTypes = new List<ProfileType>();
+            var userRoles = new List<UserRole>();
+
+            foreach (var role in roles)
             {
-                recipientUserIds.Add(userId);
+                // Map string role to UserRole or ProfileType
+                switch (role.ToLowerInvariant())
+                {
+                    case "admin":
+                        userRoles.Add(UserRole.Admin);
+                        break;
+                    case "managementstaff":
+                    case "management":
+                    case "staff":
+                    case "management_staff":
+                        userRoles.Add(UserRole.ManagementStaff);
+                        break;
+                    case "accountantstaff":
+                    case "accountant":
+                        userRoles.Add(UserRole.AccountantStaff);
+                        break;
+                    case "teacher":
+                    case "giaovien":
+                    case "gv":
+                        userRoles.Add(UserRole.Teacher);
+                        break;
+                    case "parent":
+                    case "phuhuynh":
+                    case "phụ huynh":
+                        // Parent can be in both User.Role and Profile.ProfileType
+                        userRoles.Add(UserRole.Parent);
+                        profileTypes.Add(ProfileType.Parent);
+                        break;
+                    case "student":
+                    case "hocsinh":
+                    case "học sinh":
+                    case "hs":
+                        // Student only exists in Profile.ProfileType
+                        profileTypes.Add(ProfileType.Student);
+                        break;
+                }
+            }
+
+            // Query Users by UserRole
+            if (userRoles.Any())
+            {
+                var userIdsFromRoles = await context.Users
+                    .Where(u => userRoles.Contains(u.Role))
+                    .Select(u => u.Id)
+                    .ToListAsync(cancellationToken);
+                foreach (var userId in userIdsFromRoles)
+                {
+                    recipientUserIds.Add(userId);
+                }
+            }
+
+            // Query Users via Profile by ProfileType
+            if (profileTypes.Any())
+            {
+                var userIdsFromProfiles = await context.Profiles
+                    .Where(p => profileTypes.Contains(p.ProfileType))
+                    .Select(p => p.UserId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+                foreach (var userId in userIdsFromProfiles)
+                {
+                    recipientUserIds.Add(userId);
+                }
             }
         }
         else
