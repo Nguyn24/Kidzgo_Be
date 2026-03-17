@@ -1,62 +1,61 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
-using Kidzgo.Application.LeaveRequests.ApproveLeaveRequest;
-using Kidzgo.Application.LeaveRequests.BulkApproveLeaveRequests;
-using Kidzgo.Application.LeaveRequests.CancelLeaveRequest;
-using Kidzgo.Application.LeaveRequests.CreateLeaveRequest;
-using Kidzgo.Application.LeaveRequests.GetLeaveRequestById;
-using Kidzgo.Application.LeaveRequests.GetLeaveRequests;
-using Kidzgo.Application.LeaveRequests.RejectLeaveRequest;
-using Kidzgo.Domain.Sessions;
+using Kidzgo.Application.PauseEnrollmentRequests.ApprovePauseEnrollmentRequest;
+using Kidzgo.Application.PauseEnrollmentRequests.BulkApprovePauseEnrollmentRequests;
+using Kidzgo.Application.PauseEnrollmentRequests.CancelPauseEnrollmentRequest;
+using Kidzgo.Application.PauseEnrollmentRequests.CreatePauseEnrollmentRequest;
+using Kidzgo.Application.PauseEnrollmentRequests.GetPauseEnrollmentRequestById;
+using Kidzgo.Application.PauseEnrollmentRequests.GetPauseEnrollmentRequests;
+using Kidzgo.Application.PauseEnrollmentRequests.RejectPauseEnrollmentRequest;
+using Kidzgo.Application.PauseEnrollmentRequests.UpdatePauseEnrollmentOutcome;
+using Kidzgo.Domain.Classes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kidzgo.API.Controllers;
 
-[Route("api/leave-requests")]
+[Route("api/pause-enrollment-requests")]
 [ApiController]
 [Authorize]
-public class LeaveRequestController : ControllerBase
+public class PauseEnrollmentRequestController : ControllerBase
 {
     private readonly ISender _mediator;
 
-    public LeaveRequestController(ISender mediator)
+    public PauseEnrollmentRequestController(ISender mediator)
     {
         _mediator = mediator;
     }
 
-    /// UC-091/092: Tạo Leave Request
     [HttpPost]
     public async Task<IResult> Create(
-        [FromBody] CreateLeaveRequestRequest request,
+        [FromBody] CreatePauseEnrollmentRequestRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new CreateLeaveRequestCommand
+        var command = new CreatePauseEnrollmentRequestCommand
         {
             StudentProfileId = request.StudentProfileId,
             ClassId = request.ClassId,
-            SessionDate = request.SessionDate,
-            EndDate = request.EndDate,
+            PauseFrom = request.PauseFrom,
+            PauseTo = request.PauseTo,
             Reason = request.Reason
         };
 
         var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchCreated(r => $"/api/leave-requests/{r.LeaveRequests.First().Id}");
+        return result.MatchCreated(r => $"/api/pause-enrollment-requests/{r.Id}");
     }
 
-    /// UC-093: Danh sách Leave Requests
     [HttpGet]
     public async Task<IResult> GetList(
         [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
-        [FromQuery] LeaveRequestStatus? status,
+        [FromQuery] PauseEnrollmentRequestStatus? status,
         [FromQuery] Guid? branchId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetLeaveRequestsQuery
+        var query = new GetPauseEnrollmentRequestsQuery
         {
             StudentProfileId = studentProfileId,
             ClassId = classId,
@@ -70,21 +69,19 @@ public class LeaveRequestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-094: Chi tiết Leave Request
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var query = new GetLeaveRequestByIdQuery { Id = id };
+        var query = new GetPauseEnrollmentRequestByIdQuery { Id = id };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
 
-    /// UC-095: Duyệt Leave Request
     [HttpPut("{id:guid}/approve")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Approve(Guid id, CancellationToken cancellationToken)
     {
-        var command = new ApproveLeaveRequestCommand { Id = id };
+        var command = new ApprovePauseEnrollmentRequestCommand { Id = id };
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
@@ -95,7 +92,7 @@ public class LeaveRequestController : ControllerBase
         [FromBody] BulkApproveRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new BulkApproveLeaveRequestsCommand
+        var command = new BulkApprovePauseEnrollmentRequestsCommand
         {
             Ids = request.Ids
         };
@@ -104,14 +101,38 @@ public class LeaveRequestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-096: Từ chối Leave Request
     [HttpPut("{id:guid}/reject")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> Reject(Guid id, CancellationToken cancellationToken)
     {
-        var command = new RejectLeaveRequestCommand { Id = id };
+        var command = new RejectPauseEnrollmentRequestCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPut("{id:guid}/cancel")]
+    public async Task<IResult> Cancel(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new CancelPauseEnrollmentRequestCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPut("{id:guid}/outcome")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateOutcome(
+        Guid id,
+        [FromBody] UpdatePauseEnrollmentOutcomeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdatePauseEnrollmentOutcomeCommand
+        {
+            Id = id,
+            Outcome = request.Outcome,
+            OutcomeNote = request.OutcomeNote
+        };
+
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
 }
-

@@ -37,6 +37,8 @@ public interface IDbContext
     // Classes
     DbSet<Class> Classes { get; }
     DbSet<ClassEnrollment> ClassEnrollments { get; }
+    DbSet<PauseEnrollmentRequest> PauseEnrollmentRequests { get; }
+    DbSet<PauseEnrollmentRequestHistory> PauseEnrollmentRequestHistories { get; }
 
     // CRM
     DbSet<Lead> Leads { get; }
