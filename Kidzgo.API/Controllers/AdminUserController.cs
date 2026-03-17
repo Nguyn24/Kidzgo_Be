@@ -114,8 +114,6 @@ public class AdminUserController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-
-  
    
     [HttpDelete("{id:guid}")]
     public async Task<IResult> DeleteUser(
@@ -181,7 +179,7 @@ public class AdminUserController : ControllerBase
         return result.MatchOk();
     }
     
-    [HttpPut("/approve")]
+    [HttpPut("approve")]
     public async Task<IResult> ApproveProfile(
         ApproveProfileRequest request,
         CancellationToken cancellationToken)

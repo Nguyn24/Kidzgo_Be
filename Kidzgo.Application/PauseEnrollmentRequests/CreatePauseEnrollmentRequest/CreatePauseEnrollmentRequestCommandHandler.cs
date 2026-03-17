@@ -9,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.PauseEnrollmentRequests.CreatePauseEnrollmentRequest;
 
 public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext context)
-    : ICommandHandler<CreatePauseEnrollmentRequestCommand, PauseEnrollmentRequestResponse>
+    : ICommandHandler<CreatePauseEnrollmentRequestCommand, CreatePauseEnrollmentRequestResponse>
 {
-    public async Task<Result<PauseEnrollmentRequestResponse>> Handle(
+    public async Task<Result<CreatePauseEnrollmentRequestResponse>> Handle(
         CreatePauseEnrollmentRequestCommand command,
         CancellationToken cancellationToken)
     {
@@ -20,51 +20,75 @@ public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext contex
 
         if (!profileExists)
         {
-            return Result.Failure<PauseEnrollmentRequestResponse>(
+            return Result.Failure<CreatePauseEnrollmentRequestResponse>(
                 PauseEnrollmentRequestErrors.StudentNotFound(command.StudentProfileId));
         }
 
-        var classExists = await context.Classes
-            .AnyAsync(c => c.Id == command.ClassId, cancellationToken);
+        var activeEnrollments = await context.ClassEnrollments
+            .Where(e => e.StudentProfileId == command.StudentProfileId
+                        && e.Status == EnrollmentStatus.Active)
+            .ToListAsync(cancellationToken);
 
-        if (!classExists)
+        if (activeEnrollments.Count == 0)
         {
-            return Result.Failure<PauseEnrollmentRequestResponse>(
-                PauseEnrollmentRequestErrors.ClassNotFound(command.ClassId));
+            return Result.Failure<CreatePauseEnrollmentRequestResponse>(
+                PauseEnrollmentRequestErrors.NoEnrollmentsInRange);
         }
 
-        var enrollment = await context.ClassEnrollments
-            .FirstOrDefaultAsync(e => e.ClassId == command.ClassId && e.StudentProfileId == command.StudentProfileId, cancellationToken);
+        var activeClassIds = activeEnrollments
+            .Select(e => e.ClassId)
+            .Distinct()
+            .ToList();
 
-        if (enrollment is null)
-        {
-            return Result.Failure<PauseEnrollmentRequestResponse>(
-                PauseEnrollmentRequestErrors.NotEnrolled(command.ClassId, command.StudentProfileId));
-        }
+        var classIdsInRange = await context.Sessions
+            .Where(s => activeClassIds.Contains(s.ClassId)
+                        && DateOnly.FromDateTime(s.PlannedDatetime) >= command.PauseFrom
+                        && DateOnly.FromDateTime(s.PlannedDatetime) <= command.PauseTo)
+            .Select(s => s.ClassId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
-        if (enrollment.Status != EnrollmentStatus.Active)
+        if (classIdsInRange.Count == 0)
         {
-            return Result.Failure<PauseEnrollmentRequestResponse>(
-                PauseEnrollmentRequestErrors.EnrollmentNotActive);
+            return Result.Failure<CreatePauseEnrollmentRequestResponse>(
+                PauseEnrollmentRequestErrors.NoEnrollmentsInRange);
         }
 
         bool hasActiveRequest = await context.PauseEnrollmentRequests
             .AnyAsync(r => r.StudentProfileId == command.StudentProfileId
-                           && r.ClassId == command.ClassId
                            && (r.Status == PauseEnrollmentRequestStatus.Pending ||
-                               r.Status == PauseEnrollmentRequestStatus.Approved), cancellationToken);
+                               r.Status == PauseEnrollmentRequestStatus.Approved)
+                           && r.PauseFrom <= command.PauseTo
+                           && r.PauseTo >= command.PauseFrom, cancellationToken);
 
         if (hasActiveRequest)
         {
-            return Result.Failure<PauseEnrollmentRequestResponse>(
+            return Result.Failure<CreatePauseEnrollmentRequestResponse>(
                 PauseEnrollmentRequestErrors.DuplicateActiveRequest);
         }
+
+        var classesInRange = await context.Classes
+            .Where(c => classIdsInRange.Contains(c.Id))
+            .Select(c => new PauseEnrollmentClassDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Title = c.Title,
+                ProgramId = c.ProgramId,
+                ProgramName = c.Program.Name,
+                BranchId = c.BranchId,
+                BranchName = c.Branch.Name,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Status = c.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
 
         var request = new PauseEnrollmentRequest
         {
             Id = Guid.NewGuid(),
             StudentProfileId = command.StudentProfileId,
-            ClassId = command.ClassId,
+            ClassId = null,
             PauseFrom = command.PauseFrom,
             PauseTo = command.PauseTo,
             Reason = command.Reason,
@@ -75,24 +99,16 @@ public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext contex
         context.PauseEnrollmentRequests.Add(request);
         await context.SaveChangesAsync(cancellationToken);
 
-        return new PauseEnrollmentRequestResponse
+        return new CreatePauseEnrollmentRequestResponse
         {
             Id = request.Id,
             StudentProfileId = request.StudentProfileId,
-            ClassId = request.ClassId,
             PauseFrom = request.PauseFrom,
             PauseTo = request.PauseTo,
             Reason = request.Reason,
             Status = request.Status.ToString(),
             RequestedAt = request.RequestedAt,
-            ApprovedBy = request.ApprovedBy,
-            ApprovedAt = request.ApprovedAt,
-            CancelledBy = request.CancelledBy,
-            CancelledAt = request.CancelledAt,
-            Outcome = request.Outcome?.ToString(),
-            OutcomeNote = request.OutcomeNote,
-            OutcomeBy = request.OutcomeBy,
-            OutcomeAt = request.OutcomeAt
+            Classes = classesInRange
         };
     }
 }

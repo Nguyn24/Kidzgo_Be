@@ -4,6 +4,7 @@ Tai lieu nay mo ta chi tiet flow bao luu (pause enrollment) de FE tich hop.
 
 ## Tong quan
 - Bao luu la yeu cau tam dung hoc theo khoang ngay `pause_from` -> `pause_to`.
+- Khi tao request, he thong tu quet cac lop/buoi hoc cua hoc sinh trong khoang bao luu.
 - Khi duoc APPROVED, he thong tu dong tam dung cac ghi danh ACTIVE co buoi hoc nam trong khoang bao luu.
 - Ket qua sau bao luu (outcome) chi la ghi nhan, khong tu dong chuyen lop/thu hoc phi.
 
@@ -27,7 +28,7 @@ Tai lieu nay mo ta chi tiet flow bao luu (pause enrollment) de FE tich hop.
 {
   "id": "uuid",
   "studentProfileId": "uuid",
-  "classId": "uuid",
+  "classId": "uuid | null",
   "pauseFrom": "YYYY-MM-DD",
   "pauseTo": "YYYY-MM-DD",
   "reason": "string | null",
@@ -40,7 +41,48 @@ Tai lieu nay mo ta chi tiet flow bao luu (pause enrollment) de FE tich hop.
   "outcome": "ContinueSameClass|ReassignEquivalentClass|ContinueWithTutoring | null",
   "outcomeNote": "string | null",
   "outcomeBy": "uuid | null",
-  "outcomeAt": "2026-03-17T10:05:00Z | null"
+  "outcomeAt": "2026-03-17T10:05:00Z | null",
+  "classes": [
+    {
+      "id": "uuid",
+      "code": "ENG-L1-2024-01",
+      "title": "English Level 1",
+      "programId": "uuid",
+      "programName": "English Level 1",
+      "branchId": "uuid",
+      "branchName": "Hanoi",
+      "startDate": "2026-01-01",
+      "endDate": "2026-06-01",
+      "status": "Active"
+    }
+  ]
+}
+```
+
+## Response model (CreatePauseEnrollmentRequestResponse - POST only)
+```
+{
+  "id": "uuid",
+  "studentProfileId": "uuid",
+  "pauseFrom": "YYYY-MM-DD",
+  "pauseTo": "YYYY-MM-DD",
+  "reason": "string | null",
+  "status": "Pending",
+  "requestedAt": "2026-03-17T10:00:00Z",
+  "classes": [
+    {
+      "id": "uuid",
+      "code": "ENG-L1-2024-01",
+      "title": "English Level 1",
+      "programId": "uuid",
+      "programName": "English Level 1",
+      "branchId": "uuid",
+      "branchName": "Hanoi",
+      "startDate": "2026-01-01",
+      "endDate": "2026-06-01",
+      "status": "Active"
+    }
+  ]
 }
 ```
 
@@ -53,7 +95,6 @@ Body:
 ```
 {
   "studentProfileId": "uuid",
-  "classId": "uuid",
   "pauseFrom": "2026-04-01",
   "pauseTo": "2026-04-30",
   "reason": "string | null"
@@ -61,13 +102,13 @@ Body:
 ```
 
 Response:
-- `201 Created` + `PauseEnrollmentRequestResponse`
+- `201 Created` + `CreatePauseEnrollmentRequestResponse`
 
 Validation rules:
 - `pauseFrom` >= UTC today
 - `pauseTo` >= `pauseFrom`
-- Hoc sinh phai co ghi danh ACTIVE o lop do
-- Khong duoc trung khi da co request PENDING/APPROVED cho cung hoc sinh + lop
+- Hoc sinh phai co ghi danh ACTIVE va co buoi hoc trong khoang bao luu
+- Khong duoc trung khi da co request PENDING/APPROVED bi chong lap thoi gian voi cung hoc sinh
 
 ### 2. Danh sach yeu cau
 `GET /api/pause-enrollment-requests`
@@ -105,7 +146,7 @@ Response:
 Behavior:
 - `status = Approved`, set `approvedBy/approvedAt`
 - Tu dong pause cac ghi danh ACTIVE co buoi hoc nam trong khoang bao luu
-- Luon bao gom lop khoi nguon `classId` du khoang bao luu khong co session
+- Neu request co `classId` (legacy), se luon bao gom lop khoi nguon du khoang bao luu khong co session
 - Ghi lich su vao `pause_enrollment_request_histories` cho moi ghi danh bi anh huong
 
 ### 5. Duyet hang loat
@@ -167,6 +208,7 @@ Rules:
 - `PauseEnrollmentRequest.NotEnrolled`
 - `PauseEnrollmentRequest.EnrollmentNotActive`
 - `PauseEnrollmentRequest.DuplicateActiveRequest`
+- `PauseEnrollmentRequest.NoEnrollmentsInRange`
 - `PauseEnrollmentRequest.AlreadyApproved`
 - `PauseEnrollmentRequest.AlreadyRejected`
 - `PauseEnrollmentRequest.AlreadyCancelled`
@@ -179,4 +221,3 @@ Rules:
 2. Staff approve → status `Approved`, he thong pause ghi danh + ghi lich su
 3. Sau khi hoc sinh quay lai:
    - Staff cap nhat outcome (ContinueSameClass / ReassignEquivalentClass / ContinueWithTutoring)
-

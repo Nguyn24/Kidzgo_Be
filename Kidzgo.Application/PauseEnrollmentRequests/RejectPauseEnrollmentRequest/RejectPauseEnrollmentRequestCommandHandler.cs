@@ -1,5 +1,7 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -7,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PauseEnrollmentRequests.RejectPauseEnrollmentRequest;
 
-public sealed class RejectPauseEnrollmentRequestCommandHandler(IDbContext context)
+public sealed class RejectPauseEnrollmentRequestCommandHandler(
+    IDbContext context,
+    ITemplateRenderer templateRenderer)
     : ICommandHandler<RejectPauseEnrollmentRequestCommand>
 {
     public async Task<Result> Handle(RejectPauseEnrollmentRequestCommand request, CancellationToken cancellationToken)
@@ -38,6 +42,19 @@ public sealed class RejectPauseEnrollmentRequestCommandHandler(IDbContext contex
         pauseRequest.Status = PauseEnrollmentRequestStatus.Rejected;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await PauseEnrollmentRequestNotificationHelper.NotifyAsync(
+            context,
+            templateRenderer,
+            pauseRequest.StudentProfileId,
+            pauseRequest.Id,
+            PauseEnrollmentRequestNotificationHelper.NotificationType.Rejected,
+            pauseRequest.PauseFrom,
+            pauseRequest.PauseTo,
+            null,
+            null,
+            cancellationToken);
+
         return Result.Success();
     }
 }
