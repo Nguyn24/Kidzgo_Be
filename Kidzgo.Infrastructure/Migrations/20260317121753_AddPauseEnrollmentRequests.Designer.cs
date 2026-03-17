@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317121753_AddPauseEnrollmentRequests")]
+    partial class AddPauseEnrollmentRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -433,12 +436,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid?>("ApprovedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CancelledBy")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
 
@@ -479,8 +476,6 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.HasIndex("ApprovedBy");
 
-                    b.HasIndex("CancelledBy");
-
                     b.HasIndex("ClassId");
 
                     b.HasIndex("OutcomeBy");
@@ -488,61 +483,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("StudentProfileId");
 
                     b.ToTable("PauseEnrollmentRequests", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequestHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ChangedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EnrollmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("NewStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("PauseEnrollmentRequestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateOnly>("PauseFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly>("PauseTo")
-                        .HasColumnType("date");
-
-                    b.Property<string>("PreviousStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("StudentProfileId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedBy");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("EnrollmentId");
-
-                    b.HasIndex("PauseEnrollmentRequestId");
-
-                    b.HasIndex("StudentProfileId");
-
-                    b.ToTable("PauseEnrollmentRequestHistories", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>
@@ -3610,11 +3550,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasForeignKey("ApprovedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Kidzgo.Domain.Users.User", "CancelledByUser")
-                        .WithMany()
-                        .HasForeignKey("CancelledBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
                         .WithMany()
                         .HasForeignKey("ClassId")
@@ -3634,52 +3569,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Navigation("ApprovedByUser");
 
-                    b.Navigation("CancelledByUser");
-
                     b.Navigation("Class");
 
                     b.Navigation("OutcomeByUser");
-
-                    b.Navigation("StudentProfile");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequestHistory", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Users.User", "ChangedByUser")
-                        .WithMany()
-                        .HasForeignKey("ChangedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Classes.ClassEnrollment", "Enrollment")
-                        .WithMany()
-                        .HasForeignKey("EnrollmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Kidzgo.Domain.Classes.PauseEnrollmentRequest", "PauseEnrollmentRequest")
-                        .WithMany()
-                        .HasForeignKey("PauseEnrollmentRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
-                        .WithMany()
-                        .HasForeignKey("StudentProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ChangedByUser");
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Enrollment");
-
-                    b.Navigation("PauseEnrollmentRequest");
 
                     b.Navigation("StudentProfile");
                 });

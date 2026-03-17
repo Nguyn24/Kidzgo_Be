@@ -33,6 +33,15 @@ Tất cả các API điểm danh đều yêu cầu xác thực bằng Bearer Tok
 Authorization: Bearer <your_token>
 ```
 
+### Authorization (Roles)
+
+| API | Admin | Teacher | Parent | Student |
+|-----|-------|---------|--------|---------|
+| POST /api/attendance/{sessionId} | ✅ | ✅ | ❌ | ❌ |
+| GET /api/attendance/{sessionId} | ✅ | ✅ | ❌ | ❌ |
+| PUT /api/attendance/{sessionId}/students/{studentProfileId} | ✅ | ✅ | ❌ | ❌ |
+| GET /api/attendance/students | ✅ | ✅ | ✅ | ✅ |
+
 ---
 
 ## Các API Endpoints
@@ -90,12 +99,14 @@ POST /api/attendance/{sessionId}
 {
   "isSuccess": true,
   "data": {
-    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-    "markedCount": 2,
-    "attendances": [
+    "results": [
       {
+        "id": "660e8400-e29b-41d4-a716-446655440001",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
         "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
-        "attendanceStatus": 0,
+        "attendanceStatus": "Present",
+        "absenceType": null,
+        "markedAt": "2026-02-03T08:15:00Z",
         "note": "Đến muộn 5 phút"
       }
     ]
@@ -129,16 +140,21 @@ GET /api/attendance/{sessionId}
     "date": "2026-02-03",
     "startTime": "08:00",
     "endTime": "09:30",
-    "totalStudents": 25,
-    "presentCount": 20,
-    "absentCount": 3,
-    "makeupCount": 1,
-    "notMarkedCount": 1,
+    "summary": {
+      "totalStudents": 25,
+      "presentCount": 20,
+      "absentCount": 3,
+      "makeupCount": 1,
+      "notMarkedCount": 1
+    },
     "attendances": [
       {
+        "id": "660e8400-e29b-41d4-a716-446655440001",
         "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
         "studentName": "Nguyễn Văn A",
-        "attendanceStatus": 0,
+        "attendanceStatus": "Present",
+        "absenceType": null,
+        "hasMakeupCredit": false,
         "note": null,
         "markedAt": "2026-02-03T08:15:00Z"
       }
@@ -176,7 +192,7 @@ GET /api/attendance/students
         "date": "2026-02-03",
         "startTime": "08:00",
         "className": "Lớp 1A",
-        "attendanceStatus": 0,
+        "attendanceStatus": "Present",
         "note": null,
         "markedAt": "2026-02-03T08:15:00Z"
       }
@@ -221,7 +237,8 @@ PUT /api/attendance/{sessionId}/students/{studentProfileId}
   "data": {
     "sessionId": "550e8400-e29b-41d4-a716-446655440000",
     "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
-    "attendanceStatus": 2,
+    "attendanceStatus": "Makeup",
+    "absenceType": null,
     "note": "Học bù buổi trước",
     "updatedAt": "2026-02-03T10:30:00Z"
   }
@@ -247,12 +264,28 @@ PUT /api/attendance/{sessionId}/students/{studentProfileId}
 | SESSION_NOT_FOUND | Session not found | Buổi học không tồn tại |
 | STUDENT_NOT_IN_SESSION | Student not enrolled in this session | Học sinh không đăng ký buổi học này |
 | ATTENDANCE_ALREADY_MARKED | Attendance already marked | Điểm danh đã được thực hiện |
-| CANNOT_UPDATE_FUTURE_SESSION | Cannot update attendance for future session | Không thể cập nhật điểm danh cho buổi học tương lai |
+| UPDATE_WINDOW_CLOSED | Attendance can only be updated within 24 hours after session ends | Chỉ được cập nhật trong vòng 24h sau khi session kết thúc |
 | INVALID_ATTENDANCE_STATUS | Invalid attendance status | Trạng thái điểm danh không hợp lệ |
 
 ---
 
 ## Luồng xử lý
+
+### Business Rules
+
+1. **Validate Session tồn tại**: Kiểm tra session có tồn tại trong hệ thống.
+
+2. **Validate Student thuộc Session**: Kiểm tra học sinh có đăng ký lớp chứa session đó.
+
+3. **Idempotent**: Nếu học sinh đã được điểm danh rồi, API sẽ cập nhật lại thay vì tạo mới.
+
+4. **Update Window**: 
+   - Admin: Có thể cập nhật bất kỳ lúc nào.
+   - Teacher: Chỉ được cập nhật trong vòng 24 giờ sau khi session kết thúc.
+
+5. **Makeup Credit**: Khi điểm danh Absent với loại nghỉ có phép 24h, hệ thống tự động tạo makeup credit.
+
+6. **Audit Log**: Tất cả thao tác update đều được ghi log (actor, thời gian, dữ liệu trước/sau).
 
 ### Luồng 1: Điểm danh hàng loạt
 

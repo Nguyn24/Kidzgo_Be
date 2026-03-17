@@ -761,18 +761,18 @@ public interface IPushNotificationService
 ```json
 {
   "notification": {
-    "title": "Báo cáo tháng đã công bố",
+  "title": "Báo cáo tháng đã công bố",
     "body": "Phụ huynh có thể xem báo cáo tháng 2."
   },
   "data": {
-    "targetRole": "Parent",
-    "kind": "report",
-    "priority": "high",
-    "senderRole": "Teacher",
-    "senderName": "KidzGo Centre",
-    "link": "/vi/portal/parent/notifications",
-    "notification_id": "uuid-here",
-    "deeplink": "/vi/portal/parent/notifications"
+  "targetRole": "Parent",
+  "kind": "report",
+  "priority": "high",
+  "senderRole": "Teacher",
+  "senderName": "KidzGo Centre",
+  "link": "/vi/portal/parent/notifications",
+  "notification_id": "uuid-here",
+  "deeplink": "/vi/portal/parent/notifications"
   },
   "webpush": {
     "fcm_options": {
