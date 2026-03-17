@@ -6,7 +6,11 @@ public sealed class SubmitMultipleChoiceHomeworkResponse
     public Guid AssignmentId { get; init; }
     public string Status { get; init; } = null!;
     public DateTime SubmittedAt { get; init; }
+    public decimal? MaxScore { get; init; }
     public decimal? Score { get; init; }
+    public int? RewardStars { get; init; }
+    public int CorrectCount { get; init; }
+    public int TotalCount { get; init; }
     public int TotalPoints { get; init; }
     public int EarnedPoints { get; init; }
     public List<AnswerResultDto> AnswerResults { get; init; } = new();
