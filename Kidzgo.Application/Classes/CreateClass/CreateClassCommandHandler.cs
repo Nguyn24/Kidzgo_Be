@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-// using Kidzgo.Application.Services; // TODO: Uncomment after Services namespace is fixed
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -10,8 +11,9 @@ using System.Text.RegularExpressions;
 namespace Kidzgo.Application.Classes.CreateClass;
 
 public sealed class CreateClassCommandHandler(
-    IDbContext context
-    // SessionGenerationService sessionGenerationService // TODO: Uncomment after Services namespace is fixed
+    IDbContext context,
+    SessionConflictChecker conflictChecker,
+    ISchedulePatternParser patternParser
 ) : ICommandHandler<CreateClassCommand, CreateClassResponse>
 {
     public async Task<Result<CreateClassResponse>> Handle(CreateClassCommand command, CancellationToken cancellationToken)
@@ -87,24 +89,81 @@ public sealed class CreateClassCommandHandler(
 
         // Tính EndDate tự động nếu không được cung cấp và có SchedulePattern + TotalSessions
         var endDate = command.EndDate;
-        
+
         // Chỉ tính tự động nếu EndDate không được cung cấp (null)
         // và có đủ thông tin: SchedulePattern và TotalSessions > 0
         // Kiểm tra cả điều kiện: EndDate null HOẶC không có giá trị hợp lệ
-        if (!endDate.HasValue && 
-            !string.IsNullOrWhiteSpace(command.SchedulePattern) && 
+        if (!endDate.HasValue &&
+            !string.IsNullOrWhiteSpace(command.SchedulePattern) &&
             program.TotalSessions > 0)
         {
             var calculatedEndDate = CalculateEndDateFromSchedulePattern(
                 command.StartDate,
                 command.SchedulePattern,
                 program.TotalSessions);
-            
+
             if (calculatedEndDate.HasValue)
             {
                 endDate = calculatedEndDate;
             }
             // Nếu không tính được, endDate vẫn là null (giữ nguyên giá trị ban đầu)
+        }
+
+        // Check for session conflicts if schedule pattern is provided
+        if (!string.IsNullOrWhiteSpace(command.SchedulePattern) && endDate.HasValue)
+        {
+            var durationMinutes = patternParser.ParseDuration(command.SchedulePattern) ?? 90;
+
+            // Parse schedule pattern to get session dates
+            var parseResult = patternParser.ParseAndGenerateOccurrences(
+                command.SchedulePattern,
+                command.StartDate,
+                endDate.Value);
+
+            if (parseResult.IsSuccess && parseResult.Value.Count > 0)
+            {
+                // Check conflicts for each session (limit to first 10 for performance)
+                var sessionsToCheck = parseResult.Value.Take(10).ToList();
+
+                foreach (var sessionDateTime in sessionsToCheck)
+                {
+                    // Use sessionId = Guid.Empty since class doesn't exist yet
+                    var conflictResult = await conflictChecker.CheckConflictsAsync(
+                        Guid.Empty,
+                        sessionDateTime,
+                        durationMinutes,
+                        null, // No room assigned during class creation
+                        command.MainTeacherId,
+                        command.AssistantTeacherId,
+                        cancellationToken);
+
+                    if (conflictResult.HasConflicts)
+                    {
+                        // Return first conflict found
+                        var firstConflict = conflictResult.Conflicts.First();
+                        return firstConflict.Type switch
+                        {
+                            ConflictType.Room => Result.Failure<CreateClassResponse>(
+                                ClassErrors.RoomConflict(
+                                    firstConflict.ClassCode,
+                                    firstConflict.ClassTitle,
+                                    firstConflict.ConflictDatetime)),
+                            ConflictType.Teacher => Result.Failure<CreateClassResponse>(
+                                ClassErrors.TeacherConflict(
+                                    firstConflict.ClassCode,
+                                    firstConflict.ClassTitle,
+                                    firstConflict.ConflictDatetime,
+                                    firstConflict.RoomName)),
+                            ConflictType.Assistant => Result.Failure<CreateClassResponse>(
+                                ClassErrors.AssistantConflict(
+                                    firstConflict.ClassCode,
+                                    firstConflict.ClassTitle,
+                                    firstConflict.ConflictDatetime)),
+                            _ => Result.Failure<CreateClassResponse>(ClassErrors.NotFound(null))
+                        };
+                    }
+                }
+            }
         }
 
         var now = DateTime.UtcNow;

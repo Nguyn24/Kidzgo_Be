@@ -42,6 +42,8 @@ public sealed class ApplicationDbContext(
     // Classes
     public DbSet<Class> Classes => Set<Class>();
     public DbSet<ClassEnrollment> ClassEnrollments => Set<ClassEnrollment>();
+    public DbSet<PauseEnrollmentRequest> PauseEnrollmentRequests => Set<PauseEnrollmentRequest>();
+    public DbSet<PauseEnrollmentRequestHistory> PauseEnrollmentRequestHistories => Set<PauseEnrollmentRequestHistory>();
 
     // CRM
     public DbSet<Lead> Leads => Set<Lead>();
