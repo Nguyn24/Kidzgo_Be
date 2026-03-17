@@ -3072,7 +3072,7 @@ GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
 **Channel Values:**
 - `"InApp"`: Thông báo trong app
 - `"Email"`: Thông báo qua email
-- `"ZaloOA"`: Thông báo qua Zalo OA
+- `"ZaloOa"`: Thông báo qua Zalo OA
 - `"Push"`: Push notification
 
 ---
@@ -3081,9 +3081,9 @@ GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
 
 **Endpoint:** `POST /api/notifications/broadcast`
 
-**Mô tả:** UC-325-339: Admin/Staff broadcast notification.
+**Mô tả:** UC-325-339: Admin/ManagementStaff broadcast notification đến nhiều người dùng.
 
-**Authorization:** Required (Roles: Admin, Staff)
+**Authorization:** Required (Roles: Admin, ManagementStaff)
 
 **Request Body:**
 ```json
@@ -3101,20 +3101,45 @@ GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
 }
 ```
 
-**Lưu ý:** Filters được áp dụng theo thứ tự ưu tiên:
-1. Nếu có `ProfileIds` → gửi cho các profiles đó
-2. Nếu có `UserIds` → gửi cho các users đó
-3. Nếu có `StudentProfileId` → gửi cho profile đó
-4. Nếu có `ClassId` → gửi cho tất cả students trong class
-5. Nếu có `BranchId` → gửi cho tất cả users trong branch
-6. Nếu có `Role` → gửi cho tất cả users có role đó
+**Request Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `title` | string | Yes | Tiêu đề notification |
+| `content` | string | No | Nội dung notification |
+| `deeplink` | string | No | Deep link để mở app |
+| `channel` | NotificationChannel | No | Kênh gửi (mặc định: InApp) |
+| `role` | string | No* | Role người nhận (xem bảng bên dưới) |
+| `branchId` | Guid | No* | Lọc theo branch |
+| `classId` | Guid | No* | Lọc theo class |
+| `studentProfileId` | Guid | No* | Gửi đến một student cụ thể |
+| `userIds` | List\<Guid\> | No* | Gửi đến các user IDs cụ thể |
+| `profileIds` | List\<Guid\> | No* | Gửi đến các profile IDs cụ thể |
+
+**Chỉ chọn MỘT trong các filter:** `role`, `branchId`, `classId`, `studentProfileId`, `userIds`, `profileIds`. Thứ tự ưu tiên từ trên xuống dưới.
+
+**Giá trị Role được hỗ trợ:**
+| Role Value | Description | Nguồn dữ liệu |
+|------------|-------------|----------------|
+| `Admin` | Admin users | User.Role |
+| `ManagementStaff` | Management staff | User.Role |
+| `AccountantStaff` | Accountant staff | User.Role |
+| `Teacher` | Teachers | User.Role |
+| `Parent` | Parents | User.Role + Profile |
+| `Student` | Students | Profile.ProfileType |
+
+**Gửi đến nhiều role:**
+Có thể kết hợp nhiều role bằng dấu `,` hoặc `+`:
+- `"Admin,ManagementStaff"` → gửi cho Admin và ManagementStaff
+- `"Parent+Student"` → gửi cho Parents và Students
+- `"Admin,ManagementStaff,AccountantStaff,Teacher,Parent,Student"` → gửi cho tất cả
 
 **Response (201 Created):**
 ```json
 {
   "isSuccess": true,
   "data": {
-    "createdCount": 10
+    "createdCount": 10,
+    "createdNotificationIds": ["guid1", "guid2", ...]
   }
 }
 ```
@@ -3123,7 +3148,8 @@ GET /api/notifications?profileId=guid&unreadOnly=true&pageNumber=1&pageSize=10
 - `Location: /api/notifications/broadcast/{createdCount}`
 
 **Lỗi có thể xảy ra:**
-- `400 Bad Request`: Dữ liệu không hợp lệ
+- `400 Bad Request`: InvalidFilters - Không có filter nào được chọn
+- `400 Bad Request`: NoRecipients - Không tìm thấy người nhận nào phù hợp với filter
 - `404 Not Found`: Branch, Class, hoặc Profile không tồn tại
 
 ---
