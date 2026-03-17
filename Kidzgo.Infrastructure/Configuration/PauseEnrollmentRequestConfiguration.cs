@@ -17,7 +17,7 @@ public class PauseEnrollmentRequestConfiguration : IEntityTypeConfiguration<Paus
             .IsRequired();
 
         builder.Property(x => x.ClassId)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.PauseFrom)
             .IsRequired();

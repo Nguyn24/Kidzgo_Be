@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -10,7 +11,8 @@ namespace Kidzgo.Application.PauseEnrollmentRequests.UpdatePauseEnrollmentOutcom
 
 public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
     IDbContext context,
-    IUserContext userContext)
+    IUserContext userContext,
+    ITemplateRenderer templateRenderer)
     : ICommandHandler<UpdatePauseEnrollmentOutcomeCommand>
 {
     public async Task<Result> Handle(UpdatePauseEnrollmentOutcomeCommand request, CancellationToken cancellationToken)
@@ -34,6 +36,19 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
         pauseRequest.OutcomeAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await PauseEnrollmentRequestNotificationHelper.NotifyAsync(
+            context,
+            templateRenderer,
+            pauseRequest.StudentProfileId,
+            pauseRequest.Id,
+            PauseEnrollmentRequestNotificationHelper.NotificationType.OutcomeUpdated,
+            pauseRequest.PauseFrom,
+            pauseRequest.PauseTo,
+            request.Outcome.ToString(),
+            request.OutcomeNote,
+            cancellationToken);
+
         return Result.Success();
     }
 }

@@ -4,7 +4,7 @@ public sealed class PauseEnrollmentRequestResponse
 {
     public Guid Id { get; set; }
     public Guid StudentProfileId { get; set; }
-    public Guid ClassId { get; set; }
+    public Guid? ClassId { get; set; }
     public DateOnly PauseFrom { get; set; }
     public DateOnly PauseTo { get; set; }
     public string? Reason { get; set; }
@@ -18,4 +18,5 @@ public sealed class PauseEnrollmentRequestResponse
     public string? OutcomeNote { get; set; }
     public Guid? OutcomeBy { get; set; }
     public DateTime? OutcomeAt { get; set; }
+    public List<PauseEnrollmentClassDto> Classes { get; set; } = new();
 }

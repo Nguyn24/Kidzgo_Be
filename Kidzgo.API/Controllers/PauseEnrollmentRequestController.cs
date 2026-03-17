@@ -35,7 +35,6 @@ public class PauseEnrollmentRequestController : ControllerBase
         var command = new CreatePauseEnrollmentRequestCommand
         {
             StudentProfileId = request.StudentProfileId,
-            ClassId = request.ClassId,
             PauseFrom = request.PauseFrom,
             PauseTo = request.PauseTo,
             Reason = request.Reason
