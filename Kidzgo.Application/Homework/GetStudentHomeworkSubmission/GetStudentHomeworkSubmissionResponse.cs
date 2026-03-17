@@ -19,6 +19,7 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string? Skills { get; init; }
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
+    public int? RewardStars { get; init; }
     public string Status { get; init; } = null!;
     public DateTime? SubmittedAt { get; init; }
     public DateTime? GradedAt { get; init; }
@@ -30,5 +31,16 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string? LinkUrl { get; init; }
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
+    public List<StudentHomeworkQuestionDto> Questions { get; init; } = new();
+}
+
+public sealed class StudentHomeworkQuestionDto
+{
+    public Guid Id { get; init; }
+    public int OrderIndex { get; init; }
+    public string QuestionText { get; init; } = null!;
+    public string QuestionType { get; init; } = null!;
+    public List<string> Options { get; init; } = new();
+    public int Points { get; init; }
 }
 

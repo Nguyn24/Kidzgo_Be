@@ -53,6 +53,18 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.SubmissionAlreadySubmitted);
         }
 
+        if (homeworkStudent.Status == HomeworkStatus.Missing)
+        {
+            return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.SubmissionCannotSubmitMissing);
+        }
+
+        if (homeworkStudent.Assignment.SubmissionType != SubmissionType.Quiz)
+        {
+            return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.CannotSubmitMultipleChoice);
+        }
+
         // Validate answers
         if (command.Answers == null || command.Answers.Count == 0)
         {
@@ -64,6 +76,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         var questions = await context.HomeworkQuestions
             .Where(q => q.HomeworkAssignmentId == homeworkStudent.AssignmentId)
             .OrderBy(q => q.OrderIndex)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         if (questions.Count == 0)
@@ -85,69 +98,99 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             }
         }
 
-        // Calculate score and build results
-        var totalPoints = 0;
-        var earnedPoints = 0;
-        var answerResults = new List<AnswerResultDto>();
-
+        var answersByQuestionId = new Dictionary<Guid, string?>();
         foreach (var answer in command.Answers)
         {
-            if (!questionLookup.TryGetValue(answer.QuestionId, out var question))
-            {
-                continue;
-            }
+            answersByQuestionId[answer.QuestionId] = answer.Answer;
+        }
 
-            var studentAnswer = answer.Answer?.Trim() ?? "";
-            var correctAnswer = question.CorrectAnswer?.Trim() ?? "";
-            var isCorrect = string.Equals(studentAnswer, correctAnswer, StringComparison.OrdinalIgnoreCase);
+        // Calculate score and build results
+        var totalPoints = questions.Sum(q => q.Points);
+        var totalCount = questions.Count;
+        var earnedPoints = 0;
+        var correctCount = 0;
+        var answerResults = new List<AnswerResultDto>();
 
-            var pointsEarned = isCorrect ? question.Points : 0;
-
-            totalPoints += question.Points;
-            earnedPoints += pointsEarned;
-
+        foreach (var question in questions)
+        {
             // Parse options for display
-            List<string>? options = null;
+            List<string> options = new();
             if (!string.IsNullOrEmpty(question.Options))
             {
                 try
                 {
-                    options = JsonSerializer.Deserialize<List<string>>(question.Options);
+                    options = JsonSerializer.Deserialize<List<string>>(question.Options) ?? new List<string>();
                 }
                 catch
                 {
                     // Ignore parse errors
+                    options = new List<string>();
                 }
+            }
+
+            var studentAnswerRaw = answersByQuestionId.TryGetValue(question.Id, out var rawAnswer)
+                ? rawAnswer?.Trim() ?? string.Empty
+                : string.Empty;
+
+            var correctAnswerRaw = question.CorrectAnswer?.Trim() ?? string.Empty;
+
+            var correctIndex = -1;
+            var correctText = correctAnswerRaw;
+            if (options.Count > 0 &&
+                int.TryParse(correctAnswerRaw, out var correctIdx) &&
+                correctIdx >= 0 &&
+                correctIdx < options.Count)
+            {
+                correctIndex = correctIdx;
+                correctText = options[correctIdx];
+            }
+
+            var studentIndex = -1;
+            var studentText = studentAnswerRaw;
+            if (options.Count > 0 &&
+                int.TryParse(studentAnswerRaw, out var studentIdx) &&
+                studentIdx >= 0 &&
+                studentIdx < options.Count)
+            {
+                studentIndex = studentIdx;
+                studentText = options[studentIdx];
+            }
+
+            bool isCorrect;
+            if (question.QuestionType == HomeworkQuestionType.MultipleChoice && options.Count > 0 && correctIndex >= 0)
+            {
+                isCorrect = studentIndex >= 0
+                    ? studentIndex == correctIndex
+                    : string.Equals(studentText, correctText, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                isCorrect = string.Equals(studentText, correctText, StringComparison.OrdinalIgnoreCase);
+            }
+
+            var pointsEarned = isCorrect ? question.Points : 0;
+            if (isCorrect)
+            {
+                correctCount++;
+                earnedPoints += pointsEarned;
             }
 
             answerResults.Add(new AnswerResultDto
             {
                 QuestionId = question.Id,
                 QuestionText = question.QuestionText,
-                StudentAnswer = options != null && int.TryParse(studentAnswer, out var idx) && idx >= 0 && idx < options.Count
-                    ? options[idx]
-                    : studentAnswer,
-                CorrectAnswer = options != null && int.TryParse(correctAnswer, out var correctIdx) && correctIdx >= 0 && correctIdx < options.Count
-                    ? options[correctIdx]
-                    : correctAnswer,
+                StudentAnswer = studentText,
+                CorrectAnswer = correctText,
                 IsCorrect = isCorrect,
                 Points = pointsEarned,
                 Explanation = question.Explanation
             });
         }
 
-        // Update status
-        if (homeworkStudent.Status == HomeworkStatus.Missing ||
-            (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value))
-        {
-            homeworkStudent.Status = HomeworkStatus.Late;
-        }
-        else
-        {
-            homeworkStudent.Status = HomeworkStatus.Submitted;
-        }
-
-        homeworkStudent.SubmittedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        homeworkStudent.Status = HomeworkStatus.Graded;
+        homeworkStudent.SubmittedAt = now;
+        homeworkStudent.GradedAt = now;
 
         // Store answers as JSON in TextAnswer field
         var answersJson = JsonSerializer.Serialize(command.Answers.Select(a => new
@@ -158,21 +201,24 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         homeworkStudent.TextAnswer = answersJson;
 
         // Calculate and store score
-        if (totalPoints > 0)
-        {
-            homeworkStudent.Score = (decimal)earnedPoints / totalPoints * (homeworkStudent.Assignment.MaxScore ?? 10);
-        }
+        var maxScore = homeworkStudent.Assignment.MaxScore ?? totalPoints;
+        homeworkStudent.Score = totalPoints > 0
+            ? (decimal)earnedPoints / totalPoints * maxScore
+            : 0;
 
         await context.SaveChangesAsync(cancellationToken);
 
         // Award stars for on-time submission
-        if (homeworkStudent.Status == HomeworkStatus.Submitted &&
+        var rewardStars = 0;
+        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
+        if (isOnTime &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)
         {
+            rewardStars = homeworkStudent.Assignment.RewardStars.Value;
             await gamificationService.AddStarsForHomeworkCompletion(
                 homeworkStudent.StudentProfileId,
-                homeworkStudent.Assignment.RewardStars.Value,
+                rewardStars,
                 homeworkStudent.AssignmentId,
                 reason: "On-time Homework Submission",
                 cancellationToken);
@@ -184,7 +230,11 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             AssignmentId = homeworkStudent.AssignmentId,
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt!.Value,
+            MaxScore = homeworkStudent.Assignment.MaxScore,
             Score = homeworkStudent.Score,
+            RewardStars = rewardStars,
+            CorrectCount = correctCount,
+            TotalCount = totalCount,
             TotalPoints = totalPoints,
             EarnedPoints = earnedPoints,
             AnswerResults = answerResults

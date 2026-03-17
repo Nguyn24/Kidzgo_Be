@@ -121,7 +121,7 @@ public static class HomeworkErrors
 
     public static readonly Error CannotSubmitMultipleChoice = Error.Validation(
         "HomeworkSubmission.CannotSubmitMultipleChoice",
-        "This is a multiple choice homework, use the multiple choice submission endpoint");
+        "Wrong submission endpoint for this homework type");
 
     public static readonly Error NoAnswersProvided = Error.Validation(
         "HomeworkSubmission.NoAnswersProvided",
