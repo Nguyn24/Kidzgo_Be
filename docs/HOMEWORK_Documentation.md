@@ -802,6 +802,7 @@ Any → Graded (re-grade allowed)
     "className": "Class 1A",
     "status": "Graded",
     "dueAt": "2025-01-15T23:59:00Z",
+    "submissionType": "Quiz",
     "submittedAt": "2025-01-14T10:00:00Z",
     "gradedAt": "2025-01-16T10:00:00Z",
     "score": 8.5,
@@ -811,11 +812,23 @@ Any → Graded (re-grade allowed)
     "textAnswer": "My answer...",
     "attachmentUrls": ["https://..."],
     "linkUrl": null,
+    "questions": [
+      {
+        "id": "guid",
+        "orderIndex": 1,
+        "questionText": "2 + 2 = ?",
+        "questionType": "MultipleChoice",
+        "options": ["1","2","3","4"],
+        "points": 1
+      }
+    ],
     "isLate": false,
     "rewardStars": 5
   }
 }
 ```
+
+*Note: `questions` chi tra ve khi `submissionType = Quiz` va khong bao gom `correctAnswer`.*
 
 ---
 
@@ -844,14 +857,16 @@ Any → Graded (re-grade allowed)
 {
   "success": true,
   "data": {
-    "homeworkStudentId": "guid",
+    "id": "guid",
+    "assignmentId": "guid",
     "status": "Submitted",
-    "submittedAt": "2025-01-14T10:00:00Z",
-    "rewardStars": 5
+    "submittedAt": "2025-01-14T10:00:00Z"
   },
   "message": "Homework submitted successfully"
 }
 ```
+
+*Note: reward stars duoc cong neu nop dung han, nhung khong tra ve trong response.*
 
 ---
 
@@ -883,15 +898,18 @@ Any → Graded (re-grade allowed)
 {
   "success": true,
   "data": {
-    "homeworkStudentId": "guid",
+    "id": "guid",
+    "assignmentId": "guid",
     "status": "Graded",
     "submittedAt": "2025-01-14T10:00:00Z",
     "score": 8.5,
     "maxScore": 10.0,
+    "rewardStars": 5,
     "correctCount": 8,
     "totalCount": 10,
-    "rewardStars": 5,
-    "results": [
+    "totalPoints": 10,
+    "earnedPoints": 8,
+    "answerResults": [
       {
         "questionId": "guid",
         "questionText": "What is 2+2?",
