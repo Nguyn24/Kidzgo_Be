@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.PauseEnrollmentRequests;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -15,25 +16,6 @@ public sealed class GetPauseEnrollmentRequestByIdQueryHandler(IDbContext context
         CancellationToken cancellationToken)
     {
         var item = await context.PauseEnrollmentRequests
-            .Select(r => new PauseEnrollmentRequestResponse
-            {
-                Id = r.Id,
-                StudentProfileId = r.StudentProfileId,
-                ClassId = r.ClassId,
-                PauseFrom = r.PauseFrom,
-                PauseTo = r.PauseTo,
-                Reason = r.Reason,
-                Status = r.Status.ToString(),
-                RequestedAt = r.RequestedAt,
-                ApprovedBy = r.ApprovedBy,
-                ApprovedAt = r.ApprovedAt,
-                CancelledBy = r.CancelledBy,
-                CancelledAt = r.CancelledAt,
-                Outcome = r.Outcome.HasValue ? r.Outcome.Value.ToString() : null,
-                OutcomeNote = r.OutcomeNote,
-                OutcomeBy = r.OutcomeBy,
-                OutcomeAt = r.OutcomeAt
-            })
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (item is null)
@@ -42,6 +24,64 @@ public sealed class GetPauseEnrollmentRequestByIdQueryHandler(IDbContext context
                 PauseEnrollmentRequestErrors.NotFound(request.Id));
         }
 
-        return item;
+        var enrollmentClassIds = await context.ClassEnrollments
+            .Where(e => e.StudentProfileId == item.StudentProfileId
+                        && e.Status != EnrollmentStatus.Dropped)
+            .Select(e => e.ClassId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        List<PauseEnrollmentClassDto> classes = new();
+        if (enrollmentClassIds.Count > 0)
+        {
+            var classIdsInRange = await context.Sessions
+                .Where(s => enrollmentClassIds.Contains(s.ClassId)
+                            && DateOnly.FromDateTime(s.PlannedDatetime) >= item.PauseFrom
+                            && DateOnly.FromDateTime(s.PlannedDatetime) <= item.PauseTo)
+                .Select(s => s.ClassId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            if (classIdsInRange.Count > 0)
+            {
+                classes = await context.Classes
+                    .Where(c => classIdsInRange.Contains(c.Id))
+                    .Select(c => new PauseEnrollmentClassDto
+                    {
+                        Id = c.Id,
+                        Code = c.Code,
+                        Title = c.Title,
+                        ProgramId = c.ProgramId,
+                        ProgramName = c.Program.Name,
+                        BranchId = c.BranchId,
+                        BranchName = c.Branch.Name,
+                        StartDate = c.StartDate,
+                        EndDate = c.EndDate,
+                        Status = c.Status.ToString()
+                    })
+                    .ToListAsync(cancellationToken);
+            }
+        }
+
+        return new PauseEnrollmentRequestResponse
+        {
+            Id = item.Id,
+            StudentProfileId = item.StudentProfileId,
+            ClassId = item.ClassId,
+            PauseFrom = item.PauseFrom,
+            PauseTo = item.PauseTo,
+            Reason = item.Reason,
+            Status = item.Status.ToString(),
+            RequestedAt = item.RequestedAt,
+            ApprovedBy = item.ApprovedBy,
+            ApprovedAt = item.ApprovedAt,
+            CancelledBy = item.CancelledBy,
+            CancelledAt = item.CancelledAt,
+            Outcome = item.Outcome.HasValue ? item.Outcome.Value.ToString() : null,
+            OutcomeNote = item.OutcomeNote,
+            OutcomeBy = item.OutcomeBy,
+            OutcomeAt = item.OutcomeAt,
+            Classes = classes
+        };
     }
 }

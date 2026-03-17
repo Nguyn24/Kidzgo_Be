@@ -26,7 +26,11 @@ public static class PauseEnrollmentRequestErrors
 
     public static readonly Error DuplicateActiveRequest = Error.Conflict(
         "PauseEnrollmentRequest.DuplicateActiveRequest",
-        "A pending or approved pause request already exists for this class and student");
+        "A pending or approved pause request already exists for this student in the selected date range");
+
+    public static readonly Error NoEnrollmentsInRange = Error.Conflict(
+        "PauseEnrollmentRequest.NoEnrollmentsInRange",
+        "Student has no active enrollments with sessions in the pause range");
 
     public static readonly Error AlreadyApproved = Error.Conflict(
         "PauseEnrollmentRequest.AlreadyApproved",

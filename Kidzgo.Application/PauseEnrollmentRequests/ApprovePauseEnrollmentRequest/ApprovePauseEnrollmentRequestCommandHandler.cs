@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -10,7 +11,8 @@ namespace Kidzgo.Application.PauseEnrollmentRequests.ApprovePauseEnrollmentReque
 
 public sealed class ApprovePauseEnrollmentRequestCommandHandler(
     IDbContext context,
-    IUserContext userContext)
+    IUserContext userContext,
+    ITemplateRenderer templateRenderer)
     : ICommandHandler<ApprovePauseEnrollmentRequestCommand>
 {
     public async Task<Result> Handle(ApprovePauseEnrollmentRequestCommand request, CancellationToken cancellationToken)
@@ -43,14 +45,22 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
                         && e.Status == EnrollmentStatus.Active)
             .ToListAsync(cancellationToken);
 
-        var requestEnrollment = activeEnrollments
-            .FirstOrDefault(e => e.ClassId == pauseRequest.ClassId);
-
-        if (requestEnrollment is null)
+        if (activeEnrollments.Count == 0)
         {
-            return Result.Failure(PauseEnrollmentRequestErrors.NotEnrolled(
-                pauseRequest.ClassId,
-                pauseRequest.StudentProfileId));
+            return Result.Failure(PauseEnrollmentRequestErrors.NoEnrollmentsInRange);
+        }
+
+        if (pauseRequest.ClassId.HasValue)
+        {
+            var requestEnrollment = activeEnrollments
+                .FirstOrDefault(e => e.ClassId == pauseRequest.ClassId.Value);
+
+            if (requestEnrollment is null)
+            {
+                return Result.Failure(PauseEnrollmentRequestErrors.NotEnrolled(
+                    pauseRequest.ClassId.Value,
+                    pauseRequest.StudentProfileId));
+            }
         }
 
         pauseRequest.Status = PauseEnrollmentRequestStatus.Approved;
@@ -70,9 +80,14 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        if (!classIdsInRange.Contains(pauseRequest.ClassId))
+        if (pauseRequest.ClassId.HasValue && !classIdsInRange.Contains(pauseRequest.ClassId.Value))
         {
-            classIdsInRange.Add(pauseRequest.ClassId);
+            classIdsInRange.Add(pauseRequest.ClassId.Value);
+        }
+
+        if (classIdsInRange.Count == 0)
+        {
+            return Result.Failure(PauseEnrollmentRequestErrors.NoEnrollmentsInRange);
         }
 
         var affectedEnrollments = activeEnrollments
@@ -104,6 +119,19 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await PauseEnrollmentRequestNotificationHelper.NotifyAsync(
+            context,
+            templateRenderer,
+            pauseRequest.StudentProfileId,
+            pauseRequest.Id,
+            PauseEnrollmentRequestNotificationHelper.NotificationType.Approved,
+            pauseRequest.PauseFrom,
+            pauseRequest.PauseTo,
+            null,
+            null,
+            cancellationToken);
+
         return Result.Success();
     }
 }

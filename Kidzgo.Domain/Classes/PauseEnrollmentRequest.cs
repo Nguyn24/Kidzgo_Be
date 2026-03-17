@@ -7,7 +7,7 @@ public class PauseEnrollmentRequest : Entity
 {
     public Guid Id { get; set; }
     public Guid StudentProfileId { get; set; }
-    public Guid ClassId { get; set; }
+    public Guid? ClassId { get; set; }
     public DateOnly PauseFrom { get; set; }
     public DateOnly PauseTo { get; set; }
     public string? Reason { get; set; }
@@ -23,7 +23,7 @@ public class PauseEnrollmentRequest : Entity
     public DateTime? OutcomeAt { get; set; }
 
     public Profile StudentProfile { get; set; } = null!;
-    public Class Class { get; set; } = null!;
+    public Class? Class { get; set; }
     public User? ApprovedByUser { get; set; }
     public User? CancelledByUser { get; set; }
     public User? OutcomeByUser { get; set; }
