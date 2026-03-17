@@ -7,7 +7,6 @@ public sealed class CreatePauseEnrollmentRequestCommandValidator : AbstractValid
     public CreatePauseEnrollmentRequestCommandValidator()
     {
         RuleFor(c => c.StudentProfileId).NotEmpty();
-        RuleFor(c => c.ClassId).NotEmpty();
         RuleFor(c => c.PauseFrom)
             .NotEmpty()
             .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
