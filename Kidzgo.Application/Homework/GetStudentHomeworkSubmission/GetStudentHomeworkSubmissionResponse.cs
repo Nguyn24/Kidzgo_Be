@@ -1,11 +1,14 @@
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 
+using Kidzgo.Application.Homework.Shared;
+
 namespace Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
 
 public sealed class GetStudentHomeworkSubmissionResponse
 {
     public Guid Id { get; init; }
+    public Guid HomeworkStudentId { get; init; }
     public Guid AssignmentId { get; init; }
     public string AssignmentTitle { get; init; } = null!;
     public string? AssignmentDescription { get; init; }
@@ -20,7 +23,10 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
     public int? RewardStars { get; init; }
+    public int? TimeLimitMinutes { get; init; }
+    public bool AllowResubmit { get; init; }
     public string Status { get; init; } = null!;
+    public DateTime? StartedAt { get; init; }
     public DateTime? SubmittedAt { get; init; }
     public DateTime? GradedAt { get; init; }
     public decimal? Score { get; init; }
@@ -32,6 +38,10 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
     public List<StudentHomeworkQuestionDto> Questions { get; init; } = new();
+    public StudentHomeworkReviewDto? Review { get; init; }
+    public bool ShowReview { get; init; }
+    public bool ShowCorrectAnswer { get; init; }
+    public bool ShowExplanation { get; init; }
 }
 
 public sealed class StudentHomeworkQuestionDto
@@ -40,7 +50,19 @@ public sealed class StudentHomeworkQuestionDto
     public int OrderIndex { get; init; }
     public string QuestionText { get; init; } = null!;
     public string QuestionType { get; init; } = null!;
-    public List<string> Options { get; init; } = new();
+    public List<StudentHomeworkOptionDto> Options { get; init; } = new();
     public int Points { get; init; }
+}
+
+public sealed class StudentHomeworkOptionDto
+{
+    public Guid Id { get; init; }
+    public string Text { get; init; } = null!;
+    public int OrderIndex { get; init; }
+}
+
+public sealed class StudentHomeworkReviewDto
+{
+    public List<QuizAnswerResultDto> AnswerResults { get; init; } = new();
 }
 

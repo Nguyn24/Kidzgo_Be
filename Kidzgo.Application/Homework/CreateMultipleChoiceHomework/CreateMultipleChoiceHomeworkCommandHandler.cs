@@ -111,6 +111,12 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.InvalidDueDate);
         }
 
+        if (command.TimeLimitMinutes.HasValue && command.TimeLimitMinutes.Value <= 0)
+        {
+            return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.InvalidTimeLimitMinutes);
+        }
+
         // Convert DueAt to UTC if provided
         var dueAtUtc = command.DueAt.HasValue
             ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
@@ -135,6 +141,8 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             SubmissionType = SubmissionType.Quiz,
             MaxScore = maxScore,
             RewardStars = command.RewardStars,
+            TimeLimitMinutes = command.TimeLimitMinutes,
+            AllowResubmit = command.AllowResubmit ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
             CreatedBy = currentUserId,
@@ -207,6 +215,8 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             Description = homework.Description,
             DueAt = homework.DueAt,
             RewardStars = homework.RewardStars,
+            TimeLimitMinutes = homework.TimeLimitMinutes,
+            AllowResubmit = homework.AllowResubmit,
             MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             CreatedAt = homework.CreatedAt,

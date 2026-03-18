@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Microsoft.EntityFrameworkCore;
@@ -83,9 +84,11 @@ public sealed class GetHomeworkAssignmentsQueryHandler(
                 Book = h.Book,
                 Pages = h.Pages,
                 Skills = h.Skills,
-                SubmissionType = h.SubmissionType.ToString(),
+                SubmissionType = SubmissionTypeMapper.ToApiString(h.SubmissionType),
                 MaxScore = h.MaxScore,
                 RewardStars = h.RewardStars,
+                TimeLimitMinutes = h.TimeLimitMinutes,
+                AllowResubmit = h.AllowResubmit,
                 MissionId = h.MissionId,
                 CreatedAt = h.CreatedAt,
                 TotalStudents = h.HomeworkStudents.Count,

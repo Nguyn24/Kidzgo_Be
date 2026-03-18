@@ -42,7 +42,7 @@ public class HomeworkController : ControllerBase
         [FromBody] CreateHomeworkAssignmentRequest request,
         CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<SubmissionType>(request.SubmissionType, ignoreCase: true, out var submissionType))
+        if (!TryParseSubmissionType(request.SubmissionType, out var submissionType))
         {
             return Results.BadRequest(HomeworkErrors.InvalidSubmissionType);
         }
@@ -60,6 +60,8 @@ public class HomeworkController : ControllerBase
             SubmissionType = submissionType,
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
+            TimeLimitMinutes = request.TimeLimitMinutes,
+            AllowResubmit = request.AllowResubmit,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
@@ -109,6 +111,8 @@ public class HomeworkController : ControllerBase
             Description = request.Description,
             DueAt = request.DueAt,
             RewardStars = request.RewardStars,
+            TimeLimitMinutes = request.TimeLimitMinutes,
+            AllowResubmit = request.AllowResubmit,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             Questions = questions
@@ -136,8 +140,7 @@ public class HomeworkController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         SubmissionType? parsedSubmissionType = null;
-        if (!string.IsNullOrWhiteSpace(submissionType) &&
-            Enum.TryParse<SubmissionType>(submissionType, ignoreCase: true, out var tmpType))
+        if (TryParseSubmissionType(submissionType, out var tmpType))
         {
             parsedSubmissionType = tmpType;
         }
@@ -184,8 +187,7 @@ public class HomeworkController : ControllerBase
         CancellationToken cancellationToken)
     {
         SubmissionType? parsedSubmissionType = null;
-        if (!string.IsNullOrWhiteSpace(request.SubmissionType) &&
-            Enum.TryParse<SubmissionType>(request.SubmissionType, ignoreCase: true, out var tmpType))
+        if (TryParseSubmissionType(request.SubmissionType, out var tmpType))
         {
             parsedSubmissionType = tmpType;
         }
@@ -202,6 +204,8 @@ public class HomeworkController : ControllerBase
             SubmissionType = parsedSubmissionType,
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
+            TimeLimitMinutes = request.TimeLimitMinutes,
+            AllowResubmit = request.AllowResubmit,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
@@ -380,6 +384,23 @@ public class HomeworkController : ControllerBase
         var query = new GetHomeworkSubmissionDetailQuery { HomeworkStudentId = homeworkStudentId };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
+    }
+
+    private static bool TryParseSubmissionType(string? input, out SubmissionType submissionType)
+    {
+        submissionType = default;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        if (string.Equals(input, "MULTIPLE_CHOICE", StringComparison.OrdinalIgnoreCase))
+        {
+            submissionType = SubmissionType.Quiz;
+            return true;
+        }
+
+        return Enum.TryParse(input, ignoreCase: true, out submissionType);
     }
 }
 
