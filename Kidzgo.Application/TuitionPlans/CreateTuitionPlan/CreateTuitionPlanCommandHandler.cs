@@ -44,7 +44,7 @@ public sealed class CreateTuitionPlanCommandHandler(
             TuitionAmount = command.TuitionAmount,
             UnitPriceSession = command.UnitPriceSession,
             Currency = command.Currency,
-            IsActive = false, // Mặc định false, cần duyệt qua toggle-status API để active
+            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
