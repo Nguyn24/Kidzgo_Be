@@ -19,6 +19,8 @@ using Kidzgo.Domain.Audit;
 using Kidzgo.Domain.Registrations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Kidzgo.Infrastructure.Database;
 
@@ -131,6 +133,22 @@ public sealed class ApplicationDbContext(
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         modelBuilder.HasDefaultSchema(Schemas.Default);
+
+        // Configure DateTime to always use UTC for PostgreSQL timestamp with time zone
+        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+            v => v.ToUniversalTime(),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var dateTimeProperties = entityType.ClrType.GetProperties()
+                .Where(p => p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?));
+
+            foreach (var property in dateTimeProperties)
+            {
+                modelBuilder.Entity(entityType.ClrType).Property(property.Name).HasConversion(dateTimeConverter);
+            }
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
