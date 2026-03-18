@@ -22,7 +22,7 @@
 | BR-003 | Each student in the class automatically receives a homework record when assignment is created |
 | BR-004 | Students can only submit their own homework |
 | BR-005 | Teachers can only view/grade homework from classes they teach |
-| BR-006 | Homework submission must contain data matching the submission type (Text/File/Image/Link/Quiz) |
+| BR-006 | Homework submission must contain data matching the submission type (Text/File/Image/Link/MULTIPLE_CHOICE) |
 | BR-007 | Score cannot exceed MaxScore defined in the assignment |
 | BR-008 | Reward stars are granted to students upon successful submission |
 | BR-009 | Late submissions are automatically marked by background job |
@@ -36,7 +36,7 @@
 | `Image` | Submit as image | AttachmentUrl |
 | `Text` | Submit as text answer | TextAnswer |
 | `Link` | Submit as URL | LinkUrl |
-| `Quiz` | Multiple choice quiz | Answers (JSON) |
+| `MULTIPLE_CHOICE` | Multiple choice quiz | Answers (JSON) |
 
 ---
 
@@ -157,9 +157,11 @@ Any → Graded (re-grade allowed)
 | `Book` | string | No | Related book |
 | `Pages` | string | No | Page numbers |
 | `Skills` | string | No | Related skills |
-| `SubmissionType` | string | Yes | File/Image/Text/Link/Quiz |
+| `SubmissionType` | string | Yes | File/Image/Text/Link/MULTIPLE_CHOICE |
 | `MaxScore` | decimal | No | Maximum score |
 | `RewardStars` | int | No | Stars reward (>=0) |
+| `TimeLimitMinutes` | int | No | Quiz time limit (minutes) |
+| `AllowResubmit` | bool | No | Allow student resubmit quiz |
 | `MissionId` | GUID | No | Linked mission |
 | `Instructions` | string | No | Instructions for students |
 | `ExpectedAnswer` | string | No | Expected answer (for grading) |
@@ -180,6 +182,8 @@ Any → Graded (re-grade allowed)
     "submissionType": "Text",
     "maxScore": 10.0,
     "rewardStars": 5,
+    "timeLimitMinutes": null,
+    "allowResubmit": false,
     "createdAt": "2025-01-10T10:00:00Z"
   },
   "message": "Homework assignment created successfully"
@@ -219,6 +223,8 @@ Any → Graded (re-grade allowed)
 | `Description` | string | No | Homework description |
 | `DueAt` | DateTime | No | Due date/time |
 | `RewardStars` | int | No | Stars reward |
+| `TimeLimitMinutes` | int | No | Quiz time limit (minutes) |
+| `AllowResubmit` | bool | No | Allow student resubmit quiz |
 | `MissionId` | GUID | No | Linked mission |
 | `Instructions` | string | No | Instructions |
 | `Questions` | List | Yes | Questions array |
@@ -251,6 +257,8 @@ Any → Graded (re-grade allowed)
       }
     ],
     "maxScore": 100,
+    "timeLimitMinutes": 30,
+    "allowResubmit": false,
     "createdAt": "2025-01-10T10:00:00Z"
   },
   "message": "Multiple choice homework created successfully"
@@ -797,11 +805,16 @@ Any → Graded (re-grade allowed)
   "success": true,
   "data": {
     "id": "guid",
-    "homeworkId": "guid",
-    "homeworkTitle": "Math Homework 1",
-    "className": "Class 1A",
+    "homeworkStudentId": "guid",
+    "assignmentId": "guid",
+    "assignmentTitle": "Math Homework 1",
+    "classTitle": "Class 1A",
     "status": "Graded",
     "dueAt": "2025-01-15T23:59:00Z",
+    "submissionType": "MULTIPLE_CHOICE",
+    "timeLimitMinutes": 30,
+    "allowResubmit": false,
+    "startedAt": "2025-01-14T09:30:00Z",
     "submittedAt": "2025-01-14T10:00:00Z",
     "gradedAt": "2025-01-16T10:00:00Z",
     "score": 8.5,
@@ -811,11 +824,47 @@ Any → Graded (re-grade allowed)
     "textAnswer": "My answer...",
     "attachmentUrls": ["https://..."],
     "linkUrl": null,
+    "questions": [
+      {
+        "id": "guid",
+        "questionText": "2 + 2 = ?",
+        "questionType": "MultipleChoice",
+        "points": 1,
+        "options": [
+          { "id": "guid", "text": "1", "orderIndex": 0 },
+          { "id": "guid", "text": "2", "orderIndex": 1 },
+          { "id": "guid", "text": "3", "orderIndex": 2 },
+          { "id": "guid", "text": "4", "orderIndex": 3 }
+        ]
+      }
+    ],
+    "review": {
+      "answerResults": [
+        {
+          "questionId": "guid",
+          "questionText": "2 + 2 = ?",
+          "selectedOptionId": "guid",
+          "selectedOptionText": "4",
+          "correctOptionId": "guid",
+          "correctOptionText": "4",
+          "isCorrect": true,
+          "earnedPoints": 1,
+          "maxPoints": 1,
+          "explanation": "Basic addition"
+        }
+      ]
+    },
+    "showReview": true,
+    "showCorrectAnswer": true,
+    "showExplanation": true,
     "isLate": false,
     "rewardStars": 5
   }
 }
 ```
+
+*Note: `questions` chi tra ve khi `submissionType = MULTIPLE_CHOICE` va khong bao gom `correctAnswer`.*
+*Note: `startedAt` duoc set lan dau khi hoc sinh mo bai (GET detail). Neu co `timeLimitMinutes`, BE se reject khi nop qua han.*
 
 ---
 
@@ -844,14 +893,17 @@ Any → Graded (re-grade allowed)
 {
   "success": true,
   "data": {
-    "homeworkStudentId": "guid",
+    "id": "guid",
+    "assignmentId": "guid",
     "status": "Submitted",
-    "submittedAt": "2025-01-14T10:00:00Z",
-    "rewardStars": 5
+    "submittedAt": "2025-01-14T10:00:00Z"
   },
   "message": "Homework submitted successfully"
 }
 ```
+
+*Note: reward stars duoc cong neu nop dung han, nhung khong tra ve trong response.*
+*Note: Bai nop file/image can upload truoc qua `POST /api/files/upload` va dung URL tra ve trong `attachmentUrls`.*
 
 ---
 
@@ -875,7 +927,7 @@ Any → Graded (re-grade allowed)
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `QuestionId` | GUID | Yes | Question ID |
-| `Answer` | string | Yes | Answer (option index or text) |
+| `SelectedOptionId` | GUID | No | Selected option ID (null nếu bỏ qua) |
 
 **Response Success (200):**
 
@@ -883,22 +935,31 @@ Any → Graded (re-grade allowed)
 {
   "success": true,
   "data": {
-    "homeworkStudentId": "guid",
+    "id": "guid",
+    "assignmentId": "guid",
     "status": "Graded",
     "submittedAt": "2025-01-14T10:00:00Z",
+    "gradedAt": "2025-01-14T10:00:00Z",
     "score": 8.5,
     "maxScore": 10.0,
-    "correctCount": 8,
-    "totalCount": 10,
     "rewardStars": 5,
-    "results": [
+    "correctCount": 8,
+    "wrongCount": 1,
+    "skippedCount": 1,
+    "totalCount": 10,
+    "totalPoints": 10,
+    "earnedPoints": 8,
+    "answerResults": [
       {
         "questionId": "guid",
         "questionText": "What is 2+2?",
-        "studentAnswer": "4",
-        "correctAnswer": "4",
+        "selectedOptionId": "guid",
+        "selectedOptionText": "4",
+        "correctOptionId": "guid",
+        "correctOptionText": "4",
         "isCorrect": true,
-        "points": 1,
+        "earnedPoints": 1,
+        "maxPoints": 1,
         "explanation": "Basic addition"
       }
     ]
@@ -906,6 +967,8 @@ Any → Graded (re-grade allowed)
   "message": "Multiple choice homework submitted and graded successfully"
 }
 ```
+
+*Note: Chua ho tro `timeLimitMinutes/startedAt/allowResubmit` cho quiz; can bo sung neu co yeu cau rang buoc lam bai.*
 
 ---
 
@@ -963,6 +1026,7 @@ Any → Graded (re-grade allowed)
 | `SubmissionType` | Required, must be valid enum | Invalid submission type |
 | `MaxScore` | If provided, must be > 0 | MaxScore must be greater than 0 |
 | `RewardStars` | If provided, must be >= 0 | RewardStars must be greater than or equal to 0 |
+| `TimeLimitMinutes` | If provided, must be > 0 | TimeLimitMinutes must be greater than 0 |
 
 ### 6.2 Submit Homework
 
@@ -1016,6 +1080,7 @@ Any → Graded (re-grade allowed)
 | `Homework.InvalidTitle` | Title cannot be empty | 400 |
 | `Homework.InvalidMaxScore` | MaxScore must be > 0 | 400 |
 | `Homework.InvalidRewardStars` | RewardStars must be >= 0 | 400 |
+| `Homework.InvalidTimeLimitMinutes` | TimeLimitMinutes must be > 0 | 400 |
 | `Homework.InvalidSubmissionType` | Invalid submission type | 400 |
 | `Homework.InvalidStatusForMarking` | Status must be LATE or MISSING | 400 |
 
@@ -1035,6 +1100,7 @@ Any → Graded (re-grade allowed)
 | `HomeworkSubmission.NotSubmitted` | Not yet submitted | 400 |
 | `HomeworkSubmission.CannotSubmitMultipleChoice` | Wrong endpoint | 400 |
 | `HomeworkSubmission.NoAnswersProvided` | No answers | 400 |
+| `HomeworkSubmission.TimeExpired` | Time limit expired | 400 |
 | `HomeworkSubmission.QuestionNotFound` | Question not found | 404 |
 
 ### 7.3 Multiple Choice Errors
@@ -1111,7 +1177,7 @@ Any → Graded (re-grade allowed)
 - `Image`
 - `Text`
 - `Link`
-- `Quiz`
+- `MULTIPLE_CHOICE`
 
 #### HomeworkStatus
 - `Assigned` = 0

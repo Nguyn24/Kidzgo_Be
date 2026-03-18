@@ -9,6 +9,7 @@ public class HomeworkStudent : Entity
     public Guid AssignmentId { get; set; }
     public Guid StudentProfileId { get; set; }
     public HomeworkStatus Status { get; set; }
+    public DateTime? StartedAt { get; set; }
     public DateTime? SubmittedAt { get; set; }
     public DateTime? GradedAt { get; set; }
     public decimal? Score { get; set; }

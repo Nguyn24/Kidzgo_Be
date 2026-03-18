@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.LeaveRequests.ApproveLeaveRequest;
+using Kidzgo.Application.LeaveRequests.BulkApproveLeaveRequests;
 using Kidzgo.Application.LeaveRequests.CancelLeaveRequest;
 using Kidzgo.Application.LeaveRequests.CreateLeaveRequest;
 using Kidzgo.Application.LeaveRequests.GetLeaveRequestById;
@@ -84,6 +85,21 @@ public class LeaveRequestController : ControllerBase
     public async Task<IResult> Approve(Guid id, CancellationToken cancellationToken)
     {
         var command = new ApproveLeaveRequestCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPut("approve-bulk")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> ApproveBulk(
+        [FromBody] BulkApproveRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new BulkApproveLeaveRequestsCommand
+        {
+            Ids = request.Ids
+        };
+
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }

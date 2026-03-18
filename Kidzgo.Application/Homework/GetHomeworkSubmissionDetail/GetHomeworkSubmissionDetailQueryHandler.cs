@@ -2,11 +2,11 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
 
@@ -63,7 +63,7 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
             Book = homeworkStudent.Assignment.Book,
             Pages = homeworkStudent.Assignment.Pages,
             Skills = homeworkStudent.Assignment.Skills,
-            SubmissionType = homeworkStudent.Assignment.SubmissionType.ToString(),
+            SubmissionType = SubmissionTypeMapper.ToApiString(homeworkStudent.Assignment.SubmissionType),
             MaxScore = homeworkStudent.Assignment.MaxScore,
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt,

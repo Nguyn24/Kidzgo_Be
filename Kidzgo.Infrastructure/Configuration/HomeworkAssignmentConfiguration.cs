@@ -45,6 +45,11 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
 
         builder.Property(x => x.RewardStars);
 
+        builder.Property(x => x.TimeLimitMinutes);
+
+        builder.Property(x => x.AllowResubmit)
+            .HasDefaultValue(false);
+
         builder.Property(x => x.MissionId);
 
         builder.Property(x => x.Instructions);

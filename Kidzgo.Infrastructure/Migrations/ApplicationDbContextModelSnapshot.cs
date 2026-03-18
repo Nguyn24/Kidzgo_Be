@@ -421,6 +421,130 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("ClassEnrollments", "public");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CancelledBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime?>("OutcomeAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OutcomeBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OutcomeNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("PauseFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PauseTo")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CancelledBy");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("OutcomeBy");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("PauseEnrollmentRequests", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EnrollmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("PauseEnrollmentRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("PauseFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PauseTo")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedBy");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("PauseEnrollmentRequestId");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("PauseEnrollmentRequestHistories", "public");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1169,6 +1293,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AllowResubmit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("AttachmentUrl")
                         .HasColumnType("text");
 
@@ -1224,6 +1353,9 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("TimeLimitMinutes")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1301,6 +1433,9 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<decimal?>("Score")
                         .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1886,6 +2021,123 @@ namespace Kidzgo.Infrastructure.Migrations
                             IsDeleted = false,
                             Placeholders = "[\"media_title\",\"media_type\",\"class_name\",\"student_name\"]",
                             Title = "Thông báo: Có {{media_type}} mới từ lớp {{class_name}}",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("77777777-7777-7777-7777-777777777777"),
+                            Channel = "Email",
+                            Code = "PAUSE_ENROLLMENT_APPROVED_EMAIL",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#2b6cb0;\">Yêu cầu bảo lưu đã được duyệt</h2>\n  <p>Xin chào,</p>\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã được duyệt.</p>\n  <div style=\"background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;\">\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\n  </div>\n  <p>Vui lòng theo dõi lịch học sau thời gian bảo lưu.</p>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"pause_from\",\"pause_to\"]",
+                            Title = "Yêu cầu bảo lưu đã được duyệt",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("88888888-8888-8888-8888-888888888888"),
+                            Channel = "Email",
+                            Code = "PAUSE_ENROLLMENT_REJECTED_EMAIL",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#c53030;\">Yêu cầu bảo lưu bị từ chối</h2>\n  <p>Xin chào,</p>\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã bị từ chối.</p>\n  <div style=\"background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;\">\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\n  </div>\n  <p>Vui lòng liên hệ trung tâm nếu cần hỗ trợ thêm.</p>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"pause_from\",\"pause_to\"]",
+                            Title = "Yêu cầu bảo lưu bị từ chối",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("99999999-9999-9999-9999-999999999999"),
+                            Channel = "Email",
+                            Code = "PAUSE_ENROLLMENT_OUTCOME_EMAIL",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#2f855a;\">Kết quả bảo lưu đã được cập nhật</h2>\n  <p>Xin chào,</p>\n  <p>Kết quả bảo lưu của <strong>{{student_name}}</strong> đã được cập nhật.</p>\n  <div style=\"background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;\">\n    <p><strong>Kết quả:</strong> {{outcome}}</p>\n    <p><strong>Ghi chú:</strong> {{outcome_note}}</p>\n  </div>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"outcome\",\"outcome_note\"]",
+                            Title = "Kết quả bảo lưu đã được cập nhật",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Channel = "Push",
+                            Code = "PAUSE_ENROLLMENT_APPROVED_PUSH",
+                            Content = "Yêu cầu bảo lưu {{pause_from}} - {{pause_to}} đã được duyệt.",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"pause_from\",\"pause_to\"]",
+                            Title = "Bảo lưu đã được duyệt",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                            Channel = "Push",
+                            Code = "PAUSE_ENROLLMENT_REJECTED_PUSH",
+                            Content = "Yêu cầu bảo lưu {{pause_from}} - {{pause_to}} đã bị từ chối.",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"pause_from\",\"pause_to\"]",
+                            Title = "Bảo lưu bị từ chối",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                            Channel = "Push",
+                            Code = "PAUSE_ENROLLMENT_OUTCOME_PUSH",
+                            Content = "Kết quả bảo lưu: {{outcome}}.",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"outcome\"]",
+                            Title = "Kết quả bảo lưu đã cập nhật",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            Channel = "ZaloOa",
+                            Code = "PAUSE_ENROLLMENT_APPROVED_ZALO",
+                            Content = "Yêu cầu bảo lưu của {{student_name}} từ {{pause_from}} đến {{pause_to}} đã được duyệt.",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"pause_from\",\"pause_to\"]",
+                            Title = "Bảo lưu đã được duyệt",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                            Channel = "ZaloOa",
+                            Code = "PAUSE_ENROLLMENT_REJECTED_ZALO",
+                            Content = "Yêu cầu bảo lưu của {{student_name}} từ {{pause_from}} đến {{pause_to}} đã bị từ chối.",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"pause_from\",\"pause_to\"]",
+                            Title = "Bảo lưu bị từ chối",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+                            Channel = "ZaloOa",
+                            Code = "PAUSE_ENROLLMENT_OUTCOME_ZALO",
+                            Content = "Kết quả bảo lưu của {{student_name}}: {{outcome}}. {{outcome_note}}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Placeholders = "[\"student_name\",\"outcome\",\"outcome_note\"]",
+                            Title = "Kết quả bảo lưu đã cập nhật",
                             UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -3477,6 +3729,86 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("StudentProfile");
 
                     b.Navigation("TuitionPlan");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequest", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Users.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "CancelledByUser")
+                        .WithMany()
+                        .HasForeignKey("CancelledBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "OutcomeByUser")
+                        .WithMany()
+                        .HasForeignKey("OutcomeBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("CancelledByUser");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("OutcomeByUser");
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequestHistory", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Users.User", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Classes.ClassEnrollment", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Kidzgo.Domain.Classes.PauseEnrollmentRequest", "PauseEnrollmentRequest")
+                        .WithMany()
+                        .HasForeignKey("PauseEnrollmentRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Enrollment");
+
+                    b.Navigation("PauseEnrollmentRequest");
+
+                    b.Navigation("StudentProfile");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>

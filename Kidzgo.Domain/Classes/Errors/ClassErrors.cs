@@ -47,6 +47,21 @@ public static class ClassErrors
     public static readonly Error InvalidStatusTransition = Error.Validation(
         "Class.InvalidStatusTransition",
         "Cannot change status from Closed to Planned");
+
+    // Session conflict errors
+    public static Error RoomConflict(string classCode, string classTitle, DateTime conflictDatetime) => Error.Conflict(
+        "Class.RoomConflict",
+        $"Room is already booked by class '{classCode} - {classTitle}' at {conflictDatetime:dd/MM/yyyy HH:mm}");
+
+    public static Error TeacherConflict(string classCode, string classTitle, DateTime conflictDatetime, string? roomName = null) => Error.Conflict(
+        "Class.TeacherConflict",
+        roomName != null
+            ? $"Teacher is already assigned to class '{classCode} - {classTitle}' at {conflictDatetime:dd/MM/yyyy HH:mm} in room '{roomName}'"
+            : $"Teacher is already assigned to class '{classCode} - {classTitle}' at {conflictDatetime:dd/MM/yyyy HH:mm}");
+
+    public static Error AssistantConflict(string classCode, string classTitle, DateTime conflictDatetime) => Error.Conflict(
+        "Class.AssistantConflict",
+        $"Assistant teacher is already assigned to class '{classCode} - {classTitle}' at {conflictDatetime:dd/MM/yyyy HH:mm}");
 }
 
 public static class ScheduleErrors
