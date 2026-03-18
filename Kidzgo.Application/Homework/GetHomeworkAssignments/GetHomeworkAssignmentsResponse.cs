@@ -23,6 +23,8 @@ public sealed class HomeworkAssignmentDto
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
     public int? RewardStars { get; init; }
+    public int? TimeLimitMinutes { get; init; }
+    public bool AllowResubmit { get; init; }
     public Guid? MissionId { get; init; }
     public DateTime CreatedAt { get; init; }
     public int TotalStudents { get; init; }

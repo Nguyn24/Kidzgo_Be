@@ -20,6 +20,8 @@ public class HomeworkAssignment : Entity
     public SubmissionType SubmissionType { get; set; }
     public decimal? MaxScore { get; set; }
     public int? RewardStars { get; set; }
+    public int? TimeLimitMinutes { get; set; }
+    public bool AllowResubmit { get; set; }
     public Guid? MissionId { get; set; }
     public string? Instructions { get; set; }
     public string? ExpectedAnswer { get; set; }

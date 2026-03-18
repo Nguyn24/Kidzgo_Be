@@ -11,6 +11,6 @@ public sealed class SubmitMultipleChoiceHomeworkCommand : ICommand<SubmitMultipl
 public class SubmitAnswerDto
 {
     public Guid QuestionId { get; init; }
-    public string Answer { get; init; } = null!; // Option index (0, 1, 2, 3) for multiple choice, text for text input
+    public Guid? SelectedOptionId { get; init; }
 }
 

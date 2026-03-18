@@ -28,6 +28,8 @@ public class HomeworkStudentConfiguration : IEntityTypeConfiguration<HomeworkStu
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(x => x.StartedAt);
+
         builder.Property(x => x.SubmittedAt);
 
         builder.Property(x => x.GradedAt);
