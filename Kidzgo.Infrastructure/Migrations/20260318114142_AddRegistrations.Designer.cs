@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260318114142_AddRegistrations")]
+    partial class AddRegistrations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2559,8 +2562,7 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("EntryType")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ExpectedStartDate")
                         .HasColumnType("timestamp with time zone");
@@ -2572,8 +2574,7 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("OperationType")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("OriginalRegistrationId")
                         .HasColumnType("uuid");
@@ -2590,10 +2591,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<int>("RemainingSessions")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uuid");
@@ -4559,23 +4558,21 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasOne("Kidzgo.Domain.Schools.Branch", "Branch")
                         .WithMany()
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
                         .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ClassId");
 
                     b.HasOne("Kidzgo.Domain.Registrations.Registration", "OriginalRegistration")
                         .WithMany()
-                        .HasForeignKey("OriginalRegistrationId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("OriginalRegistrationId");
 
                     b.HasOne("Kidzgo.Domain.Programs.Program", "Program")
                         .WithMany()
                         .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
@@ -4587,7 +4584,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasOne("Kidzgo.Domain.Programs.TuitionPlan", "TuitionPlan")
                         .WithMany()
                         .HasForeignKey("TuitionPlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Branch");
