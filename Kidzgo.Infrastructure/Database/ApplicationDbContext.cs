@@ -16,6 +16,7 @@ using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
+using Kidzgo.Domain.Registrations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -101,6 +102,9 @@ public sealed class ApplicationDbContext(
     // Programs
     public DbSet<Program> Programs => Set<Program>();
     public DbSet<TuitionPlan> TuitionPlans => Set<TuitionPlan>();
+
+    // Registrations
+    public DbSet<Registration> Registrations => Set<Registration>();
 
     // Reports
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
