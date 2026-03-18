@@ -77,6 +77,8 @@ Request
   "description": "Mo ta",
   "dueAt": "2026-03-20T16:00:00Z",
   "rewardStars": 5,
+  "timeLimitMinutes": 30,
+  "allowResubmit": false,
   "missionId": "guid|null",
   "instructions": "Chon dap an dung",
   "questions": [
@@ -100,6 +102,8 @@ Response (201)
     "id": "guid",
     "title": "Trac nghiem 1",
     "maxScore": 10,
+    "timeLimitMinutes": 30,
+    "allowResubmit": false,
     "createdAt": "2026-03-18T08:00:00Z"
   }
 }
@@ -145,7 +149,7 @@ Response (200)
   "data": {
     "id": "guid",
     "classId": "guid",
-    "className": "Class A",
+    "classTitle": "Class A",
     "sessionId": "guid|null",
     "title": "Bai tap 1",
     "description": "Mo ta",
@@ -334,15 +338,14 @@ Response (200)
     "items": [
       {
         "id": "guid",
-        "homeworkId": "guid",
-        "homeworkTitle": "Bai tap 1",
+        "assignmentId": "guid",
+        "assignmentTitle": "Bai tap 1",
         "classId": "guid",
-        "className": "Class A",
+        "classTitle": "Class A",
         "status": "Assigned",
         "dueAt": "2026-03-20T16:00:00Z",
         "submissionType": "Text",
-        "maxScore": 10,
-        "rewardStars": 5
+        "maxScore": 10
       }
     ],
     "pageNumber": 1,
@@ -362,22 +365,29 @@ Response (200)
   "isSuccess": true,
   "data": {
     "id": "guid",
-    "homeworkId": "guid",
-    "homeworkTitle": "Trac nghiem 1",
+    "homeworkStudentId": "guid",
+    "assignmentId": "guid",
+    "assignmentTitle": "Trac nghiem 1",
     "classId": "guid",
     "className": "Class A",
     "status": "Assigned",
     "dueAt": "2026-03-20T16:00:00Z",
-    "submissionType": "Quiz",
+    "submissionType": "MULTIPLE_CHOICE",
     "rewardStars": 5,
+    "timeLimitMinutes": 30,
+    "allowResubmit": false,
+    "startedAt": "2026-03-19T08:00:00Z",
     "questions": [
       {
         "id": "guid",
-        "orderIndex": 1,
         "questionText": "2 + 2 = ?",
-        "questionType": "MultipleChoice",
-        "options": ["1","2","3","4"],
-        "points": 1
+        "points": 1,
+        "options": [
+          { "id": "guid", "text": "1", "orderIndex": 0 },
+          { "id": "guid", "text": "2", "orderIndex": 1 },
+          { "id": "guid", "text": "3", "orderIndex": 2 },
+          { "id": "guid", "text": "4", "orderIndex": 3 }
+        ]
       }
     ]
   }
@@ -387,6 +397,7 @@ Response (200)
 Luu y:
 - Endpoint nay dung de render bai trac nghiem cho hoc sinh lam truc tiep.
 - Khong tra `correctAnswer`/`explanation` trong luc lam bai; chi co trong response sau submit.
+- `startedAt` duoc set lan dau khi hoc sinh mo bai (GET detail).
 
 ### 5.3 Submit Homework
 `POST /api/students/homework/submit`
@@ -425,7 +436,7 @@ Request
 {
   "homeworkStudentId": "guid",
   "answers": [
-    { "questionId": "guid", "answer": "4" }
+    { "questionId": "guid", "selectedOptionId": "guid" }
   ]
 }
 ```
@@ -439,10 +450,13 @@ Response (200)
     "assignmentId": "guid",
     "status": "Graded",
     "submittedAt": "2026-03-19T08:00:00Z",
+    "gradedAt": "2026-03-19T08:00:00Z",
     "score": 8.5,
     "maxScore": 10,
     "rewardStars": 5,
     "correctCount": 8,
+    "wrongCount": 1,
+    "skippedCount": 1,
     "totalCount": 10,
     "totalPoints": 10,
     "earnedPoints": 8,
@@ -450,10 +464,13 @@ Response (200)
       {
         "questionId": "guid",
         "questionText": "2 + 2 = ?",
-        "studentAnswer": "4",
-        "correctAnswer": "4",
+        "selectedOptionId": "guid",
+        "selectedOptionText": "4",
+        "correctOptionId": "guid",
+        "correctOptionText": "4",
         "isCorrect": true,
-        "points": 1,
+        "earnedPoints": 1,
+        "maxPoints": 1,
         "explanation": "Cong co ban"
       }
     ]
@@ -462,8 +479,9 @@ Response (200)
 ```
 
 Luu y:
-- `answer` co the la option index (0-based) hoac text option.
+- FE chi gui `selectedOptionId` (khong gui index/text).
 - `rewardStars` chi tra ve gia tri duoc cong khi nop dung han.
+- Neu co `timeLimitMinutes`, BE se reject neu qua han tinh tu `startedAt`.
 
 ### 5.5 My Submitted Homework
 `GET /api/students/homework/submitted?pageNumber=1&pageSize=10`
@@ -473,6 +491,7 @@ Luu y:
 
 Luu y:
 - Neu submissionType = `Quiz`, su dung response o muc 5.2 de render cau hoi khi lam bai.
+- Sau khi nop va duoc auto-grade, detail se tra them `review.answerResults` va cac co `showReview/showCorrectAnswer/showExplanation`.
 
 ### 5.7 My Feedback
 `GET /api/students/homework/feedback/my?pageNumber=1&pageSize=10`
@@ -481,3 +500,7 @@ Luu y:
 - Multiple choice co the auto-grade va set `Graded` ngay sau submit.
 - Job he thong co the danh dau `Late`/`Missing` theo `DueAt`.
 - Response fields co the khac tuy version, can doi chieu swagger khi integrate.
+- SubmissionType cho quiz tra ve `MULTIPLE_CHOICE`.
+- Bai nop file/image: FE can upload truoc qua `POST /api/files/upload` (folder tuy chon, vi du `homework`) va dung URL tra ve trong `attachmentUrls`.
+- Quiz ho tro `timeLimitMinutes`, `startedAt`, `allowResubmit`.
+- `allowResubmit` = true cho phep hoc sinh nop lai bai quiz (se auto-grade lai).

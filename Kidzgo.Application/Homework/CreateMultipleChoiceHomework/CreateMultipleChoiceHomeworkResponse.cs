@@ -9,6 +9,8 @@ public sealed class CreateMultipleChoiceHomeworkResponse
     public string? Description { get; init; }
     public DateTime? DueAt { get; init; }
     public int? RewardStars { get; init; }
+    public int? TimeLimitMinutes { get; init; }
+    public bool AllowResubmit { get; init; }
     public Guid? MissionId { get; init; }
     public string? Instructions { get; init; }
     public DateTime CreatedAt { get; init; }

@@ -92,7 +92,7 @@ public class StudentController : ControllerBase
         var answers = request.Answers.Select(a => new SubmitAnswerDto
         {
             QuestionId = a.QuestionId,
-            Answer = a.Answer
+            SelectedOptionId = a.SelectedOptionId
         }).ToList();
 
         var command = new SubmitMultipleChoiceHomeworkCommand

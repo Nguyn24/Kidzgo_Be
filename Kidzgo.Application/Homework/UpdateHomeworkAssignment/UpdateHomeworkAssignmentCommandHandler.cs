@@ -81,6 +81,12 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidRewardStars);
         }
 
+        if (command.TimeLimitMinutes.HasValue && command.TimeLimitMinutes.Value <= 0)
+        {
+            return Result.Failure<UpdateHomeworkAssignmentResponse>(
+                HomeworkErrors.InvalidTimeLimitMinutes);
+        }
+
         // Update fields
         if (!string.IsNullOrWhiteSpace(command.Title))
         {
@@ -125,6 +131,16 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
         if (command.RewardStars.HasValue)
         {
             homework.RewardStars = command.RewardStars;
+        }
+
+        if (command.TimeLimitMinutes.HasValue)
+        {
+            homework.TimeLimitMinutes = command.TimeLimitMinutes;
+        }
+
+        if (command.AllowResubmit.HasValue)
+        {
+            homework.AllowResubmit = command.AllowResubmit.Value;
         }
 
         if (command.MissionId.HasValue)
