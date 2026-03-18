@@ -1,0 +1,221 @@
+using Kidzgo.API.Extensions;
+using Kidzgo.API.Requests;
+using Kidzgo.Application.Registrations.AssignClass;
+using Kidzgo.Application.Registrations.CancelRegistration;
+using Kidzgo.Application.Registrations.CreateRegistration;
+using Kidzgo.Application.Registrations.GetRegistrationById;
+using Kidzgo.Application.Registrations.GetRegistrations;
+using Kidzgo.Application.Registrations.GetWaitingList;
+using Kidzgo.Application.Registrations.SuggestClasses;
+using Kidzgo.Application.Registrations.TransferClass;
+using Kidzgo.Application.Registrations.UpdateRegistration;
+using Kidzgo.Application.Registrations.UpgradeTuitionPlan;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Kidzgo.API.Controllers;
+
+[Route("api/registrations")]
+[ApiController]
+public class RegistrationController : ControllerBase
+{
+    private readonly ISender _mediator;
+
+    public RegistrationController(ISender mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// Tạo mới đăng ký học
+    [HttpPost]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> CreateRegistration(
+        [FromBody] CreateRegistrationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateRegistrationCommand
+        {
+            StudentProfileId = request.StudentProfileId,
+            BranchId = request.BranchId,
+            ProgramId = request.ProgramId,
+            TuitionPlanId = request.TuitionPlanId,
+            ExpectedStartDate = request.ExpectedStartDate,
+            PreferredSchedule = request.PreferredSchedule,
+            Note = request.Note
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(r => $"/api/registrations/{r.Id}");
+    }
+
+    /// Xem danh sách đăng ký
+    [HttpGet]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetRegistrations(
+        [FromQuery] Guid? studentProfileId,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? programId,
+        [FromQuery] string? status,
+        [FromQuery] Guid? classId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetRegistrationsQuery
+        {
+            StudentProfileId = studentProfileId,
+            BranchId = branchId,
+            ProgramId = programId,
+            Status = status,
+            ClassId = classId,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Xem chi tiết đăng ký
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetRegistrationById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetRegistrationByIdQuery { Id = id };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Cập nhật đăng ký
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateRegistration(
+        Guid id,
+        [FromBody] UpdateRegistrationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateRegistrationCommand
+        {
+            Id = id,
+            ExpectedStartDate = request.ExpectedStartDate,
+            PreferredSchedule = request.PreferredSchedule,
+            Note = request.Note,
+            TuitionPlanId = request.TuitionPlanId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Hủy đăng ký
+    [HttpPatch("{id:guid}/cancel")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> CancelRegistration(
+        Guid id,
+        [FromQuery] string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CancelRegistrationCommand
+        {
+            Id = id,
+            Reason = reason
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Gợi ý lớp phù hợp cho đăng ký
+    [HttpGet("{id:guid}/suggest-classes")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> SuggestClasses(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var query = new SuggestClassesQuery { RegistrationId = id };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Xếp lớp cho học viên
+    [HttpPost("{id:guid}/assign-class")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> AssignClass(
+        Guid id,
+        [FromBody] AssignClassRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AssignClassCommand
+        {
+            RegistrationId = id,
+            ClassId = request.ClassId,
+            EntryType = request.EntryType
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Danh sách chờ xếp lớp
+    [HttpGet("waiting-list")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetWaitingList(
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? programId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetWaitingListQuery
+        {
+            BranchId = branchId,
+            ProgramId = programId,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Chuyển lớp
+    [HttpPost("{id:guid}/transfer-class")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> TransferClass(
+        Guid id,
+        [FromQuery] Guid newClassId,
+        [FromQuery] DateTime? effectiveDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new TransferClassCommand
+        {
+            RegistrationId = id,
+            NewClassId = newClassId,
+            EffectiveDate = effectiveDate ?? DateTime.UtcNow
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Nâng gói học
+    [HttpPost("{id:guid}/upgrade")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpgradeTuitionPlan(
+        Guid id,
+        [FromQuery] Guid newTuitionPlanId,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpgradeTuitionPlanCommand
+        {
+            RegistrationId = id,
+            NewTuitionPlanId = newTuitionPlanId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+}
