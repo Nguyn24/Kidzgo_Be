@@ -205,5 +205,173 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
             CreatedAt = seedDate,
             UpdatedAt = seedDate
         });
+
+        // Pause Enrollment - Approved (Email)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("77777777-7777-7777-7777-777777777777"),
+            Code = "PAUSE_ENROLLMENT_APPROVED_EMAIL",
+            Channel = NotificationChannel.Email,
+            Title = "Yêu cầu bảo lưu đã được duyệt",
+            Content = """
+                     <div style="font-family: Arial, sans-serif; color:#222; line-height:1.6;">
+                       <h2 style="color:#2b6cb0;">Yêu cầu bảo lưu đã được duyệt</h2>
+                       <p>Xin chào,</p>
+                       <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã được duyệt.</p>
+                       <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+                         <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>
+                       </div>
+                       <p>Vui lòng theo dõi lịch học sau thời gian bảo lưu.</p>
+                       <p>Trân trọng,<br/>KidzGo Team</p>
+                     </div>
+                     """,
+            Placeholders = """["student_name","pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Rejected (Email)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("88888888-8888-8888-8888-888888888888"),
+            Code = "PAUSE_ENROLLMENT_REJECTED_EMAIL",
+            Channel = NotificationChannel.Email,
+            Title = "Yêu cầu bảo lưu bị từ chối",
+            Content = """
+                     <div style="font-family: Arial, sans-serif; color:#222; line-height:1.6;">
+                       <h2 style="color:#c53030;">Yêu cầu bảo lưu bị từ chối</h2>
+                       <p>Xin chào,</p>
+                       <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã bị từ chối.</p>
+                       <div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;">
+                         <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>
+                       </div>
+                       <p>Vui lòng liên hệ trung tâm nếu cần hỗ trợ thêm.</p>
+                       <p>Trân trọng,<br/>KidzGo Team</p>
+                     </div>
+                     """,
+            Placeholders = """["student_name","pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Outcome Updated (Email)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("99999999-9999-9999-9999-999999999999"),
+            Code = "PAUSE_ENROLLMENT_OUTCOME_EMAIL",
+            Channel = NotificationChannel.Email,
+            Title = "Kết quả bảo lưu đã được cập nhật",
+            Content = """
+                     <div style="font-family: Arial, sans-serif; color:#222; line-height:1.6;">
+                       <h2 style="color:#2f855a;">Kết quả bảo lưu đã được cập nhật</h2>
+                       <p>Xin chào,</p>
+                       <p>Kết quả bảo lưu của <strong>{{student_name}}</strong> đã được cập nhật.</p>
+                       <div style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;">
+                         <p><strong>Kết quả:</strong> {{outcome}}</p>
+                         <p><strong>Ghi chú:</strong> {{outcome_note}}</p>
+                       </div>
+                       <p>Trân trọng,<br/>KidzGo Team</p>
+                     </div>
+                     """,
+            Placeholders = """["student_name","outcome","outcome_note"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Approved (Push)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            Code = "PAUSE_ENROLLMENT_APPROVED_PUSH",
+            Channel = NotificationChannel.Push,
+            Title = "Bảo lưu đã được duyệt",
+            Content = "Yêu cầu bảo lưu {{pause_from}} - {{pause_to}} đã được duyệt.",
+            Placeholders = """["pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Rejected (Push)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            Code = "PAUSE_ENROLLMENT_REJECTED_PUSH",
+            Channel = NotificationChannel.Push,
+            Title = "Bảo lưu bị từ chối",
+            Content = "Yêu cầu bảo lưu {{pause_from}} - {{pause_to}} đã bị từ chối.",
+            Placeholders = """["pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Outcome Updated (Push)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            Code = "PAUSE_ENROLLMENT_OUTCOME_PUSH",
+            Channel = NotificationChannel.Push,
+            Title = "Kết quả bảo lưu đã cập nhật",
+            Content = "Kết quả bảo lưu: {{outcome}}.",
+            Placeholders = """["outcome"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Approved (Zalo OA)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+            Code = "PAUSE_ENROLLMENT_APPROVED_ZALO",
+            Channel = NotificationChannel.ZaloOa,
+            Title = "Bảo lưu đã được duyệt",
+            Content = "Yêu cầu bảo lưu của {{student_name}} từ {{pause_from}} đến {{pause_to}} đã được duyệt.",
+            Placeholders = """["student_name","pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Rejected (Zalo OA)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            Code = "PAUSE_ENROLLMENT_REJECTED_ZALO",
+            Channel = NotificationChannel.ZaloOa,
+            Title = "Bảo lưu bị từ chối",
+            Content = "Yêu cầu bảo lưu của {{student_name}} từ {{pause_from}} đến {{pause_to}} đã bị từ chối.",
+            Placeholders = """["student_name","pause_from","pause_to"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
+
+        // Pause Enrollment - Outcome Updated (Zalo OA)
+        builder.HasData(new NotificationTemplate
+        {
+            Id = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+            Code = "PAUSE_ENROLLMENT_OUTCOME_ZALO",
+            Channel = NotificationChannel.ZaloOa,
+            Title = "Kết quả bảo lưu đã cập nhật",
+            Content = "Kết quả bảo lưu của {{student_name}}: {{outcome}}. {{outcome_note}}",
+            Placeholders = """["student_name","outcome","outcome_note"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
     }
 }

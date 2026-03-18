@@ -81,9 +81,17 @@ public static class HomeworkErrors
         "Homework.InvalidRewardStars",
         "RewardStars must be greater than or equal to 0");
 
+    public static readonly Error InvalidTimeLimitMinutes = Error.Validation(
+        "Homework.InvalidTimeLimitMinutes",
+        "TimeLimitMinutes must be greater than 0");
+
     public static readonly Error SubmissionCannotSubmitMissing = Error.Validation(
         "HomeworkSubmission.CannotSubmitMissing",
         "Cannot submit homework with MISSING status");
+
+    public static readonly Error SubmissionTimeExpired = Error.Validation(
+        "HomeworkSubmission.TimeExpired",
+        "Time limit has expired for this homework");
 
     public static readonly Error SubmissionNotSubmitted = Error.Validation(
         "HomeworkSubmission.NotSubmitted",
@@ -121,7 +129,7 @@ public static class HomeworkErrors
 
     public static readonly Error CannotSubmitMultipleChoice = Error.Validation(
         "HomeworkSubmission.CannotSubmitMultipleChoice",
-        "This is a multiple choice homework, use the multiple choice submission endpoint");
+        "Wrong submission endpoint for this homework type");
 
     public static readonly Error NoAnswersProvided = Error.Validation(
         "HomeworkSubmission.NoAnswersProvided",

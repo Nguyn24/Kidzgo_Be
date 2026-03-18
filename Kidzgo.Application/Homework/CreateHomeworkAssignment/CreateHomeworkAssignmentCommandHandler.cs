@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -38,6 +39,12 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
         {
             return Result.Failure<CreateHomeworkAssignmentResponse>(
                 HomeworkErrors.InvalidRewardStars);
+        }
+
+        if (command.TimeLimitMinutes.HasValue && command.TimeLimitMinutes.Value <= 0)
+        {
+            return Result.Failure<CreateHomeworkAssignmentResponse>(
+                HomeworkErrors.InvalidTimeLimitMinutes);
         }
 
         // Validate class exists
@@ -113,6 +120,8 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             SubmissionType = command.SubmissionType,
             MaxScore = command.MaxScore ?? 10,
             RewardStars = command.RewardStars,
+            TimeLimitMinutes = command.TimeLimitMinutes,
+            AllowResubmit = command.AllowResubmit ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
             ExpectedAnswer = command.ExpectedAnswer,
@@ -162,9 +171,11 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             Book = homework.Book,
             Pages = homework.Pages,
             Skills = homework.Skills,
-            SubmissionType = homework.SubmissionType.ToString(),
+            SubmissionType = SubmissionTypeMapper.ToApiString(homework.SubmissionType),
             MaxScore = homework.MaxScore,
             RewardStars = homework.RewardStars,
+            TimeLimitMinutes = homework.TimeLimitMinutes,
+            AllowResubmit = homework.AllowResubmit,
             MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,

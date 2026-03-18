@@ -9,6 +9,6 @@ public sealed class SubmitMultipleChoiceHomeworkRequest
 public class SubmitAnswerRequest
 {
     public Guid QuestionId { get; init; }
-    public string Answer { get; init; } = null!;
+    public Guid? SelectedOptionId { get; init; }
 }
 

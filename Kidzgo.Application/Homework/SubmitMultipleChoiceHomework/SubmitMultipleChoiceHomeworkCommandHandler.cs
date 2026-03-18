@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Common;
@@ -49,8 +50,41 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         // Check if already submitted
         if (homeworkStudent.Status == HomeworkStatus.Submitted || homeworkStudent.Status == HomeworkStatus.Graded)
         {
+            if (!homeworkStudent.Assignment.AllowResubmit)
+            {
+                return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                    HomeworkErrors.SubmissionAlreadySubmitted);
+            }
+        }
+
+        if (homeworkStudent.Status == HomeworkStatus.Missing)
+        {
             return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
-                HomeworkErrors.SubmissionAlreadySubmitted);
+                HomeworkErrors.SubmissionCannotSubmitMissing);
+        }
+
+        if (homeworkStudent.Assignment.SubmissionType != SubmissionType.Quiz)
+        {
+            return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.CannotSubmitMultipleChoice);
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (homeworkStudent.Assignment.TimeLimitMinutes.HasValue)
+        {
+            if (!homeworkStudent.StartedAt.HasValue ||
+                (homeworkStudent.Assignment.AllowResubmit && homeworkStudent.Status == HomeworkStatus.Graded))
+            {
+                homeworkStudent.StartedAt = now;
+            }
+
+            var deadline = homeworkStudent.StartedAt.Value.AddMinutes(homeworkStudent.Assignment.TimeLimitMinutes.Value);
+            if (now > deadline)
+            {
+                return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                    HomeworkErrors.SubmissionTimeExpired);
+            }
         }
 
         // Validate answers
@@ -64,6 +98,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         var questions = await context.HomeworkQuestions
             .Where(q => q.HomeworkAssignmentId == homeworkStudent.AssignmentId)
             .OrderBy(q => q.OrderIndex)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         if (questions.Count == 0)
@@ -85,94 +120,114 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             }
         }
 
-        // Calculate score and build results
-        var totalPoints = 0;
-        var earnedPoints = 0;
-        var answerResults = new List<AnswerResultDto>();
-
+        var answersByQuestionId = new Dictionary<Guid, Guid?>();
         foreach (var answer in command.Answers)
         {
-            if (!questionLookup.TryGetValue(answer.QuestionId, out var question))
+            answersByQuestionId[answer.QuestionId] = answer.SelectedOptionId;
+        }
+
+        // Calculate score and build results
+        var totalPoints = questions.Sum(q => q.Points);
+        var totalCount = questions.Count;
+        var earnedPoints = 0;
+        var correctCount = 0;
+        var answerResults = new List<QuizAnswerResultDto>();
+        var skippedCount = 0;
+
+        foreach (var question in questions)
+        {
+            // Parse options for display
+            var optionTexts = QuizOptionUtils.ParseOptions(question.Options);
+            var optionIdByIndex = optionTexts
+                .Select((_, idx) => QuizOptionUtils.BuildOptionId(question.Id, idx))
+                .ToList();
+            var optionTextById = optionIdByIndex
+                .Select((id, idx) => new { id, text = optionTexts[idx] })
+                .ToDictionary(x => x.id, x => x.text);
+
+            var correctOptionId = (Guid?)null;
+            var correctOptionText = (string?)null;
+            if (int.TryParse(question.CorrectAnswer, out var correctIdx) &&
+                correctIdx >= 0 &&
+                correctIdx < optionTexts.Count)
             {
-                continue;
+                correctOptionId = optionIdByIndex[correctIdx];
+                correctOptionText = optionTexts[correctIdx];
             }
 
-            var studentAnswer = answer.Answer?.Trim() ?? "";
-            var correctAnswer = question.CorrectAnswer?.Trim() ?? "";
-            var isCorrect = string.Equals(studentAnswer, correctAnswer, StringComparison.OrdinalIgnoreCase);
+            var selectedOptionId = answersByQuestionId.TryGetValue(question.Id, out var selectedId)
+                ? selectedId
+                : null;
+
+            var selectedOptionText = selectedOptionId.HasValue
+                ? optionTextById.TryGetValue(selectedOptionId.Value, out var text)
+                    ? text
+                    : null
+                : null;
+
+            var isSkipped = !selectedOptionId.HasValue || selectedOptionId == Guid.Empty;
+            if (isSkipped)
+            {
+                skippedCount++;
+            }
+
+            var isCorrect = !isSkipped &&
+                            correctOptionId.HasValue &&
+                            selectedOptionId == correctOptionId;
 
             var pointsEarned = isCorrect ? question.Points : 0;
-
-            totalPoints += question.Points;
-            earnedPoints += pointsEarned;
-
-            // Parse options for display
-            List<string>? options = null;
-            if (!string.IsNullOrEmpty(question.Options))
+            if (isCorrect)
             {
-                try
-                {
-                    options = JsonSerializer.Deserialize<List<string>>(question.Options);
-                }
-                catch
-                {
-                    // Ignore parse errors
-                }
+                correctCount++;
+                earnedPoints += pointsEarned;
             }
 
-            answerResults.Add(new AnswerResultDto
+            answerResults.Add(new QuizAnswerResultDto
             {
                 QuestionId = question.Id,
                 QuestionText = question.QuestionText,
-                StudentAnswer = options != null && int.TryParse(studentAnswer, out var idx) && idx >= 0 && idx < options.Count
-                    ? options[idx]
-                    : studentAnswer,
-                CorrectAnswer = options != null && int.TryParse(correctAnswer, out var correctIdx) && correctIdx >= 0 && correctIdx < options.Count
-                    ? options[correctIdx]
-                    : correctAnswer,
+                SelectedOptionId = selectedOptionId,
+                SelectedOptionText = selectedOptionText,
+                CorrectOptionId = correctOptionId,
+                CorrectOptionText = correctOptionText,
                 IsCorrect = isCorrect,
-                Points = pointsEarned,
+                EarnedPoints = pointsEarned,
+                MaxPoints = question.Points,
                 Explanation = question.Explanation
             });
         }
 
-        // Update status
-        if (homeworkStudent.Status == HomeworkStatus.Missing ||
-            (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value))
-        {
-            homeworkStudent.Status = HomeworkStatus.Late;
-        }
-        else
-        {
-            homeworkStudent.Status = HomeworkStatus.Submitted;
-        }
-
-        homeworkStudent.SubmittedAt = DateTime.UtcNow;
+        homeworkStudent.Status = HomeworkStatus.Graded;
+        homeworkStudent.SubmittedAt = now;
+        homeworkStudent.GradedAt = now;
 
         // Store answers as JSON in TextAnswer field
         var answersJson = JsonSerializer.Serialize(command.Answers.Select(a => new
         {
             a.QuestionId,
-            a.Answer
+            a.SelectedOptionId
         }).ToList());
         homeworkStudent.TextAnswer = answersJson;
 
         // Calculate and store score
-        if (totalPoints > 0)
-        {
-            homeworkStudent.Score = (decimal)earnedPoints / totalPoints * (homeworkStudent.Assignment.MaxScore ?? 10);
-        }
+        var maxScore = homeworkStudent.Assignment.MaxScore ?? totalPoints;
+        homeworkStudent.Score = totalPoints > 0
+            ? (decimal)earnedPoints / totalPoints * maxScore
+            : 0;
 
         await context.SaveChangesAsync(cancellationToken);
 
         // Award stars for on-time submission
-        if (homeworkStudent.Status == HomeworkStatus.Submitted &&
+        var rewardStars = 0;
+        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
+        if (isOnTime &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)
         {
+            rewardStars = homeworkStudent.Assignment.RewardStars.Value;
             await gamificationService.AddStarsForHomeworkCompletion(
                 homeworkStudent.StudentProfileId,
-                homeworkStudent.Assignment.RewardStars.Value,
+                rewardStars,
                 homeworkStudent.AssignmentId,
                 reason: "On-time Homework Submission",
                 cancellationToken);
@@ -184,11 +239,17 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             AssignmentId = homeworkStudent.AssignmentId,
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt!.Value,
+            GradedAt = homeworkStudent.GradedAt!.Value,
+            MaxScore = maxScore,
             Score = homeworkStudent.Score,
+            RewardStars = rewardStars,
+            CorrectCount = correctCount,
+            WrongCount = totalCount - correctCount - skippedCount,
+            SkippedCount = skippedCount,
+            TotalCount = totalCount,
             TotalPoints = totalPoints,
             EarnedPoints = earnedPoints,
             AnswerResults = answerResults
         };
     }
 }
-
