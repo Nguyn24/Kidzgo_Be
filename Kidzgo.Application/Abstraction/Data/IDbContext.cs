@@ -15,6 +15,7 @@ using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
+using Kidzgo.Domain.Registrations;
 
 namespace Kidzgo.Application.Abstraction.Data;
 
@@ -96,6 +97,9 @@ public interface IDbContext
     // Programs
     DbSet<Program> Programs { get; }
     DbSet<TuitionPlan> TuitionPlans { get; }
+
+    // Registrations
+    DbSet<Registration> Registrations { get; }
 
     // Reports
     DbSet<MonthlyReportJob> MonthlyReportJobs { get; }

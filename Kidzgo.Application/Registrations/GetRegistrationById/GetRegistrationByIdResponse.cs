@@ -1,0 +1,33 @@
+using Kidzgo.Domain.Common;
+
+namespace Kidzgo.Application.Registrations.GetRegistrationById;
+
+public sealed class GetRegistrationByIdResponse
+{
+    public Guid Id { get; init; }
+    public Guid StudentProfileId { get; init; }
+    public string StudentName { get; init; } = null!;
+    public Guid BranchId { get; init; }
+    public string BranchName { get; init; } = null!;
+    public Guid ProgramId { get; init; }
+    public string ProgramName { get; init; } = null!;
+    public Guid TuitionPlanId { get; init; }
+    public string TuitionPlanName { get; init; } = null!;
+    public DateTime RegistrationDate { get; init; }
+    public DateTime? ExpectedStartDate { get; init; }
+    public DateTime? ActualStartDate { get; init; }
+    public string? PreferredSchedule { get; init; }
+    public string? Note { get; init; }
+    public string Status { get; init; } = null!;
+    public Guid? ClassId { get; init; }
+    public string? ClassName { get; init; }
+    public string? EntryType { get; init; }
+    public int TotalSessions { get; init; }
+    public int UsedSessions { get; init; }
+    public int RemainingSessions { get; init; }
+    public DateTime? ExpiryDate { get; init; }
+    public Guid? OriginalRegistrationId { get; init; }
+    public string? OperationType { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
