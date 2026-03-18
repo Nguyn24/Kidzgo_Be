@@ -1,7 +1,9 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +78,12 @@ public sealed class MarkAttendanceCommandHandler(
                     }
                 }
             }
+            else if (item.AttendanceStatus == AttendanceStatus.Present)
+            {
+                // Update UsedSessions and RemainingSessions when student is present
+                await UpdateRegistrationSessionsAsync(item.StudentProfileId, session.ClassId, cancellationToken);
+                attendance.AbsenceType = null;
+            }
             else
             {
                 attendance.AbsenceType = null;
@@ -102,6 +110,64 @@ public sealed class MarkAttendanceCommandHandler(
         {
             Results = results
         });
+    }
+
+    private async Task UpdateRegistrationSessionsAsync(Guid studentProfileId, Guid? classId, CancellationToken cancellationToken)
+    {
+        if (classId == null) return;
+
+        // Find active registration for this student in this class
+        var registration = await context.Registrations
+            .FirstOrDefaultAsync(r => r.StudentProfileId == studentProfileId
+                && r.ClassId == classId
+                && r.Status == RegistrationStatus.Studying,
+                cancellationToken);
+
+        if (registration != null && registration.RemainingSessions > 0)
+        {
+            registration.UsedSessions++;
+            registration.RemainingSessions--;
+            registration.UpdatedAt = DateTime.UtcNow;
+
+            // Auto complete registration when all sessions are used
+            if (registration.RemainingSessions == 0)
+            {
+                registration.Status = RegistrationStatus.Completed;
+                registration.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // Check if all students in class have completed their sessions
+            await CheckAndUpdateClassCompletionAsync(classId.Value, cancellationToken);
+        }
+    }
+
+    private async Task CheckAndUpdateClassCompletionAsync(Guid classId, CancellationToken cancellationToken)
+    {
+        var classEntity = await context.Classes
+            .Include(c => c.ClassEnrollments)
+            .FirstOrDefaultAsync(c => c.Id == classId, cancellationToken);
+
+        if (classEntity == null) return;
+
+        // Get all active registrations for this class
+        var activeRegistrations = await context.Registrations
+            .Where(r => r.ClassId == classId 
+                && r.Status == RegistrationStatus.Studying)
+            .ToListAsync(cancellationToken);
+
+        // If no active registrations, check if class should be completed
+        if (activeRegistrations.Count == 0)
+        {
+            // Check if there are any active enrollments
+            var activeEnrollments = classEntity.ClassEnrollments
+                .Count(ce => ce.Status == EnrollmentStatus.Active);
+
+            if (activeEnrollments == 0 && classEntity.Status == ClassStatus.Active)
+            {
+                classEntity.Status = ClassStatus.Completed;
+                classEntity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
     }
 
     private async Task<AbsenceType> ResolveAbsenceType(Guid studentProfileId, Session session, CancellationToken cancellationToken)
