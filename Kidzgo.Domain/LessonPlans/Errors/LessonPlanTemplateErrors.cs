@@ -27,4 +27,8 @@ public static class LessonPlanTemplateErrors
     public static readonly Error HasActiveLessonPlans = Error.Conflict(
         "LessonPlanTemplate.HasActiveLessonPlans",
         "Cannot delete template that has active lesson plans");
+
+    public static readonly Error Unauthorized = Error.Validation(
+        "LessonPlanTemplate.Unauthorized",
+        "You do not have permission to modify this lesson plan template");
 }
