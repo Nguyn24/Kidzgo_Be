@@ -36,87 +36,126 @@ public sealed class AssignClassCommandHandler(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "assign-class"));
         }
 
-        // 3. Get class
-        var classEntity = await context.Classes
-            .Include(c => c.ClassEnrollments)
-            .FirstOrDefaultAsync(c => c.Id == command.ClassId, cancellationToken);
+        // 3. Get class (only if not wait type - wait means no class yet)
+        var isWait = command.EntryType?.ToLowerInvariant() == "wait";
+        var classId = command.ClassId;
+        
+        var classEntity = !isWait && classId.HasValue
+            ? await context.Classes
+                .Include(c => c.ClassEnrollments)
+                .FirstOrDefaultAsync(c => c.Id == classId.Value, cancellationToken)
+            : null;
 
-        if (classEntity == null)
+        // 4. For non-wait types, validate class exists
+        if (classEntity == null && !isWait)
         {
-            return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassNotFound(command.ClassId));
+            return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassNotFound(classId ?? Guid.Empty));
         }
 
-        // 4. Validate class matches program
-        if (classEntity.ProgramId != registration.ProgramId)
-        {
-            return Result.Failure<AssignClassResponse>(
-                RegistrationErrors.ClassNotMatchingProgram(command.ClassId, registration.ProgramId));
-        }
-
-        // 5. Check class status - can only assign to active/recruiting classes
-        if (classEntity.Status == ClassStatus.Completed || 
-            classEntity.Status == ClassStatus.Cancelled ||
-            classEntity.Status == ClassStatus.Suspended)
+        // 5. Validate class matches program (for non-wait types)
+        if (classEntity != null && classEntity.ProgramId != registration.ProgramId)
         {
             return Result.Failure<AssignClassResponse>(
-                Error.Validation("ClassNotAvailable", $"Class is {classEntity.Status} and cannot accept new students"));
+                RegistrationErrors.ClassNotMatchingProgram(classEntity.Id, registration.ProgramId));
         }
 
-        // 6. Check capacity
-        if (classEntity.ClassEnrollments.Count >= classEntity.Capacity)
+        // 6. Check class status - can only assign to active/recruiting classes (for non-wait types)
+        if (classEntity != null)
         {
-            return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassFull(command.ClassId));
+            if (classEntity.Status == ClassStatus.Completed || 
+                classEntity.Status == ClassStatus.Cancelled ||
+                classEntity.Status == ClassStatus.Suspended)
+            {
+                return Result.Failure<AssignClassResponse>(
+                    Error.Validation("ClassNotAvailable", $"Class is {classEntity.Status} and cannot accept new students"));
+            }
+
+            // 7. Check capacity
+            if (classEntity.ClassEnrollments.Count >= classEntity.Capacity)
+            {
+                return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassFull(classEntity.Id));
+            }
+
+            // 8. Check if student is already enrolled in this class
+            var alreadyEnrolled = await context.ClassEnrollments
+                .AnyAsync(ce => ce.ClassId == classEntity.Id && 
+                    ce.StudentProfileId == registration.StudentProfileId &&
+                    ce.Status != EnrollmentStatus.Dropped, 
+                    cancellationToken);
+
+            if (alreadyEnrolled)
+            {
+                return Result.Failure<AssignClassResponse>(
+                    Error.Conflict("AlreadyEnrolled", "Student is already enrolled in this class"));
+            }
         }
 
-        // 7. Check if student is already enrolled in this class
-        var alreadyEnrolled = await context.ClassEnrollments
-            .AnyAsync(ce => ce.ClassId == command.ClassId && 
-                ce.StudentProfileId == registration.StudentProfileId &&
-                ce.Status != EnrollmentStatus.Dropped, 
-                cancellationToken);
-
-        if (alreadyEnrolled)
-        {
-            return Result.Failure<AssignClassResponse>(
-                Error.Conflict("AlreadyEnrolled", "Student is already enrolled in this class"));
-        }
-
-        // 8. Handle entry type
+        // 9. Handle entry type logic
         string warningMessage = null;
-        bool classAlreadyStarted = classEntity.Status == ClassStatus.Active;
-
-        if (classAlreadyStarted && command.EntryType == "immediate")
+        var entryType = command.EntryType?.ToLowerInvariant() switch
         {
-            // This is fine - student will join mid-course
-            warningMessage = "Lớp đã bắt đầu. Học viên sẽ tham gia giữa chừng.";
-        }
-        else if (command.EntryType == "wait")
-        {
-            // Student wants to wait for next class - but we're assigning now
-            warningMessage = "Học viên đang chờ lớp mới nhưng đã được xếp vào lớp hiện tại.";
-        }
-
-        // 9. Create ClassEnrollment
-        var enrollment = new ClassEnrollment
-        {
-            Id = Guid.NewGuid(),
-            ClassId = command.ClassId,
-            StudentProfileId = registration.StudentProfileId,
-            EnrollDate = DateOnly.FromDateTime(now),
-            Status = EnrollmentStatus.Active,
-            TuitionPlanId = registration.TuitionPlanId,
-            CreatedAt = now,
-            UpdatedAt = now
+            "makeup" => EntryType.Makeup,
+            "wait" => EntryType.Wait,
+            _ => EntryType.Immediate
         };
 
-        context.ClassEnrollments.Add(enrollment);
+        // Determine new status based on entry type
+        var newStatus = entryType switch
+        {
+            EntryType.Immediate => RegistrationStatus.Studying,      // Vào học ngay
+            EntryType.Makeup => RegistrationStatus.ClassAssigned,     // Đã xếp lớp nhưng cần học bổ trước
+            EntryType.Wait => RegistrationStatus.WaitingForClass,    // Chờ lớp mới
+            _ => RegistrationStatus.Studying
+        };
+
+        // For immediate and makeup, create enrollment
+        if (entryType == EntryType.Immediate || entryType == EntryType.Makeup)
+        {
+            var enrollment = new ClassEnrollment
+            {
+                Id = Guid.NewGuid(),
+                ClassId = classEntity!.Id,
+                StudentProfileId = registration.StudentProfileId,
+                EnrollDate = DateOnly.FromDateTime(now),
+                Status = EnrollmentStatus.Active,
+                TuitionPlanId = registration.TuitionPlanId,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            context.ClassEnrollments.Add(enrollment);
+
+            // Add warning for mid-course entry
+            if (classEntity?.Status == ClassStatus.Active)
+            {
+                warningMessage = entryType == EntryType.Makeup
+                    ? "Học viên sẽ tham gia lớp sau khi hoàn thành buổi học bù."
+                    : "Lớp đã bắt đầu. Học viên sẽ tham gia giữa chừng.";
+            }
+
+            // Auto set class to Full when capacity is reached
+            var newEnrollmentCount = classEntity!.ClassEnrollments.Count + 1;
+            if (newEnrollmentCount >= classEntity.Capacity && classEntity.Status != ClassStatus.Full)
+            {
+                classEntity.Status = ClassStatus.Full;
+                classEntity.UpdatedAt = now;
+                warningMessage = string.IsNullOrEmpty(warningMessage) 
+                    ? "Lớp đã đầy sau khi thêm học viên này."
+                    : warningMessage + " Lớp đã đầy sau khi thêm học viên này.";
+            }
+        }
+        // For wait type, don't create enrollment - just update registration status
+        else if (entryType == EntryType.Wait)
+        {
+            warningMessage = "Học viên đã được thêm vào danh sách chờ lớp mới.";
+        }
 
         // 10. Update registration
-        registration.ClassId = command.ClassId;
-        registration.ClassAssignedDate = now;
-        registration.EntryType = Enum.Parse<EntryType>(command.EntryType);
-        registration.Status = RegistrationStatus.Studying;
-        registration.ActualStartDate = now;
+        registration.ClassId = entryType == EntryType.Wait ? null : classEntity?.Id;
+        registration.ClassAssignedDate = entryType == EntryType.Wait ? null : now;
+        registration.EntryType = entryType;
+        registration.Status = newStatus;
+        registration.ActualStartDate = entryType == EntryType.Immediate ? now : null;
         registration.UpdatedAt = now;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -125,11 +164,11 @@ public sealed class AssignClassCommandHandler(
         {
             RegistrationId = registration.Id,
             RegistrationStatus = registration.Status.ToString(),
-            ClassId = classEntity.Id,
-            ClassCode = classEntity.Code,
-            ClassTitle = classEntity.Title,
-            EntryType = command.EntryType,
-            ClassAssignedDate = now,
+            ClassId = classEntity?.Id ?? Guid.Empty,
+            ClassCode = classEntity?.Code,
+            ClassTitle = classEntity?.Title,
+            EntryType = entryType.ToString(),
+            ClassAssignedDate = registration.ClassAssignedDate ?? now,
             WarningMessage = warningMessage
         };
     }

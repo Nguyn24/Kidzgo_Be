@@ -5,6 +5,17 @@ namespace Kidzgo.Application.Registrations.AssignClass;
 public sealed class AssignClassCommand : ICommand<AssignClassResponse>
 {
     public Guid RegistrationId { get; init; }
-    public Guid ClassId { get; init; }
-    public string EntryType { get; init; } = "immediate"; // "immediate" | "makeup" | "wait"
+    
+    /// <summary>
+    /// Class ID to assign. Required for immediate/makeup, optional for wait.
+    /// </summary>
+    public Guid? ClassId { get; init; }
+    
+    /// <summary>
+    /// Entry type: "immediate" | "makeup" | "wait"
+    /// - immediate: Vào học ngay, tham gia các buổi còn lại
+    /// - makeup: Đã có lớp nhưng cần học bổ trước khi vào lớp
+    /// - wait: Chờ lớp mới, chưa xếp lớp
+    /// </summary>
+    public string EntryType { get; init; } = "immediate";
 }

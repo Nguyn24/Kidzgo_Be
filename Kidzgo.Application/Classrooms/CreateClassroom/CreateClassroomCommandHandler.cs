@@ -29,7 +29,7 @@ public sealed class CreateClassroomCommandHandler(
             Name = command.Name,
             Capacity = command.Capacity,
             Note = command.Note,
-            IsActive = false, // Mặc định false, cần duyệt qua toggle-status API để active
+            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
         };
 
         context.Classrooms.Add(classroom);
