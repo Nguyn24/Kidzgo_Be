@@ -1,20 +1,36 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LessonPlanTemplates.UpdateLessonPlanTemplate;
 
 public sealed class UpdateLessonPlanTemplateCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<UpdateLessonPlanTemplateCommand, UpdateLessonPlanTemplateResponse>
 {
     public async Task<Result<UpdateLessonPlanTemplateResponse>> Handle(
         UpdateLessonPlanTemplateCommand command,
         CancellationToken cancellationToken)
     {
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<UpdateLessonPlanTemplateResponse>(LessonPlanTemplateErrors.Unauthorized);
+        }
+
+        if (currentUser.Role == UserRole.Teacher)
+        {
+            return Result.Failure<UpdateLessonPlanTemplateResponse>(LessonPlanTemplateErrors.Unauthorized);
+        }
+
         var template = await context.LessonPlanTemplates
             .FirstOrDefaultAsync(t => t.Id == command.Id && !t.IsDeleted, cancellationToken);
 

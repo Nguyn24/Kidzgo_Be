@@ -5,6 +5,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Sessions.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LessonPlans.CreateLessonPlan;
@@ -18,6 +19,14 @@ public sealed class CreateLessonPlanCommandHandler(
         CreateLessonPlanCommand command,
         CancellationToken cancellationToken)
     {
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<CreateLessonPlanResponse>(LessonPlanErrors.Unauthorized);
+        }
+
         // Validate class exists
         var classExists = await context.Classes
             .AnyAsync(c => c.Id == command.ClassId, cancellationToken);
@@ -45,6 +54,14 @@ public sealed class CreateLessonPlanCommandHandler(
                 LessonPlanErrors.SessionClassMismatch(command.SessionId, command.ClassId));
         }
 
+        // Authorization: teacher can only create lesson plans for their sessions
+        if (currentUser.Role == UserRole.Teacher &&
+            session.PlannedTeacherId != currentUser.Id &&
+            session.ActualTeacherId != currentUser.Id)
+        {
+            return Result.Failure<CreateLessonPlanResponse>(LessonPlanErrors.Unauthorized);
+        }
+
         // Check if session already has a lesson plan (not deleted)
         var existingLessonPlan = await context.LessonPlans
             .FirstOrDefaultAsync(lp => lp.SessionId == command.SessionId && !lp.IsDeleted, cancellationToken);
@@ -68,7 +85,7 @@ public sealed class CreateLessonPlanCommandHandler(
             }
         }
 
-        var currentUserId = userContext.UserId;
+        var currentUserId = currentUser.Id;
         var now = DateTime.UtcNow;
 
         var lessonPlan = new LessonPlan
@@ -81,8 +98,8 @@ public sealed class CreateLessonPlanCommandHandler(
             ActualContent = command.ActualContent,
             ActualHomework = command.ActualHomework,
             TeacherNotes = command.TeacherNotes,
-            SubmittedBy = currentUserId,
-            SubmittedAt = DateTime.Now,
+            SubmittedBy = null,
+            SubmittedAt = null,
             IsDeleted = false,
         };
 

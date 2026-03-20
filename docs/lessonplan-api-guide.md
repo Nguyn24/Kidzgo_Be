@@ -1,422 +1,402 @@
+# Lesson Plan Full Flow (API Usage)
 
-## 2. LessonPlanTemplate API
+Tai lieu nay gom day du flow va API usage cho LessonPlan va LessonPlanTemplate.
 
-### 2.1. Tạo LessonPlanTemplate mới
+## 1. Overview
+- LessonPlanTemplate: giao an khung theo Program + Level + SessionIndex.
+- LessonPlan: giao an thuc te theo Session (co the gan Template).
+- Media/Attachment: upload qua `api/files/*`, sau do luu URL vao `attachment`.
 
-**Endpoint:**
-```
-POST /api/lesson-plan-templates
-```
+## 2. Roles
+- LessonPlan: Teacher chi duoc tao/cap nhat/submit/xoa cho buoi day cua minh (PlannedTeacher/ActualTeacher). ManagementStaff, Admin duoc thao tac tat ca.
+- LessonPlanTemplate: Teacher duoc tao/xem. Update/Delete chi danh cho ManagementStaff, Admin.
 
-**Headers:**
-```
-Authorization: Bearer {JWT_TOKEN}
-Content-Type: application/json
-```
+## 3. Upload Flow (Attachment)
+Su dung upload truoc, lay URL tra ve de gan vao `attachment`.
 
-**Request Body:**
+### 3.1 Upload Lesson Plan Template
+`POST /api/files/lesson-plan/template`
+
+Form-data:
+- `file`: file doc
+
+Response (200)
 ```json
 {
-  "programId": "guid-required",
-  "level": "1",
-  "sessionIndex": 1,
-  "attachment": "url-to-attachment-file"
+  "url": "https://...",
+  "fileName": "template.docx",
+  "size": 12345,
+  "folder": "lesson-plan-templates",
+  "resourceType": "document"
 }
 ```
 
-**Parameters:**
+### 3.2 Upload Lesson Plan Materials
+`POST /api/files/lesson-plan/materials`
 
-| Field | Type | Required | Mô tả |
-|-------|------|----------|-------|
-| programId | Guid | ✅ | ID của chương trình học |
-| level | string | ✅ | Cấp độ (ví dụ: "1", "2", "3") |
-| sessionIndex | int | ✅ | Số thứ tự buổi học trong chương trình |
-| attachment | string | ❌ | URL file đính kèm (tài liệu mẫu) |
+Form-data:
+- `file`: file tai lieu
 
-**Response (201 Created):**
+Response (200)
 ```json
 {
-  "id": "guid",
+  "url": "https://...",
+  "fileName": "materials.pdf",
+  "size": 12345,
+  "folder": "lesson-plan-materials",
+  "resourceType": "document"
+}
+```
+
+### 3.3 Upload Lesson Plan Media
+`POST /api/files/lesson-plan/media?isVideo=false`
+
+Form-data:
+- `file`: image/video
+
+Response (200)
+```json
+{
+  "url": "https://...",
+  "fileName": "image.png",
+  "size": 12345,
+  "folder": "lesson-plans/images",
+  "resourceType": "image"
+}
+```
+
+## 4. LessonPlanTemplate API
+
+### 4.1 Create LessonPlanTemplate
+`POST /api/lesson-plan-templates`
+
+Request
+```json
+{
   "programId": "guid",
-  "programName": "Toán Tiểu Học",
   "level": "1",
+  "title": "Lesson Plan Template 1",
   "sessionIndex": 1,
-  "attachment": "url-to-attachment",
-  "isActive": true,
-  "createdBy": "guid",
-  "createdByName": "Nguyễn Văn A",
-  "createdAt": "2025-02-01T00:00:00Z",
-  "usedCount": 0
+  "attachment": "https://..."
 }
 ```
 
----
-
-### 2.2. Lấy danh sách LessonPlanTemplates
-
-**Endpoint:**
-```
-GET /api/lesson-plan-templates
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| programId | Guid | ❌ | Lọc theo chương trình |
-| level | string | ❌ | Lọc theo cấp độ |
-| isActive | bool | ❌ | Lọc theo trạng thái hoạt động |
-| includeDeleted | bool | ❌ | Bao gồm các bản đã xóa (mặc định: false) |
-| pageNumber | int | ❌ | Số trang (mặc định: 1) |
-| pageSize | int | ❌ | Số item/trang (mặc định: 10) |
-
-**Example Request:**
-```http
-GET /api/lesson-plan-templates?programId=123e4567-e89b-12d3-a456-426614174000&level=1&isActive=true&pageNumber=1&pageSize=20
-```
-
-**Response (200 OK):**
+Response (201)
 ```json
 {
-  "templates": {
-    "items": [
-      {
-        "id": "guid",
-        "programId": "guid",
-        "programName": "Toán Tiểu Học",
-        "level": "1",
-        "sessionIndex": 1,
-        "attachment": "url",
-        "isActive": true,
-        "createdBy": "guid",
-        "createdByName": "Nguyễn Văn A",
-        "createdAt": "2025-02-01T00:00:00Z",
-        "usedCount": 5
-      }
-    ],
-    "pageNumber": 1,
-    "pageSize": 20,
-    "totalCount": 1,
-    "totalPages": 1
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "programId": "guid",
+    "level": "1",
+    "title": "Lesson Plan Template 1",
+    "sessionIndex": 1,
+    "attachment": "https://...",
+    "isActive": true,
+    "createdAt": "2025-02-01T00:00:00Z"
   }
 }
 ```
 
----
+### 4.2 List LessonPlanTemplates
+`GET /api/lesson-plan-templates?programId=&level=&title=&isActive=&includeDeleted=&pageNumber=1&pageSize=10`
 
-### 2.3. Lấy LessonPlanTemplate theo ID
-
-**Endpoint:**
-```
-GET /api/lesson-plan-templates/{id}
-```
-
-**Example Request:**
-```http
-GET /api/lesson-plan-templates/123e4567-e89b-12d3-a456-426614174000
-```
-
-**Response (200 OK):**
+Response (200)
 ```json
 {
-  "id": "guid",
-  "programId": "guid",
-  "programName": "Toán Tiểu Học",
-  "level": "1",
-  "sessionIndex": 1,
-  "attachment": "url",
-  "isActive": true,
-  "createdBy": "guid",
-  "createdByName": "Nguyễn Văn A",
-  "createdAt": "2025-02-01T00:00:00Z",
-  "usedCount": 5
+  "isSuccess": true,
+  "data": {
+    "templates": {
+      "items": [
+        {
+          "id": "guid",
+          "programId": "guid",
+          "programName": "Program A",
+          "title": "Lesson Plan Template 1",
+          "level": "1",
+          "sessionIndex": 1,
+          "attachment": "https://...",
+          "isActive": true,
+          "createdBy": "guid",
+          "createdByName": "Teacher A",
+          "createdAt": "2025-02-01T00:00:00Z",
+          "usedCount": 3
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1
+    }
+  }
 }
 ```
 
----
+### 4.3 LessonPlanTemplate Detail
+`GET /api/lesson-plan-templates/{id}`
 
-### 2.4. Cập nhật LessonPlanTemplate
-
-**Endpoint:**
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "programId": "guid",
+    "programName": "Program A",
+    "level": "1",
+    "title": "Lesson Plan Template 1",
+    "sessionIndex": 1,
+    "attachment": "https://...",
+    "isActive": true,
+    "createdBy": "guid",
+    "createdByName": "Teacher A",
+    "createdAt": "2025-02-01T00:00:00Z",
+    "usedCount": 3
+  }
+}
 ```
-PUT /api/lesson-plan-templates/{id}
-```
 
-**Request Body:**
+### 4.4 Update LessonPlanTemplate
+`PUT /api/lesson-plan-templates/{id}`
+
+Request
 ```json
 {
   "level": "2",
-  "sessionIndex": 1,
-  "attachment": "new-url",
+  "title": "Lesson Plan Template 1 (update)",
+  "sessionIndex": 2,
+  "attachment": "https://...",
   "isActive": false
 }
 ```
 
-**Parameters:**
-
-| Field | Type | Required | Mô tả |
-|-------|------|----------|-------|
-| level | string | ❌ | Cấp độ mới |
-| sessionIndex | int | ❌ | Số thứ tự buổi học mới |
-| attachment | string | ❌ | URL file đính kèm mới |
-| isActive | bool | ❌ | Trạng thái hoạt động |
-
-**Response (200 OK):**
+Response (200)
 ```json
 {
-  "id": "guid",
-  "programId": "guid",
-  "programName": "Toán Tiểu Học",
-  "level": "2",
-  "sessionIndex": 1,
-  "attachment": "new-url",
-  "isActive": false,
-  "createdBy": "guid",
-  "createdByName": "Nguyễn Văn A",
-  "createdAt": "2025-02-01T00:00:00Z",
-  "usedCount": 5
-}
-```
-
----
-
-### 2.5. Xóa LessonPlanTemplate (Soft Delete)
-
-**Endpoint:**
-```
-DELETE /api/lesson-plan-templates/{id}
-```
-
-**Response (204 No Content):** Thành công không có nội dung trả về
-
----
-
-## 3. LessonPlan API
-
-### 3.1. Tạo LessonPlan mới
-
-**Endpoint:**
-```
-POST /api/lesson-plans
-```
-
-**Request Body:**
-```json
-{
-  "sessionId": "guid-required",
-  "templateId": "guid-optional",
-  "plannedContent": "Nội dung giáo án dự kiến",
-  "actualContent": "Nội dung đã dạy thực tế",
-  "actualHomework": "Bài tập về nhà",
-  "teacherNotes": "Ghi chú của giáo viên"
-}
-```
-
-**Parameters:**
-
-| Field | Type | Required | Mô tả |
-|-------|------|----------|-------|
-| sessionId | Guid | ✅ | ID của buổi học (Session) |
-| templateId | Guid | ❌ | ID của template (LessonPlanTemplate) |
-| plannedContent | string | ❌ | Nội dung dự kiến sẽ dạy |
-| actualContent | string | ❌ | Nội dung đã dạy thực tế |
-| actualHomework | string | ❌ | Bài tập về nhà |
-| teacherNotes | string | ❌ | Ghi chú của giáo viên |
-
-**Response (201 Created):**
-```json
-{
-  "id": "guid",
-  "sessionId": "guid",
-  "sessionTitle": "Toán - Buổi 1",
-  "sessionDate": "2025-02-01",
-  "classId": "guid",
-  "classCode": "LOP001",
-  "templateId": "guid",
-  "templateLevel": "1",
-  "templateSessionIndex": 1,
-  "plannedContent": "Nội dung giáo án dự kiến",
-  "actualContent": "Nội dung đã dạy thực tế",
-  "actualHomework": "Bài tập về nhà",
-  "teacherNotes": "Ghi chú của giáo viên",
-  "submittedBy": "guid",
-  "submittedByName": "Nguyễn Văn A",
-  "submittedAt": "2025-02-01T10:00:00Z",
-  "createdAt": "2025-02-01T08:00:00Z"
-}
-```
-
----
-
-### 3.2. Lấy danh sách LessonPlans
-
-**Endpoint:**
-```
-GET /api/lesson-plans
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Required | Mô tả |
-|-----------|------|----------|-------|
-| sessionId | Guid | ❌ | Lọc theo buổi học |
-| classId | Guid | ❌ | Lọc theo lớp |
-| templateId | Guid | ❌ | Lọc theo template |
-| submittedBy | Guid | ❌ | Lọc theo người tạo |
-| fromDate | DateTime | ❌ | Từ ngày |
-| toDate | DateTime | ❌ | Đến ngày |
-| includeDeleted | bool | ❌ | Bao gồm đã xóa |
-| pageNumber | int | ❌ | Số trang |
-| pageSize | int | ❌ | Số item/trang |
-
-**Example Request:**
-```http
-GET /api/lesson-plans?classId=123e4567-e89b-12d3-a456-426614174000&fromDate=2025-02-01&toDate=2025-02-28
-```
-
-**Response (200 OK):**
-```json
-{
-  "lessonPlans": {
-    "items": [
-      {
-        "id": "guid",
-        "sessionId": "guid",
-        "sessionTitle": "Toán - Buổi 1",
-        "sessionDate": "2025-02-01",
-        "classId": "guid",
-        "classCode": "LOP001",
-        "templateId": "guid",
-        "templateLevel": "1",
-        "templateSessionIndex": 1,
-        "plannedContent": "Nội dung giáo án dự kiến",
-        "actualContent": "Nội dung đã dạy thực tế",
-        "actualHomework": "Bài tập về nhà",
-        "submittedBy": "guid",
-        "submittedByName": "Nguyễn Văn A",
-        "submittedAt": "2025-02-01T10:00:00Z",
-        "createdAt": "2025-02-01T08:00:00Z"
-      }
-    ],
-    "pageNumber": 1,
-    "pageSize": 10,
-    "totalCount": 1,
-    "totalPages": 1
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "programId": "guid",
+    "title": "Lesson Plan Template 1 (update)",
+    "level": "2",
+    "sessionIndex": 2,
+    "attachment": "https://...",
+    "isActive": false
   }
 }
 ```
 
----
+### 4.5 Delete LessonPlanTemplate (soft delete)
+`DELETE /api/lesson-plan-templates/{id}`
 
-### 3.3. Lấy LessonPlan theo ID
-
-**Endpoint:**
-```
-GET /api/lesson-plans/{id}
-```
-
-**Response (200 OK):**
+Response (200)
 ```json
 {
-  "id": "guid",
+  "isSuccess": true,
+  "data": null
+}
+```
+
+## 5. LessonPlan API
+
+### 5.1 Create LessonPlan
+`POST /api/lesson-plans`
+
+Request
+```json
+{
+  "classId": "guid",
   "sessionId": "guid",
-  "sessionTitle": "Toán - Buổi 1",
-  "sessionDate": "2025-02-01",
-  "templateId": "guid",
-  "templateLevel": "1",
-  "templateSessionIndex": 1,
-  "plannedContent": "Nội dung giáo án dự kiến",
-  "actualContent": "Nội dung đã dạy thực tế",
-  "actualHomework": "Bài tập về nhà",
-  "teacherNotes": "Ghi chú của giáo viên",
-  "submittedBy": "guid",
-  "submittedByName": "Nguyễn Văn A",
-  "submittedAt": "2025-02-01T10:00:00Z",
-  "createdAt": "2025-02-01T08:00:00Z"
+  "templateId": "guid|null",
+  "plannedContent": "Planned content",
+  "actualContent": "Actual content",
+  "actualHomework": "Homework",
+  "teacherNotes": "Notes"
 }
 ```
 
----
-
-### 3.4. Cập nhật LessonPlan
-
-**Endpoint:**
+Response (201)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "classId": "guid",
+    "sessionId": "guid",
+    "templateId": "guid",
+    "plannedContent": "Planned content",
+    "actualContent": "Actual content",
+    "actualHomework": "Homework",
+    "teacherNotes": "Notes",
+    "submittedBy": null,
+    "submittedAt": null,
+    "createdAt": "2025-02-01T08:00:00Z"
+  }
+}
 ```
-PUT /api/lesson-plans/{id}
+
+### 5.2 List LessonPlans
+`GET /api/lesson-plans?sessionId=&classId=&templateId=&submittedBy=&fromDate=&toDate=&includeDeleted=&pageNumber=1&pageSize=10`
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "lessonPlans": {
+      "items": [
+        {
+          "id": "guid",
+          "sessionId": "guid",
+          "sessionTitle": "Session 1",
+          "sessionDate": "2025-02-01T00:00:00Z",
+          "classId": "guid",
+          "classCode": "CLASS001",
+          "templateId": "guid",
+          "templateLevel": "1",
+          "templateSessionIndex": 1,
+          "plannedContent": "Planned content",
+          "actualContent": "Actual content",
+          "actualHomework": "Homework",
+          "teacherNotes": "Notes",
+          "submittedBy": "guid",
+          "submittedByName": "Teacher A",
+          "submittedAt": "2025-02-01T10:00:00Z",
+          "createdAt": "2025-02-01T08:00:00Z"
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1
+    }
+  }
+}
 ```
 
-**Request Body:**
+### 5.3 LessonPlan Detail
+`GET /api/lesson-plans/{id}`
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "classId": "guid",
+    "classCode": "CLASS001",
+    "sessionId": "guid",
+    "sessionTitle": "Session 1",
+    "sessionDate": "2025-02-01T00:00:00Z",
+    "templateId": "guid",
+    "templateLevel": "1",
+    "templateSessionIndex": 1,
+    "plannedContent": "Planned content",
+    "actualContent": "Actual content",
+    "actualHomework": "Homework",
+    "teacherNotes": "Notes",
+    "submittedBy": "guid",
+    "submittedByName": "Teacher A",
+    "submittedAt": "2025-02-01T10:00:00Z",
+    "createdAt": "2025-02-01T08:00:00Z"
+  }
+}
+```
+
+### 5.4 Update LessonPlan
+`PUT /api/lesson-plans/{id}`
+
+Request
 ```json
 {
   "templateId": "guid",
-  "plannedContent": "Nội dung giáo án đã cập nhật",
-  "actualContent": "Nội dung đã dạy thực tế",
-  "actualHomework": "Bài tập về nhà đã cập nhật",
-  "teacherNotes": "Ghi chú mới"
+  "plannedContent": "Updated planned content",
+  "actualContent": "Updated actual content",
+  "actualHomework": "Updated homework",
+  "teacherNotes": "Updated notes"
 }
 ```
 
-**Response (200 OK):**
+Response (200)
 ```json
 {
-  "id": "guid",
-  "sessionId": "guid",
-  ...
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "sessionId": "guid",
+    "templateId": "guid",
+    "plannedContent": "Updated planned content",
+    "actualContent": "Updated actual content",
+    "actualHomework": "Updated homework",
+    "teacherNotes": "Updated notes"
+  }
 }
 ```
 
----
+### 5.5 Update Actual Content (PATCH) - Submit
+`PATCH /api/lesson-plans/{id}/actual`
 
-### 3.5. Cập nhật nội dung thực tế (PATCH)
-
-**Endpoint:**
-```
-PATCH /api/lesson-plans/{id}/actual
-```
-
-**Đặc điểm:** API này chỉ cập nhật các trường Actual (nội dung đã dạy thực tế)
-
-**Request Body:**
+Request
 ```json
 {
-  "actualContent": "Nội dung đã dạy thực tế",
-  "actualHomework": "Bài tập về nhà",
-  "teacherNotes": "Ghi chú của giáo viên"
+  "actualContent": "Actual content",
+  "actualHomework": "Homework",
+  "teacherNotes": "Notes"
 }
 ```
 
----
-
-### 3.6. Lấy Template từ LessonPlan
-
-**Endpoint:**
-```
-GET /api/lesson-plans/{id}/template
-```
-
-**Mục đích:** Lấy giáo án khung (template) và planned content từ một lesson plan cụ thể - chỉ đọc (read-only)
-
-**Response (200 OK):**
+Response (200)
 ```json
 {
-  "lessonPlanId": "guid",
-  "templateId": "guid",
-  "templateLevel": "1",
-  "templateSessionIndex": 1,
-  "templateStructureJson": "{...}",
-  "plannedContent": "Nội dung giáo án dự kiến",
-  "isReadOnly": true
+  "isSuccess": true,
+  "data": {
+    "id": "guid",
+    "sessionId": "guid",
+    "actualContent": "Actual content",
+    "actualHomework": "Homework",
+    "teacherNotes": "Notes",
+    "submittedBy": "guid",
+    "submittedByName": "Teacher A",
+    "submittedAt": "2025-02-01T11:00:00Z",
+    "updatedAt": "2025-02-01T11:00:00Z"
+  }
 }
 ```
 
----
+### 5.6 Get Template From LessonPlan (read-only)
+`GET /api/lesson-plans/{id}/template`
 
-### 3.7. Xóa LessonPlan
-
-**Endpoint:**
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "lessonPlanId": "guid",
+    "templateId": "guid",
+    "templateLevel": "1",
+    "templateSessionIndex": 1,
+    "templateStructureJson": "{...}",
+    "plannedContent": "Planned content",
+    "isReadOnly": true
+  }
+}
 ```
-DELETE /api/lesson-plans/{id}
+
+### 5.7 Delete LessonPlan
+`DELETE /api/lesson-plans/{id}`
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
 ```
 
-**Response (204 No Content):** Thành công
-
+## 6. Notes
+- LessonPlanTemplate delete la soft delete.
+- `includeDeleted=true` de lay ca ban ghi da xoa.
+- Upload file qua `api/files/*` truoc, sau do gan URL vao `attachment`.
+- `submittedAt/submittedBy` duoc set khi goi `PATCH /api/lesson-plans/{id}/actual`.
+- 1 session = 1 lesson plan (unique theo `SessionId`).
+- Neu role la Teacher, ket qua list/detail se chi gioi han theo session ma teacher dang day.

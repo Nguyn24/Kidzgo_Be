@@ -1,14 +1,17 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LessonPlans.UpdateLessonPlan;
 
 public sealed class UpdateLessonPlanCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<UpdateLessonPlanCommand, UpdateLessonPlanResponse>
 {
     public async Task<Result<UpdateLessonPlanResponse>> Handle(
@@ -16,12 +19,29 @@ public sealed class UpdateLessonPlanCommandHandler(
         CancellationToken cancellationToken)
     {
         var lessonPlan = await context.LessonPlans
+            .Include(lp => lp.Session)
             .FirstOrDefaultAsync(lp => lp.Id == command.Id && !lp.IsDeleted, cancellationToken);
 
         if (lessonPlan is null)
         {
             return Result.Failure<UpdateLessonPlanResponse>(
                 LessonPlanErrors.NotFound(command.Id));
+        }
+
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<UpdateLessonPlanResponse>(LessonPlanErrors.Unauthorized);
+        }
+
+        if (currentUser.Role == UserRole.Teacher &&
+            (lessonPlan.Session is null ||
+             (lessonPlan.Session.PlannedTeacherId != currentUser.Id &&
+              lessonPlan.Session.ActualTeacherId != currentUser.Id)))
+        {
+            return Result.Failure<UpdateLessonPlanResponse>(LessonPlanErrors.Unauthorized);
         }
 
         // Validate template if provided
