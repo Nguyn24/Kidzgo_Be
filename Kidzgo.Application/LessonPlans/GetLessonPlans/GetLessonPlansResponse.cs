@@ -22,6 +22,7 @@ public sealed class LessonPlanDto
     public string? PlannedContent { get; init; }
     public string? ActualContent { get; init; }
     public string? ActualHomework { get; init; }
+    public string? TeacherNotes { get; init; }
     public Guid? SubmittedBy { get; init; }
     public string? SubmittedByName { get; init; }
     public DateTime? SubmittedAt { get; init; }
