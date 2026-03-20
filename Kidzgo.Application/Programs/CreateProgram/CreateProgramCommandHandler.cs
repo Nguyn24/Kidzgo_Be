@@ -34,7 +34,7 @@ public sealed class CreateProgramCommandHandler(
             DefaultTuitionAmount = command.DefaultTuitionAmount,
             UnitPriceSession = command.UnitPriceSession,
             Description = command.Description,
-            IsActive = false, // Mặc định false, cần duyệt qua toggle-status API để active
+            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
             IsDeleted = false,
             CreatedAt = now,
             UpdatedAt = now
