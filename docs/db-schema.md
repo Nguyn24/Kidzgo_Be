@@ -803,7 +803,13 @@ Sau buổi học:
   - `QUIZ`: Làm quiz trực tuyến
 - `max_score`: Điểm tối đa
 - `reward_stars`: Số sao thưởng khi hoàn thành (gamification)
+- `time_limit_minutes`: Giới hạn thời gian làm bài (phút) cho quiz
+- `allow_resubmit`: Cho phép nộp lại (quiz)
 - `mission_id`: Liên kết với mission (nếu bài tập là một phần của nhiệm vụ)
+- `instructions`: Hướng dẫn chung cho bài tập/quiz
+- `expected_answer`: Đáp án kỳ vọng (dùng cho text/file)
+- `rubric`: Tiêu chí chấm/đánh giá
+- `attachment_url`: Tài liệu đính kèm (URL)
 
 **Luồng tạo bài tập**:
 1. Giáo viên tạo `homework_assignment` cho lớp/buổi học
@@ -911,6 +917,37 @@ Học sinh: Nguyễn Văn A
    - ai_feedback: {"grammar_score": 7, "vocabulary_score": 9}
 ```
 
+### 5.4.1. `homework_questions` - Câu hỏi trong bài tập trắc nghiệm
+
+**Mục đích**: Lưu danh sách câu hỏi cho homework dạng quiz (multiple choice/text input).
+
+**Các attribute quan trọng**:
+- `homework_assignment_id`: Bài tập liên quan
+- `order_index`: Thứ tự câu hỏi trong bài
+- `question_text`: Nội dung câu hỏi
+- `question_type`: Loại câu hỏi (MULTIPLE_CHOICE/TEXT_INPUT)
+- `options` (jsonb): Danh sách lựa chọn (cho multiple choice)
+- `correct_answer`: Đáp án đúng (index hoặc text)
+- `points`: Điểm cho câu hỏi
+- `explanation`: Giải thích đáp án (nullable)
+
+### 5.4.2. `question_bank_items` - Ngân hàng câu hỏi
+
+**Mục đích**: Lưu câu hỏi dùng chung theo program, phục vụ tạo đề random theo level.
+
+**Các attribute quan trọng**:
+- `program_id`: Program sở hữu ngân hàng
+- `question_text`: Nội dung câu hỏi
+- `question_type`: Loại câu hỏi (MULTIPLE_CHOICE/TEXT_INPUT)
+- `options` (jsonb): Danh sách lựa chọn
+- `correct_answer`: Đáp án đúng
+- `points`: Điểm cho câu hỏi
+- `explanation`: Giải thích đáp án (nullable)
+- `level`: Mức độ (Easy/Medium/Hard)
+- `created_by`: Người tạo
+- `created_at`: Thời gian tạo
+- `updated_at`: Thời gian cập nhật (nullable)
+
 ### 5.5. Quan hệ giữa các bảng
 
 **Luồng hoàn chỉnh**:
@@ -938,8 +975,10 @@ Học sinh: Nguyễn Văn A
 - `lesson_plan_templates` → `lesson_plans` (1:N): Một template có thể dùng cho nhiều buổi học
 - `classes` → `homework_assignments` (1:N): Một lớp có nhiều bài tập
 - `sessions` → `homework_assignments` (1:N): Một buổi học có thể có nhiều bài tập
+- `homework_assignments` → `homework_questions` (1:N): Một bài tập quiz có nhiều câu hỏi
 - `homework_assignments` → `homework_student` (1:N): Một bài tập có nhiều record (mỗi học sinh một record)
 - `profiles` → `homework_student` (1:N): Một học sinh có nhiều bài tập
+- `programs` → `question_bank_items` (1:N): Một program có nhiều câu hỏi trong ngân hàng
 
 
 
@@ -2061,7 +2100,13 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `submission_type` (varchar(20)): Loại nộp - FILE/IMAGE/TEXT/LINK/QUIZ
 - `max_score` (numeric): Điểm tối đa
 - `reward_stars` (int): Số sao thưởng khi hoàn thành
+- `time_limit_minutes` (int, nullable): Giới hạn thời gian làm bài (phút) cho quiz
+- `allow_resubmit` (boolean): Cho phép nộp lại (quiz)
 - `mission_id` (uuid, FK → missions.id, nullable): Liên kết với mission (nếu có)
+- `instructions` (text, nullable): Hướng dẫn chung
+- `expected_answer` (text, nullable): Đáp án kỳ vọng
+- `rubric` (text, nullable): Tiêu chí chấm/đánh giá
+- `attachment_url` (text, nullable): Tài liệu đính kèm (URL)
 - `created_by` (uuid, FK → users.id): Người tạo (CHANGED: từ profiles.id → users.id, role=TEACHER)
 - `created_at` (timestamptz): Thời gian tạo
 
@@ -2078,6 +2123,31 @@ Làm bằng chứng khi đổi owner hoặc bàn giao giữa sales.
 - `attachments` (jsonb): Danh sách file đính kèm (JSON array)
 - `ai_version` (varchar(50), nullable): Phiên bản AI model đã dùng để chấm (A3/A8) – phục vụ audit/A-B test
 - **Unique constraint**: (assignment_id, student_profile_id)
+
+#### `homework_questions` - Câu hỏi trong bài tập trắc nghiệm
+- `id` (uuid, PK): Định danh câu hỏi
+- `homework_assignment_id` (uuid, FK → homework_assignments.id): Bài tập
+- `order_index` (int): Thứ tự câu hỏi
+- `question_text` (text): Nội dung câu hỏi
+- `question_type` (varchar(20)): Loại - MULTIPLE_CHOICE/TEXT_INPUT
+- `options` (jsonb, nullable): Danh sách lựa chọn (JSON array)
+- `correct_answer` (text, nullable): Đáp án đúng
+- `points` (int): Điểm số
+- `explanation` (text, nullable): Giải thích đáp án
+
+#### `question_bank_items` - Ngân hàng câu hỏi
+- `id` (uuid, PK): Định danh câu hỏi
+- `program_id` (uuid, FK → programs.id): Program sở hữu
+- `question_text` (text): Nội dung câu hỏi
+- `question_type` (varchar(20)): Loại - MULTIPLE_CHOICE/TEXT_INPUT
+- `options` (jsonb, nullable): Danh sách lựa chọn (JSON array)
+- `correct_answer` (text, nullable): Đáp án đúng
+- `points` (int): Điểm số
+- `explanation` (text, nullable): Giải thích đáp án
+- `level` (varchar(10)): Mức độ Easy/Medium/Hard
+- `created_by` (uuid, FK → users.id, nullable): Người tạo
+- `created_at` (timestamptz): Thời gian tạo
+- `updated_at` (timestamptz, nullable): Thời gian cập nhật
 
 ### 15.5. Khối Kiểm tra định kỳ
 
@@ -2648,8 +2718,10 @@ Khi phụ huynh xem kết quả:
 - `lesson_plan_templates` → `lesson_plans` (1:N): Một template có thể dùng cho nhiều buổi học.
 - `classes` → `homework_assignments` (1:N): Một lớp có nhiều bài tập.
 - `sessions` → `homework_assignments` (1:N): Một buổi học có thể có nhiều bài tập.
+- `homework_assignments` → `homework_questions` (1:N): Một bài tập quiz có nhiều câu hỏi.
 - `homework_assignments` → `homework_student` (1:N): Một bài tập có nhiều submission (mỗi học sinh một record).
 - `profiles` → `homework_student` (1:N): Một học sinh có nhiều bài tập đã làm.
+- `programs` → `question_bank_items` (1:N): Một program có nhiều câu hỏi trong ngân hàng.
 
 ### 5. Quan hệ Kiểm tra/Báo cáo
 - `classes` → `exams` (1:N): Một lớp có nhiều kỳ kiểm tra.
@@ -2826,7 +2898,8 @@ Admin, ManagementStaff, AccountantStaff, Teacher, Parent
 ### 3.6. Homework mở rộng
 | Entity | Mô tả | Trạng thái |
 |--------|-------|-------------|
-| `HomeworkQuestion` | Câu hỏi trong bài tập trắc nghiệm | ❌ Chưa có trong schema |
+| `HomeworkQuestion` | Câu hỏi trong bài tập trắc nghiệm | ✅ Có trong schema |
+| `QuestionBankItem` | Ngân hàng câu hỏi theo program (level Easy/Medium/Hard) | ✅ Có trong schema |
 
 ## 4. Invoice mở rộng - PayOS Integration
 

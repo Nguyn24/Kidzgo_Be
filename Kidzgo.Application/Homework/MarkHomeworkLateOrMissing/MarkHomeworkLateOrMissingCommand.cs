@@ -1,4 +1,5 @@
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 
 namespace Kidzgo.Application.Homework.MarkHomeworkLateOrMissing;

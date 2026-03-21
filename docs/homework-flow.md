@@ -109,6 +109,139 @@ Response (201)
 }
 ```
 
+### 4.2.1 Create Multiple Choice Homework From Question Bank
+`POST /api/homework/multiple-choice/from-bank`
+
+Request
+```json
+{
+  "classId": "guid",
+  "programId": "guid",
+  "sessionId": "guid|null",
+  "title": "Trac nghiem random",
+  "description": "Mo ta",
+  "dueAt": "2026-03-20T16:00:00Z",
+  "rewardStars": 5,
+  "timeLimitMinutes": 30,
+  "allowResubmit": false,
+  "missionId": "guid|null",
+  "instructions": "Chon dap an dung",
+  "distribution": [
+    { "level": "Easy", "count": 5 },
+    { "level": "Medium", "count": 3 },
+    { "level": "Hard", "count": 2 }
+  ]
+}
+```
+
+Response (201) giong `Create Multiple Choice Homework`.
+
+### 4.2.2 Question Bank - Create (Manual)
+`POST /api/question-bank`
+
+Request
+```json
+{
+  "programId": "guid",
+  "items": [
+    {
+      "questionText": "2 + 2 = ?",
+      "questionType": "MultipleChoice",
+      "options": ["1","2","3","4"],
+      "correctAnswer": "3",
+      "points": 1,
+      "explanation": "Cong co ban",
+      "level": "Easy"
+    }
+  ]
+}
+```
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": [
+      {
+        "id": "guid",
+        "programId": "guid",
+        "questionText": "2 + 2 = ?",
+        "questionType": "MultipleChoice",
+        "options": ["1","2","3","4"],
+        "correctAnswer": "3",
+        "points": 1,
+        "explanation": "Cong co ban",
+        "level": "Easy",
+        "createdAt": "2026-03-18T08:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### 4.2.3 Question Bank - List
+`GET /api/question-bank?programId=&level=&pageNumber=1&pageSize=10`
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "items": {
+      "items": [
+        {
+          "id": "guid",
+          "programId": "guid",
+          "questionText": "2 + 2 = ?",
+          "questionType": "MultipleChoice",
+          "options": ["1","2","3","4"],
+          "correctAnswer": "3",
+          "points": 1,
+          "explanation": "Cong co ban",
+          "level": "Easy",
+          "createdAt": "2026-03-18T08:00:00Z"
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+### 4.2.4 Question Bank - Import (CSV/Excel/Word/PDF)
+`POST /api/question-bank/import?programId=...`
+
+Form-data:
+- `file`: `.csv` / `.xlsx` / `.xls` / `.docx` / `.pdf`
+
+Common columns (case-insensitive) for all formats:
+- `QuestionText` (required)
+- `Options` (required for multiple choice, phan tach bang dau `|`, vi du `A|B|C|D`)
+- `CorrectAnswer` (required, co the la 0-based, 1-based, A/B/C, hoac text)
+- `Level` (required: `Easy`, `Medium`, `Hard`)
+- `Points` (optional, default 1)
+- `Explanation` (optional)
+- `QuestionType` (optional, default `MultipleChoice`)
+
+Format rules:
+- Excel: sheet 1, dong 1 la header.
+- Word: table dau tien trong file, dong 1 la header.
+- PDF: dong 1 la header, cac dong sau la data. Delimiter: `,` hoac `|` hoac tab.
+
+Response (200)
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "importedCount": 20
+  }
+}
+```
+
 ### 4.3 List Homework
 `GET /api/homework?classId=&sessionId=&submissionType=&branchId=&pageNumber=1&pageSize=10`
 

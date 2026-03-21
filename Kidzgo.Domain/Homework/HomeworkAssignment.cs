@@ -1,10 +1,11 @@
-using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
-using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
+using Kidzgo.Domain.LessonPlans;
+using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Users;
 
-namespace Kidzgo.Domain.LessonPlans;
+namespace Kidzgo.Domain.Homework;
 
 public class HomeworkAssignment : Entity
 {

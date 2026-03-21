@@ -6,6 +6,8 @@ using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
+using Kidzgo.Domain.Homework.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Homework.CreateMultipleChoiceHomework;

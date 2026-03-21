@@ -1,6 +1,7 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.LessonPlans;
 
-namespace Kidzgo.Domain.LessonPlans;
+namespace Kidzgo.Domain.Homework;
 
 public class HomeworkQuestion : Entity
 {

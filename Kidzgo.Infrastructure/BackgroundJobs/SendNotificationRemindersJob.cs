@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Finance;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Media;
 using Kidzgo.Domain.Notifications;

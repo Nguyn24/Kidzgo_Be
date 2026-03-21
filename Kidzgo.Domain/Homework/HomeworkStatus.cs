@@ -1,4 +1,4 @@
-namespace Kidzgo.Domain.LessonPlans;
+namespace Kidzgo.Domain.Homework;
 
 public enum HomeworkStatus
 {
