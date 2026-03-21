@@ -11,6 +11,7 @@ using Kidzgo.Domain.Finance;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
+using Kidzgo.Domain.Homework;
 
 namespace Kidzgo.Domain.Users;
 

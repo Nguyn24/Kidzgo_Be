@@ -1,7 +1,8 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Users;
 
-namespace Kidzgo.Domain.LessonPlans;
+namespace Kidzgo.Domain.Homework;
 
 public class HomeworkStudent : Entity
 {

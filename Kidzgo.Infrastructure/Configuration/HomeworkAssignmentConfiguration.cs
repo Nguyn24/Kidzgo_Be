@@ -1,3 +1,4 @@
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

@@ -3,6 +3,7 @@ using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Exams;
+using Kidzgo.Domain.Homework;
 
 namespace Kidzgo.Domain.Gamification;
 
