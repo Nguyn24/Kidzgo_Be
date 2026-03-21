@@ -1287,7 +1287,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("StudentLevels", "public");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkAssignment", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkAssignment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1375,7 +1375,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("HomeworkAssignments", "public");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkQuestion", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkQuestion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1391,7 +1391,7 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Options")
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("OrderIndex")
                         .HasColumnType("integer");
@@ -1403,8 +1403,10 @@ namespace Kidzgo.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("QuestionType")
-                        .HasColumnType("integer");
+                    b.Property<string>("QuestionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
@@ -1413,7 +1415,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("HomeworkQuestions", "public");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkStudent", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkStudent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1463,6 +1465,57 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasDatabaseName("homework_student_unique");
 
                     b.ToTable("HomeworkStudents", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Homework.QuestionBankItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrectAnswer")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Explanation")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Options")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("QuestionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgramId", "Level");
+
+                    b.ToTable("QuestionBankItems", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.LessonPlans.LessonPlan", b =>
@@ -2028,7 +2081,7 @@ namespace Kidzgo.Infrastructure.Migrations
                             Id = new Guid("77777777-7777-7777-7777-777777777777"),
                             Channel = "Email",
                             Code = "PAUSE_ENROLLMENT_APPROVED_EMAIL",
-                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\r\n  <h2 style=\"color:#2b6cb0;\">Yêu cầu bảo lưu đã được duyệt</h2>\r\n  <p>Xin chào,</p>\r\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã được duyệt.</p>\r\n  <div style=\"background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;\">\r\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\r\n  </div>\r\n  <p>Vui lòng theo dõi lịch học sau thời gian bảo lưu.</p>\r\n  <p>Trân trọng,<br/>KidzGo Team</p>\r\n</div>",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#2b6cb0;\">Yêu cầu bảo lưu đã được duyệt</h2>\n  <p>Xin chào,</p>\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã được duyệt.</p>\n  <div style=\"background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;\">\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\n  </div>\n  <p>Vui lòng theo dõi lịch học sau thời gian bảo lưu.</p>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
@@ -2041,7 +2094,7 @@ namespace Kidzgo.Infrastructure.Migrations
                             Id = new Guid("88888888-8888-8888-8888-888888888888"),
                             Channel = "Email",
                             Code = "PAUSE_ENROLLMENT_REJECTED_EMAIL",
-                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\r\n  <h2 style=\"color:#c53030;\">Yêu cầu bảo lưu bị từ chối</h2>\r\n  <p>Xin chào,</p>\r\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã bị từ chối.</p>\r\n  <div style=\"background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;\">\r\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\r\n  </div>\r\n  <p>Vui lòng liên hệ trung tâm nếu cần hỗ trợ thêm.</p>\r\n  <p>Trân trọng,<br/>KidzGo Team</p>\r\n</div>",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#c53030;\">Yêu cầu bảo lưu bị từ chối</h2>\n  <p>Xin chào,</p>\n  <p>Yêu cầu bảo lưu của <strong>{{student_name}}</strong> đã bị từ chối.</p>\n  <div style=\"background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;\">\n    <p><strong>Thời gian bảo lưu:</strong> {{pause_from}} - {{pause_to}}</p>\n  </div>\n  <p>Vui lòng liên hệ trung tâm nếu cần hỗ trợ thêm.</p>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
@@ -2054,7 +2107,7 @@ namespace Kidzgo.Infrastructure.Migrations
                             Id = new Guid("99999999-9999-9999-9999-999999999999"),
                             Channel = "Email",
                             Code = "PAUSE_ENROLLMENT_OUTCOME_EMAIL",
-                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\r\n  <h2 style=\"color:#2f855a;\">Kết quả bảo lưu đã được cập nhật</h2>\r\n  <p>Xin chào,</p>\r\n  <p>Kết quả bảo lưu của <strong>{{student_name}}</strong> đã được cập nhật.</p>\r\n  <div style=\"background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;\">\r\n    <p><strong>Kết quả:</strong> {{outcome}}</p>\r\n    <p><strong>Ghi chú:</strong> {{outcome_note}}</p>\r\n  </div>\r\n  <p>Trân trọng,<br/>KidzGo Team</p>\r\n</div>",
+                            Content = "<div style=\"font-family: Arial, sans-serif; color:#222; line-height:1.6;\">\n  <h2 style=\"color:#2f855a;\">Kết quả bảo lưu đã được cập nhật</h2>\n  <p>Xin chào,</p>\n  <p>Kết quả bảo lưu của <strong>{{student_name}}</strong> đã được cập nhật.</p>\n  <div style=\"background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;\">\n    <p><strong>Kết quả:</strong> {{outcome}}</p>\n    <p><strong>Ghi chú:</strong> {{outcome_note}}</p>\n  </div>\n  <p>Trân trọng,<br/>KidzGo Team</p>\n</div>",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
@@ -4190,7 +4243,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("StudentProfile");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkAssignment", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkAssignment", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
                         .WithMany("HomeworkAssignments")
@@ -4222,9 +4275,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Session");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkQuestion", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkQuestion", b =>
                 {
-                    b.HasOne("Kidzgo.Domain.LessonPlans.HomeworkAssignment", "HomeworkAssignment")
+                    b.HasOne("Kidzgo.Domain.Homework.HomeworkAssignment", "HomeworkAssignment")
                         .WithMany()
                         .HasForeignKey("HomeworkAssignmentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4233,9 +4286,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("HomeworkAssignment");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkStudent", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkStudent", b =>
                 {
-                    b.HasOne("Kidzgo.Domain.LessonPlans.HomeworkAssignment", "Assignment")
+                    b.HasOne("Kidzgo.Domain.Homework.HomeworkAssignment", "Assignment")
                         .WithMany("HomeworkStudents")
                         .HasForeignKey("AssignmentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4250,6 +4303,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Assignment");
 
                     b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Homework.QuestionBankItem", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Programs.Program", "Program")
+                        .WithMany("QuestionBankItems")
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Program");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.LessonPlans.LessonPlan", b =>
@@ -5146,7 +5210,7 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("RewardRedemptions");
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.LessonPlans.HomeworkAssignment", b =>
+            modelBuilder.Entity("Kidzgo.Domain.Homework.HomeworkAssignment", b =>
                 {
                     b.Navigation("HomeworkStudents");
                 });
@@ -5173,6 +5237,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Classes");
 
                     b.Navigation("LessonPlanTemplates");
+
+                    b.Navigation("QuestionBankItems");
 
                     b.Navigation("TuitionPlans");
                 });

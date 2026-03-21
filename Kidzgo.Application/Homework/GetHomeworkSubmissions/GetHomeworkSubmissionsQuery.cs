@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 
 namespace Kidzgo.Application.Homework.GetHomeworkSubmissions;

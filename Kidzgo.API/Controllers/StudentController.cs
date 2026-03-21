@@ -9,6 +9,7 @@ using Kidzgo.Application.Homework.SubmitHomework;
 using Kidzgo.Application.Homework.SubmitMultipleChoiceHomework;
 using Kidzgo.Application.Sessions.GetStudentTimetable;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

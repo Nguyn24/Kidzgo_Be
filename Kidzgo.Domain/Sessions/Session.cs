@@ -1,5 +1,6 @@
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Schools;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.LessonPlans;

@@ -4,6 +4,8 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
+using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Microsoft.EntityFrameworkCore;
