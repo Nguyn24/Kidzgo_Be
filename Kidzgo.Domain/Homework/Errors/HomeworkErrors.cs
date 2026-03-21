@@ -1,6 +1,6 @@
 using Kidzgo.Domain.Common;
 
-namespace Kidzgo.Domain.LessonPlans.Errors;
+namespace Kidzgo.Domain.Homework.Errors;
 
 public static class HomeworkErrors
 {
@@ -126,6 +126,30 @@ public static class HomeworkErrors
     public static Error InvalidPoints(int questionNumber) => Error.Validation(
         "Homework.InvalidPoints",
         $"Question {questionNumber} points must be greater than 0");
+
+    public static Error ProgramNotFound(Guid? programId) => Error.NotFound(
+        "Homework.ProgramNotFound",
+        $"Program with Id = '{programId}' was not found");
+
+    public static readonly Error InvalidQuestionDistribution = Error.Validation(
+        "Homework.InvalidQuestionDistribution",
+        "Question distribution must have at least one level with count > 0");
+
+    public static Error InsufficientQuestionsInBank(QuestionLevel level, int required, int available) => Error.Validation(
+        "Homework.InsufficientQuestionsInBank",
+        $"Not enough questions in bank for level {level}. Required {required}, available {available}");
+
+    public static Error UnsupportedQuestionBankFileType(string? extension) => Error.Validation(
+        "Homework.UnsupportedQuestionBankFileType",
+        $"Unsupported question bank file type: {extension}");
+
+    public static Error InvalidQuestionBankFile(string message) => Error.Validation(
+        "Homework.InvalidQuestionBankFile",
+        message);
+
+    public static Error InvalidQuestionBankRow(int rowNumber, string message) => Error.Validation(
+        "Homework.InvalidQuestionBankRow",
+        $"Row {rowNumber}: {message}");
 
     public static readonly Error CannotSubmitMultipleChoice = Error.Validation(
         "HomeworkSubmission.CannotSubmitMultipleChoice",

@@ -9,6 +9,7 @@ using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.Media;
 using Kidzgo.Domain.Finance;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Tickets;
 
 namespace Kidzgo.Domain.Classes;

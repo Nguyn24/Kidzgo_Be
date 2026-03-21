@@ -16,6 +16,7 @@ using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Registrations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +81,7 @@ public sealed class ApplicationDbContext(
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();
     public DbSet<HomeworkStudent> HomeworkStudents => Set<HomeworkStudent>();
     public DbSet<HomeworkQuestion> HomeworkQuestions => Set<HomeworkQuestion>();
+    public DbSet<QuestionBankItem> QuestionBankItems => Set<QuestionBankItem>();
     public DbSet<LessonPlan> LessonPlans => Set<LessonPlan>();
     public DbSet<LessonPlanTemplate> LessonPlanTemplates => Set<LessonPlanTemplate>();
 

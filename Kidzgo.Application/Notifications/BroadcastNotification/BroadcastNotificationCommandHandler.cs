@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -10,13 +11,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Notifications.BroadcastNotification;
 
 public sealed class BroadcastNotificationCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<BroadcastNotificationCommand, BroadcastNotificationResponse>
 {
     public async Task<Result<BroadcastNotificationResponse>> Handle(
         BroadcastNotificationCommand command,
         CancellationToken cancellationToken)
     {
+        var sender = await context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        var senderRole = sender?.Role.ToString();
+        var senderName = sender?.Name;
+        var targetRole = string.IsNullOrWhiteSpace(command.Role) ? null : command.Role;
+
         // Determine recipients based on filters
         var recipientUserIds = new HashSet<Guid>();
 
@@ -214,7 +224,10 @@ public sealed class BroadcastNotificationCommandHandler(
                 Content = command.Content,
                 Deeplink = command.Deeplink,
                 Status = NotificationStatus.Pending,
-                CreatedAt = now
+                CreatedAt = now,
+                SenderRole = senderRole,
+                SenderName = senderName,
+                TargetRole = targetRole
             };
 
             // Raise domain event to trigger email/push/zalo sending

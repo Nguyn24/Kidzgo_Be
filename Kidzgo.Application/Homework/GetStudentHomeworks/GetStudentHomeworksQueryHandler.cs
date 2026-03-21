@@ -4,6 +4,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +81,7 @@ public sealed class GetStudentHomeworksQueryHandler(
                 Skills = hs.Assignment.Skills,
                 SubmissionType = SubmissionTypeMapper.ToApiString(hs.Assignment.SubmissionType),
                 MaxScore = hs.Assignment.MaxScore,
+                TimeLimitMinutes = hs.Assignment.TimeLimitMinutes,
                 Status = hs.Status.ToString(),
                 SubmittedAt = hs.SubmittedAt,
                 GradedAt = hs.GradedAt,

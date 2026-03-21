@@ -7,6 +7,7 @@ using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Kidzgo.Domain.Homework;
 
 namespace Kidzgo.Infrastructure.Services;
 

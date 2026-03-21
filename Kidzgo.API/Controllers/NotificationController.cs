@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Notifications.BroadcastNotification;
+using Kidzgo.Application.Notifications.GetBroadcastNotificationHistory;
 using Kidzgo.Application.Notifications.GetNotifications;
 using Kidzgo.Application.Notifications.MarkNotificationAsRead;
 using Kidzgo.Application.NotificationTemplates.CreateNotificationTemplate;
@@ -82,6 +83,32 @@ public class NotificationController : ControllerBase
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchCreated(br => $"/api/notifications/broadcast/{br.CreatedCount}");
+    }
+
+    /// View broadcast notification history (grouped)
+    [HttpGet("broadcast-history")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetBroadcastNotificationHistory(
+        [FromQuery] NotificationChannel? channel,
+        [FromQuery] string? senderRole,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetBroadcastNotificationHistoryQuery
+        {
+            Channel = channel,
+            SenderRole = senderRole,
+            FromDate = fromDate,
+            ToDate = toDate,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
     }
 
     /// Mark notification as read
