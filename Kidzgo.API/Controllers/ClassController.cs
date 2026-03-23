@@ -25,7 +25,7 @@ public class ClassController : ControllerBase
         _mediator = mediator;
     }
 
-    /// UC-057: Tạo Class
+    /// UC-057: Táº¡o Class
     [HttpPost]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CreateClass(
@@ -41,7 +41,7 @@ public class ClassController : ControllerBase
             MainTeacherId = request.MainTeacherId,
             AssistantTeacherId = request.AssistantTeacherId,
             StartDate = request.StartDate,
-            EndDate = request.EndDate, // Nếu là null hoặc default, sẽ được tính tự động trong handler
+            EndDate = request.EndDate, 
             Capacity = request.Capacity,
             SchedulePattern = request.SchedulePattern
         };
@@ -50,7 +50,7 @@ public class ClassController : ControllerBase
         return result.MatchCreated(c => $"/api/classes/{c.Id}");
     }
 
-    /// UC-058: Xem danh sách Classes
+    /// UC-058: Xem danh sÃ¡ch Classes
     /// <param name="branchId">Filter by branch ID</param>
     /// <param name="programId">Filter by program ID</param>
     /// <param name="studentId">Filter by enrolled student ID</param>
@@ -91,7 +91,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-059: Xem chi tiết Class
+    /// UC-059: Xem chi tiáº¿t Class
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> GetClassById(
@@ -107,7 +107,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-060: Cập nhật Class
+    /// UC-060: Cáº­p nháº­t Class
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateClass(
@@ -134,7 +134,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-061: Xóa mềm Class (Set status = Closed)
+    /// UC-061: XÃ³a má»m Class (Set status = Closed)
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteClass(
@@ -150,7 +150,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-062: Thay đổi trạng thái Class (PLANNED/ACTIVE/CLOSED)
+    /// UC-062: Thay Ä‘á»•i tráº¡ng thÃ¡i Class (PLANNED/ACTIVE/CLOSED)
     [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ChangeClassStatus(
@@ -168,7 +168,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-063/064: Gán Main Teacher và Assistant Teacher cho Class
+    /// UC-063/064: GÃ¡n Main Teacher vÃ  Assistant Teacher cho Class
     [HttpPatch("{id:guid}/assign-teacher")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AssignTeacher(
@@ -187,7 +187,7 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-066: Kiểm tra capacity trước khi ghi danh
+    /// UC-066: Kiá»ƒm tra capacity trÆ°á»›c khi ghi danh
     [HttpGet("{id:guid}/capacity")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CheckClassCapacity(
@@ -203,4 +203,3 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 }
-

@@ -25,12 +25,13 @@ public sealed class ReactivateProfileCommandHandler(IDbContext context)
         //     return Result.Failure(ProfileErrors.ProfileNotDeleted);
         // }
 
-        // Reactivate: set IsDeleted = false and IsActive = true
-        profile.IsDeleted = false;
-        profile.IsActive = true;
-        profile.UpdatedAt = DateTime.UtcNow;
-
-        await context.SaveChangesAsync(cancellationToken);
+        await context.Profiles
+            .Where(p => p.UserId == profile.UserId && p.IsApproved)
+            .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.IsDeleted, false)
+                    .SetProperty(p => p.IsActive, true)
+                    .SetProperty(p => p.UpdatedAt, DateTime.UtcNow),
+                cancellationToken);
 
         return Result.Success();
     }
