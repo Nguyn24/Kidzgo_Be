@@ -1,8 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
-using Kidzgo.Domain.Users;
-using Kidzgo.Domain.Users.Errors;
 using Kidzgo.Domain.Users.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +15,9 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
         var result = new ApproveProfileResponse();
 
         if (command.Id == null || !command.Id.Any())
+        {
             return Result.Success(result);
+        }
 
         var ids = command.Id.Distinct().ToList();
         var profiles = await context.Profiles
@@ -36,12 +36,10 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
             .Where(id => !foundIds.Contains(id))
             .ToList();
 
-        var alreadyApproved = profiles
+        result.AlreadyApproved = profiles
             .Where(p => p.IsApproved)
             .Select(p => p.Id)
             .ToList();
-
-        result.AlreadyApproved = alreadyApproved;
 
         var idsToApprove = profiles
             .Where(p => !p.IsApproved)
@@ -49,11 +47,12 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
             .ToList();
 
         if (!idsToApprove.Any())
+        {
             return Result.Success(result);
+        }
 
         var now = DateTime.UtcNow;
 
-        // BULK UPDATE (1 SQL query)
         var updatedCount = await context.Profiles
             .Where(p => idsToApprove.Contains(p.Id))
             .ExecuteUpdateAsync(setters => setters
@@ -63,7 +62,6 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
 
         result.ApprovedCount = updatedCount;
 
-        // Query lại profile vừa approve để publish event
         var approvedProfiles = await context.Profiles
             .Include(p => p.User)
             .Where(p => idsToApprove.Contains(p.Id))
@@ -71,28 +69,52 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
 
         const string defaultPassword = "123456";
         const string defaultPin = "1234";
-        await Task.WhenAll(
-            approvedProfiles.Select(profile =>
-                mediator.Publish(new ProfileCreatedDomainEvent(
-                    profile.Id,
-                    profile.UserId,
-                    profile.ProfileType.ToString(),
-                    profile.DisplayName,
-                    profile.FullName ?? string.Empty,
+
+        var emailEvents = approvedProfiles
+            .GroupBy(profile => profile.UserId)
+            .Select(group =>
+            {
+                var firstProfile = group
+                    .OrderBy(profile => profile.CreatedAt)
+                    .First();
+
+                var recipientName = group
+                    .Select(profile => profile.DisplayName)
+                    .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
+                    ?? firstProfile.User?.Name
+                    ?? string.Empty;
+
+                var emailProfiles = group
+                    .OrderBy(profile => profile.CreatedAt)
+                    .Select(profile => new ProfileCreatedEmailProfile(
+                        profile.Id,
+                        profile.ProfileType.ToString(),
+                        profile.DisplayName,
+                        profile.FullName ?? string.Empty,
+                        profile.Gender?.ToString() ?? string.Empty,
+                        profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
+                        profile.ZaloId ?? string.Empty,
+                        profile.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    ))
+                    .ToList();
+
+                return new ProfileCreatedDomainEvent(
+                    group.Key,
+                    recipientName,
+                    firstProfile.User?.Email ?? string.Empty,
+                    firstProfile.User?.PhoneNumber ?? string.Empty,
                     defaultPassword,
                     defaultPin,
-                    profile.Gender?.ToString() ?? string.Empty,
-                    profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
-                    profile.ZaloId ?? string.Empty,
-                    profile.User?.Email ?? string.Empty,
-                    profile.User?.PhoneNumber ?? string.Empty,
-                    profile.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                ), cancellationToken)
-            )
-        );
+                    emailProfiles
+                );
+            })
+            .ToList();
+
+        foreach (var emailEvent in emailEvents)
+        {
+            await mediator.Publish(emailEvent, cancellationToken);
+        }
 
         return Result.Success(result);
     }
 }
-
-

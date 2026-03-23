@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Domain.Notifications;
@@ -15,11 +17,10 @@ public sealed class ProfileCreatedDomainEventHandler(
 {
     private const string TemplateCode = "PROFILE_CREATED";
     private const string FrontendUrl = "https://kidzgo-centre-pvjj.vercel.app/vi";
-    private const string ApiUrl = "https://api.kidzgo.vn";
 
     public async Task Handle(ProfileCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(notification.Email))
+        if (string.IsNullOrWhiteSpace(notification.Email) || notification.Profiles.Count == 0)
         {
             return;
         }
@@ -33,29 +34,72 @@ public sealed class ProfileCreatedDomainEventHandler(
             return;
         }
 
-        var verifyLink = $"{FrontendUrl}/activate-profile?id={notification.ProfileId}";
-        // var updateLink = $"{ApiUrl}/api/profiles/{notification.ProfileId}/reactivate-and-update";
+        var orderedProfiles = notification.Profiles.ToList();
+
+        var firstProfile = orderedProfiles[0];
+        var verifyLink = $"{FrontendUrl}/activate-profile?id={firstProfile.ProfileId}";
+        var recipientName = string.IsNullOrWhiteSpace(notification.RecipientName)
+            ? firstProfile.DisplayName
+            : notification.RecipientName;
 
         var placeholders = new Dictionary<string, string>
         {
-            ["profile_name"] = notification.DisplayName,
-            ["profile_type"] = notification.ProfileType,
+            ["recipient_name"] = recipientName,
+            ["profile_count"] = orderedProfiles.Count.ToString(),
+            ["profile_names"] = string.Join(", ", orderedProfiles.Select(profile => profile.DisplayName)),
+            ["profiles_html"] = BuildProfilesHtml(orderedProfiles),
             ["email"] = notification.Email,
+            ["phone"] = notification.Phone,
             ["password"] = notification.Password,
             ["pin"] = notification.Pin,
-            ["phone"] = notification.Phone,
-            ["full_name"] = notification.FullName,
-            ["gender"] = notification.Gender,
-            ["birth_day"] = notification.Birthday,
-            ["zalo_id"] = notification.ZaloId,
             ["verify_link"] = verifyLink,
-            // ["update_link"] = updateLink,
-            ["created_at"] = notification.CreatedAt
+            // Backward-compatible placeholders for older template revisions.
+            ["profile_name"] = firstProfile.DisplayName,
+            ["profile_type"] = firstProfile.ProfileType,
+            ["full_name"] = firstProfile.FullName,
+            ["gender"] = firstProfile.Gender,
+            ["birth_day"] = firstProfile.Birthday,
+            ["zalo_id"] = firstProfile.ZaloId,
+            ["created_at"] = firstProfile.CreatedAt,
+            ["update_link"] = verifyLink
         };
 
-        string subject = template.Subject;
+        string subject = templateRenderer.Render(template.Subject, placeholders);
         string body = templateRenderer.Render(template.Body ?? string.Empty, placeholders);
 
         await mailService.SendEmailAsync(notification.Email, subject, body, cancellationToken);
+    }
+
+    private static string BuildProfilesHtml(IEnumerable<ProfileCreatedEmailProfile> profiles)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var profile in profiles)
+        {
+            builder.Append(
+                $$"""
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;margin:0 0 16px 0;">
+                    <tr>
+                      <td style="padding:16px 18px;">
+                        <p style="margin:0 0 8px 0;font-size:13px;color:#64748b;">Hồ sơ {{Encode(profile.ProfileType)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Tên hiển thị:</strong> {{Encode(profile.DisplayName)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Họ tên:</strong> {{Encode(profile.FullName)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Loại hồ sơ:</strong> {{Encode(profile.ProfileType)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Giới tính:</strong> {{Encode(profile.Gender)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Ngày sinh:</strong> {{Encode(profile.Birthday)}}</p>
+                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Zalo ID:</strong> {{Encode(profile.ZaloId)}}</p>
+                        <p style="margin:0;font-size:14px;"><strong>Thời gian tạo hồ sơ:</strong> {{Encode(profile.CreatedAt)}}</p>
+                      </td>
+                    </tr>
+                  </table>
+                  """);
+        }
+
+        return builder.ToString();
+    }
+
+    private static string Encode(string? value)
+    {
+        return WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(value) ? "-" : value);
     }
 }

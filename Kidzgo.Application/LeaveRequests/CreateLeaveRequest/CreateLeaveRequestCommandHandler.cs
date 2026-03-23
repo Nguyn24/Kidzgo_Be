@@ -88,9 +88,14 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
         // Count total unique session dates (existing + new request)
         var totalSessionDatesInMonth = existingSessionDates.Count + sessionDatesInRange.Count;
 
-        if (totalSessionDatesInMonth > MaxLeavesPerMonth)
+        var configuredMaxLeavesPerMonth = await context.ProgramLeavePolicies
+            .Where(x => x.ProgramId == classInfo.ProgramId)
+            .Select(x => (int?)x.MaxLeavesPerMonth)
+            .FirstOrDefaultAsync(cancellationToken) ?? MaxLeavesPerMonth;
+
+        if (totalSessionDatesInMonth > configuredMaxLeavesPerMonth)
         {
-            return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.ExceededMonthlyLeaveLimit(MaxLeavesPerMonth));
+            return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.ExceededMonthlyLeaveLimit(configuredMaxLeavesPerMonth));
         }
 
         // Compute notice hours from now until session date (first day)
@@ -129,6 +134,8 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
         // Auto approve path -> create makeup credits and schedule makeup sessions on T7/CN
         if (status == LeaveRequestStatus.Approved)
         {
+            var defaultMakeupClassId = await GetDefaultMakeupClassIdAsync(context, classInfo.BranchId, cancellationToken);
+
             foreach (var session in sessionsInRange)
             {
                 var credit = new MakeupCredit
@@ -144,7 +151,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                 context.MakeupCredits.Add(credit);
 
                 // Auto-schedule makeup session on T7/CN of the same week
-                await ScheduleMakeupSessionAsync(context, credit, classInfo, session, cancellationToken);
+                await ScheduleMakeupSessionAsync(context, credit, classInfo, session, defaultMakeupClassId, cancellationToken);
             }
 
             foreach (var leave in createdLeaves)
@@ -179,6 +186,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
         MakeupCredit credit,
         Class originalClass,
         Session originalSession,
+        Guid? defaultMakeupClassId,
         CancellationToken cancellationToken)
     {
         // Find Saturday and Sunday of the week when the student took leave
@@ -190,7 +198,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
         var sunday = sessionDate.AddDays(-dayOfWeek);
 
         // Find T7/CN sessions in the same week, same level, same branch, different class
-        var makeupSessions = await context.Sessions
+        var makeupSessionsQuery = context.Sessions
             .Include(s => s.Class)
             .ThenInclude(c => c.Program)
             .Include(s => s.Attendances)
@@ -200,7 +208,14 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                         && s.Class.Program.IsMakeup == true
                         && (DateOnly.FromDateTime(s.PlannedDatetime) == saturday 
                             || DateOnly.FromDateTime(s.PlannedDatetime) == sunday))
-            .ToListAsync(cancellationToken);
+            .AsQueryable();
+
+        if (defaultMakeupClassId.HasValue)
+        {
+            makeupSessionsQuery = makeupSessionsQuery.Where(s => s.ClassId == defaultMakeupClassId.Value);
+        }
+
+        var makeupSessions = await makeupSessionsQuery.ToListAsync(cancellationToken);
 
         // Filter sessions with available slot (enrolled count < capacity)
         var availableSessions = makeupSessions
@@ -226,6 +241,18 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
             CreatedAt = DateTime.UtcNow
         };
         context.MakeupAllocations.Add(allocation);
+    }
+
+    private static async Task<Guid?> GetDefaultMakeupClassIdAsync(
+        IDbContext context,
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        return await context.Programs
+            .Where(p => p.BranchId == branchId && p.IsMakeup && p.DefaultMakeupClassId != null)
+            .OrderByDescending(p => p.UpdatedAt)
+            .Select(p => p.DefaultMakeupClassId)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
 
