@@ -98,6 +98,7 @@ public interface IDbContext
 
     // Programs
     DbSet<Program> Programs { get; }
+    DbSet<ProgramLeavePolicy> ProgramLeavePolicies { get; }
     DbSet<TuitionPlan> TuitionPlans { get; }
 
     // Registrations

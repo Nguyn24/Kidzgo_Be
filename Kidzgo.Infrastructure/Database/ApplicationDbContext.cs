@@ -105,6 +105,7 @@ public sealed class ApplicationDbContext(
 
     // Programs
     public DbSet<Program> Programs => Set<Program>();
+    public DbSet<ProgramLeavePolicy> ProgramLeavePolicies => Set<ProgramLeavePolicy>();
     public DbSet<TuitionPlan> TuitionPlans => Set<TuitionPlan>();
 
     // Registrations

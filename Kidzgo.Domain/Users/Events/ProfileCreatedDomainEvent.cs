@@ -2,19 +2,24 @@ using Kidzgo.Domain.Common;
 
 namespace Kidzgo.Domain.Users.Events;
 
-public sealed record ProfileCreatedDomainEvent(
+public sealed record ProfileCreatedEmailProfile(
     Guid ProfileId,
-    Guid UserId,
     string ProfileType,
     string DisplayName,
     string FullName,
-    string Password,
-    string Pin,
     string Gender,
     string Birthday,
     string ZaloId,
+    string CreatedAt
+);
+
+public sealed record ProfileCreatedDomainEvent(
+    Guid UserId,
+    string RecipientName,
     string Email,
     string Phone,
-    string CreatedAt
+    string Password,
+    string Pin,
+    IReadOnlyCollection<ProfileCreatedEmailProfile> Profiles
 ) : IDomainEvent;
 
