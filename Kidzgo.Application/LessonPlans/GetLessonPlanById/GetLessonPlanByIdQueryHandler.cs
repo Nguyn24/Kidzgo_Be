@@ -1,14 +1,17 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LessonPlans.GetLessonPlanById;
 
 public sealed class GetLessonPlanByIdQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetLessonPlanByIdQuery, GetLessonPlanByIdResponse>
 {
     public async Task<Result<GetLessonPlanByIdResponse>> Handle(
@@ -26,6 +29,22 @@ public sealed class GetLessonPlanByIdQueryHandler(
         {
             return Result.Failure<GetLessonPlanByIdResponse>(
                 LessonPlanErrors.NotFound(query.Id));
+        }
+
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<GetLessonPlanByIdResponse>(LessonPlanErrors.Unauthorized);
+        }
+
+        if (currentUser.Role == UserRole.Teacher &&
+            (lessonPlan.Session is null ||
+             (lessonPlan.Session.PlannedTeacherId != currentUser.Id &&
+              lessonPlan.Session.ActualTeacherId != currentUser.Id)))
+        {
+            return Result.Failure<GetLessonPlanByIdResponse>(LessonPlanErrors.Unauthorized);
         }
 
         return new GetLessonPlanByIdResponse

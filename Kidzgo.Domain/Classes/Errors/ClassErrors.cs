@@ -74,4 +74,3 @@ public static class ScheduleErrors
         "SchedulePattern.Invalid",
         $"Invalid RRULE pattern: {message}");
 }
-

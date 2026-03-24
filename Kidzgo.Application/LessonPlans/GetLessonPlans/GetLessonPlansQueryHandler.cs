@@ -1,25 +1,45 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.LessonPlans.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LessonPlans.GetLessonPlans;
 
 public sealed class GetLessonPlansQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetLessonPlansQuery, GetLessonPlansResponse>
 {
     public async Task<Result<GetLessonPlansResponse>> Handle(
         GetLessonPlansQuery query,
         CancellationToken cancellationToken)
     {
+        var currentUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
+
+        if (currentUser is null)
+        {
+            return Result.Failure<GetLessonPlansResponse>(LessonPlanErrors.Unauthorized);
+        }
+
         var lessonPlanQuery = context.LessonPlans
             .Include(lp => lp.Class)
             .Include(lp => lp.Session)
             .Include(lp => lp.Template)
             .Include(lp => lp.SubmittedByUser)
             .AsQueryable();
+
+        // Authorization: teacher can only view lesson plans of their sessions
+        if (currentUser.Role == UserRole.Teacher)
+        {
+            lessonPlanQuery = lessonPlanQuery.Where(lp =>
+                lp.Session != null &&
+                (lp.Session.PlannedTeacherId == currentUser.Id || lp.Session.ActualTeacherId == currentUser.Id));
+        }
 
         // Filter by IsDeleted
         if (!query.IncludeDeleted)
@@ -87,6 +107,7 @@ public sealed class GetLessonPlansQueryHandler(
                 PlannedContent = lp.PlannedContent,
                 ActualContent = lp.ActualContent,
                 ActualHomework = lp.ActualHomework,
+                TeacherNotes = lp.TeacherNotes,
                 SubmittedBy = lp.SubmittedBy,
                 SubmittedByName = lp.SubmittedByUser != null ? lp.SubmittedByUser.Name : null,
                 SubmittedAt = lp.SubmittedAt,

@@ -340,6 +340,7 @@ Các loại error trong hệ thống được định nghĩa trong `Kidzgo.Domai
 | `LessonPlanTemplate.SessionIndexRequired` | Validation | SessionIndex is required and must be greater than 0 |
 | `LessonPlanTemplate.DuplicateSessionIndex` | Conflict | Template with SessionIndex {sessionIndex} already exists for Program {programId} |
 | `LessonPlanTemplate.HasActiveLessonPlans` | Conflict | Cannot delete template that has active lesson plans |
+| `LessonPlanTemplate.Unauthorized` | Validation | You do not have permission to modify this lesson plan template |
 
 ### HomeworkErrors (`Kidzgo.Domain/LessonPlans/Errors/HomeworkErrors.cs`)
 

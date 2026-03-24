@@ -28,7 +28,7 @@ public class LessonPlanTemplateController : ControllerBase
     /// Tạo Lesson Plan Template mới
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> CreateLessonPlanTemplate(
         [FromBody] CreateLessonPlanTemplateRequest request,
         CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public class LessonPlanTemplateController : ControllerBase
     /// Lấy Lesson Plan Template theo ID
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> GetLessonPlanTemplateById(
         Guid id,
         CancellationToken cancellationToken)

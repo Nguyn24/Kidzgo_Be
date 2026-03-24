@@ -1,0 +1,18 @@
+namespace Kidzgo.API.Requests;
+
+public sealed class CreateQuestionBankItemsRequest
+{
+    public Guid ProgramId { get; init; }
+    public List<CreateQuestionBankItemRequest> Items { get; init; } = new();
+}
+
+public sealed class CreateQuestionBankItemRequest
+{
+    public string QuestionText { get; init; } = null!;
+    public string QuestionType { get; init; } = null!;
+    public List<string> Options { get; init; } = new();
+    public string CorrectAnswer { get; init; } = null!;
+    public int Points { get; init; } = 1;
+    public string? Explanation { get; init; }
+    public string Level { get; init; } = null!;
+}

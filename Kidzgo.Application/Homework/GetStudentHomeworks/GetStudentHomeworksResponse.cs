@@ -22,6 +22,7 @@ public sealed class StudentHomeworkDto
     public string? Skills { get; init; }
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
+    public int? TimeLimitMinutes { get; init; }
     public string Status { get; init; } = null!;
     public DateTime? SubmittedAt { get; init; }
     public DateTime? GradedAt { get; init; }
