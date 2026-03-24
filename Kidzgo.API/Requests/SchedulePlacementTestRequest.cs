@@ -12,8 +12,6 @@ public sealed class SchedulePlacementTestRequest
     /// LeadChildId (priority over LeadId if provided)
     /// </summary>
     public Guid? LeadChildId { get; set; }
-    public Guid? StudentProfileId { get; set; }
-    public Guid? ClassId { get; set; }
     [Required]
     public DateTime ScheduledAt { get; set; }
     public string? Room { get; set; }

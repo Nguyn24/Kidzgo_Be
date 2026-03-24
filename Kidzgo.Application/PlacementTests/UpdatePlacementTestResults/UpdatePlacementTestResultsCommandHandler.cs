@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
+using Kidzgo.Domain.Registrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PlacementTests.UpdatePlacementTestResults;
@@ -15,7 +16,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         UpdatePlacementTestResultsCommand command,
         CancellationToken cancellationToken)
     {
-        // UC-032 to UC-036: Update Placement Test Results
         var placementTest = await context.PlacementTests
             .Include(pt => pt.LeadChild)
             .FirstOrDefaultAsync(pt => pt.Id == command.PlacementTestId, cancellationToken);
@@ -26,58 +26,36 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                 PlacementTestErrors.NotFound(command.PlacementTestId));
         }
 
-        // Update scores (UC-032, UC-033)
         if (command.ListeningScore.HasValue)
-        {
             placementTest.ListeningScore = command.ListeningScore.Value;
-        }
 
         if (command.SpeakingScore.HasValue)
-        {
             placementTest.SpeakingScore = command.SpeakingScore.Value;
-        }
 
         if (command.ReadingScore.HasValue)
-        {
             placementTest.ReadingScore = command.ReadingScore.Value;
-        }
 
         if (command.WritingScore.HasValue)
-        {
             placementTest.WritingScore = command.WritingScore.Value;
-        }
 
         if (command.ResultScore.HasValue)
-        {
             placementTest.ResultScore = command.ResultScore.Value;
-        }
-
-        // Update recommendations (UC-034, UC-035)
-        if (command.LevelRecommendation is not null)
-        {
-            placementTest.LevelRecommendation = string.IsNullOrWhiteSpace(command.LevelRecommendation)
-                ? null
-                : command.LevelRecommendation.Trim();
-        }
 
         if (command.ProgramRecommendation is not null)
         {
             placementTest.ProgramRecommendation = string.IsNullOrWhiteSpace(command.ProgramRecommendation)
-                ? null
-                : command.ProgramRecommendation.Trim();
+                ? null : command.ProgramRecommendation.Trim();
         }
 
-        // Update attachment URL (UC-036)
         if (command.AttachmentUrl is not null)
         {
             placementTest.AttachmentUrl = string.IsNullOrWhiteSpace(command.AttachmentUrl)
-                ? null
-                : command.AttachmentUrl.Trim();
+                ? null : command.AttachmentUrl.Trim();
         }
 
         var now = DateTime.UtcNow;
+        Guid? newRegId = null;
 
-        // Mark as Completed if all scores are entered
         if (placementTest.ListeningScore.HasValue &&
             placementTest.SpeakingScore.HasValue &&
             placementTest.ReadingScore.HasValue &&
@@ -87,7 +65,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         {
             placementTest.Status = PlacementTestStatus.Completed;
 
-            // Update LeadChild status if LeadChildId exists
             if (placementTest.LeadChildId.HasValue && placementTest.LeadChild is not null)
             {
                 var leadChild = placementTest.LeadChild;
@@ -95,8 +72,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                 {
                     leadChild.Status = LeadChildStatus.TestDone;
                     leadChild.UpdatedAt = now;
-
-                    // Create activity for LeadChild
                     context.LeadActivities.Add(new LeadActivity
                     {
                         Id = Guid.NewGuid(),
@@ -109,7 +84,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                 }
             }
 
-            // Auto-transition lead status to TestDone when test is completed (backward compatibility)
             if (placementTest.LeadId.HasValue)
             {
                 var lead = await context.Leads
@@ -120,7 +94,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                     lead.Status = LeadStatus.TestDone;
                     lead.UpdatedAt = now;
 
-                    // Only create activity if LeadChild was not updated (to avoid duplicate)
                     if (!placementTest.LeadChildId.HasValue || placementTest.LeadChild is null)
                     {
                         context.LeadActivities.Add(new LeadActivity
@@ -135,6 +108,8 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                     }
                 }
             }
+
+            newRegId = await AutoCreateRegistrationForRetakeAsync(placementTest, now, cancellationToken);
         }
 
         placementTest.UpdatedAt = now;
@@ -148,12 +123,107 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
             ReadingScore = placementTest.ReadingScore,
             WritingScore = placementTest.WritingScore,
             ResultScore = placementTest.ResultScore,
-            LevelRecommendation = placementTest.LevelRecommendation,
             ProgramRecommendation = placementTest.ProgramRecommendation,
             AttachmentUrl = placementTest.AttachmentUrl,
             Status = placementTest.Status.ToString(),
-            UpdatedAt = placementTest.UpdatedAt
+            UpdatedAt = placementTest.UpdatedAt,
+            NewRegistrationId = newRegId
         };
     }
-}
 
+    private async Task<Guid?> AutoCreateRegistrationForRetakeAsync(
+        Domain.CRM.PlacementTest pt,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        // Chi tao Registration moi neu PlacementTest nay co OriginalPlacementTestId (nghia la day la retake)
+        if (pt.OriginalPlacementTestId is null)
+            return null;
+
+        if (pt.StudentProfileId is null || string.IsNullOrWhiteSpace(pt.ProgramRecommendation))
+            return null;
+
+        var activeReg = await context.Registrations
+            .Include(r => r.Program).Include(r => r.TuitionPlan).Include(r => r.Branch)
+            .FirstOrDefaultAsync(r =>
+                r.StudentProfileId == pt.StudentProfileId.Value &&
+                r.Status != RegistrationStatus.Completed &&
+                r.Status != RegistrationStatus.Cancelled,
+                cancellationToken);
+
+        if (activeReg is null)
+            return null;
+
+        var targetProgram = await context.Programs
+            .FirstOrDefaultAsync(p =>
+                p.Name == pt.ProgramRecommendation && p.IsActive && !p.IsDeleted,
+                cancellationToken);
+
+        if (targetProgram is null)
+            return null;
+
+        var targetTuitionPlan = await context.TuitionPlans
+            .Where(tp => tp.ProgramId == targetProgram.Id && tp.IsActive)
+            .OrderBy(tp => tp.TuitionAmount)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (targetTuitionPlan is null)
+            return null;
+
+        var remainingSessions = activeReg.RemainingSessions;
+        var originalProgramName = activeReg.Program.Name;
+        var originalRegId = activeReg.Id;
+
+        activeReg.Status = RegistrationStatus.Completed;
+        activeReg.UpdatedAt = now;
+
+        var newReg = new Registration
+        {
+            Id = Guid.NewGuid(),
+            StudentProfileId = pt.StudentProfileId.Value,
+            BranchId = activeReg.BranchId,
+            ProgramId = targetProgram.Id,
+            TuitionPlanId = targetTuitionPlan.Id,
+            RegistrationDate = now,
+            ExpectedStartDate = now,
+            PreferredSchedule = activeReg.PreferredSchedule,
+            Note = $"Thi lai tu chuong trinh '{originalProgramName}' len '{targetProgram.Name}'. Giu lai {remainingSessions} buoi con lai. PlacementTest retake ID: {pt.Id}.",
+            Status = RegistrationStatus.WaitingForClass,
+            ClassId = null,
+            ClassAssignedDate = null,
+            EntryType = EntryType.Retake,
+            OriginalRegistrationId = originalRegId,
+            OperationType = OperationType.Retake,
+            TotalSessions = remainingSessions,
+            UsedSessions = 0,
+            RemainingSessions = remainingSessions,
+            ExpiryDate = now.AddMonths(EstimateDurationMonths(remainingSessions)),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        context.Registrations.Add(newReg);
+
+        if (pt.LeadId.HasValue)
+        {
+            context.LeadActivities.Add(new LeadActivity
+            {
+                Id = Guid.NewGuid(),
+                LeadId = pt.LeadId.Value,
+                ActivityType = ActivityType.Note,
+                Content = $"Student retake placement test completed. Original program: '{originalProgramName}' ({remainingSessions} sessions remaining). New program: '{targetProgram.Name}'. New Registration ID: {newReg.Id}.",
+                CreatedAt = now
+            });
+        }
+
+        return newReg.Id;
+    }
+
+    private static int EstimateDurationMonths(int remainingSessions)
+    {
+        if (remainingSessions <= 0) return 3;
+        var months = remainingSessions / 4;
+        if (remainingSessions % 4 > 0) months++;
+        return Math.Max(1, months);
+    }
+}

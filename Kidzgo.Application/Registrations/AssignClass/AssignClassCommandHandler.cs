@@ -29,14 +29,33 @@ public sealed class AssignClassCommandHandler(
         }
 
         // 2. Validate registration status - can only assign if in valid state
-        if (registration.Status == RegistrationStatus.Completed || 
+        if (registration.Status == RegistrationStatus.Completed ||
             registration.Status == RegistrationStatus.Cancelled)
         {
             return Result.Failure<AssignClassResponse>(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "assign-class"));
         }
 
-        // 3. Get class (only if not wait type - wait means no class yet)
+        // 3. If registration already has EntryType = Immediate (already enrolled in class),
+        // cannot change back to Wait
+        var newEntryType = command.EntryType?.ToLowerInvariant() switch
+        {
+            "makeup" => EntryType.Makeup,
+            "wait" => EntryType.Wait,
+            _ => EntryType.Immediate
+        };
+
+        if (registration.EntryType != null &&
+            registration.EntryType != EntryType.Wait &&
+            newEntryType == EntryType.Wait)
+        {
+            return Result.Failure<AssignClassResponse>(
+                RegistrationErrors.InvalidStatus(
+                    $"Cannot change from EntryType '{registration.EntryType}' back to 'Wait'. Student is already enrolled in a class.",
+                    "assign-class"));
+        }
+
+        // 4. Get class (only if not wait type - wait means no class yet)
         var isWait = command.EntryType?.ToLowerInvariant() == "wait";
         var classId = command.ClassId;
         
@@ -92,12 +111,7 @@ public sealed class AssignClassCommandHandler(
 
         // 9. Handle entry type logic
         string warningMessage = null;
-        var entryType = command.EntryType?.ToLowerInvariant() switch
-        {
-            "makeup" => EntryType.Makeup,
-            "wait" => EntryType.Wait,
-            _ => EntryType.Immediate
-        };
+        var entryType = newEntryType;
 
         // Determine new status based on entry type
         var newStatus = entryType switch
