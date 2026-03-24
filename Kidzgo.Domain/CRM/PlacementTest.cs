@@ -15,6 +15,7 @@ public class PlacementTest : Entity
     public PlacementTestStatus Status { get; set; }
     public string? Room { get; set; }
     public Guid? InvigilatorUserId { get; set; }
+    public Guid? OriginalPlacementTestId { get; set; }
     public decimal? ResultScore { get; set; }
     public decimal? ListeningScore { get; set; }
     public decimal? SpeakingScore { get; set; }
@@ -33,4 +34,5 @@ public class PlacementTest : Entity
     public Profile? StudentProfile { get; set; }
     public Class? Class { get; set; }
     public User? InvigilatorUser { get; set; }
+    public PlacementTest? OriginalPlacementTest { get; set; }
 }

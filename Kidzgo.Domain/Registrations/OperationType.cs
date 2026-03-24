@@ -6,5 +6,6 @@ public enum OperationType
     Upgrade,       // Nang goi
     Renewal,       // Gia han
     Transfer,      // Chuyen lop
-    TransferBranch // Chuyen chi nhanh
+    TransferBranch, // Chuyen chi nhanh
+    Retake          // Thi lai de len lop cao hon
 }

@@ -47,5 +47,13 @@ public static class PlacementTestErrors
     public static Error StudentProfileAlreadyAssigned(Guid? profileId, Guid leadChildId) => Error.Conflict(
         "PlacementTest.StudentProfileAlreadyAssigned",
         $"The student profile with Id = '{profileId}' is already assigned to another child (LeadChildId = '{leadChildId}'). One profile can only be assigned to one child.");
+
+    public static Error NoActiveRegistrationForRetake(Guid studentProfileId) => Error.Validation(
+        "PlacementTest.NoActiveRegistrationForRetake",
+        $"Student has no active registration to retake placement test");
+
+    public static Error RetakeAlreadyScheduled(Guid studentProfileId) => Error.Conflict(
+        "PlacementTest.RetakeAlreadyScheduled",
+        $"Student already has a scheduled or completed retake placement test");
 }
 
