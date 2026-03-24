@@ -152,7 +152,6 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
-    [AllowAnonymous]
     [HttpGet("{id:guid}/reactivate-and-update")]
     public async Task<IResult> ReactivateAndRedirectToUpdate(
         Guid id,

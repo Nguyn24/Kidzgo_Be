@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Microsoft.EntityFrameworkCore;
 

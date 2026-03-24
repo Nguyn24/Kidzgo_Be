@@ -8,6 +8,7 @@ using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.Finance;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Payroll;
 using Microsoft.EntityFrameworkCore;
 

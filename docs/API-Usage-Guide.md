@@ -3154,7 +3154,56 @@ Có thể kết hợp nhiều role bằng dấu `,` hoặc `+`:
 
 ---
 
-### 10.3. Mark Notification As Read
+### 10.3. Broadcast Notification History
+
+**Endpoint:** `GET /api/notifications/broadcast-history`
+
+**MÃ´ táº£:** Admin/ManagementStaff xem lá»‹ch sá»­ broadcast notification (group theo láº§n broadcast).
+
+**Authorization:** Required (Roles: Admin, ManagementStaff)
+
+**Query Parameters:**
+- `channel` (NotificationChannel?, optional): Lá»c theo kÃªnh gá»­i
+- `senderRole` (string?, optional): Lá»c theo role ngÆ°á»i gá»­i (Admin/ManagementStaff)
+- `fromDate` (DateTime?, optional): Lá»c tá»« ngÃ y
+- `toDate` (DateTime?, optional): Lá»c Ä‘áº¿n ngÃ y
+- `pageNumber` (int, default: 1): Sá»‘ trang
+- `pageSize` (int, default: 10): Sá»‘ lÆ°á»£ng items má»—i trang
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": {
+    "broadcasts": {
+      "items": [
+        {
+          "createdAt": "2024-01-15T10:00:00Z",
+          "channel": "InApp",
+          "title": "ThÃ´ng bÃ¡o má»›i",
+          "content": "Báº¡n cÃ³ bÃ i táº­p má»›i cáº§n hoÃ n thÃ nh",
+          "deeplink": "/homework/123",
+          "senderRole": "ManagementStaff",
+          "senderName": "Nguyá»…n VÄƒn A",
+          "targetRole": "Parent+Student",
+          "recipientCount": 120,
+          "pendingCount": 120,
+          "sentCount": 0,
+          "failedCount": 0
+        }
+      ],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+---
+
+### 10.4. Mark Notification As Read
 
 **Endpoint:** `PATCH /api/notifications/{id}/read`
 

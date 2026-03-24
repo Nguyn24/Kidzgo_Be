@@ -2,6 +2,7 @@ using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Homework.CreateHomeworkAssignment;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
+using Kidzgo.Application.Homework.CreateMultipleChoiceHomeworkFromBank;
 using Kidzgo.Application.Homework.DeleteHomeworkAssignment;
 using Kidzgo.Application.Homework.GetHomeworkAssignmentById;
 using Kidzgo.Application.Homework.GetHomeworkAssignments;
@@ -13,6 +14,8 @@ using Kidzgo.Application.Homework.LinkHomeworkToMission;
 using Kidzgo.Application.Homework.MarkHomeworkLateOrMissing;
 using Kidzgo.Application.Homework.SetHomeworkRewardStars;
 using Kidzgo.Application.Homework.UpdateHomeworkAssignment;
+using Kidzgo.Domain.Homework;
+using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using MediatR;
@@ -116,6 +119,52 @@ public class HomeworkController : ControllerBase
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             Questions = questions
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(r => $"/api/homework/{r.Id}");
+    }
+
+    /// <summary>
+    /// Táº¡o Multiple Choice Homework Assignment tá»« Question Bank
+    /// </summary>
+    [HttpPost("multiple-choice/from-bank")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> CreateMultipleChoiceHomeworkFromBank(
+        [FromBody] CreateMultipleChoiceHomeworkFromBankRequest request,
+        CancellationToken cancellationToken)
+    {
+        var distribution = new List<QuestionLevelCountDto>();
+
+        for (int i = 0; i < request.Distribution.Count; i++)
+        {
+            var d = request.Distribution[i];
+            if (!Enum.TryParse<QuestionLevel>(d.Level, ignoreCase: true, out var level))
+            {
+                return Results.BadRequest($"Invalid level: {d.Level}");
+            }
+
+            distribution.Add(new QuestionLevelCountDto
+            {
+                Level = level,
+                Count = d.Count
+            });
+        }
+
+        var command = new CreateMultipleChoiceHomeworkFromBankCommand
+        {
+            ClassId = request.ClassId,
+            ProgramId = request.ProgramId,
+            SessionId = request.SessionId,
+            Title = request.Title,
+            Description = request.Description,
+            DueAt = request.DueAt,
+            RewardStars = request.RewardStars,
+            TimeLimitMinutes = request.TimeLimitMinutes,
+            AllowResubmit = request.AllowResubmit,
+            MissionId = request.MissionId,
+            Instructions = request.Instructions,
+            Distribution = distribution
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -2,6 +2,7 @@ using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
 using Kidzgo.Application.Profiles.ApproveProfile;
+using Kidzgo.Application.Programs.UpsertProgramLeavePolicy;
 using Kidzgo.Application.Users.Admin.AssignBranch;
 using Kidzgo.Application.Users.Admin.CreateUser;
 using Kidzgo.Application.Users.Admin.GetAllUser;
@@ -187,6 +188,22 @@ public class AdminUserController : ControllerBase
         var command = new ApproveProfileCommand
         {
             Id = request.ProfileId,
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPatch("/api/admin/programs/{programId:guid}/monthly-leave-limit")]
+    public async Task<IResult> UpsertProgramMonthlyLeaveLimit(
+        Guid programId,
+        [FromBody] UpsertProgramLeavePolicyRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpsertProgramLeavePolicyCommand
+        {
+            ProgramId = programId,
+            MaxLeavesPerMonth = request.MaxLeavesPerMonth
         };
 
         var result = await _mediator.Send(command, cancellationToken);

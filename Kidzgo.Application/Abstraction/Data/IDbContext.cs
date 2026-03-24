@@ -15,6 +15,7 @@ using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Registrations;
 
 namespace Kidzgo.Application.Abstraction.Data;
@@ -72,6 +73,7 @@ public interface IDbContext
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }
     DbSet<HomeworkQuestion> HomeworkQuestions { get; }
+    DbSet<QuestionBankItem> QuestionBankItems { get; }
 
     DbSet<HomeworkStudent> HomeworkStudents { get; }
     DbSet<LessonPlan> LessonPlans { get; }
@@ -96,6 +98,7 @@ public interface IDbContext
 
     // Programs
     DbSet<Program> Programs { get; }
+    DbSet<ProgramLeavePolicy> ProgramLeavePolicies { get; }
     DbSet<TuitionPlan> TuitionPlans { get; }
 
     // Registrations

@@ -41,8 +41,6 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
-        // Seed một template mẫu cho quên mật khẩu
-        // Sử dụng static DateTime thay vì DateTime.UtcNow để tránh PendingModelChangesWarning
         var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         builder.HasData(new EmailTemplate
@@ -69,7 +67,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
         {
             Id = Guid.Parse("b9f6c8a1-3f57-45c6-8f4b-9f0c2b7d7f10"),
             Code = "PROFILE_CREATED",
-            Subject = "KidzGo | Hồ sơ đã được tạo thành công",
+            Subject = "KidzGo | Hồ sơ mới đã sẵn sàng xác minh",
             Body = """
                    <div style="margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#1f2937;">
                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;">
@@ -82,7 +80,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
                                    <p style="margin:0 0 8px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">KidzGo Learning Center</p>
                                    <h1 style="margin:0;font-size:28px;line-height:1.3;font-weight:700;">Hồ sơ mới đã sẵn sàng</h1>
                                    <p style="margin:10px 0 0 0;font-size:15px;line-height:1.6;opacity:.95;">
-                                     Xin chào {{profile_name}}, tài khoản {{profile_type}} của bạn đã được tạo và sẵn sàng cho bước xác minh.
+                                     Xin chào {{recipient_name}}, tài khoản của bạn hiện có {{profile_count}} hồ sơ đã được phê duyệt và sẵn sàng cho bước xác minh.
                                    </p>
                                  </div>
                                </td>
@@ -90,43 +88,36 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
                              <tr>
                                <td style="padding:26px 30px 12px 30px;">
                                  <p style="margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#475569;">
-                                   Vui lòng kiểm tra thông tin bên dưới. Nếu cần chỉnh sửa, sau khi xác nhận có thể chỉnh sửa thông tin. Mật khẩu đăng nhập tài khoản và mã pin của phụ huynh là mặc định vui lòng thay đổi sau khi nhận được tài khoản.
+                                   Vui lòng kiểm tra thông tin bên dưới. Mật khẩu đăng nhập và mã PIN phụ huynh hiện đang là mặc định, vui lòng đổi lại sau khi đăng nhập.
                                  </p>
                                </td>
                              </tr>
                              <tr>
                                <td style="padding:0 30px 20px 30px;">
-                                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
+                                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbeafe;border-radius:12px;background:#eff6ff;">
                                    <tr>
                                      <td style="padding:16px 18px;">
-                                       <p style="margin:0 0 8px 0;font-size:13px;color:#64748b;">Thông tin hồ sơ</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Tên hiển thị:</strong> {{profile_name}}</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Họ tên:</strong> {{full_name}}</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Loại hồ sơ:</strong> {{profile_type}}</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Giới tính:</strong> {{gender}}</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Ngày sinh:</strong> {{birth_day}}</p>
-                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Email:</strong> {{email}}</p>
+                                       <p style="margin:0 0 10px 0;font-size:13px;color:#1d4ed8;text-transform:uppercase;letter-spacing:.04em;">Thông tin tài khoản</p>
+                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Email đăng nhập:</strong> {{email}}</p>
                                        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Số điện thoại:</strong> {{phone}}</p>
-                                       <p style="margin:0 0 0 0;font-size:14px;"><strong>Zalo ID:</strong> {{zalo_id}}</p>
+                                       <p style="margin:0 0 6px 0;font-size:14px;"><strong>Mật khẩu mặc định:</strong> {{password}}</p>
+                                       <p style="margin:0;font-size:14px;"><strong>PIN phụ huynh mặc định:</strong> {{pin}}</p>
                                      </td>
                                    </tr>
                                  </table>
                                </td>
                              </tr>
                              <tr>
-                               <td style="padding:6px 30px 28px 30px;">
-                                 <table role="presentation" cellspacing="0" cellpadding="0">
-                                   <tr>
-                                     <td style="padding-right:10px;">
-                                       <a href="{{verify_link}}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;">Xác minh hồ sơ</a>
-                                     </td>
-                                     <td>
-                                       <a href="{{update_link}}" style="display:inline-block;background:#ffffff;color:#1d4ed8;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;border:1px solid #bfdbfe;">Cập nhật thông tin</a>
-                                     </td>
-                                   </tr>
-                                 </table>
+                               <td style="padding:0 30px 8px 30px;">
+                                 <p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Danh sách hồ sơ đã được duyệt</p>
+                                 {{profiles_html}}
+                               </td>
+                             </tr>
+                             <tr>
+                               <td style="padding:8px 30px 28px 30px;">
+                                 <a href="{{verify_link}}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;">Xác minh tất cả hồ sơ</a>
                                  <p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#64748b;">
-                                   Thời gian tạo hồ sơ: {{created_at}}
+                                   Nút xác minh sẽ kích hoạt toàn bộ hồ sơ đã được duyệt của tài khoản này.
                                  </p>
                                </td>
                              </tr>
@@ -143,7 +134,7 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
                      </table>
                    </div>
                    """,
-            Placeholders = """["profile_name","profile_type","email","phone","full_name","gender","birth_day","zalo_id","verify_link","update_link","created_at"]""",
+            Placeholders = """["recipient_name","profile_count","profiles_html","email","phone","password","pin","verify_link","profile_names"]""",
             IsActive = true,
             IsDeleted = false,
             CreatedAt = seedDate,

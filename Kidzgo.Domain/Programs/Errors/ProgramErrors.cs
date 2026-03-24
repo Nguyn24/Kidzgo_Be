@@ -15,5 +15,17 @@ public static class ProgramErrors
     public static readonly Error HasActiveClasses = Error.Conflict(
         "Program.HasActiveClasses",
         "Cannot delete program with active classes");
+
+    public static readonly Error NotMakeupProgram = Error.Validation(
+        "Program.NotMakeupProgram",
+        "Program is not a makeup program");
+
+    public static Error DefaultMakeupClassNotFound(Guid? classId) => Error.NotFound(
+        "Program.DefaultMakeupClassNotFound",
+        $"Default makeup class with Id = '{classId}' was not found");
+
+    public static Error DefaultMakeupClassMismatch(Guid? classId, Guid? programId) => Error.Validation(
+        "Program.DefaultMakeupClassMismatch",
+        $"Class with Id = '{classId}' does not belong to program '{programId}'");
 }
 

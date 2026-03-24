@@ -51,6 +51,8 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.Property(x=>x.IsMakeup)
             .IsRequired();
 
+        builder.Property(x => x.DefaultMakeupClassId);
+
         // Relationships
         builder.HasOne(x => x.Branch)
             .WithMany()
@@ -60,6 +62,11 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.HasMany(x => x.Classes)
             .WithOne(x => x.Program)
             .HasForeignKey(x => x.ProgramId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.DefaultMakeupClass)
+            .WithMany()
+            .HasForeignKey(x => x.DefaultMakeupClassId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.TuitionPlans)
