@@ -82,32 +82,6 @@ public sealed class SchedulePlacementTestCommandHandler(
                 Domain.Common.Error.Validation("LeadId", "Either LeadId or LeadChildId must be provided"));
         }
 
-        // Validate StudentProfile if provided
-        if (command.StudentProfileId.HasValue)
-        {
-            var profile = await context.Profiles
-                .FirstOrDefaultAsync(p => p.Id == command.StudentProfileId.Value, cancellationToken);
-
-            if (profile is null || profile.ProfileType != Kidzgo.Domain.Users.ProfileType.Student)
-            {
-                return Result.Failure<SchedulePlacementTestResponse>(
-                    PlacementTestErrors.StudentProfileNotFound(command.StudentProfileId));
-            }
-        }
-
-        // Validate Class if provided
-        if (command.ClassId.HasValue)
-        {
-            var classExists = await context.Classes
-                .AnyAsync(c => c.Id == command.ClassId.Value, cancellationToken);
-
-            if (!classExists)
-            {
-                return Result.Failure<SchedulePlacementTestResponse>(
-                    PlacementTestErrors.ClassNotFound(command.ClassId));
-            }
-        }
-
         // Validate Invigilator if provided
         if (command.InvigilatorUserId.HasValue)
         {
@@ -132,8 +106,6 @@ public sealed class SchedulePlacementTestCommandHandler(
             Id = Guid.NewGuid(),
             LeadId = lead.Id,
             LeadChildId = leadChild.Id,
-            StudentProfileId = command.StudentProfileId,
-            ClassId = command.ClassId,
             ScheduledAt = scheduledAtUtc,
             Status = PlacementTestStatus.Scheduled,
             Room = command.Room?.Trim(),
@@ -165,8 +137,6 @@ public sealed class SchedulePlacementTestCommandHandler(
             Id = placementTest.Id,
             LeadId = placementTest.LeadId,
             LeadChildId = placementTest.LeadChildId,
-            StudentProfileId = placementTest.StudentProfileId,
-            ClassId = placementTest.ClassId,
             ScheduledAt = placementTest.ScheduledAt,
             Status = placementTest.Status.ToString(),
             Room = placementTest.Room,

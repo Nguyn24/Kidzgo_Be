@@ -6,6 +6,7 @@ using Kidzgo.Application.PlacementTests.ConvertLeadToEnrolled;
 using Kidzgo.Application.PlacementTests.GetPlacementTestById;
 using Kidzgo.Application.PlacementTests.GetPlacementTests;
 using Kidzgo.Application.PlacementTests.MarkPlacementTestNoShow;
+using Kidzgo.Application.PlacementTests.RetakePlacementTest;
 using Kidzgo.Application.PlacementTests.SchedulePlacementTest;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTest;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTestResults;
@@ -16,9 +17,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kidzgo.API.Controllers;
 
-/// <summary>
-/// UC-027 to UC-038: Placement Test Management APIs
-/// </summary>
 [Route("api/placement-tests")]
 [ApiController]
 [Authorize]
@@ -31,9 +29,6 @@ public class PlacementTestController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// UC-027: Đặt lịch Placement Test
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> SchedulePlacementTest(
@@ -44,8 +39,6 @@ public class PlacementTestController : ControllerBase
         {
             LeadId = request.LeadId,
             LeadChildId = request.LeadChildId,
-            StudentProfileId = request.StudentProfileId,
-            ClassId = request.ClassId,
             ScheduledAt = request.ScheduledAt,
             Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId
@@ -55,9 +48,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-028: Xem danh sách Placement Tests
-    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetPlacementTests(
@@ -85,9 +75,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-028: Xem chi tiết Placement Test
-    /// </summary>
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetPlacementTestById(
@@ -103,9 +90,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-029: Cập nhật thông tin Placement Test
-    /// </summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdatePlacementTest(
@@ -127,9 +111,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-030: Hủy Placement Test
-    /// </summary>
     [HttpPost("{id}/cancel")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> CancelPlacementTest(
@@ -147,9 +128,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-031: Đánh dấu NO_SHOW
-    /// </summary>
     [HttpPost("{id}/no-show")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> MarkPlacementTestNoShow(
@@ -165,9 +143,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-032 to UC-036: Nhập kết quả Placement Test
-    /// </summary>
     [HttpPut("{id}/results")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdatePlacementTestResults(
@@ -183,7 +158,6 @@ public class PlacementTestController : ControllerBase
             ReadingScore = request.ReadingScore,
             WritingScore = request.WritingScore,
             ResultScore = request.ResultScore,
-            LevelRecommendation = request.LevelRecommendation,
             ProgramRecommendation = request.ProgramRecommendation,
             AttachmentUrl = request.AttachmentUrl
         };
@@ -192,9 +166,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-037: Ghi chú Placement Test
-    /// </summary>
     [HttpPost("{id}/notes")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> AddPlacementTestNote(
@@ -212,9 +183,6 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// UC-038: Chuyển Lead sang ENROLLED sau Placement Test
-    /// </summary>
     [HttpPost("{id}/convert-to-enrolled")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> ConvertLeadToEnrolled(
@@ -231,5 +199,28 @@ public class PlacementTestController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-}
 
+    [HttpPost("{id}/retake")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> RetakePlacementTest(
+        Guid id,
+        [FromBody] RetakePlacementTestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new RetakePlacementTestCommand
+        {
+            OriginalPlacementTestId = id,
+            StudentProfileId = request.StudentProfileId,
+            NewProgramId = request.NewProgramId,
+            NewTuitionPlanId = request.NewTuitionPlanId,
+            BranchId = request.BranchId,
+            ScheduledAt = request.ScheduledAt,
+            Room = request.Room,
+            InvigilatorUserId = request.InvigilatorUserId,
+            Note = request.Note
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+}

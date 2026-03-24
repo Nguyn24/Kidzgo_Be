@@ -6,8 +6,6 @@ public sealed class SchedulePlacementTestCommand : ICommand<SchedulePlacementTes
 {
     public Guid? LeadId { get; init; }
     public Guid? LeadChildId { get; init; }
-    public Guid? StudentProfileId { get; init; }
-    public Guid? ClassId { get; init; }
     public DateTime ScheduledAt { get; init; }
     public string? Room { get; init; }
     public Guid? InvigilatorUserId { get; init; }
