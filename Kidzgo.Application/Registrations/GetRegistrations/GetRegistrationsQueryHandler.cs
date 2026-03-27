@@ -4,7 +4,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kidzgo.Application.Registrations.GetRegistrations.Handler;
+namespace Kidzgo.Application.Registrations.GetRegistrations;
 
 public sealed class GetRegistrationsQueryHandler(
     IDbContext context
@@ -63,7 +63,7 @@ public sealed class GetRegistrationsQueryHandler(
             {
                 Id = r.Id,
                 StudentProfileId = r.StudentProfileId,
-                StudentName = r.StudentProfile.FullName,
+                StudentName = r.StudentProfile.DisplayName,
                 BranchId = r.BranchId,
                 BranchName = r.Branch.Name,
                 ProgramId = r.ProgramId,

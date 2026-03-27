@@ -18,6 +18,9 @@ public sealed class MarkOverdueHomeworkSubmissionsJob(
     ILogger<MarkOverdueHomeworkSubmissionsJob> logger
 ) : IJob
 {
+    private const string AutoGradeFeedback =
+        "Automatically graded 0 because the homework was not submitted before the deadline.";
+
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
@@ -44,11 +47,19 @@ public sealed class MarkOverdueHomeworkSubmissionsJob(
         foreach (var hs in overdue)
         {
             hs.Status = HomeworkStatus.Missing;
-            
+            hs.Score = 0;
+            hs.GradedAt = now;
+
+            if (string.IsNullOrWhiteSpace(hs.TeacherFeedback))
+            {
+                hs.TeacherFeedback = AutoGradeFeedback;
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Marked {Count} overdue homework submissions as Missing", overdue.Count);
+        logger.LogInformation(
+            "Marked {Count} overdue homework submissions as Missing and auto-graded 0",
+            overdue.Count);
     }
 }
 

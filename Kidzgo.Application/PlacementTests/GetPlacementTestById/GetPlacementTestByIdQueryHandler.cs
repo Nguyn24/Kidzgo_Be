@@ -55,6 +55,11 @@ public sealed class GetPlacementTestByIdQueryHandler(
             ProgramRecommendation = placementTest.ProgramRecommendation,
             Notes = placementTest.Notes,
             AttachmentUrl = placementTest.AttachmentUrl,
+            IsAccountProfileCreated = placementTest.StudentProfileId.HasValue ||
+                                      placementTest.LeadChild?.ConvertedStudentProfileId.HasValue == true,
+            IsConvertedToEnrolled = placementTest.LeadChildId.HasValue
+                ? placementTest.LeadChild?.Status == LeadChildStatus.Enrolled
+                : placementTest.Lead?.Status == LeadStatus.Enrolled,
             CreatedAt = placementTest.CreatedAt,
             UpdatedAt = placementTest.UpdatedAt
         };
