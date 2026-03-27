@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,8 @@ public sealed class GetPlacementTestsQueryHandler(
             placementTestsQuery = placementTestsQuery.Where(pt => pt.ScheduledAt <= toDateUtc);
         }
 
+        placementTestsQuery = ApplySorting(placementTestsQuery, query);
+
         var totalCount = await placementTestsQuery.CountAsync(cancellationToken);
 
         var placementTests = await placementTestsQuery
@@ -56,7 +59,6 @@ public sealed class GetPlacementTestsQueryHandler(
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
             .Include(pt => pt.InvigilatorUser)
-            .OrderByDescending(pt => pt.ScheduledAt ?? pt.CreatedAt)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .Select(pt => new PlacementTestDto
@@ -102,6 +104,38 @@ public sealed class GetPlacementTestsQueryHandler(
             PageSize = query.PageSize,
             TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize)
         });
+    }
+
+    private static IQueryable<PlacementTest> ApplySorting(
+        IQueryable<PlacementTest> placementTestsQuery,
+        GetPlacementTestsQuery query)
+    {
+        if (string.Equals(query.SortBy, "branch", StringComparison.OrdinalIgnoreCase))
+        {
+            return query.SortOrder == SortOrder.Ascending
+                ? placementTestsQuery
+                    .OrderBy(pt => pt.ClassId.HasValue
+                        ? pt.Class != null && pt.Class.Branch != null
+                            ? pt.Class.Branch.Name
+                            : string.Empty
+                        : pt.Lead != null && pt.Lead.BranchPreferenceNavigation != null
+                            ? pt.Lead.BranchPreferenceNavigation.Name
+                            : string.Empty)
+                    .ThenByDescending(pt => pt.ScheduledAt ?? pt.CreatedAt)
+                : placementTestsQuery
+                    .OrderByDescending(pt => pt.ClassId.HasValue
+                        ? pt.Class != null && pt.Class.Branch != null
+                            ? pt.Class.Branch.Name
+                            : string.Empty
+                        : pt.Lead != null && pt.Lead.BranchPreferenceNavigation != null
+                            ? pt.Lead.BranchPreferenceNavigation.Name
+                            : string.Empty)
+                    .ThenByDescending(pt => pt.ScheduledAt ?? pt.CreatedAt);
+        }
+
+        return query.SortOrder == SortOrder.Ascending
+            ? placementTestsQuery.OrderBy(pt => pt.ScheduledAt ?? pt.CreatedAt)
+            : placementTestsQuery.OrderByDescending(pt => pt.ScheduledAt ?? pt.CreatedAt);
     }
 }
 
