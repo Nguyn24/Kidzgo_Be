@@ -110,7 +110,12 @@ hoặc có thể để null hết
 - Target session phải là T7 hoặc CN
 - Target session phải thuộc các tuần SAU tuần nghỉ (không phải cùng tuần)
 - Target session không được là ngày trong quá khứ
-- **Nếu makeup credit đã được xếp lịch (đã có MakeupAllocation)**: Kiểm tra nếu ngày học bù đã qua thì không thể đổi được
+- **Nếu makeup credit đã được xếp lịch (đã có MakeupAllocation)**:
+  - Nếu buổi cũ là hôm nay hoặc đã qua thì không thể đổi
+  - Nếu buổi cũ còn ở tương lai thì được đổi sang buổi khác
+  - Buổi mới phải cùng program với buổi bù hiện tại
+  - Buổi mới phải còn slot
+- Khi đổi buổi, backend sẽ huỷ allocation cũ và tạo allocation mới; `MakeupCredit` vẫn giữ trạng thái `Used`
 
 **Request** (cho Student):
 ```json
@@ -147,6 +152,8 @@ hoặc có thể để null hết
 | `MakeupCredit.CannotUsePastDate` | Không thể sử dụng cho ngày trong quá khứ |
 | `MakeupCredit.CannotChangeAllocatedPastSession` | Không thể đổi buổi bù vì buổi bù đã được xếp lịch đã qua |
 | `MakeupCredit.SessionNotBelongToClass` | Session không thuộc về class được chỉ định |
+| `MakeupCredit.MustStayInCurrentMakeupProgram` | Buổi mới phải thuộc cùng program học bù với allocation hiện tại |
+| `MakeupCredit.TargetSessionFull` | Buổi học bù mới đã hết slot |
 
 
 
