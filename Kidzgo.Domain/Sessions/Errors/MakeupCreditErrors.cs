@@ -47,5 +47,13 @@ public static class MakeupCreditErrors
     public static Error SessionNotBelongToClass => Error.Validation(
         "MakeupCredit.SessionNotBelongToClass",
         "Target session does not belong to the specified class.");
+
+    public static Error MustStayInCurrentMakeupProgram => Error.Validation(
+        "MakeupCredit.MustStayInCurrentMakeupProgram",
+        "Target session must belong to the same makeup program as the current allocation.");
+
+    public static Error TargetSessionFull => Error.Conflict(
+        "MakeupCredit.TargetSessionFull",
+        "Target makeup session has no available slot.");
 }
 

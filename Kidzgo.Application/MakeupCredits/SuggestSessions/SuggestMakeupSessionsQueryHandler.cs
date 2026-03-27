@@ -1,5 +1,6 @@
-﻿using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -23,7 +24,6 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             return Result.Failure<IEnumerable<SuggestedSessionResponse>>(MakeupCreditErrors.NotFound(query.MakeupCreditId));
         }
 
-        // Lấy thông tin buổi học nguồn cùng với lớp và chương trình để xác định trình độ
         var sourceSession = await context.Sessions
             .AsNoTracking()
             .Include(s => s.Class)
@@ -36,15 +36,29 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
         }
 
         var now = DateTime.UtcNow;
-        var sourceProgram = sourceSession.Class.Program;
 
-        // Lấy danh sách các khoảng thời gian (start-end) của tất cả session mà học sinh đang học
-        // để tránh gợi ý các buổi bị trùng hoặc quá sát giờ (cách nhau < 2 tiếng)
+        Session? currentAllocatedSession = null;
+        Guid? restrictedProgramId = null;
+        if (credit.Status == MakeupCreditStatus.Used && credit.UsedSessionId.HasValue)
+        {
+            currentAllocatedSession = await context.Sessions
+                .AsNoTracking()
+                .Include(s => s.Class)
+                .ThenInclude(c => c.Program)
+                .FirstOrDefaultAsync(s => s.Id == credit.UsedSessionId.Value, cancellationToken);
+
+            if (currentAllocatedSession != null &&
+                DateOnly.FromDateTime(currentAllocatedSession.PlannedDatetime) > DateOnly.FromDateTime(now))
+            {
+                restrictedProgramId = currentAllocatedSession.Class.ProgramId;
+            }
+        }
+
         var studentSessionTimes = await context.Sessions
             .AsNoTracking()
             .Where(s => s.Class.ClassEnrollments
                 .Any(ce => ce.StudentProfileId == credit.StudentProfileId &&
-                           ce.Status == Domain.Classes.EnrollmentStatus.Active))
+                           ce.Status == EnrollmentStatus.Active))
             .Where(s => s.Status == SessionStatus.Scheduled)
             .Select(s => new
             {
@@ -53,18 +67,8 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             })
             .ToListAsync(cancellationToken);
 
-        // Gợi ý các buổi học bù:
-        // - Cùng trình độ (cùng Program.Level)
-        // - Cùng chi nhánh
-        // - Khác lớp với buổi nguồn
-        // - Trạng thái Scheduled và thời gian trong tương lai
-        // - Chỉ lấy các buổi T7 và CN
-        // - Lọc theo ngày bắt đầu - kết thúc và buổi trong ngày (nếu có)
-
-        // Determine date range (default to current week if not specified)
         var fromDate = query.FromDate ?? DateOnly.FromDateTime(now);
         var toDate = query.ToDate ?? fromDate.AddDays(7);
-
         string? timeOfDay = query.TimeOfDay?.ToLower().Trim();
 
         var rawSuggestionsQuery = context.Sessions
@@ -72,14 +76,19 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             .Include(s => s.Class)
             .ThenInclude(c => c.Program)
             .Where(s => s.Id != sourceSession.Id)
+            .Where(s => !credit.UsedSessionId.HasValue || s.Id != credit.UsedSessionId.Value)
             .Where(s => s.Status == SessionStatus.Scheduled && s.PlannedDatetime >= now)
             .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) >= fromDate)
             .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) <= toDate)
-            // Only Saturday and Sunday
             .Where(s => DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Saturday ||
                         DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Sunday)
             .Where(s => s.BranchId == sourceSession.BranchId)
             .Where(s => s.ClassId != sourceSession.ClassId);
+
+        if (restrictedProgramId.HasValue)
+        {
+            rawSuggestionsQuery = rawSuggestionsQuery.Where(s => s.Class.ProgramId == restrictedProgramId.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(timeOfDay))
         {
@@ -99,25 +108,57 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             .OrderBy(s => s.PlannedDatetime)
             .ToListAsync(cancellationToken);
 
+        if (!rawSuggestions.Any())
+        {
+            return Array.Empty<SuggestedSessionResponse>();
+        }
+
+        var classIds = rawSuggestions
+            .Select(s => s.ClassId)
+            .Distinct()
+            .ToList();
+
+        var sessionIds = rawSuggestions
+            .Select(s => s.Id)
+            .ToList();
+
+        var enrollmentCounts = await context.ClassEnrollments
+            .AsNoTracking()
+            .Where(e => classIds.Contains(e.ClassId) && e.Status == EnrollmentStatus.Active)
+            .GroupBy(e => e.ClassId)
+            .Select(g => new { ClassId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ClassId, x => x.Count, cancellationToken);
+
+        var allocationCounts = await context.MakeupAllocations
+            .AsNoTracking()
+            .Where(a => sessionIds.Contains(a.TargetSessionId) &&
+                        a.MakeupCreditId != credit.Id &&
+                        a.Status != MakeupAllocationStatus.Cancelled)
+            .GroupBy(a => a.TargetSessionId)
+            .Select(g => new { SessionId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.SessionId, x => x.Count, cancellationToken);
+
         var minGap = TimeSpan.FromHours(2);
 
         var filtered = rawSuggestions
             .Where(s =>
             {
+                var activeEnrollmentCount = enrollmentCounts.GetValueOrDefault(s.ClassId);
+                var activeAllocationCount = allocationCounts.GetValueOrDefault(s.Id);
+                if (activeEnrollmentCount + activeAllocationCount >= s.Class.Capacity)
+                {
+                    return false;
+                }
+
                 var start = s.PlannedDatetime;
                 var end = s.PlannedDatetime.AddMinutes(s.DurationMinutes);
 
-                // Không chọn nếu khoảng thời gian này giao với bất kỳ session nào của học sinh
-                // hoặc khoảng cách giữa hai buổi < 2 tiếng
                 return !studentSessionTimes.Any(st =>
                 {
-                    // Điều kiện giao nhau (overlap)
-                    bool overlap = start < st.End && end > st.Start;
-
-                    // Khoảng cách tối thiểu 2 tiếng giữa các buổi (kể cả không overlap)
+                    var overlap = start < st.End && end > st.Start;
                     var gapToStart = (start - st.End).Duration();
                     var gapToEnd = (st.Start - end).Duration();
-                    bool tooClose = gapToStart < minGap || gapToEnd < minGap;
+                    var tooClose = gapToStart < minGap || gapToEnd < minGap;
 
                     return overlap || tooClose;
                 });
