@@ -10,6 +10,7 @@ using Kidzgo.Application.PlacementTests.RetakePlacementTest;
 using Kidzgo.Application.PlacementTests.SchedulePlacementTest;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTest;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTestResults;
+using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.CRM;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -56,6 +57,8 @@ public class PlacementTestController : ControllerBase
         [FromQuery] PlacementTestStatus? status,
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
+        [FromQuery] string? sortBy,
+        [FromQuery] SortOrder sortOrder = SortOrder.Descending,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
@@ -67,6 +70,8 @@ public class PlacementTestController : ControllerBase
             Status = status,
             FromDate = fromDate,
             ToDate = toDate,
+            SortBy = sortBy,
+            SortOrder = sortOrder,
             Page = page,
             PageSize = pageSize
         };

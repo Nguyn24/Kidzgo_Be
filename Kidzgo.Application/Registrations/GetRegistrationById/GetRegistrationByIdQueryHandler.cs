@@ -1,11 +1,10 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
-using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kidzgo.Application.Registrations.GetRegistrationById.Handler;
+namespace Kidzgo.Application.Registrations.GetRegistrationById;
 
 public sealed class GetRegistrationByIdQueryHandler(
     IDbContext context
@@ -32,7 +31,7 @@ public sealed class GetRegistrationByIdQueryHandler(
         {
             Id = registration.Id,
             StudentProfileId = registration.StudentProfileId,
-            StudentName = registration.StudentProfile.FullName,
+            StudentName = registration.StudentProfile.DisplayName,
             BranchId = registration.BranchId,
             BranchName = registration.Branch.Name,
             ProgramId = registration.ProgramId,
