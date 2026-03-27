@@ -45,6 +45,14 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionUnauthorized);
         }
 
+        if (homeworkStudent.Status == HomeworkStatus.Missing &&
+            homeworkStudent.SubmittedAt == null &&
+            homeworkStudent.GradedAt.HasValue)
+        {
+            return Result.Failure<SubmitHomeworkResponse>(
+                HomeworkErrors.SubmissionAlreadyAutoGraded);
+        }
+
         if (homeworkStudent.Status == HomeworkStatus.Submitted || homeworkStudent.Status == HomeworkStatus.Graded)
         {
             return Result.Failure<SubmitHomeworkResponse>(

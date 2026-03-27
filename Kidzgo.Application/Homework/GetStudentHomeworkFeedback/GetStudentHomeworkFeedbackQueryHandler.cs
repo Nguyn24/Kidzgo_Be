@@ -41,9 +41,10 @@ public sealed class GetStudentHomeworkFeedbackQueryHandler(
             .Include(hs => hs.Assignment)
                 .ThenInclude(a => a.Class)
             .Where(hs => hs.StudentProfileId == studentId.Value)
-            .Where(hs => hs.Status == HomeworkStatus.Graded || 
-                        (!string.IsNullOrWhiteSpace(hs.TeacherFeedback) || 
-                         !string.IsNullOrWhiteSpace(hs.AiFeedback)))
+            // AiFeedback is stored as jsonb, so avoid string functions that PostgreSQL cannot apply to jsonb.
+            .Where(hs => hs.Status == HomeworkStatus.Graded ||
+                         !string.IsNullOrWhiteSpace(hs.TeacherFeedback) ||
+                         hs.AiFeedback != null)
             .AsQueryable();
 
         // Filter by class
