@@ -84,6 +84,11 @@ public sealed class GetPlacementTestsQueryHandler(
                 ProgramRecommendation = pt.ProgramRecommendation,
                 Notes = pt.Notes,
                 AttachmentUrl = pt.AttachmentUrl,
+                IsAccountProfileCreated = pt.StudentProfileId.HasValue ||
+                                          (pt.LeadChild != null && pt.LeadChild.ConvertedStudentProfileId.HasValue),
+                IsConvertedToEnrolled = pt.LeadChildId.HasValue
+                    ? pt.LeadChild != null && pt.LeadChild.Status == LeadChildStatus.Enrolled
+                    : pt.Lead != null && pt.Lead.Status == LeadStatus.Enrolled,
                 CreatedAt = pt.CreatedAt,
                 UpdatedAt = pt.UpdatedAt
             })

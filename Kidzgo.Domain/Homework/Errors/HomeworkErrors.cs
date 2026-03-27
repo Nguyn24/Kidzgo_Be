@@ -65,6 +65,10 @@ public static class HomeworkErrors
         "HomeworkSubmission.AlreadySubmitted",
         "This homework has already been submitted");
 
+    public static readonly Error SubmissionAlreadyAutoGraded = Error.Validation(
+        "HomeworkSubmission.AlreadyAutoGraded",
+        "This homework was automatically graded 0 because it was not submitted before the deadline");
+
     public static Error SubmissionInvalidData(string submissionType) => Error.Validation(
         "HomeworkSubmission.InvalidData",
         $"Submission data is required for {submissionType} submission type");

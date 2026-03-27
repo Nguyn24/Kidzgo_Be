@@ -34,6 +34,8 @@ public sealed class PlacementTestDto
     public string? ProgramRecommendation { get; init; }
     public string? Notes { get; init; }
     public string? AttachmentUrl { get; init; }
+    public bool IsAccountProfileCreated { get; init; }
+    public bool IsConvertedToEnrolled { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
