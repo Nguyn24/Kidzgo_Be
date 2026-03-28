@@ -254,6 +254,7 @@ public static class DependencyInjection
         services.AddScoped<ITemplateRenderer, TemplateRenderer>();
         services.AddScoped<IImageUploader, ImageUploader>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<ITeachingMaterialStorageService, TeachingMaterialStorageService>();
         
         // Register FileStorageService - Local hoặc Cloudinary dựa trên config
         var fileStorageProvider = configuration["FileStorage:Provider"] ?? "Cloudinary";
