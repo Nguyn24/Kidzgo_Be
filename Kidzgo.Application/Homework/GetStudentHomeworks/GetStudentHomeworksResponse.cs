@@ -13,6 +13,7 @@ public sealed class StudentHomeworkDto
     public Guid AssignmentId { get; init; }
     public string AssignmentTitle { get; init; } = null!;
     public string? AssignmentDescription { get; init; }
+    public string? AssignmentAttachmentUrl { get; init; }
     public Guid ClassId { get; init; }
     public string ClassCode { get; init; } = null!;
     public string ClassTitle { get; init; } = null!;

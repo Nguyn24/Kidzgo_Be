@@ -29,13 +29,19 @@ public sealed class CreateProfileCommandHandler(
         }
 
         var now = DateTime.UtcNow;
+        var trimmedDisplayName = command.DisplayName.Trim();
+        var trimmedFullName = string.IsNullOrWhiteSpace(command.FullName)
+            ? null
+            : command.FullName.Trim();
+        var lookupName = trimmedFullName ?? trimmedDisplayName;
         
         var profile = new Profile
         {
             Id = Guid.NewGuid(),
             UserId = command.UserId,
             ProfileType = command.ProfileType,
-            DisplayName = command.DisplayName.Trim(),
+            DisplayName = trimmedDisplayName,
+            FullName = trimmedFullName,
             PinHash = !string.IsNullOrWhiteSpace(command.PinHash) 
                 ? passwordHasher.Hash(command.PinHash) 
                 : null,
@@ -51,12 +57,12 @@ public sealed class CreateProfileCommandHandler(
         {
             var leadChild = await context.LeadChildren
                 .Include(lc => lc.Lead)
-                .Where(lc => lc.Lead.Email == user.Email && lc.ChildName.Contains(command.DisplayName.Trim()))
+                .Where(lc => lc.Lead.Email == user.Email && lc.ChildName.Contains(lookupName))
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (leadChild != null)
             {
-                profile.FullName = leadChild.ChildName;
+                profile.FullName ??= leadChild.ChildName;
                 profile.Gender = leadChild.Gender;
                 profile.DateOfBirth = leadChild.Dob;
             }
@@ -65,12 +71,12 @@ public sealed class CreateProfileCommandHandler(
         if (command.ProfileType == ProfileType.Parent)
         {
             var lead = await context.Leads
-                .Where(l=>l.Email == user.Email || l.Phone == user.PhoneNumber && l.ContactName.Contains(command.DisplayName.Trim()))
+                .Where(l=>l.Email == user.Email || l.Phone == user.PhoneNumber && l.ContactName.Contains(lookupName))
                 .FirstOrDefaultAsync(cancellationToken);
             
             if (lead != null)
             {
-                profile.FullName = lead.ContactName;
+                profile.FullName ??= lead.ContactName;
                 profile.ZaloId = lead.ZaloId;
             }
         }
@@ -133,6 +139,7 @@ public sealed class CreateProfileCommandHandler(
             UserId = profile.UserId,
             ProfileType = profile.ProfileType.ToString(),
             DisplayName = profile.DisplayName,
+            FullName = profile.FullName,
             IsActive = profile.IsActive,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt

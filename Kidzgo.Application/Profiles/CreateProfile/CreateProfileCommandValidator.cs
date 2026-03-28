@@ -13,6 +13,10 @@ public class CreateProfileCommandValidator : AbstractValidator<CreateProfileComm
             .NotEmpty()
             .MaximumLength(255)
             .WithMessage("Display name is required and must not exceed 255 characters");
+        RuleFor(command => command.FullName)
+            .MaximumLength(255)
+            .When(command => !string.IsNullOrWhiteSpace(command.FullName))
+            .WithMessage("Full name must not exceed 255 characters");
         RuleFor(command => command.ProfileType)
             .IsInEnum()
             .WithMessage("Profile type must be Parent or Student");

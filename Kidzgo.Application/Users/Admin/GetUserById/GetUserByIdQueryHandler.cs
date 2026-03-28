@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
@@ -14,34 +15,38 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
     {
         var user = await context.Users
             .Include(u => u.Branch)
-            .Where(u => u.Id == query.Id)
-            .Select(u => new GetUserByIdResponse
-            {
-                Id = u.Id,
-                Username = u.Username,
-                Name = u.Name,
-                PhoneNumber = u.PhoneNumber,
-                Email = u.Email,
-                Role = u.Role.ToString(),
-                BranchId = u.BranchId,
-                BranchCode = u.Branch != null ? u.Branch.Code : null,
-                BranchName = u.Branch != null ? u.Branch.Name : null,
-                BranchAddress = u.Branch != null ? u.Branch.Address : null,
-                BranchContactPhone = u.Branch != null ? u.Branch.ContactPhone : null,
-                BranchContactEmail = u.Branch != null ? u.Branch.ContactEmail : null,
-                IsActive = u.IsActive,
-                IsDeleted = u.IsDeleted,
-                CreatedAt = u.CreatedAt,
-                UpdatedAt = u.UpdatedAt
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == query.Id, cancellationToken);
 
         if (user is null)
         {
             return Result.Failure<GetUserByIdResponse>(UserErrors.NotFound(query.Id));
         }
 
-        return user;
+        var now = DateTime.UtcNow;
+
+        return Result.Success(new GetUserByIdResponse
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Name = user.Name,
+            PhoneNumber = user.PhoneNumber,
+            Email = user.Email,
+            Role = user.Role.ToString(),
+            BranchId = user.BranchId,
+            BranchCode = user.Branch?.Code,
+            BranchName = user.Branch?.Name,
+            BranchAddress = user.Branch?.Address,
+            BranchContactPhone = user.Branch?.ContactPhone,
+            BranchContactEmail = user.Branch?.ContactEmail,
+            IsActive = user.IsActive,
+            IsDeleted = user.IsDeleted,
+            LastLoginAt = user.LastLoginAt,
+            LastSeenAt = user.LastSeenAt,
+            IsOnline = UserPresenceHelper.IsOnline(user.LastSeenAt, now),
+            OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(user.LastSeenAt, now),
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
+        });
     }
 }
 

@@ -43,6 +43,7 @@ public class ProfileController : ControllerBase
             UserId = request.UserId,
             ProfileType = request.ProfileType,
             DisplayName = request.DisplayName,
+            FullName = request.FullName,
             PinHash = request.PinHash
         };
 
