@@ -41,6 +41,11 @@ public sealed class CheckInAttendanceStreakCommandHandler(
                 StarErrors.ProfileNotFound(studentProfileId));
         }
 
+        // Get gamification settings (default: 1 star, 5 exp if not set)
+        var settings = await context.GamificationSettings.FirstOrDefaultAsync(cancellationToken);
+        var rewardStars = settings?.CheckInRewardStars ?? 1;
+        var rewardExp = settings?.CheckInRewardExp ?? 5;
+
         // UC-213: Get today's date (UTC)
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
 
@@ -110,37 +115,35 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             StudentProfileId = studentProfileId,
             AttendanceDate = today,
             CurrentStreak = currentStreak,
-            RewardStars = 1, // UC-215: 1 star per check-in
-            RewardExp = 5,  // UC-216: 5 exp per check-in
+            RewardStars = rewardStars,
+            RewardExp = rewardExp,
             CreatedAt = DateTime.UtcNow
         };
 
         context.AttendanceStreaks.Add(streak);
         await context.SaveChangesAsync(cancellationToken);
 
-        // UC-215: Add Stars (1 star)
+        // UC-215: Add Stars
         await gamificationService.AddStarsForAttendance(
             studentProfileId,
-            1,
-            streak.Id, // Use streak ID as sourceId
+            rewardStars,
+            streak.Id,
             "Daily Check-in",
             cancellationToken);
 
-        // UC-216: Add XP (5 exp)
+        // UC-216: Add XP
         await gamificationService.AddXpForAttendance(
             studentProfileId,
-            5,
-            streak.Id, // Use streak ID as sourceId
+            rewardExp,
+            streak.Id,
             "Daily Check-in",
             cancellationToken);
 
         // ============================================================
         // GIAI DOAN 3: Track NoUnexcusedAbsence Mission progress
-        // Tang ProgressValue len 1 khi student check-in thanh cong
         // ============================================================
         var now = DateTime.UtcNow;
 
-        // Tim tat ca NoUnexcusedAbsence missions dang active cua student
         var activeAttendanceMissions = await context.MissionProgresses
             .Include(mp => mp.Mission)
             .Where(mp => mp.StudentProfileId == studentProfileId)
@@ -153,23 +156,19 @@ public sealed class CheckInAttendanceStreakCommandHandler(
 
         foreach (var missionProgress in activeAttendanceMissions)
         {
-            // Update status to InProgress if currently Assigned
             if (missionProgress.Status == MissionProgressStatus.Assigned)
             {
                 missionProgress.Status = MissionProgressStatus.InProgress;
             }
 
-            // Increment progress value
             missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
 
-            // Check if mission is completed (reached TotalRequired)
             var totalRequired = missionProgress.Mission.TotalRequired;
             if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
             {
                 missionProgress.Status = MissionProgressStatus.Completed;
                 missionProgress.CompletedAt = now;
 
-                // Cong Mission Reward Stars
                 if (missionProgress.Mission.RewardStars.HasValue &&
                     missionProgress.Mission.RewardStars.Value > 0)
                 {
@@ -181,7 +180,6 @@ public sealed class CheckInAttendanceStreakCommandHandler(
                         cancellationToken);
                 }
 
-                // Cong Mission Reward XP
                 if (missionProgress.Mission.RewardExp.HasValue &&
                     missionProgress.Mission.RewardExp.Value > 0)
                 {
@@ -195,7 +193,6 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             }
         }
 
-        // Save mission progress changes
         if (activeAttendanceMissions.Count > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
@@ -207,8 +204,8 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             AttendanceDate = today,
             CurrentStreak = currentStreak,
             MaxStreak = maxStreak,
-            RewardStars = 1,
-            RewardExp = 5,
+            RewardStars = rewardStars,
+            RewardExp = rewardExp,
             IsNewStreak = true
         });
     }
