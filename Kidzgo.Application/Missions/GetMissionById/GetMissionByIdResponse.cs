@@ -9,7 +9,8 @@ public sealed class GetMissionByIdResponse
     public Guid? TargetClassId { get; init; }
     public string? TargetClassCode { get; init; }
     public string? TargetClassTitle { get; init; }
-    public string? TargetGroup { get; init; }
+    public Guid? TargetStudentId { get; init; }
+    public List<Guid>? TargetGroup { get; init; }
     public string MissionType { get; init; } = null!;
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }

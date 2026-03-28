@@ -7,11 +7,12 @@ public sealed class UpdateMissionResponse
     public string? Description { get; init; }
     public string Scope { get; init; } = null!;
     public Guid? TargetClassId { get; init; }
-    public string? TargetGroup { get; init; }
+    public Guid? TargetStudentId { get; init; }
+    public List<Guid>? TargetGroup { get; init; }
     public string MissionType { get; init; } = null!;
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
     public int? RewardStars { get; init; }
     public int? RewardExp { get; init; }
+    public int? TotalRequired { get; init; }
 }
-
