@@ -146,9 +146,16 @@ public class MakeupController : ControllerBase
 
     /// UC-116: Danh sách Makeup Allocations theo học sinh
     [HttpGet("allocations")]
-    public async Task<IResult> Allocations([FromQuery] Guid studentProfileId, CancellationToken cancellationToken)
+    public async Task<IResult> Allocations(
+        [FromQuery] Guid studentProfileId,
+        [FromQuery] bool includeCancelled = false,
+        CancellationToken cancellationToken = default)
     {
-        var query = new GetMakeupAllocationsQuery { StudentProfileId = studentProfileId };
+        var query = new GetMakeupAllocationsQuery
+        {
+            StudentProfileId = studentProfileId,
+            IncludeCancelled = includeCancelled
+        };
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
