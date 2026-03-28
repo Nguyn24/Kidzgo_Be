@@ -1,6 +1,7 @@
 ﻿using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
@@ -13,6 +14,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
         public async Task<Result<GetCurrentUserResponse>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
         {
             var currentUserId = userContext.UserId;
+            var now = DateTime.UtcNow;
 
             var user = await context.Users
                 .Include(u => u.Branch)
@@ -49,6 +51,10 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                 }).ToList(),
                 SelectedProfileId = null, // TODO: Get from claim or session if needed
                 IsActive = user.IsActive,
+                LastLoginAt = user.LastLoginAt,
+                LastSeenAt = user.LastSeenAt,
+                IsOnline = UserPresenceHelper.IsOnline(user.LastSeenAt, now),
+                OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(user.LastSeenAt, now),
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };
