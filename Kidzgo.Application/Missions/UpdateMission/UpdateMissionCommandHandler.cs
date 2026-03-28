@@ -1,6 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,13 +26,20 @@ public sealed class UpdateMissionCommandHandler(
         }
 
         // Validate scope requirements
-        if (command.Scope == Domain.Gamification.MissionScope.Class && !command.TargetClassId.HasValue)
+        if (command.Scope == MissionScope.Class && !command.TargetClassId.HasValue)
         {
             return Result.Failure<UpdateMissionResponse>(
                 MissionErrors.InvalidScope);
         }
 
-        if (command.Scope == Domain.Gamification.MissionScope.Group && string.IsNullOrWhiteSpace(command.TargetGroup))
+        if (command.Scope == MissionScope.Student && !command.TargetStudentId.HasValue)
+        {
+            return Result.Failure<UpdateMissionResponse>(
+                MissionErrors.InvalidScope);
+        }
+
+        if (command.Scope == MissionScope.Group &&
+            (command.TargetGroup == null || command.TargetGroup.Count == 0))
         {
             return Result.Failure<UpdateMissionResponse>(
                 MissionErrors.InvalidScope);
@@ -44,7 +53,7 @@ public sealed class UpdateMissionCommandHandler(
         }
 
         // Verify class exists if scope is Class
-        if (command.Scope == Domain.Gamification.MissionScope.Class && command.TargetClassId.HasValue)
+        if (command.Scope == MissionScope.Class && command.TargetClassId.HasValue)
         {
             var classExists = await context.Classes
                 .AnyAsync(c => c.Id == command.TargetClassId.Value, cancellationToken);
@@ -53,6 +62,19 @@ public sealed class UpdateMissionCommandHandler(
             {
                 return Result.Failure<UpdateMissionResponse>(
                     MissionErrors.ClassNotFound);
+            }
+        }
+
+        // Verify student profile exists if scope is Student
+        if (command.Scope == MissionScope.Student && command.TargetStudentId.HasValue)
+        {
+            var studentExists = await context.Profiles
+                .AnyAsync(p => p.Id == command.TargetStudentId.Value, cancellationToken);
+
+            if (!studentExists)
+            {
+                return Result.Failure<UpdateMissionResponse>(
+                    MissionErrors.StudentNotFound);
             }
         }
 
@@ -69,20 +91,19 @@ public sealed class UpdateMissionCommandHandler(
                 : command.EndAt.Value.ToUniversalTime()
             : null;
 
-        // Convert empty string to null for TargetGroup (jsonb field)
-        string? targetGroup = string.IsNullOrWhiteSpace(command.TargetGroup) ? null : command.TargetGroup;
-
         // Update mission
         mission.Title = command.Title;
         mission.Description = command.Description;
         mission.Scope = command.Scope;
         mission.TargetClassId = command.TargetClassId;
-        mission.TargetGroup = targetGroup;
+        mission.TargetStudentId = command.TargetStudentId;
+        mission.TargetGroup = command.TargetGroup;
         mission.MissionType = command.MissionType;
         mission.StartAt = startAtUtc;
         mission.EndAt = endAtUtc;
         mission.RewardStars = command.RewardStars;
         mission.RewardExp = command.RewardExp;
+        mission.TotalRequired = command.TotalRequired;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -93,13 +114,14 @@ public sealed class UpdateMissionCommandHandler(
             Description = mission.Description,
             Scope = mission.Scope.ToString(),
             TargetClassId = mission.TargetClassId,
+            TargetStudentId = mission.TargetStudentId,
             TargetGroup = mission.TargetGroup,
             MissionType = mission.MissionType.ToString(),
             StartAt = mission.StartAt,
             EndAt = mission.EndAt,
             RewardStars = mission.RewardStars,
-            RewardExp = mission.RewardExp
+            RewardExp = mission.RewardExp,
+            TotalRequired = mission.TotalRequired
         };
     }
 }
-

@@ -31,10 +31,10 @@ public sealed class GetMissionsQueryHandler(
             missionsQuery = missionsQuery.Where(m => m.TargetClassId == query.TargetClassId.Value);
         }
 
-        // Filter by target group
-        if (!string.IsNullOrWhiteSpace(query.TargetGroup))
+        // Filter by target student
+        if (query.TargetStudentId.HasValue)
         {
-            missionsQuery = missionsQuery.Where(m => m.TargetGroup == query.TargetGroup);
+            missionsQuery = missionsQuery.Where(m => m.TargetStudentId == query.TargetStudentId.Value);
         }
 
         // Filter by mission type
@@ -68,6 +68,7 @@ public sealed class GetMissionsQueryHandler(
                 TargetClassId = m.TargetClassId,
                 TargetClassCode = m.TargetClass != null ? m.TargetClass.Code : null,
                 TargetClassTitle = m.TargetClass != null ? m.TargetClass.Title : null,
+                TargetStudentId = m.TargetStudentId,
                 TargetGroup = m.TargetGroup,
                 MissionType = m.MissionType.ToString(),
                 StartAt = m.StartAt,
