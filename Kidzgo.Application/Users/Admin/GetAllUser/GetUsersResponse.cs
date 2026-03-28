@@ -14,6 +14,10 @@ public sealed class GetUsersResponse
     public string? BranchName { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastSeenAt { get; set; }
+    public bool IsOnline { get; set; }
+    public long? OfflineDurationSeconds { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<UserProfileDto> Profiles { get; set; } = new();

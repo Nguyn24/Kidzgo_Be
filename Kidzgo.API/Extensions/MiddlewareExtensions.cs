@@ -28,6 +28,7 @@ public static class MiddlewareExtensions
         app.UseHttpsRedirection();
 
         app.UseAuthentication();
+        app.UseMiddleware<TrackUserPresenceMiddleware>();
         app.UseAuthorization();
         app.UseAuthStatusCodePages();
 
