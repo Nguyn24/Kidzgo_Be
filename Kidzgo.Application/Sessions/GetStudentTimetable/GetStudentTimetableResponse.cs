@@ -8,6 +8,7 @@ public sealed class GetStudentTimetableResponse
 public sealed class TimetableItemDto
 {
     public Guid Id { get; init; }
+    public string? Color { get; init; }
     public Guid ClassId { get; init; }
     public string ClassCode { get; init; } = null!;
     public string ClassTitle { get; init; } = null!;

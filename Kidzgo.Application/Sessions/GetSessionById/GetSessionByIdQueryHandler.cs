@@ -50,6 +50,7 @@ public sealed class GetSessionByIdQueryHandler(
         var sessionDto = new SessionDetailDto
         {
             Id = session.Id,
+            Color = session.Color,
             ClassId = session.ClassId,
             ClassCode = session.Class.Code,
             ClassTitle = session.Class.Title,
