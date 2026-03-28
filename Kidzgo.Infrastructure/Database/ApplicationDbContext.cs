@@ -18,6 +18,7 @@ using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Registrations;
+using Kidzgo.Domain.TeachingMaterials;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -107,6 +108,9 @@ public sealed class ApplicationDbContext(
     public DbSet<Program> Programs => Set<Program>();
     public DbSet<ProgramLeavePolicy> ProgramLeavePolicies => Set<ProgramLeavePolicy>();
     public DbSet<TuitionPlan> TuitionPlans => Set<TuitionPlan>();
+
+    // Teaching materials
+    public DbSet<TeachingMaterial> TeachingMaterials => Set<TeachingMaterial>();
 
     // Registrations
     public DbSet<Registration> Registrations => Set<Registration>();
