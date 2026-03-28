@@ -32,7 +32,7 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
         }
 
         user.Username = request.Username ?? user.Username;
-        user.Name = request.FullName ?? user.Name;
+        user.Name = request.Name ?? user.Name;
         user.Email = request.Email ?? user.Email;
         if (request.PhoneNumber != null)
         {

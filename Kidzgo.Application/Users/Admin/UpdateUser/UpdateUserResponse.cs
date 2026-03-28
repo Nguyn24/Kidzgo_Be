@@ -6,7 +6,7 @@ public class UpdateUserResponse
 {
     public Guid Id { get; init; }
     public string? Username { get; init; }
-    public string? FullName { get; init; }
+    public string? Name { get; init; }
     public string Email { get; init; } = null!;
     public string? PhoneNumber { get; init; }
     public string Role { get; init; } = null!;
@@ -20,7 +20,7 @@ public class UpdateUserResponse
     {
         Id = user.Id;
         Username = user.Username;
-        FullName = user.Name;
+        Name = user.Name;
         Email = user.Email;
         PhoneNumber = user.PhoneNumber;
         Role = user.Role.ToString();
