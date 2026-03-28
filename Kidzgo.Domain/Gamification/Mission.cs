@@ -14,12 +14,14 @@ public class Mission : Entity
     public string? Description { get; set; }
     public MissionScope Scope { get; set; }
     public Guid? TargetClassId { get; set; }
-    public string? TargetGroup { get; set; }
+    public Guid? TargetStudentId { get; set; } // Chi duy nhat cho Scope.Student
+    public List<Guid>? TargetGroup { get; set; } // Danh sach student IDs cho Scope.Group
     public MissionType MissionType { get; set; }
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
     public int? RewardStars { get; set; }
-    public int? RewardExp { get; set; } // Experience points reward
+    public int? RewardExp { get; set; }
+    public int? TotalRequired { get; set; } // Target value for streak missions
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
 

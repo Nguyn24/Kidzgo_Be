@@ -25,9 +25,9 @@ public class MissionController : ControllerBase
         _mediator = mediator;
     }
 
-    /// UC-188: Tạo Mission (CLASS/STUDENT/GROUP scope)
-    /// UC-193: Thiết lập reward_stars cho Mission
-    /// UC-194: Thiết lập reward_exp cho Mission
+    /// UC-188: Tao Mission (CLASS/STUDENT/GROUP scope)
+    /// UC-193: Thiet lap reward_stars cho Mission
+    /// UC-194: Thiet lap reward_exp cho Mission
     [HttpPost]
     [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
     public async Task<IResult> CreateMission(
@@ -40,25 +40,27 @@ public class MissionController : ControllerBase
             Description = request.Description,
             Scope = request.Scope,
             TargetClassId = request.TargetClassId,
+            TargetStudentId = request.TargetStudentId,
             TargetGroup = request.TargetGroup,
             MissionType = request.MissionType,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
             RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp
+            RewardExp = request.RewardExp,
+            TotalRequired = request.TotalRequired
         };
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchCreated(m => $"/api/missions/{m.Id}");
     }
 
-    /// UC-189: Xem danh sách Missions
+    /// UC-189: Xem danh sach Missions
     [HttpGet]
     [Authorize(Roles = "Admin,ManagementStaff,Teacher,Parent,Student")]
     public async Task<IResult> GetMissions(
         [FromQuery] MissionScope? scope,
         [FromQuery] Guid? targetClassId,
-        [FromQuery] string? targetGroup,
+        [FromQuery] Guid? targetStudentId,
         [FromQuery] MissionType? missionType,
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
@@ -69,7 +71,7 @@ public class MissionController : ControllerBase
         {
             Scope = scope,
             TargetClassId = targetClassId,
-            TargetGroup = targetGroup,
+            TargetStudentId = targetStudentId,
             MissionType = missionType,
             SearchTerm = searchTerm,
             PageNumber = pageNumber,
@@ -80,7 +82,7 @@ public class MissionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-190: Xem chi tiết Mission
+    /// UC-190: Xem chi tiet Mission
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff,Teacher,Parent,Student")]
     public async Task<IResult> GetMissionById(
@@ -96,9 +98,9 @@ public class MissionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-191: Cập nhật Mission
-    /// UC-193: Thiết lập reward_stars cho Mission
-    /// UC-194: Thiết lập reward_exp cho Mission
+    /// UC-191: Cap nhat Mission
+    /// UC-193: Thiet lap reward_stars cho Mission
+    /// UC-194: Thiet lap reward_exp cho Mission
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
     public async Task<IResult> UpdateMission(
@@ -113,19 +115,21 @@ public class MissionController : ControllerBase
             Description = request.Description,
             Scope = request.Scope,
             TargetClassId = request.TargetClassId,
+            TargetStudentId = request.TargetStudentId,
             TargetGroup = request.TargetGroup,
             MissionType = request.MissionType,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
             RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp
+            RewardExp = request.RewardExp,
+            TotalRequired = request.TotalRequired
         };
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
 
-    /// UC-192: Xóa Mission
+    /// UC-192: Xoa Mission
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> DeleteMission(
@@ -141,9 +145,9 @@ public class MissionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-197: Track progress của Mission
-    /// UC-198: Hoàn thành Mission (COMPLETED)
-    /// UC-199: Xem progress bar của Mission
+    /// UC-197: Track progress cua Mission
+    /// UC-198: Hoan thanh Mission (COMPLETED)
+    /// UC-199: Xem progress bar cua Mission
     [HttpGet("{id:guid}/progress")]
     [Authorize(Roles = "Admin,ManagementStaff,Teacher,Parent,Student")]
     public async Task<IResult> GetMissionProgress(
@@ -165,4 +169,3 @@ public class MissionController : ControllerBase
         return result.MatchOk();
     }
 }
-
