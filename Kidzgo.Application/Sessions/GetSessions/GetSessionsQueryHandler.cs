@@ -63,6 +63,7 @@ public sealed class GetSessionsQueryHandler(
             .Select(s => new SessionListItemDto
             {
                 Id = s.Id,
+                Color = s.Color,
                 ClassId = s.ClassId,
                 ClassCode = s.Class.Code,
                 ClassTitle = s.Class.Title,
