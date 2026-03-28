@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Gamification.CheckInAttendanceStreak;
 
 /// <summary>
-/// UC-213 to UC-220: Student tự điểm danh hàng ngày (Daily Check-in)
+/// UC-213 to UC-220: Student tu dong diem danh hang ngay (Daily Check-in)
 /// </summary>
 public sealed class CheckInAttendanceStreakCommandHandler(
     IDbContext context,
@@ -134,6 +134,73 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             "Daily Check-in",
             cancellationToken);
 
+        // ============================================================
+        // GIAI DOAN 3: Track NoUnexcusedAbsence Mission progress
+        // Tang ProgressValue len 1 khi student check-in thanh cong
+        // ============================================================
+        var now = DateTime.UtcNow;
+
+        // Tim tat ca NoUnexcusedAbsence missions dang active cua student
+        var activeAttendanceMissions = await context.MissionProgresses
+            .Include(mp => mp.Mission)
+            .Where(mp => mp.StudentProfileId == studentProfileId)
+            .Where(mp => mp.Mission.MissionType == MissionType.NoUnexcusedAbsence)
+            .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
+                         mp.Status == MissionProgressStatus.InProgress)
+            .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
+            .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var missionProgress in activeAttendanceMissions)
+        {
+            // Update status to InProgress if currently Assigned
+            if (missionProgress.Status == MissionProgressStatus.Assigned)
+            {
+                missionProgress.Status = MissionProgressStatus.InProgress;
+            }
+
+            // Increment progress value
+            missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
+
+            // Check if mission is completed (reached TotalRequired)
+            var totalRequired = missionProgress.Mission.TotalRequired;
+            if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
+            {
+                missionProgress.Status = MissionProgressStatus.Completed;
+                missionProgress.CompletedAt = now;
+
+                // Cong Mission Reward Stars
+                if (missionProgress.Mission.RewardStars.HasValue &&
+                    missionProgress.Mission.RewardStars.Value > 0)
+                {
+                    await gamificationService.AddStarsForMissionCompletion(
+                        studentProfileId,
+                        missionProgress.Mission.RewardStars.Value,
+                        missionProgress.MissionId,
+                        reason: $"Completed NoUnexcusedAbsence Mission: {missionProgress.Mission.Title}",
+                        cancellationToken);
+                }
+
+                // Cong Mission Reward XP
+                if (missionProgress.Mission.RewardExp.HasValue &&
+                    missionProgress.Mission.RewardExp.Value > 0)
+                {
+                    await gamificationService.AddXpForMissionCompletion(
+                        studentProfileId,
+                        missionProgress.Mission.RewardExp.Value,
+                        missionProgress.MissionId,
+                        reason: $"Completed NoUnexcusedAbsence Mission: {missionProgress.Mission.Title}",
+                        cancellationToken);
+                }
+            }
+        }
+
+        // Save mission progress changes
+        if (activeAttendanceMissions.Count > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         return Result.Success(new CheckInAttendanceStreakResponse
         {
             StudentProfileId = studentProfileId,
@@ -146,4 +213,3 @@ public sealed class CheckInAttendanceStreakCommandHandler(
         });
     }
 }
-
