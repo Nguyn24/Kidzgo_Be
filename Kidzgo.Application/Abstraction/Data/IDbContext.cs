@@ -17,6 +17,7 @@ using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Audit;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Registrations;
+using Kidzgo.Domain.TeachingMaterials;
 
 namespace Kidzgo.Application.Abstraction.Data;
 
@@ -100,6 +101,9 @@ public interface IDbContext
     DbSet<Program> Programs { get; }
     DbSet<ProgramLeavePolicy> ProgramLeavePolicies { get; }
     DbSet<TuitionPlan> TuitionPlans { get; }
+
+    // Teaching materials
+    DbSet<TeachingMaterial> TeachingMaterials { get; }
 
     // Registrations
     DbSet<Registration> Registrations { get; }
