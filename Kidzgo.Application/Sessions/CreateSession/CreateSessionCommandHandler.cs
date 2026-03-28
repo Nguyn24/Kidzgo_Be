@@ -54,6 +54,7 @@ public sealed class CreateSessionCommandHandler(
             Id = Guid.NewGuid(),
             ClassId = classEntity.Id,
             BranchId = classEntity.BranchId,
+            Color = SessionColorPalette.GetRandomColor(),
             PlannedDatetime = plannedUtc,
             PlannedRoomId = command.PlannedRoomId,
             PlannedTeacherId = command.PlannedTeacherId,
