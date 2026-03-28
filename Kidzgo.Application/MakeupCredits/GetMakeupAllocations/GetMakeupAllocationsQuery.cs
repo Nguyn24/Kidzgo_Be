@@ -8,6 +8,7 @@ namespace Kidzgo.Application.MakeupCredits.GetMakeupAllocations;
 public sealed class GetMakeupAllocationsQuery : IQuery<IEnumerable<MakeupAllocationResponse>>
 {
     public Guid StudentProfileId { get; set; }
+    public bool IncludeCancelled { get; set; }
 }
 
 public sealed class GetMakeupAllocationsQueryHandler(IDbContext context)
@@ -20,11 +21,13 @@ public sealed class GetMakeupAllocationsQueryHandler(IDbContext context)
         var allocations = await context.MakeupAllocations
             .AsNoTracking()
             .Where(a => a.MakeupCredit.StudentProfileId == query.StudentProfileId)
+            .Where(a => query.IncludeCancelled || a.Status != Domain.Sessions.MakeupAllocationStatus.Cancelled)
             .Select(a => new MakeupAllocationResponse
             {
                 Id = a.Id,
                 MakeupCreditId = a.MakeupCreditId,
                 TargetSessionId = a.TargetSessionId,
+                Status = a.Status.ToString(),
                 AssignedBy = a.AssignedBy,
                 AssignedAt = a.AssignedAt
             })
@@ -40,6 +43,7 @@ public sealed class MakeupAllocationResponse
     public Guid Id { get; set; }
     public Guid MakeupCreditId { get; set; }
     public Guid TargetSessionId { get; set; }
+    public string Status { get; set; } = string.Empty;
     public Guid? AssignedBy { get; set; }
     public DateTime? AssignedAt { get; set; }
 }
