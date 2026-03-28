@@ -6,6 +6,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
 using Kidzgo.Domain.Users;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Gamification.CheckInAttendanceStreak;
@@ -16,7 +17,8 @@ namespace Kidzgo.Application.Gamification.CheckInAttendanceStreak;
 public sealed class CheckInAttendanceStreakCommandHandler(
     IDbContext context,
     IUserContext userContext,
-    IGamificationService gamificationService)
+    IGamificationService gamificationService,
+    ILogger<CheckInAttendanceStreakCommandHandler> logger)
     : ICommandHandler<CheckInAttendanceStreakCommand, CheckInAttendanceStreakResponse>
 {
     public async Task<Result<CheckInAttendanceStreakResponse>> Handle(
@@ -140,16 +142,45 @@ public sealed class CheckInAttendanceStreakCommandHandler(
         // ============================================================
         var now = DateTime.UtcNow;
 
+        logger.LogInformation(
+            "[MissionDebug] Student={StudentId} checking NoUnexcusedAbsence missions at {Now}",
+            studentProfileId, now);
+
         // Tim tat ca NoUnexcusedAbsence missions dang active cua student
-        var activeAttendanceMissions = await context.MissionProgresses
+        // Query nao dang bi loi? Kiem tra tung where clause
+        var allStudentProgress = await context.MissionProgresses
             .Include(mp => mp.Mission)
             .Where(mp => mp.StudentProfileId == studentProfileId)
             .Where(mp => mp.Mission.MissionType == MissionType.NoUnexcusedAbsence)
+            .ToListAsync(cancellationToken);
+
+        logger.LogInformation(
+            "[MissionDebug] Found {Count} NoUnexcusedAbsence progress records for student",
+            allStudentProgress.Count);
+
+        foreach (var p in allStudentProgress)
+        {
+            logger.LogInformation(
+                "[MissionDebug] Progress: MissionId={MissionId}, Status={Status}, ProgressValue={ProgressValue}, " +
+                "TotalRequired={TotalRequired}, StartAt={StartAt}, EndAt={EndAt}, Now={Now}, " +
+                "StartBeforeNow={StartBefore}, EndAfterNow={EndAfter}",
+                p.MissionId, p.Status, p.ProgressValue,
+                p.Mission.TotalRequired, p.Mission.StartAt, p.Mission.EndAt, now,
+                p.Mission.StartAt == null || p.Mission.StartAt <= now,
+                p.Mission.EndAt == null || p.Mission.EndAt >= now);
+        }
+
+        // Filter them dang active (trong khoang thoi gian)
+        var activeAttendanceMissions = allStudentProgress
             .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
                          mp.Status == MissionProgressStatus.InProgress)
             .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
             .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
-            .ToListAsync(cancellationToken);
+            .ToList();
+
+        logger.LogInformation(
+            "[MissionDebug] {ActiveCount} missions are active (Assigned/InProgress + in date range)",
+            activeAttendanceMissions.Count);
 
         foreach (var missionProgress in activeAttendanceMissions)
         {
@@ -162,12 +193,22 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             // Increment progress value
             missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
 
+            logger.LogInformation(
+                "[MissionDebug] Incremented MissionId={MissionId}, new ProgressValue={ProgressValue}",
+                missionProgress.MissionId, missionProgress.ProgressValue);
+
             // Check if mission is completed (reached TotalRequired)
             var totalRequired = missionProgress.Mission.TotalRequired;
             if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
             {
                 missionProgress.Status = MissionProgressStatus.Completed;
                 missionProgress.CompletedAt = now;
+
+                logger.LogInformation(
+                    "[MissionDebug] MissionId={MissionId} COMPLETED! RewardStars={Stars}, RewardExp={Exp}",
+                    missionProgress.MissionId,
+                    missionProgress.Mission.RewardStars,
+                    missionProgress.Mission.RewardExp);
 
                 // Cong Mission Reward Stars
                 if (missionProgress.Mission.RewardStars.HasValue &&
@@ -199,6 +240,7 @@ public sealed class CheckInAttendanceStreakCommandHandler(
         if (activeAttendanceMissions.Count > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("[MissionDebug] Saved {Count} mission progress changes", activeAttendanceMissions.Count);
         }
 
         return Result.Success(new CheckInAttendanceStreakResponse

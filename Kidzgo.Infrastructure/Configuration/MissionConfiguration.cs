@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Kidzgo.Domain.Gamification;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Kidzgo.Infrastructure.Configuration;
 
@@ -29,7 +32,14 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
         builder.Property(x => x.TargetStudentId);
 
         builder.Property(x => x.TargetGroup)
-            .HasColumnType("jsonb");
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<List<Guid>>(v, (JsonSerializerOptions?)null))
+            .Metadata.SetValueComparer(new ValueComparer<List<Guid>>(
+                (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 
         builder.Property(x => x.MissionType)
             .HasConversion<string>()
