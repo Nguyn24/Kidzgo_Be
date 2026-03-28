@@ -47,6 +47,7 @@ public sealed class GetTeacherTimetableQueryHandler(
             .Select(s => new TimetableItemDto
             {
                 Id = s.Id,
+                Color = s.Color,
                 ClassId = s.ClassId,
                 ClassCode = s.Class.Code,
                 ClassTitle = s.Class.Title,
