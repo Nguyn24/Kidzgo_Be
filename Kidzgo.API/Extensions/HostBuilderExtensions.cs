@@ -30,11 +30,14 @@ public static class HostBuilderExtensions
             logPath = Path.Combine(AppContext.BaseDirectory, "logs", "kidzgo-.log");
         }
 
-        var logDirectory = Path.GetDirectoryName(logPath);
-        if (!string.IsNullOrWhiteSpace(logDirectory))
+        var errorLogPath = builder.Configuration["Serilog:File:ErrorPath"];
+        if (string.IsNullOrWhiteSpace(errorLogPath))
         {
-            Directory.CreateDirectory(logDirectory);
+            errorLogPath = Path.Combine(AppContext.BaseDirectory, "logs", "kidzgo-errors-.log");
         }
+
+        EnsureDirectoryExists(logPath);
+        EnsureDirectoryExists(errorLogPath);
 
         builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         {
@@ -43,7 +46,7 @@ public static class HostBuilderExtensions
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "Kidzgo.API")
-                .WriteTo.Console()
+                .WriteTo.Console(outputTemplate: GetOutputTemplate())
                 .WriteTo.File(
                     path: logPath,
                     rollingInterval: RollingInterval.Day,
@@ -51,9 +54,25 @@ public static class HostBuilderExtensions
                     fileSizeLimitBytes: context.Configuration.GetValue<long?>("Serilog:File:FileSizeLimitBytes") ?? 20_971_520,
                     rollOnFileSizeLimit: true,
                     shared: true,
+                    outputTemplate: GetOutputTemplate(),
                     restrictedToMinimumLevel: ParseLevel(
                         context.Configuration["Serilog:File:RestrictedToMinimumLevel"],
-                        LogEventLevel.Information));
+                        LogEventLevel.Information))
+                .WriteTo.File(
+                    path: errorLogPath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: context.Configuration.GetValue<int?>("Serilog:File:ErrorRetainedFileCountLimit")
+                        ?? context.Configuration.GetValue<int?>("Serilog:File:RetainedFileCountLimit")
+                        ?? 14,
+                    fileSizeLimitBytes: context.Configuration.GetValue<long?>("Serilog:File:ErrorFileSizeLimitBytes")
+                        ?? context.Configuration.GetValue<long?>("Serilog:File:FileSizeLimitBytes")
+                        ?? 20_971_520,
+                    rollOnFileSizeLimit: true,
+                    shared: true,
+                    outputTemplate: GetOutputTemplate(),
+                    restrictedToMinimumLevel: ParseLevel(
+                        context.Configuration["Serilog:File:ErrorRestrictedToMinimumLevel"],
+                        LogEventLevel.Error));
 
             var seqServerUrl = context.Configuration["Serilog:Seq:ServerUrl"];
             if (!string.IsNullOrWhiteSpace(seqServerUrl))
@@ -72,11 +91,27 @@ public static class HostBuilderExtensions
         });
     }
 
+    private static string GetOutputTemplate()
+    {
+        return "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] "
+             + "[{CorrelationId}] [{TraceIdentifier}] [{RequestMethod} {RequestPath}] "
+             + "[User:{UserId}] {Message:lj}{NewLine}{Exception}";
+    }
+
     private static LogEventLevel ParseLevel(string? value, LogEventLevel fallback)
     {
         return Enum.TryParse<LogEventLevel>(value, ignoreCase: true, out var parsed)
             ? parsed
             : fallback;
+    }
+
+    private static void EnsureDirectoryExists(string logPath)
+    {
+        var logDirectory = Path.GetDirectoryName(logPath);
+        if (!string.IsNullOrWhiteSpace(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
     }
 
     private static void TryConfigureWindowsEventLog(
