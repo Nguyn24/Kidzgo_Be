@@ -77,6 +77,7 @@ public sealed class ApplicationDbContext(
     public DbSet<StarTransaction> StarTransactions => Set<StarTransaction>();
     public DbSet<StudentLevel> StudentLevels => Set<StudentLevel>();
     public DbSet<AttendanceStreak> AttendanceStreaks => Set<AttendanceStreak>();
+    public DbSet<GamificationSettings> GamificationSettings => Set<GamificationSettings>();
 
     // Lesson Plans
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();

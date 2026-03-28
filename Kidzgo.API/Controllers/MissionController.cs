@@ -5,6 +5,7 @@ using Kidzgo.Application.Missions.DeleteMission;
 using Kidzgo.Application.Missions.GetMissionById;
 using Kidzgo.Application.Missions.GetMissionProgress;
 using Kidzgo.Application.Missions.GetMissions;
+using Kidzgo.Application.Missions.GetMyMissions;
 using Kidzgo.Application.Missions.UpdateMission;
 using Kidzgo.Domain.Gamification;
 using MediatR;
@@ -161,6 +162,26 @@ public class MissionController : ControllerBase
         {
             MissionId = id,
             StudentProfileId = studentProfileId,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Student xem danh sach Mission cua chinh minh (Progress)
+    /// </summary>
+    [HttpGet("me/progress")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher,Parent,Student")]
+    public async Task<IResult> GetMyMissions(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMyMissionsQuery
+        {
             PageNumber = pageNumber,
             PageSize = pageSize
         };
