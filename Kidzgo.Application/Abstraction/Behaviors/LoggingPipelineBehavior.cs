@@ -1,7 +1,6 @@
 using Kidzgo.Domain.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Serilog.Context;
 
 namespace Kidzgo.Application.Abstraction.Behaviors;
 
@@ -20,20 +19,30 @@ internal sealed class LoggingPipelineBehavior<TRequest, TResponse>(
 
         logger.LogInformation("Processing request {RequestName}", requestName);
 
-        TResponse result = await next();
+        try
+        {
+            TResponse result = await next();
 
-        if (result.IsSuccess)
-        {
-            logger.LogInformation("Completed request {RequestName}", requestName);
-        }
-        else
-        {
-            using (LogContext.PushProperty("Error", result.Error, true))
+            if (result.IsSuccess)
             {
-                logger.LogError("Completed request {RequestName} with error", requestName);
+                logger.LogInformation("Completed request {RequestName}", requestName);
             }
-        }
 
-        return result;
+            else
+            {
+                logger.LogWarning(
+                    "Completed request {RequestName} with application error {ErrorCode}: {ErrorDescription}",
+                    requestName,
+                    result.Error.Code,
+                    result.Error.Description);
+            }
+
+            return result;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Unhandled exception while processing request {RequestName}", requestName);
+            throw;
+        }
     }
 }
