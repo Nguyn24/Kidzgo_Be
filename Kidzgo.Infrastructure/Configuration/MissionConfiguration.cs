@@ -26,6 +26,8 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
 
         builder.Property(x => x.TargetClassId);
 
+        builder.Property(x => x.TargetStudentId);
+
         builder.Property(x => x.TargetGroup)
             .HasColumnType("jsonb");
 
@@ -41,6 +43,8 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
         builder.Property(x => x.RewardStars);
 
         builder.Property(x => x.RewardExp);
+
+        builder.Property(x => x.TotalRequired);
 
         builder.Property(x => x.CreatedBy);
 

@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
@@ -130,8 +131,74 @@ public sealed class SubmitHomeworkCommandHandler(
                 break;
         }
 
+        // ============================================================
+        // GIAI DOAN 2: Track HomeworkStreak Mission progress
+        // Chỉ increment progress khi nộp đúng hạn (Submitted)
+        // ============================================================
+        if (homeworkStudent.Status == HomeworkStatus.Submitted)
+        {
+            var now = DateTime.UtcNow;
+
+            // Tim tat ca HomeworkStreak missions đang active của student
+            // (đã có MissionProgress record, trong khoảng thời gian, chưa hoàn thành)
+            var activeHomeworkStreakMissions = await context.MissionProgresses
+                .Include(mp => mp.Mission)
+                .Where(mp => mp.StudentProfileId == studentId.Value)
+                .Where(mp => mp.Mission.MissionType == MissionType.HomeworkStreak)
+                .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
+                             mp.Status == MissionProgressStatus.InProgress)
+                .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
+                .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
+                .ToListAsync(cancellationToken);
+
+            foreach (var missionProgress in activeHomeworkStreakMissions)
+            {
+                // Update status to InProgress if currently Assigned
+                if (missionProgress.Status == MissionProgressStatus.Assigned)
+                {
+                    missionProgress.Status = MissionProgressStatus.InProgress;
+                }
+
+                // Increment progress value
+                missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
+
+                // Check if mission is completed (reached TotalRequired)
+                var totalRequired = missionProgress.Mission.TotalRequired;
+                if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
+                {
+                    missionProgress.Status = MissionProgressStatus.Completed;
+                    missionProgress.CompletedAt = now;
+
+                    // Cộng Mission Reward Stars
+                    if (missionProgress.Mission.RewardStars.HasValue &&
+                        missionProgress.Mission.RewardStars.Value > 0)
+                    {
+                        await gamificationService.AddStarsForMissionCompletion(
+                            studentId.Value,
+                            missionProgress.Mission.RewardStars.Value,
+                            missionProgress.MissionId,
+                            reason: $"Completed HomeworkStreak Mission: {missionProgress.Mission.Title}",
+                            cancellationToken);
+                    }
+
+                    // Cộng Mission Reward XP
+                    if (missionProgress.Mission.RewardExp.HasValue &&
+                        missionProgress.Mission.RewardExp.Value > 0)
+                    {
+                        await gamificationService.AddXpForMissionCompletion(
+                            studentId.Value,
+                            missionProgress.Mission.RewardExp.Value,
+                            missionProgress.MissionId,
+                            reason: $"Completed HomeworkStreak Mission: {missionProgress.Mission.Title}",
+                            cancellationToken);
+                    }
+                }
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
+        // UC-208: Cộng Homework Reward Stars (đúng hạn)
         if (homeworkStudent.Status == HomeworkStatus.Submitted &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)

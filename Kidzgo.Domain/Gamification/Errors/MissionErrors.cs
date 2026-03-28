@@ -12,9 +12,17 @@ public static class MissionErrors
         "Mission.ClassNotFound",
         "Target class not found");
 
+    public static readonly Error StudentNotFound = Error.NotFound(
+        "Mission.StudentNotFound",
+        "Target student not found");
+
+    public static Error SomeStudentsNotFound(int count) => Error.NotFound(
+        "Mission.SomeStudentsNotFound",
+        $"{count} student(s) not found");
+
     public static readonly Error InvalidScope = Error.Validation(
         "Mission.InvalidScope",
-        "Invalid mission scope. For Class scope, TargetClassId is required. For Group scope, TargetGroup is required.");
+        "Invalid mission scope. For Class scope, TargetClassId is required. For Student scope, TargetStudentId is required. For Group scope, TargetGroup is required.");
 
     public static readonly Error InvalidDateRange = Error.Validation(
         "Mission.InvalidDateRange",

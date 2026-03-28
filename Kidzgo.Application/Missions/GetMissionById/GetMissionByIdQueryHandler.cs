@@ -34,6 +34,7 @@ public sealed class GetMissionByIdQueryHandler(
             TargetClassId = mission.TargetClassId,
             TargetClassCode = mission.TargetClass != null ? mission.TargetClass.Code : null,
             TargetClassTitle = mission.TargetClass != null ? mission.TargetClass.Title : null,
+            TargetStudentId = mission.TargetStudentId,
             TargetGroup = mission.TargetGroup,
             MissionType = mission.MissionType.ToString(),
             StartAt = mission.StartAt,
