@@ -6,7 +6,6 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
 using Kidzgo.Domain.Users;
-using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Gamification.CheckInAttendanceStreak;
@@ -17,8 +16,7 @@ namespace Kidzgo.Application.Gamification.CheckInAttendanceStreak;
 public sealed class CheckInAttendanceStreakCommandHandler(
     IDbContext context,
     IUserContext userContext,
-    IGamificationService gamificationService,
-    ILogger<CheckInAttendanceStreakCommandHandler> logger)
+    IGamificationService gamificationService)
     : ICommandHandler<CheckInAttendanceStreakCommand, CheckInAttendanceStreakResponse>
 {
     public async Task<Result<CheckInAttendanceStreakResponse>> Handle(
@@ -42,6 +40,11 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             return Result.Failure<CheckInAttendanceStreakResponse>(
                 StarErrors.ProfileNotFound(studentProfileId));
         }
+
+        // Get gamification settings (default: 1 star, 5 exp if not set)
+        var settings = await context.GamificationSettings.FirstOrDefaultAsync(cancellationToken);
+        var rewardStars = settings?.CheckInRewardStars ?? 1;
+        var rewardExp = settings?.CheckInRewardExp ?? 5;
 
         // UC-213: Get today's date (UTC)
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
@@ -112,105 +115,60 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             StudentProfileId = studentProfileId,
             AttendanceDate = today,
             CurrentStreak = currentStreak,
-            RewardStars = 1, // UC-215: 1 star per check-in
-            RewardExp = 5,  // UC-216: 5 exp per check-in
+            RewardStars = rewardStars,
+            RewardExp = rewardExp,
             CreatedAt = DateTime.UtcNow
         };
 
         context.AttendanceStreaks.Add(streak);
         await context.SaveChangesAsync(cancellationToken);
 
-        // UC-215: Add Stars (1 star)
+        // UC-215: Add Stars
         await gamificationService.AddStarsForAttendance(
             studentProfileId,
-            1,
-            streak.Id, // Use streak ID as sourceId
+            rewardStars,
+            streak.Id,
             "Daily Check-in",
             cancellationToken);
 
-        // UC-216: Add XP (5 exp)
+        // UC-216: Add XP
         await gamificationService.AddXpForAttendance(
             studentProfileId,
-            5,
-            streak.Id, // Use streak ID as sourceId
+            rewardExp,
+            streak.Id,
             "Daily Check-in",
             cancellationToken);
 
         // ============================================================
         // GIAI DOAN 3: Track NoUnexcusedAbsence Mission progress
-        // Tang ProgressValue len 1 khi student check-in thanh cong
         // ============================================================
         var now = DateTime.UtcNow;
 
-        logger.LogInformation(
-            "[MissionDebug] Student={StudentId} checking NoUnexcusedAbsence missions at {Now}",
-            studentProfileId, now);
-
-        // Tim tat ca NoUnexcusedAbsence missions dang active cua student
-        // Query nao dang bi loi? Kiem tra tung where clause
-        var allStudentProgress = await context.MissionProgresses
+        var activeAttendanceMissions = await context.MissionProgresses
             .Include(mp => mp.Mission)
             .Where(mp => mp.StudentProfileId == studentProfileId)
             .Where(mp => mp.Mission.MissionType == MissionType.NoUnexcusedAbsence)
-            .ToListAsync(cancellationToken);
-
-        logger.LogInformation(
-            "[MissionDebug] Found {Count} NoUnexcusedAbsence progress records for student",
-            allStudentProgress.Count);
-
-        foreach (var p in allStudentProgress)
-        {
-            logger.LogInformation(
-                "[MissionDebug] Progress: MissionId={MissionId}, Status={Status}, ProgressValue={ProgressValue}, " +
-                "TotalRequired={TotalRequired}, StartAt={StartAt}, EndAt={EndAt}, Now={Now}, " +
-                "StartBeforeNow={StartBefore}, EndAfterNow={EndAfter}",
-                p.MissionId, p.Status, p.ProgressValue,
-                p.Mission.TotalRequired, p.Mission.StartAt, p.Mission.EndAt, now,
-                p.Mission.StartAt == null || p.Mission.StartAt <= now,
-                p.Mission.EndAt == null || p.Mission.EndAt >= now);
-        }
-
-        // Filter them dang active (trong khoang thoi gian)
-        var activeAttendanceMissions = allStudentProgress
             .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
                          mp.Status == MissionProgressStatus.InProgress)
             .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
             .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
-            .ToList();
-
-        logger.LogInformation(
-            "[MissionDebug] {ActiveCount} missions are active (Assigned/InProgress + in date range)",
-            activeAttendanceMissions.Count);
+            .ToListAsync(cancellationToken);
 
         foreach (var missionProgress in activeAttendanceMissions)
         {
-            // Update status to InProgress if currently Assigned
             if (missionProgress.Status == MissionProgressStatus.Assigned)
             {
                 missionProgress.Status = MissionProgressStatus.InProgress;
             }
 
-            // Increment progress value
             missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
 
-            logger.LogInformation(
-                "[MissionDebug] Incremented MissionId={MissionId}, new ProgressValue={ProgressValue}",
-                missionProgress.MissionId, missionProgress.ProgressValue);
-
-            // Check if mission is completed (reached TotalRequired)
             var totalRequired = missionProgress.Mission.TotalRequired;
             if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
             {
                 missionProgress.Status = MissionProgressStatus.Completed;
                 missionProgress.CompletedAt = now;
 
-                logger.LogInformation(
-                    "[MissionDebug] MissionId={MissionId} COMPLETED! RewardStars={Stars}, RewardExp={Exp}",
-                    missionProgress.MissionId,
-                    missionProgress.Mission.RewardStars,
-                    missionProgress.Mission.RewardExp);
-
-                // Cong Mission Reward Stars
                 if (missionProgress.Mission.RewardStars.HasValue &&
                     missionProgress.Mission.RewardStars.Value > 0)
                 {
@@ -222,7 +180,6 @@ public sealed class CheckInAttendanceStreakCommandHandler(
                         cancellationToken);
                 }
 
-                // Cong Mission Reward XP
                 if (missionProgress.Mission.RewardExp.HasValue &&
                     missionProgress.Mission.RewardExp.Value > 0)
                 {
@@ -236,11 +193,9 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             }
         }
 
-        // Save mission progress changes
         if (activeAttendanceMissions.Count > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("[MissionDebug] Saved {Count} mission progress changes", activeAttendanceMissions.Count);
         }
 
         return Result.Success(new CheckInAttendanceStreakResponse
@@ -249,8 +204,8 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             AttendanceDate = today,
             CurrentStreak = currentStreak,
             MaxStreak = maxStreak,
-            RewardStars = 1,
-            RewardExp = 5,
+            RewardStars = rewardStars,
+            RewardExp = rewardExp,
             IsNewStreak = true
         });
     }

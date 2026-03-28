@@ -70,6 +70,7 @@ public interface IDbContext
     DbSet<StarTransaction> StarTransactions { get; }
     DbSet<StudentLevel> StudentLevels { get; }
     DbSet<AttendanceStreak> AttendanceStreaks { get; }
+    DbSet<GamificationSettings> GamificationSettings { get; }
 
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }

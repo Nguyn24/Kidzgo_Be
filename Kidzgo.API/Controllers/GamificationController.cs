@@ -18,6 +18,8 @@ using Kidzgo.Application.Gamification.GetMyStarBalance;
 using Kidzgo.Application.Gamification.GetStarBalance;
 using Kidzgo.Application.Gamification.GetStarTransactions;
 using Kidzgo.Application.Gamification.GetStudentLevel;
+using Kidzgo.Application.Gamification.GetGamificationSettings;
+using Kidzgo.Application.Gamification.UpdateGamificationSettings;
 using Kidzgo.Application.Gamification.RequestRewardRedemption;
 using Kidzgo.Application.Gamification.GetRewardRedemptions;
 using Kidzgo.Application.Gamification.GetRewardRedemptionById;
@@ -566,6 +568,38 @@ public class GamificationController : ControllerBase
         {
             Year = year,
             Month = month
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-241: Xem Gamification Settings (check-in rewards)
+    /// </summary>
+    [HttpGet("settings")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetGamificationSettings(
+        CancellationToken cancellationToken)
+    {
+        var query = new GetGamificationSettingsQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-242: Cap nhat Gamification Settings (check-in rewards)
+    /// </summary>
+    [HttpPut("settings")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateGamificationSettings(
+        [FromBody] UpdateGamificationSettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateGamificationSettingsCommand
+        {
+            CheckInRewardStars = request.CheckInRewardStars,
+            CheckInRewardExp = request.CheckInRewardExp
         };
 
         var result = await _mediator.Send(command, cancellationToken);
