@@ -8,7 +8,8 @@ public sealed class GetMissionsQuery : IQuery<GetMissionsResponse>, IPageableQue
 {
     public MissionScope? Scope { get; init; }
     public Guid? TargetClassId { get; init; }
-    public string? TargetGroup { get; init; }
+    public Guid? TargetStudentId { get; init; }
+    public List<Guid>? TargetGroup { get; init; }
     public MissionType? MissionType { get; init; }
     public string? SearchTerm { get; init; }
     public int PageNumber { get; init; } = 1;
