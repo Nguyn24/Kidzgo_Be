@@ -1,3 +1,4 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Classes.GetClasses;
 
 public sealed class GetClassesQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetClassesQuery, GetClassesResponse>
 {
     public async Task<Result<GetClassesResponse>> Handle(GetClassesQuery query, CancellationToken cancellationToken)
@@ -18,6 +20,11 @@ public sealed class GetClassesQueryHandler(
             .Include(c => c.MainTeacher)
             .Include(c => c.AssistantTeacher)
             .AsQueryable();
+
+        if (userContext.ParentId.HasValue)
+        {
+            classesQuery = classesQuery.Where(c => c.Program.IsMakeup);
+        }
 
         // Filter by branch
         if (query.BranchId.HasValue)

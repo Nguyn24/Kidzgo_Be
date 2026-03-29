@@ -49,6 +49,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.IsDeleted)
             .IsRequired();
 
+        builder.Property(x => x.LastLoginAt);
+        builder.Property(x => x.LastSeenAt);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

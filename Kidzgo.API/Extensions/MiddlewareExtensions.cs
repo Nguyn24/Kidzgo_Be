@@ -2,6 +2,7 @@ using Kidzgo.API.Middlewares;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
 
 namespace Kidzgo.API.Extensions;
 
@@ -22,12 +23,14 @@ public static class MiddlewareExtensions
             ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
         });
 
+        app.UseSerilogRequestLogging();
         app.UseCors("AllowClients");
         app.UseRequestContextLogging();
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
 
         app.UseAuthentication();
+        app.UseMiddleware<TrackUserPresenceMiddleware>();
         app.UseAuthorization();
         app.UseAuthStatusCodePages();
 

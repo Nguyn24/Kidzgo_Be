@@ -1,6 +1,7 @@
 ﻿using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ public sealed class GetUsersQueryHandler(IDbContext context)
 {
     public async Task<Result<Page<GetUsersResponse>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
+
         IQueryable<User> query = context.Users
             .Include(u => u.Branch)
             .Include(u => u.Profiles.Where(p => !p.IsDeleted));
@@ -50,6 +53,10 @@ public sealed class GetUsersQueryHandler(IDbContext context)
             BranchName = u.Branch != null ? u.Branch.Name : null,
             IsActive = u.IsActive,
             IsDeleted = u.IsDeleted,
+            LastLoginAt = u.LastLoginAt,
+            LastSeenAt = u.LastSeenAt,
+            IsOnline = UserPresenceHelper.IsOnline(u.LastSeenAt, now),
+            OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(u.LastSeenAt, now),
             CreatedAt = u.CreatedAt,
             UpdatedAt = u.UpdatedAt,
             Profiles = u.Profiles

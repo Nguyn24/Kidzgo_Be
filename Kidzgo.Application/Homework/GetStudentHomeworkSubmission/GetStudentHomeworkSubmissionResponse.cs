@@ -12,6 +12,7 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public Guid AssignmentId { get; init; }
     public string AssignmentTitle { get; init; } = null!;
     public string? AssignmentDescription { get; init; }
+    public string? AssignmentAttachmentUrl { get; init; }
     public string? Instructions { get; init; }
     public Guid ClassId { get; init; }
     public string ClassCode { get; init; } = null!;

@@ -33,6 +33,9 @@ public sealed class GetProfilesQueryHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
+                FullName = p.FullName,
+                Gender = p.Gender?.ToString(),
+                DateOfBirth = p.DateOfBirth,
                 ProfileType = p.ProfileType.ToString(),
                 IsApproved = p.IsApproved,
             })

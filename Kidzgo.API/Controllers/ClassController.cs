@@ -59,7 +59,7 @@ public class ClassController : ControllerBase
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
-    [Authorize(Roles = "Admin,ManagementStaff")]
+    [Authorize(Roles = "Admin,ManagementStaff,Parent")]
     public async Task<IResult> GetClasses(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,

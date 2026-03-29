@@ -104,7 +104,7 @@ public class AdminUserController : ControllerBase
         {
             UserId = id,
             Username = request.Username,
-            FullName = request.FullName,
+            Name = request.Name,
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             Role = request.Role,

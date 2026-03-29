@@ -43,6 +43,11 @@ public sealed class LoginCommandHandler(
             Token = tokenProvider.GenerateRefreshToken(),
             Expires = DateTime.UtcNow.AddDays(1)
         };
+
+        var now = DateTime.UtcNow;
+        user.LastLoginAt = now;
+        user.LastSeenAt = now;
+        user.UpdatedAt = now;
         
         context.RefreshTokens.RemoveRange(user.RefreshTokens);
         context.RefreshTokens.Add(refreshToken);
