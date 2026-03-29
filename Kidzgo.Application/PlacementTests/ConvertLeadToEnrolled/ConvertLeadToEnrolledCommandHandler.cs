@@ -1,8 +1,9 @@
-using Kidzgo.Application.Abstraction.Data;
+﻿using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PlacementTests.ConvertLeadToEnrolled;
@@ -45,12 +46,13 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
         }
 
         // Validate StudentProfile if provided
+        Profile? studentProfile = null;
         if (command.StudentProfileId.HasValue)
         {
-            var profile = await context.Profiles
+            studentProfile = await context.Profiles
                 .FirstOrDefaultAsync(p => p.Id == command.StudentProfileId.Value, cancellationToken);
 
-            if (profile is null || profile.ProfileType != Kidzgo.Domain.Users.ProfileType.Student)
+            if (studentProfile is null || studentProfile.ProfileType != ProfileType.Student)
             {
                 return Result.Failure<ConvertLeadToEnrolledResponse>(
                     PlacementTestErrors.StudentProfileNotFound(command.StudentProfileId));
@@ -92,6 +94,20 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
             if (command.StudentProfileId.HasValue)
             {
                 leadChild.ConvertedStudentProfileId = command.StudentProfileId.Value;
+            }
+
+            // Copy LeadChild data into the linked StudentProfile
+            if (studentProfile is not null)
+            {
+                // Only fill if the profile fields are empty (preserve existing data)
+                if (string.IsNullOrWhiteSpace(studentProfile.FullName))
+                    studentProfile.FullName = leadChild.ChildName;
+
+                if (!studentProfile.DateOfBirth.HasValue && leadChild.Dob.HasValue)
+                    studentProfile.DateOfBirth = leadChild.Dob;
+
+                if (!studentProfile.Gender.HasValue)
+                    studentProfile.Gender = leadChild.Gender;
             }
 
             // Update LeadChild status to Enrolled
