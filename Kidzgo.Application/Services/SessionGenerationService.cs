@@ -215,6 +215,7 @@ public sealed class SessionGenerationService
                 Id = Guid.NewGuid(),
                 ClassId = classEntity.Id,
                 BranchId = classEntity.BranchId,
+                Color = SessionColorPalette.GetRandomColor(),
                 PlannedDatetime = occurrence,
                 PlannedRoomId = roomId,
                 PlannedTeacherId = classEntity.MainTeacherId,

@@ -33,6 +33,8 @@ public class LoginWithRefreshToken (IDbContext context,
         string accessToken = tokenProvider.Create(refreshToken.User);
         refreshToken.Token = tokenProvider.GenerateRefreshToken();
         refreshToken.Expires = DateTime.UtcNow.AddDays(1);
+        refreshToken.User.LastSeenAt = DateTime.UtcNow;
+        refreshToken.User.UpdatedAt = DateTime.UtcNow;
         
         await context.SaveChangesAsync(cancellationToken);
         return new TokenResponse()

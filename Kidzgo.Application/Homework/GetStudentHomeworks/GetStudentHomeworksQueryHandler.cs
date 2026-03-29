@@ -72,6 +72,7 @@ public sealed class GetStudentHomeworksQueryHandler(
                 AssignmentId = hs.AssignmentId,
                 AssignmentTitle = hs.Assignment.Title,
                 AssignmentDescription = hs.Assignment.Description,
+                AssignmentAttachmentUrl = hs.Assignment.AttachmentUrl,
                 ClassId = hs.Assignment.ClassId,
                 ClassCode = hs.Assignment.Class.Code,
                 ClassTitle = hs.Assignment.Class.Title,

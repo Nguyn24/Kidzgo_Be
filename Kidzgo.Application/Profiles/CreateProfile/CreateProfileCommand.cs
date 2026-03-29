@@ -8,6 +8,7 @@ public sealed class CreateProfileCommand : ICommand<CreateProfileResponse>
     public Guid UserId { get; init; }
     public ProfileType ProfileType { get; init; }
     public string DisplayName { get; init; } = null!;
+    public string? FullName { get; init; }
     public string? PinHash { get; init; }
 }
 

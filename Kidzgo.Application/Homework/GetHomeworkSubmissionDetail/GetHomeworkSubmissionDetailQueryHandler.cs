@@ -57,6 +57,7 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
             AssignmentId = homeworkStudent.AssignmentId,
             AssignmentTitle = homeworkStudent.Assignment.Title,
             AssignmentDescription = homeworkStudent.Assignment.Description,
+            AssignmentAttachmentUrl = homeworkStudent.Assignment.AttachmentUrl,
             Instructions = homeworkStudent.Assignment.Instructions,
             ClassId = homeworkStudent.Assignment.ClassId,
             ClassCode = homeworkStudent.Assignment.Class.Code,

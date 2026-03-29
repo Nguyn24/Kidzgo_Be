@@ -169,15 +169,13 @@ public sealed class UseMakeupCreditCommandHandler(IDbContext context, IUserConte
         credit.Status = MakeupCreditStatus.Used;
         credit.UsedSessionId = command.TargetSessionId;
 
-        var assignedByProfileId = userContext.StudentId ?? userContext.ParentId;
-
         context.MakeupAllocations.Add(new MakeupAllocation
         {
             Id = Guid.NewGuid(),
             MakeupCreditId = credit.Id,
             TargetSessionId = command.TargetSessionId,
             Status = MakeupAllocationStatus.Pending,
-            AssignedBy = assignedByProfileId,
+            AssignedBy = userContext.UserId,
             AssignedAt = nowUtc,
             CreatedAt = nowUtc
         });

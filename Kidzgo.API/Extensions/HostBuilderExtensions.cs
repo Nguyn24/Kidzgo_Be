@@ -1,3 +1,7 @@
+using System.Security;
+using Serilog;
+using Serilog.Events;
+
 namespace Kidzgo.API.Extensions;
 
 public static class HostBuilderExtensions
@@ -5,6 +9,8 @@ public static class HostBuilderExtensions
     public static WebApplicationBuilder ConfigurePresentationHost(this WebApplicationBuilder builder)
     {
         builder.Configuration.AddEnvironmentVariables();
+
+        ConfigureSerilog(builder);
 
         // Configure Kestrel server limits for long-running requests (e.g., Monthly Report aggregation)
         builder.WebHost.ConfigureKestrel(options =>
@@ -14,5 +20,133 @@ public static class HostBuilderExtensions
         });
 
         return builder;
+    }
+
+    private static void ConfigureSerilog(WebApplicationBuilder builder)
+    {
+        var logPath = builder.Configuration["Serilog:File:Path"];
+        if (string.IsNullOrWhiteSpace(logPath))
+        {
+            logPath = Path.Combine(AppContext.BaseDirectory, "logs", "kidzgo-.log");
+        }
+
+        var errorLogPath = builder.Configuration["Serilog:File:ErrorPath"];
+        if (string.IsNullOrWhiteSpace(errorLogPath))
+        {
+            errorLogPath = Path.Combine(AppContext.BaseDirectory, "logs", "kidzgo-errors-.log");
+        }
+
+        EnsureDirectoryExists(logPath);
+        EnsureDirectoryExists(errorLogPath);
+
+        builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+        {
+            loggerConfiguration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext()
+                .Enrich.WithProperty("Application", "Kidzgo.API")
+                .WriteTo.Console(outputTemplate: GetOutputTemplate())
+                .WriteTo.File(
+                    path: logPath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: context.Configuration.GetValue<int?>("Serilog:File:RetainedFileCountLimit") ?? 14,
+                    fileSizeLimitBytes: context.Configuration.GetValue<long?>("Serilog:File:FileSizeLimitBytes") ?? 20_971_520,
+                    rollOnFileSizeLimit: true,
+                    shared: true,
+                    outputTemplate: GetOutputTemplate(),
+                    restrictedToMinimumLevel: ParseLevel(
+                        context.Configuration["Serilog:File:RestrictedToMinimumLevel"],
+                        LogEventLevel.Information))
+                .WriteTo.File(
+                    path: errorLogPath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: context.Configuration.GetValue<int?>("Serilog:File:ErrorRetainedFileCountLimit")
+                        ?? context.Configuration.GetValue<int?>("Serilog:File:RetainedFileCountLimit")
+                        ?? 14,
+                    fileSizeLimitBytes: context.Configuration.GetValue<long?>("Serilog:File:ErrorFileSizeLimitBytes")
+                        ?? context.Configuration.GetValue<long?>("Serilog:File:FileSizeLimitBytes")
+                        ?? 20_971_520,
+                    rollOnFileSizeLimit: true,
+                    shared: true,
+                    outputTemplate: GetOutputTemplate(),
+                    restrictedToMinimumLevel: ParseLevel(
+                        context.Configuration["Serilog:File:ErrorRestrictedToMinimumLevel"],
+                        LogEventLevel.Error));
+
+            var seqServerUrl = context.Configuration["Serilog:Seq:ServerUrl"];
+            if (!string.IsNullOrWhiteSpace(seqServerUrl))
+            {
+                loggerConfiguration.WriteTo.Seq(
+                    serverUrl: seqServerUrl,
+                    restrictedToMinimumLevel: ParseLevel(
+                        context.Configuration["Serilog:Seq:RestrictedToMinimumLevel"],
+                        LogEventLevel.Information));
+            }
+
+            if (OperatingSystem.IsWindows())
+            {
+                TryConfigureWindowsEventLog(context, loggerConfiguration);
+            }
+        });
+    }
+
+    private static string GetOutputTemplate()
+    {
+        return "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] "
+             + "[{CorrelationId}] [{TraceIdentifier}] [{RequestMethod} {RequestPath}] "
+             + "[User:{UserId}] {Message:lj}{NewLine}{Exception}";
+    }
+
+    private static LogEventLevel ParseLevel(string? value, LogEventLevel fallback)
+    {
+        return Enum.TryParse<LogEventLevel>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : fallback;
+    }
+
+    private static void EnsureDirectoryExists(string logPath)
+    {
+        var logDirectory = Path.GetDirectoryName(logPath);
+        if (!string.IsNullOrWhiteSpace(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+    }
+
+    private static void TryConfigureWindowsEventLog(
+        HostBuilderContext context,
+        LoggerConfiguration loggerConfiguration)
+    {
+        var enabled = context.Configuration.GetValue<bool?>("Serilog:EventLog:Enabled") ?? true;
+        if (!enabled)
+        {
+            return;
+        }
+
+        try
+        {
+            loggerConfiguration.WriteTo.EventLog(
+                source: context.Configuration["Serilog:EventLog:Source"] ?? "Kidzgo.API",
+                manageEventSource: true,
+                restrictedToMinimumLevel: ParseLevel(
+                    context.Configuration["Serilog:EventLog:RestrictedToMinimumLevel"],
+                    LogEventLevel.Error));
+        }
+        catch (SecurityException ex)
+        {
+            Console.Error.WriteLine(
+                $"[Serilog] EventLog sink disabled because permissions are insufficient: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine(
+                $"[Serilog] EventLog sink disabled because access was denied: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"[Serilog] EventLog sink disabled because initialization failed: {ex.Message}");
+        }
     }
 }

@@ -15,6 +15,10 @@
         public List<string> Permissions { get; set; } = new(); // TODO: Implement permissions based on role
         public bool IsActive { get; set; }
         public string? AvatarUrl { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public DateTime? LastSeenAt { get; set; }
+        public bool IsOnline { get; set; }
+        public long? OfflineDurationSeconds { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

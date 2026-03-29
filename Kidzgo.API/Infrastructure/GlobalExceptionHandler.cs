@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Kidzgo.API.Infrastructure;
 
@@ -49,7 +50,16 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
             return true;
         }
 
-        logger.LogError(exception, "Unhandled exception occurred");
+        logger.LogError(
+            exception,
+            "Unhandled exception occurred for {Method} {Path}{QueryString}. TraceId: {TraceId}. UserId: {UserId}",
+            httpContext.Request.Method,
+            httpContext.Request.Path,
+            httpContext.Request.QueryString,
+            httpContext.TraceIdentifier,
+            httpContext.User.FindFirstValue("uid")
+                ?? httpContext.User.FindFirstValue("sub")
+                ?? "anonymous");
 
         var errorProblemDetails = new ProblemDetails()
         {
