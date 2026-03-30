@@ -11,7 +11,5 @@ public sealed class UpdateTuitionPlanRequest
     public string Name { get; set; } = null!;
     public int TotalSessions { get; set; }
     public decimal TuitionAmount { get; set; }
-    public decimal UnitPriceSession { get; set; }
     public string Currency { get; set; } = null!;
 }
-
