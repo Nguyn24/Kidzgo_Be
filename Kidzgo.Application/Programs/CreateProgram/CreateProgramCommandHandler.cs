@@ -30,11 +30,7 @@ public sealed class CreateProgramCommandHandler(
             Name = command.Name,
             Code = command.Code,
             IsMakeup = command.IsMakeup,
-            TotalSessions = command.TotalSessions,
-            DefaultTuitionAmount = command.DefaultTuitionAmount,
-            UnitPriceSession = command.UnitPriceSession,
-            Description = command.Description,
-            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
+            IsActive = true,
             IsDeleted = false,
             CreatedAt = now,
             UpdatedAt = now
@@ -59,4 +55,3 @@ public sealed class CreateProgramCommandHandler(
         };
     }
 }
-

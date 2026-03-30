@@ -16,14 +16,8 @@ public sealed class UpdateProgramCommandValidator : AbstractValidator<UpdateProg
             .NotEmpty().WithMessage("Program name is required")
             .MaximumLength(255).WithMessage("Program name must not exceed 255 characters");
 
-        RuleFor(command => command.TotalSessions)
-            .GreaterThan(0).WithMessage("Total sessions must be greater than 0");
-
-        RuleFor(command => command.DefaultTuitionAmount)
-            .GreaterThanOrEqualTo(0).WithMessage("Default tuition amount must be greater than or equal to 0");
-
-        RuleFor(command => command.UnitPriceSession)
-            .GreaterThanOrEqualTo(0).WithMessage("Unit price per session must be greater than or equal to 0");
+        RuleFor(command => command.Code)
+            .NotEmpty().WithMessage("Program code is required")
+            .MaximumLength(10).WithMessage("Program code must not exceed 10 characters");
     }
 }
-

@@ -34,6 +34,11 @@ public sealed class CreateTuitionPlanCommandHandler(
             }
         }
 
+        // Calculate UnitPriceSession automatically from TuitionAmount / TotalSessions
+        decimal unitPriceSession = command.TotalSessions > 0
+            ? Math.Round(command.TuitionAmount / command.TotalSessions, 2)
+            : 0;
+
         var tuitionPlan = new TuitionPlan
         {
             Id = Guid.NewGuid(),
@@ -42,9 +47,9 @@ public sealed class CreateTuitionPlanCommandHandler(
             Name = command.Name,
             TotalSessions = command.TotalSessions,
             TuitionAmount = command.TuitionAmount,
-            UnitPriceSession = command.UnitPriceSession,
+            UnitPriceSession = unitPriceSession,
             Currency = command.Currency,
-            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
+            IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -77,4 +82,3 @@ public sealed class CreateTuitionPlanCommandHandler(
         };
     }
 }
-

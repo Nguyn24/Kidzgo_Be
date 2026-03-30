@@ -22,12 +22,8 @@ public sealed class UpdateTuitionPlanCommandValidator : AbstractValidator<Update
         RuleFor(command => command.TuitionAmount)
             .GreaterThanOrEqualTo(0).WithMessage("Tuition amount must be greater than or equal to 0");
 
-        RuleFor(command => command.UnitPriceSession)
-            .GreaterThanOrEqualTo(0).WithMessage("Unit price per session must be greater than or equal to 0");
-
         RuleFor(command => command.Currency)
             .NotEmpty().WithMessage("Currency is required")
             .MaximumLength(10).WithMessage("Currency must not exceed 10 characters");
     }
 }
-

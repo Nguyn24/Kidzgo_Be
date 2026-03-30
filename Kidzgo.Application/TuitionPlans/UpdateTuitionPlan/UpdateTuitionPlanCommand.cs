@@ -10,7 +10,5 @@ public sealed class UpdateTuitionPlanCommand : ICommand<UpdateTuitionPlanRespons
     public string Name { get; init; } = null!;
     public int TotalSessions { get; init; }
     public decimal TuitionAmount { get; init; }
-    public decimal UnitPriceSession { get; init; }
     public string Currency { get; init; } = null!;
 }
-

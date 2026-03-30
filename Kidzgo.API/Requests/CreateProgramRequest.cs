@@ -6,9 +6,4 @@ public sealed class CreateProgramRequest
     public string Name { get; set; } = null!;
     public string Code { get; set; } = null!;
     public bool IsMakeup { get; set; }
-    public int TotalSessions { get; set; }
-    public decimal DefaultTuitionAmount { get; set; }
-    public decimal UnitPriceSession { get; set; }
-    public string? Description { get; set; }
 }
-
