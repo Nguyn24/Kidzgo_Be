@@ -6,7 +6,7 @@ namespace Kidzgo.Application.QuestionBank.GetQuestionBank;
 
 public sealed class GetQuestionBankItemsQuery : IQuery<GetQuestionBankItemsResponse>
 {
-    public Guid ProgramId { get; init; }
+    public Guid? ProgramId { get; init; }
     public QuestionLevel? Level { get; init; }
     public int PageNumber { get; init; } = 1;
     public int PageSize { get; init; } = 10;
