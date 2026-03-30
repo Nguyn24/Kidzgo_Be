@@ -90,7 +90,7 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
                         profile.Id,
                         profile.ProfileType.ToString(),
                         profile.DisplayName,
-                        profile.FullName ?? string.Empty,
+                        profile.Name ?? string.Empty,
                         profile.Gender?.ToString() ?? string.Empty,
                         profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty,
                         profile.ZaloId ?? string.Empty,

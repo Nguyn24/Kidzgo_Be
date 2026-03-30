@@ -1,4 +1,4 @@
-﻿using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -32,6 +32,16 @@ public class CreateUserCommandHandler(
                 cancellationToken))
         {
             return Result.Failure<CreateUserCommandResponse>(UserErrors.EmailNotUnique);
+        }
+
+        // Check for duplicate phone number
+        if (!string.IsNullOrWhiteSpace(command.PhoneNumber))
+        {
+            var phoneNumberTrimmed = command.PhoneNumber.Trim();
+            if (await context.Users.AnyAsync(u => u.PhoneNumber == phoneNumberTrimmed, cancellationToken))
+            {
+                return Result.Failure<CreateUserCommandResponse>(UserErrors.PhoneNumberNotUnique);
+            }
         }
 
         if (role == UserRole.Admin)
@@ -68,6 +78,7 @@ public class CreateUserCommandHandler(
         {
             Id = Guid.NewGuid(),
             Username = command.Username,
+            Name = command.Name,
             Email = command.Email,
             PhoneNumber = string.IsNullOrWhiteSpace(command.PhoneNumber) ? null : command.PhoneNumber.Trim(),
             PasswordHash = hashedPassword,
@@ -87,6 +98,7 @@ public class CreateUserCommandHandler(
         {
             Id = user.Id,
             Username = user.Username,
+            Name = user.Name,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
             Role = user.Role.ToString(),

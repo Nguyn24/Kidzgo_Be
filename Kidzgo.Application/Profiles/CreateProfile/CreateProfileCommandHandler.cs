@@ -41,7 +41,7 @@ public sealed class CreateProfileCommandHandler(
             UserId = command.UserId,
             ProfileType = command.ProfileType,
             DisplayName = trimmedDisplayName,
-            FullName = trimmedFullName,
+            Name = trimmedFullName,
             PinHash = !string.IsNullOrWhiteSpace(command.PinHash) 
                 ? passwordHasher.Hash(command.PinHash) 
                 : null,
@@ -62,7 +62,7 @@ public sealed class CreateProfileCommandHandler(
 
             if (leadChild != null)
             {
-                profile.FullName ??= leadChild.ChildName;
+                profile.Name ??= leadChild.ChildName;
                 profile.Gender = leadChild.Gender;
                 profile.DateOfBirth = leadChild.Dob;
             }
@@ -76,7 +76,7 @@ public sealed class CreateProfileCommandHandler(
             
             if (lead != null)
             {
-                profile.FullName ??= lead.ContactName;
+                profile.Name ??= lead.ContactName;
                 profile.ZaloId = lead.ZaloId;
             }
         }
@@ -139,7 +139,7 @@ public sealed class CreateProfileCommandHandler(
             UserId = profile.UserId,
             ProfileType = profile.ProfileType.ToString(),
             DisplayName = profile.DisplayName,
-            FullName = profile.FullName,
+            Name = profile.Name,
             IsActive = profile.IsActive,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt
