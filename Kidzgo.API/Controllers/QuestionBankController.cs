@@ -75,7 +75,7 @@ public class QuestionBankController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> GetQuestionBankItems(
-        [FromQuery] Guid programId,
+        [FromQuery] Guid? programId,
         [FromQuery] string? level,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
