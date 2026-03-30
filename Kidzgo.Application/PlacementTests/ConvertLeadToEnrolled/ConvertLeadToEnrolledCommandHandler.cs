@@ -100,8 +100,8 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
             if (studentProfile is not null)
             {
                 // Only fill if the profile fields are empty (preserve existing data)
-                if (string.IsNullOrWhiteSpace(studentProfile.FullName))
-                    studentProfile.FullName = leadChild.ChildName;
+                if (string.IsNullOrWhiteSpace(studentProfile.Name))
+                    studentProfile.Name = leadChild.ChildName;
 
                 if (!studentProfile.DateOfBirth.HasValue && leadChild.Dob.HasValue)
                     studentProfile.DateOfBirth = leadChild.Dob;

@@ -82,7 +82,7 @@ public class AdminUserController : ControllerBase
         var command = new CreateUserCommand
         {
             Username = request.Username,
-            // Name = request.Name,
+            Name = request.Name,
             Email = request.Email,
             Password = request.Password,
             Role = request.Role,

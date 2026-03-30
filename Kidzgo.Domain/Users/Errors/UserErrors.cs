@@ -1,4 +1,4 @@
-﻿using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Common;
 
 namespace Kidzgo.Domain.Users.Errors;
 
@@ -72,4 +72,8 @@ public static class UserErrors
     public static readonly Error BranchRequiredForRole = Error.Validation(
         "User.BranchRequired",
         "BranchId is required for ManagementStaff, AccountantStaff, Teacher, and Parent accounts");
+
+    public static readonly Error PhoneNumberNotUnique = Error.Conflict(
+        "Users.PhoneNumberNotUnique",
+        "The provided phone number is already in use");
 }
