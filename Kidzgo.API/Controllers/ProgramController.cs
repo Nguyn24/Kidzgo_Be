@@ -35,11 +35,7 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
-            IsMakeup = request.IsMakeup,
-            TotalSessions = request.TotalSessions,
-            DefaultTuitionAmount = request.DefaultTuitionAmount,
-            UnitPriceSession = request.UnitPriceSession,
-            Description = request.Description
+            IsMakeup = request.IsMakeup
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -86,7 +82,7 @@ public class ProgramController : ControllerBase
         {
             BranchId = branchId,
             SearchTerm = searchTerm,
-            IsActive = true, // Chỉ lấy programs active
+            IsActive = true,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -125,11 +121,7 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
-            IsMakeup = request.IsMakeup,
-            TotalSessions = request.TotalSessions,
-            DefaultTuitionAmount = request.DefaultTuitionAmount,
-            UnitPriceSession = request.UnitPriceSession,
-            Description = request.Description
+            IsMakeup = request.IsMakeup
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -168,4 +160,3 @@ public class ProgramController : ControllerBase
         return result.MatchOk();
     }
 }
-

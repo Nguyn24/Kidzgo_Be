@@ -9,7 +9,7 @@ public sealed class GetAllProfilesResponse
     public string UserEmail { get; set; } = null!;
     public string ProfileType { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
-    public string? FullName { get; set; }
+    public string? Name { get; set; }
     public string? Gender { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public bool IsActive { get; set; }

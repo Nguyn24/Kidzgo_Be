@@ -33,10 +33,6 @@ public sealed class UpdateProgramCommandHandler(
         program.Name = command.Name;
         program.Code = command.Code;
         program.IsMakeup = command.IsMakeup;
-        program.TotalSessions = command.TotalSessions;
-        program.DefaultTuitionAmount = command.DefaultTuitionAmount;
-        program.UnitPriceSession = command.UnitPriceSession;
-        program.Description = command.Description;
         program.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -57,4 +53,3 @@ public sealed class UpdateProgramCommandHandler(
         };
     }
 }
-

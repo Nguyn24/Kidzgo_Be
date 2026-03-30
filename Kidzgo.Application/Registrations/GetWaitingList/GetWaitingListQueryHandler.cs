@@ -43,7 +43,7 @@ public sealed class GetWaitingListQueryHandler(
             {
                 Id = r.Id,
                 StudentProfileId = r.StudentProfileId,
-                StudentName = r.StudentProfile.FullName != null ? r.StudentProfile.FullName : string.Empty,
+                StudentName = r.StudentProfile.Name != null ? r.StudentProfile.Name : string.Empty,
                 BranchId = r.BranchId,
                 BranchName = r.Branch.Name,
                 ProgramId = r.ProgramId,

@@ -7,11 +7,6 @@ public sealed class UpdateProgramCommand : ICommand<UpdateProgramResponse>
     public Guid Id { get; init; }
     public Guid BranchId { get; init; }
     public string Name { get; init; } = null!;
-    public string? Code { get; init; }
+    public string Code { get; init; } = null!;
     public bool IsMakeup { get; init; }
-    public int TotalSessions { get; init; }
-    public decimal DefaultTuitionAmount { get; init; }
-    public decimal UnitPriceSession { get; init; }
-    public string? Description { get; init; }
 }
-

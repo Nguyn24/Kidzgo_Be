@@ -21,7 +21,7 @@ public class Profile : Entity
     public Guid UserId { get; set; }
     public ProfileType ProfileType { get; set; }
     public string DisplayName { get; set; } = null!;
-    public string? FullName { get; set; }
+    public string? Name { get; set; }
     public Gender? Gender { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public string? ZaloId { get; set; }
