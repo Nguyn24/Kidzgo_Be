@@ -1,3 +1,4 @@
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.LessonPlans;
 
 namespace Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
@@ -30,6 +31,8 @@ public sealed class GetHomeworkSubmissionDetailResponse
     public string? LinkUrl { get; init; }
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
+    public List<HomeworkQuestionDto> Questions { get; init; } = new();
+    public HomeworkReviewDto? Review { get; init; }
 
     // Student info
     public Guid StudentProfileId { get; init; }

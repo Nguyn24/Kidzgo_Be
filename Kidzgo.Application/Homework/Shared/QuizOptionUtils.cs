@@ -30,4 +30,57 @@ internal static class QuizOptionUtils
         var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
         return new Guid(hash);
     }
+
+    public static Dictionary<Guid, Guid?> ParseSelectedOptions(string? textAnswer)
+    {
+        var result = new Dictionary<Guid, Guid?>();
+        if (string.IsNullOrWhiteSpace(textAnswer))
+        {
+            return result;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(textAnswer);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+
+            foreach (var item in doc.RootElement.EnumerateArray())
+            {
+                if (!item.TryGetProperty("questionId", out var questionIdProp) ||
+                    questionIdProp.ValueKind != JsonValueKind.String ||
+                    !Guid.TryParse(questionIdProp.GetString(), out var questionId))
+                {
+                    continue;
+                }
+
+                if (item.TryGetProperty("selectedOptionId", out var selectedProp))
+                {
+                    if (selectedProp.ValueKind == JsonValueKind.String &&
+                        Guid.TryParse(selectedProp.GetString(), out var selectedId))
+                    {
+                        result[questionId] = selectedId;
+                    }
+                    else
+                    {
+                        result[questionId] = null;
+                    }
+                }
+                else if (item.TryGetProperty("answer", out var answerProp) &&
+                         answerProp.ValueKind == JsonValueKind.String &&
+                         Guid.TryParse(answerProp.GetString(), out var legacySelectedId))
+                {
+                    result[questionId] = legacySelectedId;
+                }
+            }
+        }
+        catch
+        {
+            return result;
+        }
+
+        return result;
+    }
 }

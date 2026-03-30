@@ -16,8 +16,12 @@ public sealed class GetQuestionBankItemsQueryHandler(
         CancellationToken cancellationToken)
     {
         var itemsQuery = context.QuestionBankItems
-            .Where(q => q.ProgramId == query.ProgramId)
             .AsQueryable();
+
+        if (query.ProgramId.HasValue && query.ProgramId.Value != Guid.Empty)
+        {
+            itemsQuery = itemsQuery.Where(q => q.ProgramId == query.ProgramId.Value);
+        }
 
         if (query.Level.HasValue)
         {

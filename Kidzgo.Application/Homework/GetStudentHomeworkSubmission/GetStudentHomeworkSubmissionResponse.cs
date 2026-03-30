@@ -1,6 +1,5 @@
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
-
 using Kidzgo.Application.Homework.Shared;
 
 namespace Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
@@ -38,32 +37,10 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string? LinkUrl { get; init; }
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
-    public List<StudentHomeworkQuestionDto> Questions { get; init; } = new();
-    public StudentHomeworkReviewDto? Review { get; init; }
+    public List<HomeworkQuestionDto> Questions { get; init; } = new();
+    public HomeworkReviewDto? Review { get; init; }
     public bool ShowReview { get; init; }
     public bool ShowCorrectAnswer { get; init; }
     public bool ShowExplanation { get; init; }
-}
-
-public sealed class StudentHomeworkQuestionDto
-{
-    public Guid Id { get; init; }
-    public int OrderIndex { get; init; }
-    public string QuestionText { get; init; } = null!;
-    public string QuestionType { get; init; } = null!;
-    public List<StudentHomeworkOptionDto> Options { get; init; } = new();
-    public int Points { get; init; }
-}
-
-public sealed class StudentHomeworkOptionDto
-{
-    public Guid Id { get; init; }
-    public string Text { get; init; } = null!;
-    public int OrderIndex { get; init; }
-}
-
-public sealed class StudentHomeworkReviewDto
-{
-    public List<QuizAnswerResultDto> AnswerResults { get; init; } = new();
 }
 

@@ -50,6 +50,23 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
         var isOverdue = homeworkStudent.Assignment.DueAt.HasValue && 
                        now > homeworkStudent.Assignment.DueAt.Value && 
                        (homeworkStudent.Status == HomeworkStatus.Assigned || homeworkStudent.Status == HomeworkStatus.Missing);
+        var showReview = homeworkStudent.Status == HomeworkStatus.Graded &&
+                         homeworkStudent.Assignment.SubmissionType == SubmissionType.Quiz;
+        List<HomeworkQuestionDto> questions = new();
+        List<QuizAnswerResultDto> reviewResults = new();
+
+        if (homeworkStudent.Assignment.SubmissionType == SubmissionType.Quiz)
+        {
+            var reviewData = await QuizSubmissionReviewBuilder.BuildAsync(
+                context,
+                homeworkStudent.AssignmentId,
+                homeworkStudent.TextAnswer,
+                showReview,
+                cancellationToken);
+
+            questions = reviewData.Questions;
+            reviewResults = reviewData.AnswerResults;
+        }
 
         return new GetHomeworkSubmissionDetailResponse
         {
@@ -78,6 +95,8 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
             TextAnswer = homeworkStudent.TextAnswer,
             IsLate = homeworkStudent.Status == HomeworkStatus.Late,
             IsOverdue = isOverdue,
+            Questions = questions,
+            Review = showReview ? new HomeworkReviewDto { AnswerResults = reviewResults } : null,
             StudentProfileId = homeworkStudent.StudentProfileId,
             StudentName = homeworkStudent.StudentProfile.DisplayName
         };

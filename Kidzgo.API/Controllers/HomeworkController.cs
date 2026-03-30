@@ -39,8 +39,8 @@ public class HomeworkController : ControllerBase
     /// <summary>
     /// UC-117: Tạo Homework Assignment
     /// </summary>
-    [HttpPost]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+[HttpPost]
+[Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateHomeworkAssignment(
         [FromBody] CreateHomeworkAssignmentRequest request,
         CancellationToken cancellationToken)
@@ -79,8 +79,8 @@ public class HomeworkController : ControllerBase
     /// <summary>
     /// Tạo Multiple Choice Homework Assignment
     /// </summary>
-    [HttpPost("multiple-choice")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+[HttpPost("multiple-choice")]
+[Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> CreateMultipleChoiceHomework(
         [FromBody] CreateMultipleChoiceHomeworkRequest request,
         CancellationToken cancellationToken)
@@ -394,7 +394,7 @@ public class HomeworkController : ControllerBase
     /// UC-134: Teacher xem danh sách bài nộp của học sinh (filter theo lớp mình dạy)
     /// </summary>
     [HttpGet("submissions")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,TeachingAssistant,ManagementStaff,Admin")]
     public async Task<IResult> GetHomeworkSubmissions(
         [FromQuery] Guid? classId,
         [FromQuery] string? status,
@@ -425,7 +425,7 @@ public class HomeworkController : ControllerBase
     /// UC-135: Teacher xem chi tiết bài nộp của học sinh
     /// </summary>
     [HttpGet("submissions/{homeworkStudentId:guid}")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,TeachingAssistant,ManagementStaff,Admin")]
     public async Task<IResult> GetHomeworkSubmissionDetail(
         Guid homeworkStudentId,
         CancellationToken cancellationToken)
