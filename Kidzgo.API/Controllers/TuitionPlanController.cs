@@ -37,7 +37,6 @@ public class TuitionPlanController : ControllerBase
             Name = request.Name,
             TotalSessions = request.TotalSessions,
             TuitionAmount = request.TuitionAmount,
-            UnitPriceSession = request.UnitPriceSession,
             Currency = request.Currency
         };
 
@@ -124,7 +123,6 @@ public class TuitionPlanController : ControllerBase
             Name = request.Name,
             TotalSessions = request.TotalSessions,
             TuitionAmount = request.TuitionAmount,
-            UnitPriceSession = request.UnitPriceSession,
             Currency = request.Currency
         };
 

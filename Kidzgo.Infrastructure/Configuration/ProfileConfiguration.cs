@@ -26,7 +26,7 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .HasMaxLength(255)
             .IsRequired();
 
-        builder.Property(x => x.FullName)
+        builder.Property(x => x.Name)
             .HasMaxLength(255);
 
         builder.Property(x => x.DateOfBirth);

@@ -41,12 +41,17 @@ public sealed class UpdateTuitionPlanCommandHandler(
             }
         }
 
+        // Calculate UnitPriceSession automatically from TuitionAmount / TotalSessions
+        decimal unitPriceSession = command.TotalSessions > 0
+            ? Math.Round(command.TuitionAmount / command.TotalSessions, 2)
+            : 0;
+
         tuitionPlan.BranchId = command.BranchId;
         tuitionPlan.ProgramId = command.ProgramId;
         tuitionPlan.Name = command.Name;
         tuitionPlan.TotalSessions = command.TotalSessions;
         tuitionPlan.TuitionAmount = command.TuitionAmount;
-        tuitionPlan.UnitPriceSession = command.UnitPriceSession;
+        tuitionPlan.UnitPriceSession = unitPriceSession;
         tuitionPlan.Currency = command.Currency;
         tuitionPlan.UpdatedAt = DateTime.UtcNow;
 
@@ -76,4 +81,3 @@ public sealed class UpdateTuitionPlanCommandHandler(
         };
     }
 }
-
