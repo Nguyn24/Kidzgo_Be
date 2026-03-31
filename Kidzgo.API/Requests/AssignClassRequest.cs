@@ -14,4 +14,9 @@ public sealed class AssignClassRequest
     /// - wait: Chờ lớp mới, chưa xếp lớp
     /// </summary>
     public string EntryType { get; set; } = "immediate";
+
+    /// <summary>
+    /// Track to assign: "primary" | "secondary"
+    /// </summary>
+    public string Track { get; set; } = "primary";
 }

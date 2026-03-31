@@ -25,6 +25,8 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         builder.Property(x => x.TuitionPlanId)
             .IsRequired();
 
+        builder.Property(x => x.SecondaryProgramId);
+
         builder.Property(x => x.RegistrationDate)
             .IsRequired();
 
@@ -37,9 +39,16 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(x => x.SecondaryEntryType)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.Property(x => x.OperationType)
             .HasConversion<string>()
             .HasMaxLength(20);
+
+        builder.Property(x => x.SecondaryProgramSkillFocus)
+            .HasMaxLength(50);
 
         builder.Property(x => x.TotalSessions)
             .IsRequired();
@@ -72,6 +81,11 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
             .HasForeignKey(x => x.ProgramId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.SecondaryProgram)
+            .WithMany()
+            .HasForeignKey(x => x.SecondaryProgramId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.TuitionPlan)
             .WithMany()
             .HasForeignKey(x => x.TuitionPlanId)
@@ -80,6 +94,11 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         builder.HasOne(x => x.Class)
             .WithMany()
             .HasForeignKey(x => x.ClassId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.SecondaryClass)
+            .WithMany()
+            .HasForeignKey(x => x.SecondaryClassId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.OriginalRegistration)
@@ -91,8 +110,10 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         builder.HasIndex(x => x.StudentProfileId);
         builder.HasIndex(x => x.BranchId);
         builder.HasIndex(x => x.ProgramId);
+        builder.HasIndex(x => x.SecondaryProgramId);
         builder.HasIndex(x => x.TuitionPlanId);
         builder.HasIndex(x => x.ClassId);
+        builder.HasIndex(x => x.SecondaryClassId);
         builder.HasIndex(x => x.OriginalRegistrationId);
     }
 }

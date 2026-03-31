@@ -7,6 +7,7 @@ public sealed class TransferClassResponse
     public string OldClassName { get; init; } = null!;
     public Guid NewClassId { get; init; }
     public string NewClassName { get; init; } = null!;
+    public string Track { get; init; } = null!;
     public DateTime EffectiveDate { get; init; }
     public string Status { get; init; } = null!;
 }

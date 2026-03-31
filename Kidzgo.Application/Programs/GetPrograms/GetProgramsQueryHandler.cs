@@ -60,6 +60,7 @@ public sealed class GetProgramsQueryHandler(
                 Name = p.Name,
                 Code = p.Code,
                 IsMakeup = p.IsMakeup,
+                IsSupplementary = p.IsSupplementary,
                 DefaultMakeupClassId = p.DefaultMakeupClassId,
                 TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,

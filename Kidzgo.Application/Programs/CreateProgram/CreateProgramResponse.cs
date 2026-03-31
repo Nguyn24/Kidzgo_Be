@@ -7,6 +7,7 @@ public sealed class CreateProgramResponse
     public string Name { get; init; } = null!;
     public string Code { get; init; }
     public bool IsMakeup { get; init; }
+    public bool IsSupplementary { get; init; }
     public Guid? DefaultMakeupClassId { get; init; }
     public int TotalSessions { get; init; }
     public decimal DefaultTuitionAmount { get; init; }

@@ -40,6 +40,8 @@ public class RegistrationController : ControllerBase
             BranchId = request.BranchId,
             ProgramId = request.ProgramId,
             TuitionPlanId = request.TuitionPlanId,
+            SecondaryProgramId = request.SecondaryProgramId,
+            SecondaryProgramSkillFocus = request.SecondaryProgramSkillFocus,
             ExpectedStartDate = request.ExpectedStartDate,
             PreferredSchedule = request.PreferredSchedule,
             Note = request.Note
@@ -103,7 +105,10 @@ public class RegistrationController : ControllerBase
             ExpectedStartDate = request.ExpectedStartDate,
             PreferredSchedule = request.PreferredSchedule,
             Note = request.Note,
-            TuitionPlanId = request.TuitionPlanId
+            TuitionPlanId = request.TuitionPlanId,
+            SecondaryProgramId = request.SecondaryProgramId,
+            SecondaryProgramSkillFocus = request.SecondaryProgramSkillFocus,
+            RemoveSecondaryProgram = request.RemoveSecondaryProgram
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -152,7 +157,8 @@ public class RegistrationController : ControllerBase
         {
             RegistrationId = id,
             ClassId = request.ClassId,
-            EntryType = request.EntryType
+            EntryType = request.EntryType,
+            Track = request.Track
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -165,6 +171,7 @@ public class RegistrationController : ControllerBase
     public async Task<IResult> GetWaitingList(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,
+        [FromQuery] string? track,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -173,6 +180,7 @@ public class RegistrationController : ControllerBase
         {
             BranchId = branchId,
             ProgramId = programId,
+            Track = track,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -187,6 +195,7 @@ public class RegistrationController : ControllerBase
     public async Task<IResult> TransferClass(
         Guid id,
         [FromQuery] Guid newClassId,
+        [FromQuery] string track = "primary",
         [FromQuery] DateTime? effectiveDate = null,
         CancellationToken cancellationToken = default)
     {
@@ -194,7 +203,8 @@ public class RegistrationController : ControllerBase
         {
             RegistrationId = id,
             NewClassId = newClassId,
-            EffectiveDate = effectiveDate ?? DateTime.UtcNow
+            EffectiveDate = effectiveDate ?? DateTime.UtcNow,
+            Track = track
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -9,6 +9,9 @@ public sealed class UpdatePlacementTestResultsResponse
     public decimal? WritingScore { get; init; }
     public decimal? ResultScore { get; init; }
     public string? ProgramRecommendation { get; init; }
+    public string? SecondaryProgramRecommendation { get; init; }
+    public bool IsSecondaryProgramSupplementary { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
     public string? AttachmentUrl { get; init; }
     public string Status { get; init; } = null!;
     public DateTime UpdatedAt { get; init; }
