@@ -116,12 +116,23 @@ public sealed class MarkAttendanceCommandHandler(
     {
         if (classId == null) return;
 
-        // Find active registration for this student in this class
-        var registration = await context.Registrations
-            .FirstOrDefaultAsync(r => r.StudentProfileId == studentProfileId
-                && r.ClassId == classId
-                && r.Status == RegistrationStatus.Studying,
+        var enrollment = await context.ClassEnrollments
+            .Include(ce => ce.Registration)
+            .FirstOrDefaultAsync(ce => ce.ClassId == classId
+                && ce.StudentProfileId == studentProfileId
+                && ce.Status == EnrollmentStatus.Active,
                 cancellationToken);
+
+        var registration = enrollment?.Registration;
+        if (registration is null)
+        {
+            registration = await context.Registrations
+                .FirstOrDefaultAsync(r => r.StudentProfileId == studentProfileId
+                    && (r.ClassId == classId || r.SecondaryClassId == classId)
+                    && r.Status != RegistrationStatus.Completed
+                    && r.Status != RegistrationStatus.Cancelled,
+                    cancellationToken);
+        }
 
         if (registration != null && registration.RemainingSessions > 0)
         {
@@ -151,7 +162,7 @@ public sealed class MarkAttendanceCommandHandler(
 
         // Get all active registrations for this class
         var activeRegistrations = await context.Registrations
-            .Where(r => r.ClassId == classId 
+            .Where(r => (r.ClassId == classId || r.SecondaryClassId == classId)
                 && r.Status == RegistrationStatus.Studying)
             .ToListAsync(cancellationToken);
 

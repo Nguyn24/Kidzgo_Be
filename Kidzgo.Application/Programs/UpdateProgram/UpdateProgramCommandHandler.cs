@@ -33,6 +33,7 @@ public sealed class UpdateProgramCommandHandler(
         program.Name = command.Name;
         program.Code = command.Code;
         program.IsMakeup = command.IsMakeup;
+        program.IsSupplementary = command.IsSupplementary;
         program.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -44,6 +45,7 @@ public sealed class UpdateProgramCommandHandler(
             Name = program.Name,
             Code = program.Code,
             IsMakeup = program.IsMakeup,
+            IsSupplementary = program.IsSupplementary,
             DefaultMakeupClassId = program.DefaultMakeupClassId,
             TotalSessions = program.TotalSessions,
             DefaultTuitionAmount = program.DefaultTuitionAmount,

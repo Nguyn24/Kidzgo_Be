@@ -11,6 +11,9 @@ public sealed class UpdatePlacementTestResultsCommand : ICommand<UpdatePlacement
     public decimal? WritingScore { get; init; }
     public decimal? ResultScore { get; init; }
     public string? ProgramRecommendation { get; init; }
+    public string? SecondaryProgramRecommendation { get; init; }
+    public bool? IsSecondaryProgramSupplementary { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
     public string? AttachmentUrl { get; init; }
 }
 

@@ -18,8 +18,10 @@ public sealed class GetRegistrationByIdQueryHandler(
             .Include(r => r.StudentProfile)
             .Include(r => r.Branch)
             .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .Include(r => r.TuitionPlan)
             .Include(r => r.Class)
+            .Include(r => r.SecondaryClass)
             .FirstOrDefaultAsync(r => r.Id == query.Id, cancellationToken);
 
         if (registration == null)
@@ -36,6 +38,9 @@ public sealed class GetRegistrationByIdQueryHandler(
             BranchName = registration.Branch.Name,
             ProgramId = registration.ProgramId,
             ProgramName = registration.Program.Name,
+            SecondaryProgramId = registration.SecondaryProgramId,
+            SecondaryProgramName = registration.SecondaryProgram?.Name,
+            SecondaryProgramSkillFocus = registration.SecondaryProgramSkillFocus,
             TuitionPlanId = registration.TuitionPlanId,
             TuitionPlanName = registration.TuitionPlan.Name,
             RegistrationDate = registration.RegistrationDate,
@@ -47,6 +52,9 @@ public sealed class GetRegistrationByIdQueryHandler(
             ClassId = registration.ClassId,
             ClassName = registration.Class?.Title,
             EntryType = registration.EntryType?.ToString(),
+            SecondaryClassId = registration.SecondaryClassId,
+            SecondaryClassName = registration.SecondaryClass?.Title,
+            SecondaryEntryType = registration.SecondaryEntryType?.ToString(),
             TotalSessions = registration.TotalSessions,
             UsedSessions = registration.UsedSessions,
             RemainingSessions = registration.RemainingSessions,
