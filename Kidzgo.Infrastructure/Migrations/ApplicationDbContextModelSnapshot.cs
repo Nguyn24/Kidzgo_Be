@@ -249,6 +249,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid?>("InvigilatorUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsSecondaryProgramSupplementary")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("LeadChildId")
                         .HasColumnType("uuid");
 
@@ -284,6 +287,14 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<DateTime?>("ScheduledAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SecondaryProgramRecommendation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SecondaryProgramSkillFocus")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal?>("SpeakingScore")
                         .HasColumnType("numeric");
@@ -401,6 +412,13 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateOnly>("EnrollDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("RegistrationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SessionSelectionPattern")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -408,6 +426,11 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Track")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<Guid?>("TuitionPlanId")
                         .HasColumnType("uuid");
@@ -418,6 +441,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClassId");
+
+                    b.HasIndex("RegistrationId");
 
                     b.HasIndex("StudentProfileId");
 
@@ -2566,6 +2591,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<bool>("IsMakeup")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsSupplementary")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -2725,6 +2753,23 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<int>("RemainingSessions")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("SecondaryClassAssignedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SecondaryClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SecondaryEntryType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("SecondaryProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SecondaryProgramSkillFocus")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2754,6 +2799,10 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("OriginalRegistrationId");
 
                     b.HasIndex("ProgramId");
+
+                    b.HasIndex("SecondaryClassId");
+
+                    b.HasIndex("SecondaryProgramId");
 
                     b.HasIndex("StudentProfileId");
 
@@ -3209,6 +3258,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateOnly>("SessionDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -3222,6 +3274,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ApprovedBy");
 
                     b.HasIndex("ClassId");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("StudentProfileId");
 
@@ -3384,6 +3438,60 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("PlannedTeacherId");
 
                     b.ToTable("Sessions", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Sessions.StudentSessionAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClassEnrollmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RegistrationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Track")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassEnrollmentId");
+
+                    b.HasIndex("RegistrationId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.HasIndex("SessionId", "ClassEnrollmentId")
+                        .IsUnique();
+
+                    b.HasIndex("SessionId", "Status");
+
+                    b.HasIndex("StudentProfileId", "Status");
+
+                    b.ToTable("StudentSessionAssignments", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", b =>
@@ -4044,6 +4152,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Kidzgo.Domain.Registrations.Registration", "Registration")
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
                         .WithMany("ClassEnrollments")
                         .HasForeignKey("StudentProfileId")
@@ -4056,6 +4169,8 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Class");
+
+                    b.Navigation("Registration");
 
                     b.Navigation("StudentProfile");
 
@@ -4855,6 +4970,16 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "SecondaryClass")
+                        .WithMany()
+                        .HasForeignKey("SecondaryClassId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Programs.Program", "SecondaryProgram")
+                        .WithMany()
+                        .HasForeignKey("SecondaryProgramId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
                         .WithMany()
                         .HasForeignKey("StudentProfileId")
@@ -4874,6 +4999,10 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("OriginalRegistration");
 
                     b.Navigation("Program");
+
+                    b.Navigation("SecondaryClass");
+
+                    b.Navigation("SecondaryProgram");
 
                     b.Navigation("StudentProfile");
 
@@ -5070,6 +5199,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Kidzgo.Domain.Sessions.Session", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
                         .WithMany("LeaveRequests")
                         .HasForeignKey("StudentProfileId")
@@ -5079,6 +5213,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("ApprovedByUser");
 
                     b.Navigation("Class");
+
+                    b.Navigation("Session");
 
                     b.Navigation("StudentProfile");
                 });
@@ -5194,6 +5330,40 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("PlannedRoom");
 
                     b.Navigation("PlannedTeacher");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Sessions.StudentSessionAssignment", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Classes.ClassEnrollment", "ClassEnrollment")
+                        .WithMany("StudentSessionAssignments")
+                        .HasForeignKey("ClassEnrollmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Registrations.Registration", "Registration")
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Kidzgo.Domain.Sessions.Session", "Session")
+                        .WithMany("StudentSessionAssignments")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
+                        .WithMany("StudentSessionAssignments")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassEnrollment");
+
+                    b.Navigation("Registration");
+
+                    b.Navigation("Session");
+
+                    b.Navigation("StudentProfile");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", b =>
@@ -5404,6 +5574,11 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Tickets");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Classes.ClassEnrollment", b =>
+                {
+                    b.Navigation("StudentSessionAssignments");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Exams.Exam", b =>
                 {
                     b.Navigation("ExamResults");
@@ -5548,6 +5723,8 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Navigation("SourceMakeupCredits");
 
+                    b.Navigation("StudentSessionAssignments");
+
                     b.Navigation("TargetMakeupAllocations");
 
                     b.Navigation("UsedMakeupCredits");
@@ -5597,6 +5774,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("StudentLinks");
 
                     b.Navigation("StudentMonthlyReports");
+
+                    b.Navigation("StudentSessionAssignments");
 
                     b.Navigation("TicketComments");
                 });

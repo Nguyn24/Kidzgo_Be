@@ -7,6 +7,12 @@ namespace Kidzgo.API.Extensions;
 public sealed class SchedulePatternSchemaFilter : ISchemaFilter
 {
     private const string ExamplePattern = "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=8;BYMINUTE=30;DURATION=60";
+    private const string SessionSelectionExample = "FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=30";
+    private const string SessionSelectionDescription =
+        "Optional subset of the class schedule for this student. " +
+        "Example: if the class runs Wednesday 08:30, use FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=30. " +
+        "The selection pattern must match both weekday and time of the class slot. " +
+        "Leave empty to attend all sessions of the class.";
 
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
@@ -15,12 +21,17 @@ public sealed class SchedulePatternSchemaFilter : ISchemaFilter
             return;
         }
 
-        if (!schema.Properties.TryGetValue("schedulePattern", out var scheduleProperty) &&
-            !schema.Properties.TryGetValue("SchedulePattern", out scheduleProperty))
+        if (schema.Properties.TryGetValue("schedulePattern", out var scheduleProperty) ||
+            schema.Properties.TryGetValue("SchedulePattern", out scheduleProperty))
         {
-            return;
+            scheduleProperty.Example ??= new OpenApiString(ExamplePattern);
         }
 
-        scheduleProperty.Example ??= new OpenApiString(ExamplePattern);
+        if (schema.Properties.TryGetValue("sessionSelectionPattern", out var sessionSelectionProperty) ||
+            schema.Properties.TryGetValue("SessionSelectionPattern", out sessionSelectionProperty))
+        {
+            sessionSelectionProperty.Example ??= new OpenApiString(SessionSelectionExample);
+            sessionSelectionProperty.Description ??= SessionSelectionDescription;
+        }
     }
 }

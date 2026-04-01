@@ -37,8 +37,19 @@ public class CreateUserCommandHandler(
         // Check for duplicate phone number
         if (!string.IsNullOrWhiteSpace(command.PhoneNumber))
         {
-            var phoneNumberTrimmed = command.PhoneNumber.Trim();
-            if (await context.Users.AnyAsync(u => u.PhoneNumber == phoneNumberTrimmed, cancellationToken))
+            var phoneLookupCandidates = PhoneNumberNormalizer.GetLookupCandidates(command.PhoneNumber);
+
+            if (await context.Users.AnyAsync(
+                    u => u.PhoneNumber != null &&
+                         phoneLookupCandidates.Contains(
+                             u.PhoneNumber
+                                 .Replace(" ", "")
+                                 .Replace("-", "")
+                                 .Replace(".", "")
+                                 .Replace("(", "")
+                                 .Replace(")", "")
+                                 .Replace("+", "")),
+                    cancellationToken))
             {
                 return Result.Failure<CreateUserCommandResponse>(UserErrors.PhoneNumberNotUnique);
             }
@@ -80,7 +91,7 @@ public class CreateUserCommandHandler(
             Username = command.Username,
             Name = command.Name,
             Email = command.Email,
-            PhoneNumber = string.IsNullOrWhiteSpace(command.PhoneNumber) ? null : command.PhoneNumber.Trim(),
+            PhoneNumber = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.PhoneNumber),
             PasswordHash = hashedPassword,
             Role = role,
             BranchId = command.BranchId,

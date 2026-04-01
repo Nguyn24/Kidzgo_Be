@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
@@ -12,7 +13,8 @@ namespace Kidzgo.Application.Attendance.MarkAttendance;
 
 public sealed class MarkAttendanceCommandHandler(
     IDbContext context,
-    IUserContext userContext)
+    IUserContext userContext,
+    SessionParticipantService sessionParticipantService)
     : ICommandHandler<MarkAttendanceCommand, MarkAttendanceResponse>
 {
     public async Task<Result<MarkAttendanceResponse>> Handle(MarkAttendanceCommand command, CancellationToken cancellationToken)
@@ -24,12 +26,24 @@ public sealed class MarkAttendanceCommandHandler(
         }
 
         var results = new List<AttendanceResultItem>();
+        var participants = await sessionParticipantService.GetParticipantsAsync(command.SessionId, cancellationToken);
+        var participantsByStudent = participants.ToDictionary(p => p.StudentProfileId);
 
         foreach (var item in command.Attendances)
         {
+            if (!participantsByStudent.TryGetValue(item.StudentProfileId, out var participant))
+            {
+                return Result.Failure<MarkAttendanceResponse>(Error.Validation(
+                    "Attendance.StudentNotAssigned",
+                    $"Student '{item.StudentProfileId}' is not assigned to session '{command.SessionId}'."));
+            }
+
             var attendance = await context.Attendances
                 .FirstOrDefaultAsync(a => a.SessionId == command.SessionId && a.StudentProfileId == item.StudentProfileId,
                     cancellationToken);
+
+            var hadExistingAttendance = attendance is not null;
+            var previousStatus = attendance?.AttendanceStatus;
 
             if (attendance is null)
             {
@@ -80,8 +94,10 @@ public sealed class MarkAttendanceCommandHandler(
             }
             else if (item.AttendanceStatus == AttendanceStatus.Present)
             {
-                // Update UsedSessions and RemainingSessions when student is present
-                await UpdateRegistrationSessionsAsync(item.StudentProfileId, session.ClassId, cancellationToken);
+                if (!participant.IsMakeup && (!hadExistingAttendance || previousStatus != AttendanceStatus.Present))
+                {
+                    await UpdateRegistrationSessionsAsync(participant.RegistrationId, cancellationToken);
+                }
                 attendance.AbsenceType = null;
             }
             else
@@ -112,16 +128,15 @@ public sealed class MarkAttendanceCommandHandler(
         });
     }
 
-    private async Task UpdateRegistrationSessionsAsync(Guid studentProfileId, Guid? classId, CancellationToken cancellationToken)
+    private async Task UpdateRegistrationSessionsAsync(Guid? registrationId, CancellationToken cancellationToken)
     {
-        if (classId == null) return;
+        if (!registrationId.HasValue)
+        {
+            return;
+        }
 
-        // Find active registration for this student in this class
         var registration = await context.Registrations
-            .FirstOrDefaultAsync(r => r.StudentProfileId == studentProfileId
-                && r.ClassId == classId
-                && r.Status == RegistrationStatus.Studying,
-                cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == registrationId.Value, cancellationToken);
 
         if (registration != null && registration.RemainingSessions > 0)
         {
@@ -137,7 +152,15 @@ public sealed class MarkAttendanceCommandHandler(
             }
 
             // Check if all students in class have completed their sessions
-            await CheckAndUpdateClassCompletionAsync(classId.Value, cancellationToken);
+            if (registration.ClassId.HasValue)
+            {
+                await CheckAndUpdateClassCompletionAsync(registration.ClassId.Value, cancellationToken);
+            }
+
+            if (registration.SecondaryClassId.HasValue)
+            {
+                await CheckAndUpdateClassCompletionAsync(registration.SecondaryClassId.Value, cancellationToken);
+            }
         }
     }
 
@@ -151,7 +174,7 @@ public sealed class MarkAttendanceCommandHandler(
 
         // Get all active registrations for this class
         var activeRegistrations = await context.Registrations
-            .Where(r => r.ClassId == classId 
+            .Where(r => (r.ClassId == classId || r.SecondaryClassId == classId)
                 && r.Status == RegistrationStatus.Studying)
             .ToListAsync(cancellationToken);
 
@@ -174,8 +197,9 @@ public sealed class MarkAttendanceCommandHandler(
     {
         var leave = await context.LeaveRequests
             .Where(l => l.StudentProfileId == studentProfileId
-                        && l.SessionDate <= DateOnly.FromDateTime(session.PlannedDatetime)
-                        && (l.EndDate == null || l.EndDate >= DateOnly.FromDateTime(session.PlannedDatetime))
+                        && (l.SessionId == session.Id ||
+                            (l.SessionDate <= DateOnly.FromDateTime(session.PlannedDatetime)
+                             && (l.EndDate == null || l.EndDate >= DateOnly.FromDateTime(session.PlannedDatetime))))
                         && l.Status == LeaveRequestStatus.Approved)
             .OrderByDescending(l => l.RequestedAt)
             .FirstOrDefaultAsync(cancellationToken);

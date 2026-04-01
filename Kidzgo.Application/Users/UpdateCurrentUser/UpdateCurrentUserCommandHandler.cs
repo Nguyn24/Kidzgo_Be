@@ -51,7 +51,27 @@ public sealed class UpdateCurrentUserCommandHandler(
 
         if (!string.IsNullOrWhiteSpace(command.PhoneNumber))
         {
-            user.PhoneNumber = command.PhoneNumber.Trim();
+            var phoneLookupCandidates = PhoneNumberNormalizer.GetLookupCandidates(command.PhoneNumber);
+
+            var phoneNumberExists = await context.Users.AnyAsync(
+                u => u.Id != currentUserId &&
+                     u.PhoneNumber != null &&
+                     phoneLookupCandidates.Contains(
+                         u.PhoneNumber
+                             .Replace(" ", "")
+                             .Replace("-", "")
+                             .Replace(".", "")
+                             .Replace("(", "")
+                             .Replace(")", "")
+                             .Replace("+", "")),
+                cancellationToken);
+
+            if (phoneNumberExists)
+            {
+                return Result.Failure<UpdateCurrentUserResponse>(UserErrors.PhoneNumberNotUnique);
+            }
+
+            user.PhoneNumber = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.PhoneNumber);
         }
 
         // AvatarUrl - TODO: Add AvatarUrl field to User entity if needed

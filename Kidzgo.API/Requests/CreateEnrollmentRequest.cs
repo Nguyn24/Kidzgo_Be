@@ -6,5 +6,7 @@ public sealed class CreateEnrollmentRequest
     public Guid StudentProfileId { get; set; }
     public DateOnly EnrollDate { get; set; }
     public Guid? TuitionPlanId { get; set; }
+    public string? Track { get; set; }
+    public string? SessionSelectionPattern { get; set; }
 }
 

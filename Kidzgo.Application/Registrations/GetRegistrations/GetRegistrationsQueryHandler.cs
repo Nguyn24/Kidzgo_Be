@@ -18,8 +18,10 @@ public sealed class GetRegistrationsQueryHandler(
             .Include(r => r.StudentProfile)
             .Include(r => r.Branch)
             .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .Include(r => r.TuitionPlan)
             .Include(r => r.Class)
+            .Include(r => r.SecondaryClass)
             .AsQueryable();
 
         // Apply filters
@@ -35,12 +37,16 @@ public sealed class GetRegistrationsQueryHandler(
 
         if (query.ProgramId.HasValue)
         {
-            baseQuery = baseQuery.Where(r => r.ProgramId == query.ProgramId.Value);
+            baseQuery = baseQuery.Where(r =>
+                r.ProgramId == query.ProgramId.Value ||
+                r.SecondaryProgramId == query.ProgramId.Value);
         }
 
         if (query.ClassId.HasValue)
         {
-            baseQuery = baseQuery.Where(r => r.ClassId == query.ClassId.Value);
+            baseQuery = baseQuery.Where(r =>
+                r.ClassId == query.ClassId.Value ||
+                r.SecondaryClassId == query.ClassId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Status))
@@ -68,6 +74,9 @@ public sealed class GetRegistrationsQueryHandler(
                 BranchName = r.Branch.Name,
                 ProgramId = r.ProgramId,
                 ProgramName = r.Program.Name,
+                SecondaryProgramId = r.SecondaryProgramId,
+                SecondaryProgramName = r.SecondaryProgram != null ? r.SecondaryProgram.Name : null,
+                SecondaryProgramSkillFocus = r.SecondaryProgramSkillFocus,
                 TuitionPlanId = r.TuitionPlanId,
                 TuitionPlanName = r.TuitionPlan.Name,
                 RegistrationDate = r.RegistrationDate,
@@ -78,6 +87,8 @@ public sealed class GetRegistrationsQueryHandler(
                 Status = r.Status.ToString(),
                 ClassId = r.ClassId,
                 ClassName = r.Class != null ? r.Class.Title : null,
+                SecondaryClassId = r.SecondaryClassId,
+                SecondaryClassName = r.SecondaryClass != null ? r.SecondaryClass.Title : null,
                 TotalSessions = r.TotalSessions,
                 UsedSessions = r.UsedSessions,
                 RemainingSessions = r.RemainingSessions,

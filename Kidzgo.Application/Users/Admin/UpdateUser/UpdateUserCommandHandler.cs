@@ -36,7 +36,34 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
         user.Email = request.Email ?? user.Email;
         if (request.PhoneNumber != null)
         {
-            user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                user.PhoneNumber = null;
+            }
+            else
+            {
+                var phoneLookupCandidates = PhoneNumberNormalizer.GetLookupCandidates(request.PhoneNumber);
+
+                var phoneNumberExists = await context.Users.AnyAsync(
+                    u => u.Id != request.UserId &&
+                         u.PhoneNumber != null &&
+                         phoneLookupCandidates.Contains(
+                             u.PhoneNumber
+                                 .Replace(" ", "")
+                                 .Replace("-", "")
+                                 .Replace(".", "")
+                                 .Replace("(", "")
+                                 .Replace(")", "")
+                                 .Replace("+", "")),
+                    cancellationToken);
+
+                if (phoneNumberExists)
+                {
+                    return Result.Failure<UpdateUserResponse>(UserErrors.PhoneNumberNotUnique);
+                }
+
+                user.PhoneNumber = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(request.PhoneNumber);
+            }
         }
         user.IsActive = request.IsActive ?? user.IsActive;
         user.IsDeleted = request.isDeleted ?? user.IsDeleted;

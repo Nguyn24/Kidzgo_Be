@@ -52,6 +52,15 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.Property(x => x.ProgramRecommendation)
             .HasMaxLength(100);
 
+        builder.Property(x => x.SecondaryProgramRecommendation)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.IsSecondaryProgramSupplementary)
+            .IsRequired();
+
+        builder.Property(x => x.SecondaryProgramSkillFocus)
+            .HasMaxLength(50);
+
         builder.Property(x => x.Notes);
 
         builder.Property(x => x.AttachmentUrl);

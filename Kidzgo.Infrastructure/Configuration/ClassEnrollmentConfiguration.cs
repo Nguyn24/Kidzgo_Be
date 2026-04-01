@@ -29,6 +29,24 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
 
         builder.Property(x => x.TuitionPlanId);
 
+        builder.Property(x => x.RegistrationId);
+
+        builder.Property(x => x.Track)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.SessionSelectionPattern)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Track)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.SessionSelectionPattern)
+            .HasMaxLength(500);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
@@ -50,5 +68,12 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
             .WithMany(x => x.ClassEnrollments)
             .HasForeignKey(x => x.TuitionPlanId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Registration)
+            .WithMany()
+            .HasForeignKey(x => x.RegistrationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(x => x.RegistrationId);
     }
 }

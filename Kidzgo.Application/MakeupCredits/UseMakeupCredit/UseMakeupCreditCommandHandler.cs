@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
@@ -10,7 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.MakeupCredits.UseMakeupCredit;
 
-public sealed class UseMakeupCreditCommandHandler(IDbContext context, IUserContext userContext)
+public sealed class UseMakeupCreditCommandHandler(
+    IDbContext context,
+    IUserContext userContext,
+    SessionParticipantService sessionParticipantService)
     : ICommandHandler<UseMakeupCreditCommand>
 {
     public async Task<Result> Handle(UseMakeupCreditCommand command, CancellationToken cancellationToken)
@@ -139,22 +143,54 @@ public sealed class UseMakeupCreditCommandHandler(IDbContext context, IUserConte
             return Result.Success();
         }
 
-        var activeEnrollmentCount = await context.ClassEnrollments
-            .CountAsync(
-                e => e.ClassId == targetSession.ClassId &&
-                     e.Status == EnrollmentStatus.Active,
-                cancellationToken);
+        var targetParticipants = await sessionParticipantService
+            .GetParticipantsAsync(targetSession.Id, cancellationToken);
 
-        var activeAllocationCount = await context.MakeupAllocations
-            .CountAsync(
-                a => a.TargetSessionId == targetSession.Id &&
-                     a.MakeupCreditId != credit.Id &&
-                     a.Status != MakeupAllocationStatus.Cancelled,
-                cancellationToken);
+        if (targetParticipants.Any(p => p.StudentProfileId == studentProfileId.Value))
+        {
+            return Result.Failure(Error.Validation(
+                "MakeupCredit.StudentAlreadyInTargetSession",
+                "Student is already assigned to the target session."));
+        }
 
-        if (activeEnrollmentCount + activeAllocationCount >= targetSession.Class.Capacity)
+        if (targetParticipants.Count >= targetSession.Class.Capacity)
         {
             return Result.Failure(MakeupCreditErrors.TargetSessionFull);
+        }
+
+        var bookedSlots = await sessionParticipantService.GetStudentBookedSlotsAsync(
+            studentProfileId.Value,
+            targetSession.PlannedDatetime.Date.AddDays(-1),
+            targetSession.PlannedDatetime.Date.AddDays(2).AddTicks(-1),
+            cancellationToken);
+
+        var currentAllocatedSlot = currentAllocatedSession is null
+            ? ((DateTime Start, DateTime End)?)null
+            : (currentAllocatedSession.PlannedDatetime,
+                currentAllocatedSession.PlannedDatetime.AddMinutes(currentAllocatedSession.DurationMinutes));
+
+        var targetStart = targetSession.PlannedDatetime;
+        var targetEnd = targetSession.PlannedDatetime.AddMinutes(targetSession.DurationMinutes);
+        var minGap = TimeSpan.FromHours(2);
+
+        var hasConflict = bookedSlots
+            .Where(slot => currentAllocatedSlot == null ||
+                           slot.Start != currentAllocatedSlot.Value.Start ||
+                           slot.End != currentAllocatedSlot.Value.End)
+            .Any(slot =>
+            {
+                var overlap = targetStart < slot.End && targetEnd > slot.Start;
+                var gapToStart = (targetStart - slot.End).Duration();
+                var gapToEnd = (slot.Start - targetEnd).Duration();
+                var tooClose = gapToStart < minGap || gapToEnd < minGap;
+                return overlap || tooClose;
+            });
+
+        if (hasConflict)
+        {
+            return Result.Failure(Error.Validation(
+                "MakeupCredit.TargetSessionConflict",
+                "Target session conflicts with another session already assigned to the student."));
         }
 
         var existingAllocations = await context.MakeupAllocations

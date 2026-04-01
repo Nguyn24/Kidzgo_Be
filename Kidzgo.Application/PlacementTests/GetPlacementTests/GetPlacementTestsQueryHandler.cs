@@ -84,6 +84,9 @@ public sealed class GetPlacementTestsQueryHandler(
                 WritingScore = pt.WritingScore,
                 LevelRecommendation = pt.LevelRecommendation,
                 ProgramRecommendation = pt.ProgramRecommendation,
+                SecondaryProgramRecommendation = pt.SecondaryProgramRecommendation,
+                IsSecondaryProgramSupplementary = pt.IsSecondaryProgramSupplementary,
+                SecondaryProgramSkillFocus = pt.SecondaryProgramSkillFocus,
                 Notes = pt.Notes,
                 AttachmentUrl = pt.AttachmentUrl,
                 IsAccountProfileCreated = pt.StudentProfileId.HasValue ||
