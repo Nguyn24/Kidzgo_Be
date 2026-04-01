@@ -28,6 +28,22 @@ public static class LessonPlanTemplateErrors
         "LessonPlanTemplate.HasActiveLessonPlans",
         "Cannot delete template that has active lesson plans");
 
+    public static Error UnsupportedImportFileType(string extension) => Error.Validation(
+        "LessonPlanTemplate.UnsupportedImportFileType",
+        $"Unsupported syllabus import file type '{extension}'. Only .csv, .xlsx, and .xls are supported");
+
+    public static readonly Error ImportFileRequiresProgramId = Error.Validation(
+        "LessonPlanTemplate.ImportFileRequiresProgramId",
+        "ProgramId is required when importing a CSV syllabus file");
+
+    public static Error InvalidImportFile(string message) => Error.Validation(
+        "LessonPlanTemplate.InvalidImportFile",
+        message);
+
+    public static Error ProgramMappingNotFound(string sheetName) => Error.NotFound(
+        "LessonPlanTemplate.ProgramMappingNotFound",
+        $"Could not map syllabus sheet '{sheetName}' to an active program");
+
     public static readonly Error Unauthorized = Error.Validation(
         "LessonPlanTemplate.Unauthorized",
         "You do not have permission to modify this lesson plan template");
