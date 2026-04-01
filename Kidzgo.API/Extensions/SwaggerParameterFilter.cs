@@ -172,6 +172,17 @@ public class SwaggerParameterFilter : IParameterFilter
                 if (string.IsNullOrEmpty(parameter.Description))
                     parameter.Description = "Filter by payment type: TOP_UP, MEMBERSHIP, or null (all)";
                 break;
+            case "sessionselectionpattern":
+                parameter.Example = new OpenApiString("FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=30");
+                if (string.IsNullOrEmpty(parameter.Description))
+                {
+                    parameter.Description =
+                        "Subset of class schedule for this student. " +
+                        "Example: if the class runs Wednesday 08:30, use FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=30. " +
+                        "The selection pattern must match both weekday and time of the class slot. " +
+                        "Leave empty to attend all sessions of the class.";
+                }
+                break;
         }
     }
 }

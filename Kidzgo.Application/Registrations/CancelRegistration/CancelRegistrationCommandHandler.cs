@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.CancelRegistration.Handler;
 
 public sealed class CancelRegistrationCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<CancelRegistrationCommand, CancelRegistrationResponse>
 {
     public async Task<Result<CancelRegistrationResponse>> Handle(
@@ -45,6 +47,10 @@ public sealed class CancelRegistrationCommandHandler(
         {
             enrollment.Status = Domain.Classes.EnrollmentStatus.Dropped;
             enrollment.UpdatedAt = now;
+            await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+                enrollment.Id,
+                now,
+                cancellationToken);
         }
 
         // Update registration status

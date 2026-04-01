@@ -11,7 +11,8 @@ namespace Kidzgo.Application.Sessions.UpdateSessionsByClass;
 
 public sealed class UpdateSessionsByClassCommandHandler(
     IDbContext context,
-    SessionConflictChecker conflictChecker
+    SessionConflictChecker conflictChecker,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<UpdateSessionsByClassCommand, UpdateSessionsByClassResponse>
 {
     public async Task<Result<UpdateSessionsByClassResponse>> Handle(
@@ -167,6 +168,7 @@ public sealed class UpdateSessionsByClassCommandHandler(
                 if (hasChanges)
                 {
                     session.UpdatedAt = now;
+                    await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
                     updatedSessionIds.Add(session.Id);
                 }
                 else

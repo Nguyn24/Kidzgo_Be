@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -9,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.UpgradeTuitionPlan.Handler;
 
 public sealed class UpgradeTuitionPlanCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<UpgradeTuitionPlanCommand, UpgradeTuitionPlanResponse>
 {
     public async Task<Result<UpgradeTuitionPlanResponse>> Handle(
@@ -112,6 +114,12 @@ public sealed class UpgradeTuitionPlanCommandHandler(
             enrollment.RegistrationId = newRegistration.Id;
             enrollment.UpdatedAt = now;
         }
+
+        await studentSessionAssignmentService.ReassignFutureAssignmentsToRegistrationAsync(
+            registration.Id,
+            newRegistration.Id,
+            now,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

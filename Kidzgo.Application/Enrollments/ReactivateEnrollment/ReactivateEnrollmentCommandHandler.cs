@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Enrollments.ReactivateEnrollment;
 
 public sealed class ReactivateEnrollmentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<ReactivateEnrollmentCommand, ReactivateEnrollmentResponse>
 {
     public async Task<Result<ReactivateEnrollmentResponse>> Handle(ReactivateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -56,6 +58,7 @@ public sealed class ReactivateEnrollmentCommandHandler(
 
         enrollment.Status = EnrollmentStatus.Active;
         enrollment.UpdatedAt = DateTime.UtcNow;
+        await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new ReactivateEnrollmentResponse

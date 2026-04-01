@@ -39,7 +39,9 @@ public class EnrollmentController : ControllerBase
             ClassId = request.ClassId,
             StudentProfileId = request.StudentProfileId,
             EnrollDate = request.EnrollDate,
-            TuitionPlanId = request.TuitionPlanId
+            TuitionPlanId = request.TuitionPlanId,
+            Track = request.Track,
+            SessionSelectionPattern = request.SessionSelectionPattern
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -109,7 +111,10 @@ public class EnrollmentController : ControllerBase
         {
             Id = id,
             EnrollDate = request.EnrollDate,
-            TuitionPlanId = request.TuitionPlanId
+            TuitionPlanId = request.TuitionPlanId,
+            Track = request.Track,
+            SessionSelectionPattern = request.SessionSelectionPattern,
+            ClearSessionSelectionPattern = request.ClearSessionSelectionPattern
         };
 
         var result = await _mediator.Send(command, cancellationToken);

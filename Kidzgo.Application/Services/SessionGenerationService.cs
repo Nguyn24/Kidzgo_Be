@@ -15,13 +15,16 @@ public sealed class SessionGenerationService
 {
     private readonly IDbContext _context;
     private readonly ISchedulePatternParser _patternParser;
+    private readonly StudentSessionAssignmentService _studentSessionAssignmentService;
 
     public SessionGenerationService(
         IDbContext context,
-        ISchedulePatternParser patternParser)
+        ISchedulePatternParser patternParser,
+        StudentSessionAssignmentService studentSessionAssignmentService)
     {
         _context = context;
         _patternParser = patternParser;
+        _studentSessionAssignmentService = studentSessionAssignmentService;
     }
 
     /// Generate sessions từ schedule pattern cho Class
@@ -235,6 +238,10 @@ public sealed class SessionGenerationService
             try
             {
                 _context.Sessions.AddRange(sessionsToCreate);
+                foreach (var session in sessionsToCreate)
+                {
+                    await _studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
+                }
                 await _context.SaveChangesAsync(cancellationToken);
             }
             catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)

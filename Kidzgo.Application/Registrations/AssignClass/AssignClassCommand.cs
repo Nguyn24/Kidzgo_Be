@@ -23,4 +23,9 @@ public sealed class AssignClassCommand : ICommand<AssignClassResponse>
     /// Track to assign: "primary" | "secondary"
     /// </summary>
     public string Track { get; init; } = "primary";
+
+    /// <summary>
+    /// Optional RRULE subset of the class schedule pattern for this student.
+    /// </summary>
+    public string? SessionSelectionPattern { get; init; }
 }

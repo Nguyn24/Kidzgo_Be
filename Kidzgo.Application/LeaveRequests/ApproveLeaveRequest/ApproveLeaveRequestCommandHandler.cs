@@ -32,13 +32,15 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
         leave.ApprovedBy = userContext.UserId;
 
         // Tạo MakeupCredit cho tất cả các buổi học trong khoảng ngày xin nghỉ
-        var endDate = leave.EndDate ?? leave.SessionDate;
-
-        var sessionsInRange = await context.Sessions
-            .Where(s => s.ClassId == leave.ClassId
-                        && DateOnly.FromDateTime(s.PlannedDatetime) >= leave.SessionDate
-                        && DateOnly.FromDateTime(s.PlannedDatetime) <= endDate)
-            .ToListAsync(cancellationToken);
+        var sessionsInRange = leave.SessionId.HasValue
+            ? await context.Sessions
+                .Where(s => s.Id == leave.SessionId.Value)
+                .ToListAsync(cancellationToken)
+            : await context.Sessions
+                .Where(s => s.ClassId == leave.ClassId
+                            && DateOnly.FromDateTime(s.PlannedDatetime) >= leave.SessionDate
+                            && DateOnly.FromDateTime(s.PlannedDatetime) <= (leave.EndDate ?? leave.SessionDate))
+                .ToListAsync(cancellationToken);
 
         if (!sessionsInRange.Any())
         {
@@ -69,7 +71,12 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
                 context.MakeupCredits.Add(credit);
 
                 // Tự động xếp lịch bù vào T7/CN của tuần student nghỉ
-                await AutoScheduleMakeupForWeekendAsync(context, credit, session, leave.SessionDate, cancellationToken);
+                await AutoScheduleMakeupForWeekendAsync(
+                    context,
+                    credit,
+                    session,
+                    DateOnly.FromDateTime(session.PlannedDatetime),
+                    cancellationToken);
             }
         }
 
@@ -119,11 +126,9 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
         foreach (var weekendSession in shuffledSessions)
         {
             // Kiểm tra xem session còn slot không
-            var enrolledCount = await context.ClassEnrollments
-                .CountAsync(e => e.ClassId == weekendSession.ClassId &&
-                                 e.Status == EnrollmentStatus.Active, cancellationToken);
+            var participantCount = await GetScheduledParticipantCountAsync(context, weekendSession, cancellationToken);
 
-            if (enrolledCount < weekendSession.Class.Capacity)
+            if (participantCount < weekendSession.Class.Capacity)
             {
                 // Tạo MakeupAllocation
                 var allocation = new MakeupAllocation
@@ -142,6 +147,28 @@ public sealed class ApproveLeaveRequestCommandHandler(IDbContext context, IUserC
                 break; // Chỉ assign vào 1 session đầu tiên còn slot
             }
         }
+    }
+
+    private static async Task<int> GetScheduledParticipantCountAsync(
+        IDbContext context,
+        Session session,
+        CancellationToken cancellationToken)
+    {
+        var hasAssignments = await context.StudentSessionAssignments
+            .AnyAsync(a => a.SessionId == session.Id, cancellationToken);
+
+        var regularCount = hasAssignments
+            ? await context.StudentSessionAssignments
+                .CountAsync(a => a.SessionId == session.Id && a.Status == StudentSessionAssignmentStatus.Assigned, cancellationToken)
+            : await context.ClassEnrollments
+                .CountAsync(e => e.ClassId == session.ClassId
+                    && e.Status == EnrollmentStatus.Active
+                    && e.EnrollDate <= DateOnly.FromDateTime(session.PlannedDatetime), cancellationToken);
+
+        var makeupCount = await context.MakeupAllocations
+            .CountAsync(a => a.TargetSessionId == session.Id && a.Status != MakeupAllocationStatus.Cancelled, cancellationToken);
+
+        return regularCount + makeupCount;
     }
 }
 

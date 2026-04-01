@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
@@ -10,7 +11,9 @@ using System.Linq;
 
 namespace Kidzgo.Application.LeaveRequests.CreateLeaveRequest;
 
-public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
+public sealed class CreateLeaveRequestCommandHandler(
+    IDbContext context,
+    SessionParticipantService sessionParticipantService)
     : ICommandHandler<CreateLeaveRequestCommand, CreateLeaveRequestResponse>
 {
     private const int MaxLeavesPerMonth = 2;
@@ -26,16 +29,6 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
             return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.NotFound(command.StudentProfileId));
         }
 
-        // Basic enrollment check (optional)
-        bool enrolled = profile.ClassEnrollments.Any(e => e.ClassId == command.ClassId && e.Status == EnrollmentStatus.Active);
-        if (!enrolled)
-        {
-            return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.NotEnrolled(
-                command.ClassId,
-                command.StudentProfileId));
-        }
-
-        // Get the class to check level and branch
         var classInfo = await context.Classes
             .Include(c => c.Program)
             .FirstOrDefaultAsync(c => c.Id == command.ClassId, cancellationToken);
@@ -45,28 +38,57 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
             return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.ClassNotFound(command.ClassId));
         }
 
-        var sessionMonth = command.SessionDate.Month;
-        var sessionYear = command.SessionDate.Year;
-        var endDate = command.EndDate ?? command.SessionDate;
+        List<Session> sessionsToLeave;
+        if (command.SessionId.HasValue)
+        {
+            var targetSession = await context.Sessions
+                .FirstOrDefaultAsync(
+                    s => s.Id == command.SessionId.Value && s.ClassId == command.ClassId,
+                    cancellationToken);
 
-        // Get all sessions in the date range for this class
-        var sessionsInRange = await context.Sessions
-            .Where(s => s.ClassId == command.ClassId
-                        && DateOnly.FromDateTime(s.PlannedDatetime) >= command.SessionDate
-                        && DateOnly.FromDateTime(s.PlannedDatetime) <= endDate)
-            .ToListAsync(cancellationToken);
+            if (targetSession is null)
+            {
+                return Result.Failure<CreateLeaveRequestResponse>(
+                    LeaveRequestErrors.SessionNotFound(command.ClassId, command.SessionDate));
+            }
 
-        if (!sessionsInRange.Any())
+            var assignmentCheck = await sessionParticipantService
+                .EnsureStudentAssignedToSessionAsync(targetSession.Id, command.StudentProfileId, cancellationToken);
+
+            if (assignmentCheck.IsFailure)
+            {
+                return Result.Failure<CreateLeaveRequestResponse>(assignmentCheck.Error);
+            }
+
+            sessionsToLeave = [targetSession];
+        }
+        else
+        {
+            bool enrolled = profile.ClassEnrollments.Any(e => e.ClassId == command.ClassId && e.Status == EnrollmentStatus.Active);
+            if (!enrolled)
+            {
+                return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.NotEnrolled(
+                    command.ClassId,
+                    command.StudentProfileId));
+            }
+
+            var endDate = command.EndDate ?? command.SessionDate;
+            sessionsToLeave = await GetAssignedSessionsInRangeAsync(
+                command.StudentProfileId,
+                command.ClassId,
+                command.SessionDate,
+                endDate,
+                cancellationToken);
+        }
+
+        if (!sessionsToLeave.Any())
         {
             return Result.Failure<CreateLeaveRequestResponse>(
                 LeaveRequestErrors.SessionNotFound(command.ClassId, command.SessionDate));
         }
 
-        // Get unique session dates in the range
-        var sessionDatesInRange = sessionsInRange
-            .Select(s => DateOnly.FromDateTime(s.PlannedDatetime))
-            .Distinct()
-            .ToList();
+        var sessionMonth = sessionsToLeave.Min(s => s.PlannedDatetime).Month;
+        var sessionYear = sessionsToLeave.Min(s => s.PlannedDatetime).Year;
 
         // Get existing leave requests (Pending + Approved) for this student, class, and month
         var existingLeavesInMonth = await context.LeaveRequests
@@ -78,15 +100,23 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                         && lr.Class.Status != ClassStatus.Closed)
             .ToListAsync(cancellationToken);
 
-        // Count unique session dates from existing leave requests
-        var existingSessionDates = new HashSet<DateOnly>();
-        foreach (var leave in existingLeavesInMonth)
+        var existingLeaveKeys = existingLeavesInMonth
+            .Select(GetLeaveKey)
+            .ToHashSet();
+        var requestedLeaveKeys = sessionsToLeave
+            .Select(GetSessionKey)
+            .ToHashSet();
+
+        if (requestedLeaveKeys.Any(existingLeaveKeys.Contains))
         {
-            existingSessionDates.Add(leave.SessionDate);
+            return Result.Failure<CreateLeaveRequestResponse>(Error.Validation(
+                "LeaveRequest.AlreadyExists",
+                "A leave request already exists for at least one selected session."));
         }
 
-        // Count total unique session dates (existing + new request)
-        var totalSessionDatesInMonth = existingSessionDates.Count + sessionDatesInRange.Count;
+        var totalSessionDatesInMonth = existingLeaveKeys
+            .Union(requestedLeaveKeys)
+            .Count();
 
         var configuredMaxLeavesPerMonth = await context.ProgramLeavePolicies
             .Where(x => x.ProgramId == classInfo.ProgramId)
@@ -98,71 +128,65 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
             return Result.Failure<CreateLeaveRequestResponse>(LeaveRequestErrors.ExceededMonthlyLeaveLimit(configuredMaxLeavesPerMonth));
         }
 
-        // Compute notice hours from now until session date (first day)
-        var firstDate = command.SessionDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var noticeHours = (int)Math.Floor((firstDate - DateTime.UtcNow).TotalHours);
-
-        var status = noticeHours >= 24 ? LeaveRequestStatus.Approved : LeaveRequestStatus.Pending;
-
         var createdLeaves = new List<LeaveRequest>();
+        var now = DateTime.UtcNow;
 
         // Create one LeaveRequest per session date (not per session)
         // sessionDate và endDate cách nhau bao nhiêu ngày thì tạo bấy nhiêu LeaveRequest
-        foreach (var sessionDate in sessionDatesInRange)
+        foreach (var session in sessionsToLeave.OrderBy(s => s.PlannedDatetime))
         {
-            // Compute notice hours for each session date
-            var sessionDateTime = sessionDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            var noticeHoursAfter = (int)Math.Floor((sessionDateTime - DateTime.UtcNow).TotalHours);
+            var sessionDate = DateOnly.FromDateTime(session.PlannedDatetime);
+            var noticeHours = (int)Math.Floor((session.PlannedDatetime - now).TotalHours);
+            var status = noticeHours >= 24 ? LeaveRequestStatus.Approved : LeaveRequestStatus.Pending;
 
             var leave = new LeaveRequest
             {
                 Id = Guid.NewGuid(),
                 StudentProfileId = command.StudentProfileId,
                 ClassId = command.ClassId,
+                SessionId = session.Id,
                 SessionDate = sessionDate,
-                EndDate = null, // Each leave request is for a single day
+                EndDate = null,
                 Reason = command.Reason,
-                NoticeHours = noticeHoursAfter,
+                NoticeHours = noticeHours,
                 Status = status,
-                RequestedAt = DateTime.UtcNow
+                RequestedAt = now
             };
 
             context.LeaveRequests.Add(leave);
             createdLeaves.Add(leave);
-        }
-
-        // Auto approve path -> create makeup credits and schedule makeup sessions on T7/CN
-        if (status == LeaveRequestStatus.Approved)
-        {
-            var defaultMakeupClassId = await GetDefaultMakeupClassIdAsync(context, classInfo.BranchId, cancellationToken);
-
-            foreach (var session in sessionsInRange)
+            if (status == LeaveRequestStatus.Approved)
             {
-                var credit = new MakeupCredit
+                bool creditExists = await context.MakeupCredits
+                    .AnyAsync(c => c.StudentProfileId == command.StudentProfileId &&
+                                   c.SourceSessionId == session.Id &&
+                                   c.CreatedReason == CreatedReason.ApprovedLeave24H,
+                        cancellationToken);
+
+                if (!creditExists)
                 {
-                    Id = Guid.NewGuid(),
-                    StudentProfileId = command.StudentProfileId,
-                    SourceSessionId = session.Id,
-                    Status = MakeupCreditStatus.Available,
-                    CreatedReason = CreatedReason.ApprovedLeave24H,
-                    ExpiresAt = null,
-                    CreatedAt = DateTime.UtcNow
-                };
-                context.MakeupCredits.Add(credit);
+                    var credit = new MakeupCredit
+                    {
+                        Id = Guid.NewGuid(),
+                        StudentProfileId = command.StudentProfileId,
+                        SourceSessionId = session.Id,
+                        Status = MakeupCreditStatus.Available,
+                        CreatedReason = CreatedReason.ApprovedLeave24H,
+                        ExpiresAt = null,
+                        CreatedAt = now
+                    };
+                    context.MakeupCredits.Add(credit);
 
-                // Auto-schedule makeup session on T7/CN of the same week
-                await ScheduleMakeupSessionAsync(context, credit, classInfo, session, defaultMakeupClassId, cancellationToken);
-            }
+                    var defaultMakeupClassId = await GetDefaultMakeupClassIdAsync(context, classInfo.BranchId, cancellationToken);
+                    await ScheduleMakeupSessionAsync(context, credit, classInfo, session, defaultMakeupClassId, cancellationToken);
+                }
 
-            foreach (var leave in createdLeaves)
-            {
-                leave.ApprovedAt = DateTime.UtcNow;
+                leave.ApprovedAt = now;
             }
         }
 
         await context.SaveChangesAsync(cancellationToken);
 
-        // Return list of created leave requests
         return new CreateLeaveRequestResponse
         {
             LeaveRequests = createdLeaves.Select(l => new LeaveRequestItem
@@ -170,6 +194,7 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                 Id = l.Id,
                 StudentProfileId = l.StudentProfileId,
                 ClassId = l.ClassId,
+                SessionId = l.SessionId,
                 SessionDate = l.SessionDate,
                 EndDate = l.EndDate,
                 Reason = l.Reason,
@@ -179,6 +204,75 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
                 ApprovedAt = l.ApprovedAt
             }).ToList()
         };
+    }
+
+    private async Task<List<Session>> GetAssignedSessionsInRangeAsync(
+        Guid studentProfileId,
+        Guid classId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        CancellationToken cancellationToken)
+    {
+        var assignedSessions = await context.StudentSessionAssignments
+            .AsNoTracking()
+            .Where(a => a.StudentProfileId == studentProfileId
+                && a.Status == StudentSessionAssignmentStatus.Assigned
+                && a.Session.ClassId == classId
+                && a.Session.Status != SessionStatus.Cancelled
+                && DateOnly.FromDateTime(a.Session.PlannedDatetime) >= fromDate
+                && DateOnly.FromDateTime(a.Session.PlannedDatetime) <= toDate)
+            .Select(a => a.Session)
+            .ToListAsync(cancellationToken);
+
+        if (assignedSessions.Count > 0)
+        {
+            return assignedSessions;
+        }
+
+        return await context.Sessions
+            .AsNoTracking()
+            .Where(s => s.ClassId == classId
+                && s.Status != SessionStatus.Cancelled
+                && !context.StudentSessionAssignments.Any(a => a.SessionId == s.Id)
+                && DateOnly.FromDateTime(s.PlannedDatetime) >= fromDate
+                && DateOnly.FromDateTime(s.PlannedDatetime) <= toDate
+                && s.Class.ClassEnrollments.Any(ce =>
+                    ce.StudentProfileId == studentProfileId
+                    && ce.Status == EnrollmentStatus.Active
+                    && ce.EnrollDate <= DateOnly.FromDateTime(s.PlannedDatetime)))
+            .ToListAsync(cancellationToken);
+    }
+
+    private static string GetLeaveKey(LeaveRequest leave)
+    {
+        return leave.SessionId?.ToString() ?? $"{leave.ClassId}_{leave.SessionDate:yyyyMMdd}";
+    }
+
+    private static string GetSessionKey(Session session)
+    {
+        return session.Id.ToString();
+    }
+
+    private static async Task<int> GetScheduledParticipantCountAsync(
+        IDbContext context,
+        Session session,
+        CancellationToken cancellationToken)
+    {
+        var hasAssignments = await context.StudentSessionAssignments
+            .AnyAsync(a => a.SessionId == session.Id, cancellationToken);
+
+        var regularCount = hasAssignments
+            ? await context.StudentSessionAssignments
+                .CountAsync(a => a.SessionId == session.Id && a.Status == StudentSessionAssignmentStatus.Assigned, cancellationToken)
+            : await context.ClassEnrollments
+                .CountAsync(e => e.ClassId == session.ClassId
+                    && e.Status == EnrollmentStatus.Active
+                    && e.EnrollDate <= DateOnly.FromDateTime(session.PlannedDatetime), cancellationToken);
+
+        var makeupCount = await context.MakeupAllocations
+            .CountAsync(a => a.TargetSessionId == session.Id && a.Status != MakeupAllocationStatus.Cancelled, cancellationToken);
+
+        return regularCount + makeupCount;
     }
 
     private async Task ScheduleMakeupSessionAsync(
@@ -217,10 +311,15 @@ public sealed class CreateLeaveRequestCommandHandler(IDbContext context)
 
         var makeupSessions = await makeupSessionsQuery.ToListAsync(cancellationToken);
 
-        // Filter sessions with available slot (enrolled count < capacity)
-        var availableSessions = makeupSessions
-            .Where(s => s.Attendances.Count < s.Class.Capacity)
-            .ToList();
+        var availableSessions = new List<Session>();
+        foreach (var makeupSession in makeupSessions)
+        {
+            var participantCount = await GetScheduledParticipantCountAsync(context, makeupSession, cancellationToken);
+            if (participantCount < makeupSession.Class.Capacity)
+            {
+                availableSessions.Add(makeupSession);
+            }
+        }
 
         if (!availableSessions.Any())
         {
