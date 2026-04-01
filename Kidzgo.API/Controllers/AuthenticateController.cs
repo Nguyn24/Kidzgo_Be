@@ -14,6 +14,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LoginRequest = Kidzgo.API.Requests.LoginRequest;
+using PhoneLoginRequest = Kidzgo.API.Requests.PhoneLoginRequest;
 
 namespace Kidzgo.API.Controllers;
 
@@ -40,6 +41,18 @@ public class AuthenticateController : ControllerBase
         };
         
         var  result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("login-phone")]
+    public async Task<IResult> LoginByPhoneNumber([FromBody] PhoneLoginRequest request, CancellationToken cancellationToken)
+    {
+        var command = new LoginByPhoneNumberCommand
+        {
+            PhoneNumber = request.PhoneNumber
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
     
