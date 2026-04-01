@@ -2,6 +2,7 @@ using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Leads.CreateLead;
 using Kidzgo.Application.Leads.CreateLeadFromZalo;
+using Kidzgo.Domain.Users;
 using Kidzgo.Infrastructure.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -177,13 +178,7 @@ public class ZaloWebhookController : ControllerBase
         
         if (match.Success)
         {
-            var phone = match.Value;
-            // Normalize: +84 -> 0
-            if (phone.StartsWith("+84"))
-            {
-                phone = "0" + phone.Substring(3);
-            }
-            return phone;
+            return PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(match.Value);
         }
 
         return null;
