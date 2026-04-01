@@ -35,7 +35,8 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
-            IsMakeup = request.IsMakeup
+            IsMakeup = request.IsMakeup,
+            IsSupplementary = request.IsSupplementary
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -121,7 +122,8 @@ public class ProgramController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Code = request.Code,
-            IsMakeup = request.IsMakeup
+            IsMakeup = request.IsMakeup,
+            IsSupplementary = request.IsSupplementary
         };
 
         var result = await _mediator.Send(command, cancellationToken);

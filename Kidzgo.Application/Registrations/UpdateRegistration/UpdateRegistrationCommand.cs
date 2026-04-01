@@ -9,4 +9,7 @@ public sealed class UpdateRegistrationCommand : ICommand<UpdateRegistrationRespo
     public string? PreferredSchedule { get; init; }
     public string? Note { get; init; }
     public Guid? TuitionPlanId { get; init; }
+    public Guid? SecondaryProgramId { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
+    public bool RemoveSecondaryProgram { get; init; }
 }

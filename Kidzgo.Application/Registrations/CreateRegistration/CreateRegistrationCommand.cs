@@ -8,6 +8,8 @@ public sealed class CreateRegistrationCommand : ICommand<CreateRegistrationRespo
     public Guid BranchId { get; init; }
     public Guid ProgramId { get; init; }
     public Guid TuitionPlanId { get; init; }
+    public Guid? SecondaryProgramId { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
     
     public DateTime? ExpectedStartDate { get; init; }
     public string? PreferredSchedule { get; init; }

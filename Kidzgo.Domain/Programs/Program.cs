@@ -19,6 +19,7 @@ public class Program : Entity
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsMakeup { get; set; }
+    public bool IsSupplementary { get; set; }
     public Guid? DefaultMakeupClassId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

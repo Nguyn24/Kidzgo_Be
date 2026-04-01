@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -15,7 +16,6 @@ public sealed class CreateRegistrationCommandHandler(
         CreateRegistrationCommand command,
         CancellationToken cancellationToken)
     {
-        // 1. Validate Student Profile exists and is active
         var student = await context.Profiles
             .FirstOrDefaultAsync(p => p.Id == command.StudentProfileId && p.ProfileType == Kidzgo.Domain.Users.ProfileType.Student, cancellationToken);
 
@@ -24,7 +24,6 @@ public sealed class CreateRegistrationCommandHandler(
             return Result.Failure<CreateRegistrationResponse>(RegistrationErrors.StudentNotFound(command.StudentProfileId));
         }
 
-        // 2. Validate Branch exists
         var branchExists = await context.Branches
             .AnyAsync(b => b.Id == command.BranchId && b.IsActive, cancellationToken);
 
@@ -33,7 +32,6 @@ public sealed class CreateRegistrationCommandHandler(
             return Result.Failure<CreateRegistrationResponse>(RegistrationErrors.BranchNotFound(command.BranchId));
         }
 
-        // 3. Validate Program exists
         var program = await context.Programs
             .FirstOrDefaultAsync(p => p.Id == command.ProgramId && p.IsActive && !p.IsDeleted, cancellationToken);
 
@@ -42,7 +40,6 @@ public sealed class CreateRegistrationCommandHandler(
             return Result.Failure<CreateRegistrationResponse>(RegistrationErrors.ProgramNotFound(command.ProgramId));
         }
 
-        // 4. Validate TuitionPlan exists and belongs to the program
         var tuitionPlan = await context.TuitionPlans
             .FirstOrDefaultAsync(tp => tp.Id == command.TuitionPlanId && tp.ProgramId == command.ProgramId && tp.IsActive, cancellationToken);
 
@@ -51,21 +48,54 @@ public sealed class CreateRegistrationCommandHandler(
             return Result.Failure<CreateRegistrationResponse>(RegistrationErrors.TuitionPlanNotFound(command.TuitionPlanId));
         }
 
-        // 5. Check if student already has active registration for this program
-        var existingRegistration = await context.Registrations
-            .AnyAsync(r => r.StudentProfileId == command.StudentProfileId 
-                && r.ProgramId == command.ProgramId 
-                && r.Status != RegistrationStatus.Completed 
-                && r.Status != RegistrationStatus.Cancelled,
-                cancellationToken);
+        if (command.SecondaryProgramId == command.ProgramId)
+        {
+            return Result.Failure<CreateRegistrationResponse>(
+                Error.Validation("Registration.SecondaryProgramDuplicated", "Secondary program must be different from primary program"));
+        }
 
-        if (existingRegistration)
+        Domain.Programs.Program? secondaryProgram = null;
+        if (command.SecondaryProgramId.HasValue)
+        {
+            secondaryProgram = await context.Programs
+                .FirstOrDefaultAsync(p => p.Id == command.SecondaryProgramId.Value && p.IsActive && !p.IsDeleted, cancellationToken);
+
+            if (secondaryProgram is null)
+            {
+                return Result.Failure<CreateRegistrationResponse>(
+                    RegistrationErrors.ProgramNotFound(command.SecondaryProgramId.Value));
+            }
+        }
+
+        var activeRegistrations = context.Registrations
+            .Where(r => r.StudentProfileId == command.StudentProfileId
+                && r.Status != RegistrationStatus.Completed
+                && r.Status != RegistrationStatus.Cancelled);
+
+        var hasPrimaryConflict = await activeRegistrations.AnyAsync(
+            r => r.ProgramId == command.ProgramId || r.SecondaryProgramId == command.ProgramId,
+            cancellationToken);
+
+        if (hasPrimaryConflict)
         {
             return Result.Failure<CreateRegistrationResponse>(
                 RegistrationErrors.AlreadyExists(command.StudentProfileId, command.ProgramId));
         }
 
-        // 6. Create the registration
+        if (command.SecondaryProgramId.HasValue)
+        {
+            var secondaryProgramId = command.SecondaryProgramId.Value;
+            var hasSecondaryConflict = await activeRegistrations.AnyAsync(
+                r => r.ProgramId == secondaryProgramId || r.SecondaryProgramId == secondaryProgramId,
+                cancellationToken);
+
+            if (hasSecondaryConflict)
+            {
+                return Result.Failure<CreateRegistrationResponse>(
+                    RegistrationErrors.AlreadyExists(command.StudentProfileId, secondaryProgramId));
+            }
+        }
+
         var now = DateTime.UtcNow;
         var registration = new Registration
         {
@@ -74,10 +104,14 @@ public sealed class CreateRegistrationCommandHandler(
             BranchId = command.BranchId,
             ProgramId = command.ProgramId,
             TuitionPlanId = command.TuitionPlanId,
+            SecondaryProgramId = command.SecondaryProgramId,
             RegistrationDate = now,
             ExpectedStartDate = command.ExpectedStartDate,
             PreferredSchedule = command.PreferredSchedule,
             Note = command.Note,
+            SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
+                ? null
+                : command.SecondaryProgramSkillFocus.Trim(),
             Status = RegistrationStatus.New,
             TotalSessions = tuitionPlan.TotalSessions,
             UsedSessions = 0,
@@ -89,7 +123,6 @@ public sealed class CreateRegistrationCommandHandler(
         context.Registrations.Add(registration);
         await context.SaveChangesAsync(cancellationToken);
 
-        // 7. Return response
         return new CreateRegistrationResponse
         {
             Id = registration.Id,
@@ -97,6 +130,9 @@ public sealed class CreateRegistrationCommandHandler(
             BranchId = registration.BranchId,
             ProgramId = registration.ProgramId,
             ProgramName = program.Name,
+            SecondaryProgramId = registration.SecondaryProgramId,
+            SecondaryProgramName = secondaryProgram?.Name,
+            SecondaryProgramSkillFocus = registration.SecondaryProgramSkillFocus,
             TuitionPlanId = registration.TuitionPlanId,
             TuitionPlanName = tuitionPlan.Name,
             RegistrationDate = registration.RegistrationDate,
@@ -106,6 +142,8 @@ public sealed class CreateRegistrationCommandHandler(
             Status = registration.Status.ToString(),
             ClassId = null,
             ClassName = null,
+            SecondaryClassId = null,
+            SecondaryClassName = null,
             CreatedAt = registration.CreatedAt
         };
     }

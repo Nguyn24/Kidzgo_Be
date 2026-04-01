@@ -19,6 +19,7 @@ public sealed class SuggestClassesQueryHandler(
     {
         var registration = await context.Registrations
             .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .Include(r => r.Branch)
             .FirstOrDefaultAsync(r => r.Id == query.RegistrationId, cancellationToken);
 
@@ -27,61 +28,19 @@ public sealed class SuggestClassesQueryHandler(
             return Result.Failure<SuggestClassesResponse>(RegistrationErrors.NotFound(query.RegistrationId));
         }
 
-        var matchingClasses = await context.Classes
-            .Include(c => c.MainTeacher)
-            .Include(c => c.ClassEnrollments)
-            .Where(c => c.ProgramId == registration.ProgramId
-                && c.BranchId == registration.BranchId
-                && (c.Status == ClassStatus.Recruiting || c.Status == ClassStatus.Active || c.Status == ClassStatus.Planned)
-                && c.Capacity > c.ClassEnrollments.Count)
-            .OrderBy(c => c.StartDate)
-            .ToListAsync(cancellationToken);
+        var primarySuggestions = await BuildSuggestionsAsync(
+            registration.ProgramId,
+            registration.BranchId,
+            registration.PreferredSchedule,
+            cancellationToken);
 
-        // Filter by preferred schedule if provided
-        var preferredSchedule = registration.PreferredSchedule?.ToLowerInvariant() ?? "";
-        var filteredClasses = matchingClasses
-            .Where(c => IsScheduleMatching(preferredSchedule, c.SchedulePattern))
-            .ToList();
-
-        var now = DateOnly.FromDateTime(DateTime.UtcNow);
-        
-        var suggestedClasses = filteredClasses
-            .Where(c => c.StartDate <= now.AddDays(7))
-            .Select(c => new SuggestedClassDto
-            {
-                Id = c.Id,
-                Code = c.Code,
-                Title = c.Title,
-                Status = c.Status.ToString(),
-                Capacity = c.Capacity,
-                CurrentEnrollment = c.ClassEnrollments.Count,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                SchedulePattern = c.SchedulePattern,
-                MainTeacherName = c.MainTeacher != null ? c.MainTeacher.Name : "Not assigned",
-                ClassroomName = null,
-                IsClassStarted = c.StartDate <= now
-            })
-            .ToList();
-
-        var alternativeClasses = filteredClasses
-            .Where(c => c.StartDate > now.AddDays(7))
-            .Select(c => new SuggestedClassDto
-            {
-                Id = c.Id,
-                Code = c.Code,
-                Title = c.Title,
-                Status = c.Status.ToString(),
-                Capacity = c.Capacity,
-                CurrentEnrollment = c.ClassEnrollments.Count,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                SchedulePattern = c.SchedulePattern,
-                MainTeacherName = c.MainTeacher != null ? c.MainTeacher.Name : "Not assigned",
-                ClassroomName = null,
-                IsClassStarted = c.StartDate <= now
-            })
-            .ToList();
+        var secondarySuggestions = registration.SecondaryProgramId.HasValue
+            ? await BuildSuggestionsAsync(
+                registration.SecondaryProgramId.Value,
+                registration.BranchId,
+                registration.PreferredSchedule,
+                cancellationToken)
+            : (Suggested: new List<SuggestedClassDto>(), Alternative: new List<SuggestedClassDto>());
 
         return new SuggestClassesResponse
         {
@@ -89,8 +48,66 @@ public sealed class SuggestClassesQueryHandler(
             ProgramName = registration.Program.Name,
             BranchName = registration.Branch.Name,
             PreferredSchedule = registration.PreferredSchedule,
-            SuggestedClasses = suggestedClasses,
-            AlternativeClasses = alternativeClasses
+            SuggestedClasses = primarySuggestions.Suggested,
+            AlternativeClasses = primarySuggestions.Alternative,
+            SecondaryProgramId = registration.SecondaryProgramId,
+            SecondaryProgramName = registration.SecondaryProgram?.Name,
+            SecondaryProgramSkillFocus = registration.SecondaryProgramSkillFocus,
+            SecondarySuggestedClasses = secondarySuggestions.Suggested,
+            SecondaryAlternativeClasses = secondarySuggestions.Alternative
+        };
+    }
+
+    private async Task<(List<SuggestedClassDto> Suggested, List<SuggestedClassDto> Alternative)> BuildSuggestionsAsync(
+        Guid programId,
+        Guid branchId,
+        string? preferredSchedule,
+        CancellationToken cancellationToken)
+    {
+        var matchingClasses = await context.Classes
+            .Include(c => c.MainTeacher)
+            .Include(c => c.ClassEnrollments)
+            .Where(c => c.ProgramId == programId
+                && c.BranchId == branchId
+                && (c.Status == ClassStatus.Recruiting || c.Status == ClassStatus.Active || c.Status == ClassStatus.Planned)
+                && c.Capacity > c.ClassEnrollments.Count)
+            .OrderBy(c => c.StartDate)
+            .ToListAsync(cancellationToken);
+
+        var normalizedPreferredSchedule = preferredSchedule?.ToLowerInvariant() ?? string.Empty;
+        var filteredClasses = matchingClasses
+            .Where(c => IsScheduleMatching(normalizedPreferredSchedule, c.SchedulePattern))
+            .ToList();
+
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        return (
+            filteredClasses
+                .Where(c => c.StartDate <= now.AddDays(7))
+                .Select(c => MapSuggestedClass(c, now))
+                .ToList(),
+            filteredClasses
+                .Where(c => c.StartDate > now.AddDays(7))
+                .Select(c => MapSuggestedClass(c, now))
+                .ToList());
+    }
+
+    private static SuggestedClassDto MapSuggestedClass(Kidzgo.Domain.Classes.Class classEntity, DateOnly now)
+    {
+        return new SuggestedClassDto
+        {
+            Id = classEntity.Id,
+            Code = classEntity.Code,
+            Title = classEntity.Title,
+            Status = classEntity.Status.ToString(),
+            Capacity = classEntity.Capacity,
+            CurrentEnrollment = classEntity.ClassEnrollments.Count,
+            StartDate = classEntity.StartDate,
+            EndDate = classEntity.EndDate,
+            SchedulePattern = classEntity.SchedulePattern,
+            MainTeacherName = classEntity.MainTeacher != null ? classEntity.MainTeacher.Name : "Not assigned",
+            ClassroomName = null,
+            IsClassStarted = classEntity.StartDate <= now
         };
     }
 

@@ -33,21 +33,18 @@ public sealed class CancelRegistrationCommandHandler(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "cancel"));
         }
 
-        // If student is studying, need to drop from class first
-        if (registration.Status == RegistrationStatus.Studying && registration.ClassId != null)
-        {
-            // Drop the enrollment
-            var enrollment = await context.ClassEnrollments
-                .FirstOrDefaultAsync(ce => ce.ClassId == registration.ClassId 
-                    && ce.StudentProfileId == registration.StudentProfileId
-                    && ce.Status == Domain.Classes.EnrollmentStatus.Active,
-                    cancellationToken);
+        var enrollments = await context.ClassEnrollments
+            .Where(ce => ce.StudentProfileId == registration.StudentProfileId
+                && ce.Status == Domain.Classes.EnrollmentStatus.Active
+                && (ce.RegistrationId == registration.Id ||
+                    (!ce.RegistrationId.HasValue &&
+                     (ce.ClassId == registration.ClassId || ce.ClassId == registration.SecondaryClassId))))
+            .ToListAsync(cancellationToken);
 
-            if (enrollment != null)
-            {
-                enrollment.Status = Domain.Classes.EnrollmentStatus.Dropped;
-                enrollment.UpdatedAt = now;
-            }
+        foreach (var enrollment in enrollments)
+        {
+            enrollment.Status = Domain.Classes.EnrollmentStatus.Dropped;
+            enrollment.UpdatedAt = now;
         }
 
         // Update registration status

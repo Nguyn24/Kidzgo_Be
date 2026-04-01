@@ -16,6 +16,7 @@ public class Registration : Entity
     public Guid BranchId { get; set; }
     public Guid ProgramId { get; set; }
     public Guid TuitionPlanId { get; set; }
+    public Guid? SecondaryProgramId { get; set; }
     
     // Ngay dang ky va ngay bat dau
     public DateTime RegistrationDate { get; set; }
@@ -33,6 +34,10 @@ public class Registration : Entity
     public Guid? ClassId { get; set; }
     public DateTime? ClassAssignedDate { get; set; }
     public EntryType? EntryType { get; set; }
+    public Guid? SecondaryClassId { get; set; }
+    public DateTime? SecondaryClassAssignedDate { get; set; }
+    public EntryType? SecondaryEntryType { get; set; }
+    public string? SecondaryProgramSkillFocus { get; set; }
     
     // Nghiem vu phat sinh - lien ket voi registration goc
     public Guid? OriginalRegistrationId { get; set; }
@@ -54,5 +59,7 @@ public class Registration : Entity
     public Program Program { get; set; } = null!;
     public TuitionPlan TuitionPlan { get; set; } = null!;
     public Classes.Class? Class { get; set; }
+    public Program? SecondaryProgram { get; set; }
+    public Classes.Class? SecondaryClass { get; set; }
     public Registration? OriginalRegistration { get; set; }
 }
