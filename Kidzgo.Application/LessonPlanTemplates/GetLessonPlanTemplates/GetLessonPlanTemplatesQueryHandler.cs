@@ -37,9 +37,10 @@ public sealed class GetLessonPlanTemplatesQueryHandler(
             templateQuery = templateQuery.Where(t => t.Level == query.Level);
         }
         
-        if (query.ProgramId.HasValue)
+        if (!string.IsNullOrWhiteSpace(query.Title))
         {
-            templateQuery = templateQuery.Where(t => t.Title.ToLower() == query.Title.ToLower());
+            var normalizedTitle = query.Title.ToLower();
+            templateQuery = templateQuery.Where(t => t.Title != null && t.Title.ToLower() == normalizedTitle);
         }
 
         // Filter by IsActive
@@ -64,6 +65,9 @@ public sealed class GetLessonPlanTemplatesQueryHandler(
                 Level = t.Level,
                 Title = t.Title,
                 SessionIndex = t.SessionIndex,
+                SyllabusMetadata = t.SyllabusMetadata,
+                SyllabusContent = t.SyllabusContent,
+                SourceFileName = t.SourceFileName,
                 Attachment = t.AttachmentUrl,
                 IsActive = t.IsActive,
                 CreatedBy = t.CreatedBy,

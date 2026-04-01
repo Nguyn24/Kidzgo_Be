@@ -1,73 +1,131 @@
 # API Hướng Dẫn Sử Dụng - Điểm Danh (Attendance)
 
+Ngày cập nhật: 2026-03-31  
+Phạm vi: tài liệu này mô tả module Attendance theo code hiện tại trong `Kidzgo_Be`.
+
 ## Mục lục
+
 - [Tổng quan](#tổng-quan)
-- [Các API Endpoints](#các-api-endpoints)
+- [Authentication và Authorization](#authentication-và-authorization)
+- [Status và enum](#status-và-enum)
+- [API Endpoints](#api-endpoints)
   - [1. Điểm danh học sinh (UC-099)](#1-điểm-danh-học-sinh-uc-099)
-  - [2. Lấy danh sách điểm danh của Session (UC-100)](#2-lấy-danh-sách-điểm-danh-của-session-uc-100)
+  - [2. Lấy danh sách điểm danh của session (UC-100)](#2-lấy-danh-sách-điểm-danh-của-session-uc-100)
   - [3. Lịch sử điểm danh học sinh (UC-101)](#3-lịch-sử-điểm-danh-học-sinh-uc-101)
   - [4. Cập nhật điểm danh (UC-104)](#4-cập-nhật-điểm-danh-uc-104)
-- [Mã lỗi và thông báo](#mã-lỗi-và-thông-báo)
-- [Luồng xử lý](#luồng-xử-lý)
+- [Response format](#response-format)
+- [Mã lỗi và business rule](#mã-lỗi-và-business-rule)
 - [Ví dụ sử dụng](#ví-dụ-sử-dụng)
+- [Lưu ý quan trọng](#lưu-ý-quan-trọng)
 
 ---
 
 ## Tổng quan
 
-API điểm danh cho phép giáo viên và nhân viên quản lý việc điểm danh học sinh theo từng buổi học (session). Hệ thống hỗ trợ các trạng thái điểm danh:
-- **Present**: Có mặt
-- **Absent**: Vắng mặt
-- **Makeup**: Học bù
-- **NotMarked**: Chưa điểm danh
+Module Attendance quản lý điểm danh học sinh theo từng buổi học (`session`).
 
-### Base URL
+Hệ thống đang hỗ trợ 4 trạng thái điểm danh:
+
+- `Present`: có mặt
+- `Absent`: vắng mặt
+- `Makeup`: học bù
+- `NotMarked`: chưa điểm danh
+
+Module này còn liên quan trực tiếp tới make-up:
+
+- Khi điểm danh `Absent`, hệ thống sẽ resolve `AbsenceType` dựa trên leave request đã `Approved`.
+- Nếu `AbsenceType = WithNotice24H`, hệ thống tự tạo `MakeupCredit` nếu chưa có credit cho buổi đó.
+- Khi điểm danh `Present`, hệ thống cập nhật `UsedSessions` và `RemainingSessions` của registration đang học.
+
+### Base path
+
+```http
+/api/attendance
 ```
-https://api.kidzgo.com/api/attendance
-```
-
-### Authentication
-Tất cả các API điểm danh đều yêu cầu xác thực bằng Bearer Token.
-
-```bash
-Authorization: Bearer <your_token>
-```
-
-### Authorization (Roles)
-
-| API | Admin | Teacher | Parent | Student |
-|-----|-------|---------|--------|---------|
-| POST /api/attendance/{sessionId} | ✅ | ✅ | ❌ | ❌ |
-| GET /api/attendance/{sessionId} | ✅ | ✅ | ❌ | ❌ |
-| PUT /api/attendance/{sessionId}/students/{studentProfileId} | ✅ | ✅ | ❌ | ❌ |
-| GET /api/attendance/students | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
-## Các API Endpoints
+## Authentication và Authorization
+
+Tất cả API đều yêu cầu Bearer Token.
+
+```http
+Authorization: Bearer <access_token>
+```
+
+### Quyền theo controller
+
+| API | Admin | Teacher | Parent | Student |
+| --- | --- | --- | --- | --- |
+| `POST /api/attendance/{sessionId}` | Có | Có | Không | Không |
+| `GET /api/attendance/{sessionId}` | Có | Có | Không | Không |
+| `PUT /api/attendance/{sessionId}/students/{studentProfileId}` | Có | Có | Không | Không |
+| `GET /api/attendance/students` | Có | Có | Có | Có |
+
+### Lưu ý về quyền thực tế ở handler
+
+- `GET /api/attendance/students` dù mở role cho `Admin/Teacher/Parent/Student`, nhưng handler vẫn yêu cầu:
+  - token có `StudentId`
+  - profile tương ứng phải có `ProfileType = Student`
+  - profile phải có `UserId == currentUserId`
+- Vì vậy endpoint này chỉ hoạt động khi token/current user đáp ứng đúng các điều kiện trên.
+
+---
+
+## Status và enum
+
+### AttendanceStatus
+
+| Value | Name | Ý nghĩa |
+| --- | --- | --- |
+| `0` | `Present` | Có mặt |
+| `1` | `Absent` | Vắng mặt |
+| `2` | `Makeup` | Học bù |
+| `3` | `NotMarked` | Chưa điểm danh |
+
+### AbsenceType
+
+| Name | Ý nghĩa |
+| --- | --- |
+| `WithNotice24H` | Nghỉ có báo trước >= 24h |
+| `Under24H` | Nghỉ có báo trước nhưng < 24h |
+| `NoNotice` | Nghỉ không báo trước |
+| `LongTerm` | Có enum trong domain nhưng hiện không được set trong attendance flow hiện tại |
+
+---
+
+## API Endpoints
 
 ### 1. Điểm danh học sinh (UC-099)
 
-Điểm danh nhiều học sinh cùng lúc cho một buổi học.
+Điểm danh nhiều học sinh trong một session.
 
-**Endpoint:**
+**Endpoint**
+
 ```http
 POST /api/attendance/{sessionId}
 ```
 
-**Path Parameters:**
-| Tham số | Kiểu | Mô tả |
-|---------|------|-------|
-| sessionId | GUID | ID của buổi học (session) |
+**Roles**
 
-**Request Body:**
+- `Admin`
+- `Teacher`
+
+**Path params**
+
+| Field | Type | Required | Mô tả |
+| --- | --- | --- | --- |
+| `sessionId` | `guid` | Có | ID của session cần điểm danh |
+
+**Request body**
+
 ```json
 {
   "attendances": [
     {
       "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
       "attendanceStatus": 0,
-      "note": "Đến muộn 5 phút"
+      "note": "Đến đúng giờ"
     },
     {
       "studentProfileId": "550e8400-e29b-41d4-a716-446655440002",
@@ -78,23 +136,17 @@ POST /api/attendance/{sessionId}
 }
 ```
 
-**Chi tiết Request:**
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|--------|------|----------|-------|
-| attendances | List | Có | Danh sách học sinh được điểm danh |
-| studentProfileId | GUID | Có | ID hồ sơ học sinh |
-| attendanceStatus | Enum | Có | Trạng thái điểm danh (0=Present, 1=Absent, 2=Makeup, 3=NotMarked) |
-| note | String | Không | Ghi chú thêm |
+**Body fields**
 
-**AttendanceStatus Values:**
-| Giá trị | Tên | Mô tả |
-|---------|-----|-------|
-| 0 | Present | Có mặt |
-| 1 | Absent | Vắng mặt |
-| 2 | Makeup | Học bù |
-| 3 | NotMarked | Chưa điểm danh |
+| Field | Type | Required | Mô tả |
+| --- | --- | --- | --- |
+| `attendances` | `array` | Có | Danh sách học sinh cần điểm danh |
+| `attendances[].studentProfileId` | `guid` | Có | ID học sinh |
+| `attendances[].attendanceStatus` | `AttendanceStatus` | Có | Trạng thái điểm danh |
+| `attendances[].note` | `string?` | Không | Ghi chú |
 
-**Response thành công (200 OK):**
+**Success response**
+
 ```json
 {
   "isSuccess": true,
@@ -106,40 +158,78 @@ POST /api/attendance/{sessionId}
         "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
         "attendanceStatus": "Present",
         "absenceType": null,
-        "markedAt": "2026-02-03T08:15:00Z",
-        "note": "Đến muộn 5 phút"
+        "markedAt": "2026-03-31T08:15:00Z",
+        "note": "Đến đúng giờ"
+      },
+      {
+        "id": "660e8400-e29b-41d4-a716-446655440002",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+        "studentProfileId": "550e8400-e29b-41d4-a716-446655440002",
+        "attendanceStatus": "Absent",
+        "absenceType": "WithNotice24H",
+        "markedAt": "2026-03-31T08:15:00Z",
+        "note": "Xin nghỉ có phép"
       }
     ]
   }
 }
 ```
 
+**Business rules**
+
+- Session phải tồn tại.
+- Nếu record attendance chưa có thì hệ thống tự tạo mới.
+- Nếu đã có thì cập nhật trên record cũ.
+- Nếu `AttendanceStatus = Absent`:
+  - hệ thống resolve `AbsenceType` từ leave request đã `Approved`
+  - nếu ra `WithNotice24H` thì tự tạo `MakeupCredit` nếu chưa có
+- Nếu `AttendanceStatus = Present`:
+  - hệ thống tăng `UsedSessions`
+  - giảm `RemainingSessions`
+  - có thể chuyển registration sang `Completed`
+  - có thể chuyển class sang `Completed` nếu không còn active registration/enrollment phù hợp
+- Nếu `AttendanceStatus = Makeup` hoặc `NotMarked` thì `AbsenceType` bị reset về `null`
+
+**Error thường gặp**
+
+| HTTP | Code | Message |
+| --- | --- | --- |
+| `404` | `Attendance.NotFound` | The attendance record with Id = '{sessionId}' was not found. |
+
 ---
 
-### 2. Lấy danh sách điểm danh của Session (UC-100)
+### 2. Lấy danh sách điểm danh của session (UC-100)
 
-Lấy toàn bộ danh sách điểm danh của một buổi học.
+Lấy danh sách điểm danh của toàn bộ học sinh đang `Active` trong class chứa session.
 
-**Endpoint:**
+**Endpoint**
+
 ```http
 GET /api/attendance/{sessionId}
 ```
 
-**Path Parameters:**
-| Tham số | Kiểu | Mô tả |
-|---------|------|-------|
-| sessionId | GUID | ID của buổi học (session) |
+**Roles**
 
-**Response thành công (200 OK):**
+- `Admin`
+- `Teacher`
+
+**Path params**
+
+| Field | Type | Required | Mô tả |
+| --- | --- | --- | --- |
+| `sessionId` | `guid` | Có | ID session |
+
+**Success response**
+
 ```json
 {
   "isSuccess": true,
   "data": {
     "sessionId": "550e8400-e29b-41d4-a716-446655440000",
     "sessionName": "Toán - Lớp 1A",
-    "date": "2026-02-03",
-    "startTime": "08:00",
-    "endTime": "09:30",
+    "date": "2026-03-31",
+    "startTime": "08:00:00",
+    "endTime": "09:30:00",
     "summary": {
       "totalStudents": 25,
       "presentCount": 20,
@@ -156,73 +246,120 @@ GET /api/attendance/{sessionId}
         "absenceType": null,
         "hasMakeupCredit": false,
         "note": null,
-        "markedAt": "2026-02-03T08:15:00Z"
+        "markedAt": "2026-03-31T08:15:00Z"
       }
     ]
   }
 }
 ```
 
+**Business rules**
+
+- Session phải tồn tại.
+- Query lấy toàn bộ enrollment `Active` của class rồi join với attendance.
+- Nếu học sinh chưa có attendance record:
+  - `id = Guid.Empty`
+  - `attendanceStatus = "NotMarked"`
+- `hasMakeupCredit` là cờ kiểm tra học sinh có bất kỳ `MakeupCredit` nào đang `Available`, không chỉ riêng session hiện tại.
+
+**Error thường gặp**
+
+| HTTP | Code | Message |
+| --- | --- | --- |
+| `404` | `Session.NotFound` | Session with Id = '{sessionId}' was not found |
+
 ---
 
 ### 3. Lịch sử điểm danh học sinh (UC-101)
 
-Lấy lịch sử điểm danh của học sinh hiện tại (lấy từ token).
+Lấy lịch sử điểm danh của học sinh từ `StudentId` trong token.
 
-**Endpoint:**
+**Endpoint**
+
 ```http
 GET /api/attendance/students
 ```
 
-**Query Parameters:**
-| Tham số | Kiểu | Mặc định | Mô tả |
-|---------|------|----------|-------|
-| pageNumber | Int | 1 | Số trang |
-| pageSize | Int | 10 | Số lượng bản ghi/trang |
+**Roles theo controller**
 
-**Response thành công (200 OK):**
+- `Admin`
+- `Teacher`
+- `Parent`
+- `Student`
+
+**Query params**
+
+| Field | Type | Required | Default | Mô tả |
+| --- | --- | --- | --- | --- |
+| `pageNumber` | `int` | Không | `1` | Số trang |
+| `pageSize` | `int` | Không | `10` | Số bản ghi mỗi trang |
+
+**Success response**
+
 ```json
 {
   "isSuccess": true,
   "data": {
     "items": [
       {
+        "id": "660e8400-e29b-41d4-a716-446655440001",
         "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-        "sessionName": "Toán - Lớp 1A",
-        "date": "2026-02-03",
-        "startTime": "08:00",
-        "className": "Lớp 1A",
+        "sessionDateTime": "2026-03-31T08:00:00Z",
         "attendanceStatus": "Present",
-        "note": null,
-        "markedAt": "2026-02-03T08:15:00Z"
+        "absenceType": null,
+        "note": null
       }
     ],
     "pageNumber": 1,
-    "pageSize": 10,
+    "totalPages": 5,
     "totalCount": 45,
-    "totalPages": 5
+    "hasPreviousPage": false,
+    "hasNextPage": true
   }
 }
 ```
+
+**Business rules**
+
+- Handler bắt buộc token có `StudentId`.
+- Handler chỉ trả dữ liệu nếu profile:
+  - tồn tại
+  - có `ProfileType = Student`
+  - có `UserId == currentUserId`
+- Dữ liệu được sort giảm dần theo `Session.PlannedDatetime`.
+
+**Error thường gặp**
+
+| HTTP | Code | Message |
+| --- | --- | --- |
+| `404` | `Profile.StudentNotFound` | Student profile not found |
 
 ---
 
 ### 4. Cập nhật điểm danh (UC-104)
 
-Cập nhật trạng thái điểm danh của một học sinh trong buổi học.
+Cập nhật attendance của một học sinh trong một session.
 
-**Endpoint:**
+**Endpoint**
+
 ```http
 PUT /api/attendance/{sessionId}/students/{studentProfileId}
 ```
 
-**Path Parameters:**
-| Tham số | Kiểu | Mô tả |
-|---------|------|-------|
-| sessionId | GUID | ID của buổi học (session) |
-| studentProfileId | GUID | ID hồ sơ học sinh |
+**Roles**
 
-**Request Body:**
+- `Admin`
+- `Teacher`
+
+**Path params**
+
+| Field | Type | Required | Mô tả |
+| --- | --- | --- | --- |
+| `sessionId` | `guid` | Có | ID session |
+| `studentProfileId` | `guid` | Có | ID học sinh |
+
+**Request body**
+
 ```json
 {
   "attendanceStatus": 2,
@@ -230,101 +367,138 @@ PUT /api/attendance/{sessionId}/students/{studentProfileId}
 }
 ```
 
-**Response thành công (200 OK):**
+**Body fields**
+
+| Field | Type | Required | Mô tả |
+| --- | --- | --- | --- |
+| `attendanceStatus` | `AttendanceStatus` | Có | Trạng thái mới |
+| `note` | `string?` | Không | Ghi chú mới |
+
+**Success response**
+
 ```json
 {
   "isSuccess": true,
   "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
     "sessionId": "550e8400-e29b-41d4-a716-446655440000",
     "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
     "attendanceStatus": "Makeup",
     "absenceType": null,
     "note": "Học bù buổi trước",
-    "updatedAt": "2026-02-03T10:30:00Z"
+    "updatedAt": "2026-03-31T08:15:00Z"
   }
 }
 ```
 
+**Validation rules**
+
+- `sessionId` bắt buộc
+- `studentProfileId` bắt buộc
+- `attendanceStatus` phải là enum hợp lệ
+
+**Business rules**
+
+- Attendance record phải tồn tại sẵn.
+- Với `Teacher`, chỉ được sửa trong vòng 24 giờ sau khi session kết thúc.
+- Với `Admin`, không bị giới hạn cửa sổ 24 giờ.
+- Khi update:
+  - nếu `attendanceStatus = Absent` thì `absenceType` bị set thành `NoNotice`
+  - nếu khác `Absent` thì `absenceType = null`
+- Hệ thống tạo `AuditLog` cho thao tác update.
+- Trường `updatedAt` hiện đang trả từ `attendance.MarkedAt`; handler không cập nhật lại `MarkedAt` trong flow update.
+
+**Error thường gặp**
+
+| HTTP | Code | Message |
+| --- | --- | --- |
+| `404` | `Attendance.NotFound` | Attendance not found for session '{sessionId}' and student '{studentProfileId}'. |
+| `400` | `Attendance.UpdateWindowClosed` | Attendance for session '{sessionId}' can only be updated within 24 hours after it ends. |
+
 ---
 
-## Mã lỗi và thông báo
+## Response format
 
-| Mã lỗi | Mô tả |
-|---------|-------|
-| 400 | Dữ liệu request không hợp lệ |
-| 401 | Chưa xác thực (token không hợp lệ) |
-| 403 | Không có quyền thực hiện thao tác |
-| 404 | Session hoặc học sinh không tồn tại |
-| 500 | Lỗi server |
+### Success
 
-### Các lỗi nghiệp vụ (Business Errors):
+```json
+{
+  "isSuccess": true,
+  "data": {}
+}
+```
 
-| Error Code | Message | Mô tả |
-|------------|---------|-------|
-| SESSION_NOT_FOUND | Session not found | Buổi học không tồn tại |
-| STUDENT_NOT_IN_SESSION | Student not enrolled in this session | Học sinh không đăng ký buổi học này |
-| ATTENDANCE_ALREADY_MARKED | Attendance already marked | Điểm danh đã được thực hiện |
-| UPDATE_WINDOW_CLOSED | Attendance can only be updated within 24 hours after session ends | Chỉ được cập nhật trong vòng 24h sau khi session kết thúc |
-| INVALID_ATTENDANCE_STATUS | Invalid attendance status | Trạng thái điểm danh không hợp lệ |
+### Error
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Attendance.NotFound",
+  "status": 404,
+  "detail": "Attendance not found for session '...' and student '...'."
+}
+```
+
+### Validation error
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Validation.General",
+  "status": 400,
+  "detail": "One or more validation errors occurred",
+  "errors": [
+    {
+      "code": "NotEmptyValidator",
+      "description": "'Session Id' must not be empty.",
+      "type": 2
+    }
+  ]
+}
+```
+
+### HTTP mapping
+
+| Loại lỗi | HTTP status |
+| --- | --- |
+| Validation | `400` |
+| NotFound | `404` |
+| Conflict | `409` |
+| Unauthorized | `401` |
+| Forbidden | `403` |
+| Failure khác | `500` |
 
 ---
 
-## Luồng xử lý
+## Mã lỗi và business rule
 
-### Business Rules
+### Mã lỗi chính
 
-1. **Validate Session tồn tại**: Kiểm tra session có tồn tại trong hệ thống.
+| Code | HTTP | Ý nghĩa |
+| --- | --- | --- |
+| `Attendance.NotFound` | `404` | Không tìm thấy attendance record |
+| `Attendance.UpdateWindowClosed` | `400` | Teacher sửa attendance quá 24 giờ sau khi session kết thúc |
+| `Session.NotFound` | `404` | Không tìm thấy session |
+| `Profile.StudentNotFound` | `404` | Không tìm thấy student profile phù hợp từ token/current user |
 
-2. **Validate Student thuộc Session**: Kiểm tra học sinh có đăng ký lớp chứa session đó.
+### Business rules tổng hợp
 
-3. **Idempotent**: Nếu học sinh đã được điểm danh rồi, API sẽ cập nhật lại thay vì tạo mới.
-
-4. **Update Window**: 
-   - Admin: Có thể cập nhật bất kỳ lúc nào.
-   - Teacher: Chỉ được cập nhật trong vòng 24 giờ sau khi session kết thúc.
-
-5. **Makeup Credit**: Khi điểm danh Absent với loại nghỉ có phép 24h, hệ thống tự động tạo makeup credit.
-
-6. **Audit Log**: Tất cả thao tác update đều được ghi log (actor, thời gian, dữ liệu trước/sau).
-
-### Luồng 1: Điểm danh hàng loạt
-
-```
-1. Giáo viên đăng nhập hệ thống
-2. Chọn buổi học cần điểm danh
-3. Hệ thống hiển thị danh sách học sinh đăng ký
-4. Giáo viên đánh dấu trạng thái cho từng học sinh
-5. Gửi request POST /api/attendance/{sessionId}
-6. Hệ thống lưu điểm danh và trả về kết quả
-7. (Tự động) Cập nhật streak điểm danh gamification
-```
-
-### Luồng 2: Cập nhật điểm danh
-
-```
-1. Phát hiện cần sửa điểm danh (sai trạng thái, thêm ghi chú...)
-2. Gọi API PUT /api/attendance/{sessionId}/students/{studentProfileId}
-3. Hệ thống xác thực và cập nhật
-4. Trả về kết quả cập nhật
-```
-
-### Luồng 3: Phụ huynh xem lịch sử điểm danh
-
-```
-1. Phụ huynh đăng nhập app
-2. Gọi API GET /api/attendance/students
-3. Hệ thống lấy studentId từ token
-4. Trả về lịch sử điểm danh của con
-```
+1. Attendance bulk mark có tính idempotent ở mức record:
+   nếu record đã tồn tại thì cập nhật lại, không tạo trùng.
+2. `Absent` có thể kéo theo `AbsenceType` và `MakeupCredit`.
+3. `Present` có thể làm thay đổi registration/class status.
+4. `UpdateAttendance` không tự tạo `MakeupCredit`.
+5. `UpdateAttendance` luôn tạo audit log.
+6. `GET /api/attendance/{sessionId}` hiển thị cả học sinh chưa có attendance record bằng status `NotMarked`.
 
 ---
 
 ## Ví dụ sử dụng
 
-### Curl - Điểm danh hàng loạt
+### Curl - điểm danh hàng loạt
 
 ```bash
-curl -X POST "https://api.kidzgo.com/api/attendance/550e8400-e29b-41d4-a716-446655440000" \
+curl -X POST "https://your-host/api/attendance/550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your_token>" \
   -d '{
@@ -343,17 +517,24 @@ curl -X POST "https://api.kidzgo.com/api/attendance/550e8400-e29b-41d4-a716-4466
   }'
 ```
 
-### Curl - Lấy danh sách điểm danh
+### Curl - lấy attendance của session
 
 ```bash
-curl -X GET "https://api.kidzgo.com/api/attendance/550e8400-e29b-41d4-a716-446655440000" \
+curl -X GET "https://your-host/api/attendance/550e8400-e29b-41d4-a716-446655440000" \
   -H "Authorization: Bearer <your_token>"
 ```
 
-### Curl - Cập nhật điểm danh
+### Curl - lấy lịch sử attendance
 
 ```bash
-curl -X PUT "https://api.kidzgo.com/api/attendance/550e8400-e29b-41d4-a716-446655440000/students/550e8400-e29b-41d4-a716-446655440001" \
+curl -X GET "https://your-host/api/attendance/students?pageNumber=1&pageSize=10" \
+  -H "Authorization: Bearer <your_token>"
+```
+
+### Curl - cập nhật attendance
+
+```bash
+curl -X PUT "https://your-host/api/attendance/550e8400-e29b-41d4-a716-446655440000/students/550e8400-e29b-41d4-a716-446655440001" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your_token>" \
   -d '{
@@ -365,53 +546,56 @@ curl -X PUT "https://api.kidzgo.com/api/attendance/550e8400-e29b-41d4-a716-44665
 ### JavaScript (Fetch API)
 
 ```javascript
-// Điểm danh hàng loạt
-async function markAttendance(sessionId, attendances) {
+async function markAttendance(sessionId, attendances, token) {
   const response = await fetch(`/api/attendance/${sessionId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ attendances })
   });
-  return await response.json();
+
+  return response.json();
 }
 
-// Lấy danh sách điểm danh
-async function getSessionAttendance(sessionId) {
+async function getSessionAttendance(sessionId, token) {
   const response = await fetch(`/api/attendance/${sessionId}`, {
     headers: {
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     }
   });
-  return await response.json();
+
+  return response.json();
 }
 
-// Lấy lịch sử điểm danh của học sinh
-async function getMyAttendanceHistory(pageNumber = 1, pageSize = 10) {
-  const response = await fetch(`/api/attendance/students?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+async function getStudentAttendanceHistory(pageNumber, pageSize, token) {
+  const response = await fetch(
+    `/api/attendance/students?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
-  return await response.json();
+  );
+
+  return response.json();
 }
 
-// Cập nhật điểm danh
-async function updateAttendance(sessionId, studentProfileId, status, note) {
-  const response = await fetch(`/api/attendance/${sessionId}/students/${studentProfileId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ 
-      attendanceStatus: status,
-      note: note 
-    })
-  });
-  return await response.json();
+async function updateAttendance(sessionId, studentProfileId, attendanceStatus, note, token) {
+  const response = await fetch(
+    `/api/attendance/${sessionId}/students/${studentProfileId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ attendanceStatus, note })
+    }
+  );
+
+  return response.json();
 }
 ```
 
@@ -419,17 +603,9 @@ async function updateAttendance(sessionId, studentProfileId, status, note) {
 
 ## Lưu ý quan trọng
 
-1. **Thời gian điểm danh**: Chỉ nên điểm danh khi buổi học đã bắt đầu hoặc sau khi kết thúc.
-2. **Quyền hạn chế**: Chỉ Admin và giáo viên mới có quyền điểm danh và cập nhật.
-3. **Gamification**: Khi điểm danh Present, hệ thống tự động cập nhật streak điểm danh (nếu có).
-4. **Audit Log**: Tất cả thao tác điểm danh đều được ghi log để theo dõi.
-5. **Concurrent**: Hệ thống hỗ trợ điểm danh đồng thời từ nhiều thiết bị.
-
----
-
-## Liên hệ hỗ trợ
-
-- Email: support@kidzgo.com
-- Hotline: 1900 xxxx
-- Slack: #api-support
-
+1. Tài liệu cũ của endpoint `GET /api/attendance/students` đã lệch shape response; shape đúng hiện tại là `id`, `sessionId`, `sessionDateTime`, `attendanceStatus`, `absenceType`, `note`.
+2. `GET /api/attendance/students` mở role khá rộng ở controller nhưng vẫn phụ thuộc `StudentId` và `currentUserId` trong handler.
+3. `GET /api/attendance/{sessionId}` trả cả học sinh chưa được điểm danh với `attendanceStatus = "NotMarked"`.
+4. `hasMakeupCredit` trong response session attendance là cờ kiểm tra credit `Available` của học sinh, không chỉ credit của session đó.
+5. `PUT /api/attendance/{sessionId}/students/{studentProfileId}` không cập nhật `MarkedAt`, nên `updatedAt` có thể phản ánh thời điểm mark cũ.
+6. Flow attendance có liên kết trực tiếp với makeup credit, nhưng không tự set attendance sang `Makeup` khi dùng makeup credit ở module khác.
