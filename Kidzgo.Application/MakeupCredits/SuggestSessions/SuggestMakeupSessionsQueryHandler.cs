@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.MakeupCredits.SuggestSessions;
 
-public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
+public sealed class SuggestMakeupSessionsQueryHandler(
+    IDbContext context,
+    SessionParticipantService sessionParticipantService)
     : IQueryHandler<SuggestMakeupSessionsQuery, IEnumerable<SuggestedSessionResponse>>
 {
     public async Task<Result<IEnumerable<SuggestedSessionResponse>>> Handle(
@@ -54,22 +57,15 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             }
         }
 
-        var studentSessionTimes = await context.Sessions
-            .AsNoTracking()
-            .Where(s => s.Class.ClassEnrollments
-                .Any(ce => ce.StudentProfileId == credit.StudentProfileId &&
-                           ce.Status == EnrollmentStatus.Active))
-            .Where(s => s.Status == SessionStatus.Scheduled)
-            .Select(s => new
-            {
-                Start = s.PlannedDatetime,
-                End = s.PlannedDatetime.AddMinutes(s.DurationMinutes)
-            })
-            .ToListAsync(cancellationToken);
-
         var fromDate = query.FromDate ?? DateOnly.FromDateTime(now);
         var toDate = query.ToDate ?? fromDate.AddDays(7);
         string? timeOfDay = query.TimeOfDay?.ToLower().Trim();
+
+        var studentSessionTimes = await sessionParticipantService.GetStudentBookedSlotsAsync(
+            credit.StudentProfileId,
+            fromDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+            toDate.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc),
+            cancellationToken);
 
         var rawSuggestionsQuery = context.Sessions
             .AsNoTracking()
@@ -113,69 +109,50 @@ public sealed class SuggestMakeupSessionsQueryHandler(IDbContext context)
             return Array.Empty<SuggestedSessionResponse>();
         }
 
-        var classIds = rawSuggestions
-            .Select(s => s.ClassId)
-            .Distinct()
-            .ToList();
-
-        var sessionIds = rawSuggestions
-            .Select(s => s.Id)
-            .ToList();
-
-        var enrollmentCounts = await context.ClassEnrollments
-            .AsNoTracking()
-            .Where(e => classIds.Contains(e.ClassId) && e.Status == EnrollmentStatus.Active)
-            .GroupBy(e => e.ClassId)
-            .Select(g => new { ClassId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ClassId, x => x.Count, cancellationToken);
-
-        var allocationCounts = await context.MakeupAllocations
-            .AsNoTracking()
-            .Where(a => sessionIds.Contains(a.TargetSessionId) &&
-                        a.MakeupCreditId != credit.Id &&
-                        a.Status != MakeupAllocationStatus.Cancelled)
-            .GroupBy(a => a.TargetSessionId)
-            .Select(g => new { SessionId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.SessionId, x => x.Count, cancellationToken);
-
         var minGap = TimeSpan.FromHours(2);
 
-        var filtered = rawSuggestions
-            .Where(s =>
+        var filtered = new List<SuggestedSessionResponse>();
+        foreach (var suggestion in rawSuggestions)
+        {
+            var participantCount = (await sessionParticipantService
+                .GetParticipantsAsync(suggestion.Id, cancellationToken))
+                .Count;
+
+            if (participantCount >= suggestion.Class.Capacity)
             {
-                var activeEnrollmentCount = enrollmentCounts.GetValueOrDefault(s.ClassId);
-                var activeAllocationCount = allocationCounts.GetValueOrDefault(s.Id);
-                if (activeEnrollmentCount + activeAllocationCount >= s.Class.Capacity)
-                {
-                    return false;
-                }
+                continue;
+            }
 
-                var start = s.PlannedDatetime;
-                var end = s.PlannedDatetime.AddMinutes(s.DurationMinutes);
-
-                return !studentSessionTimes.Any(st =>
-                {
-                    var overlap = start < st.End && end > st.Start;
-                    var gapToStart = (start - st.End).Duration();
-                    var gapToEnd = (st.Start - end).Duration();
-                    var tooClose = gapToStart < minGap || gapToEnd < minGap;
-
-                    return overlap || tooClose;
-                });
-            })
-            .Select(s => new SuggestedSessionResponse
+            var start = suggestion.PlannedDatetime;
+            var end = suggestion.PlannedDatetime.AddMinutes(suggestion.DurationMinutes);
+            var hasConflict = studentSessionTimes.Any(st =>
             {
-                SessionId = s.Id,
-                ClassId = s.ClassId,
-                ClassCode = s.Class.Code,
-                ClassTitle = s.Class.Title,
-                ProgramName = s.Class.Program.Name,
-                ProgramCode = s.Class.Program.Code,
-                PlannedDatetime = s.PlannedDatetime,
-                PlannedEndDatetime = s.PlannedDatetime.AddMinutes(s.DurationMinutes),
-                BranchId = s.BranchId
-            })
-            .ToList();
+                var overlap = start < st.End && end > st.Start;
+                var gapToStart = (start - st.End).Duration();
+                var gapToEnd = (st.Start - end).Duration();
+                var tooClose = gapToStart < minGap || gapToEnd < minGap;
+
+                return overlap || tooClose;
+            });
+
+            if (hasConflict)
+            {
+                continue;
+            }
+
+            filtered.Add(new SuggestedSessionResponse
+            {
+                SessionId = suggestion.Id,
+                ClassId = suggestion.ClassId,
+                ClassCode = suggestion.Class.Code,
+                ClassTitle = suggestion.Class.Title,
+                ProgramName = suggestion.Class.Program.Name,
+                ProgramCode = suggestion.Class.Program.Code,
+                PlannedDatetime = suggestion.PlannedDatetime,
+                PlannedEndDatetime = suggestion.PlannedDatetime.AddMinutes(suggestion.DurationMinutes),
+                BranchId = suggestion.BranchId
+            });
+        }
 
         return filtered;
     }

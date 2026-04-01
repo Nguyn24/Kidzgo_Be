@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Enrollments.UpdateEnrollment;
 
 public sealed class UpdateEnrollmentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<UpdateEnrollmentCommand, UpdateEnrollmentResponse>
 {
     public async Task<Result<UpdateEnrollmentResponse>> Handle(UpdateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -29,6 +32,27 @@ public sealed class UpdateEnrollmentCommandHandler(
         if (command.EnrollDate.HasValue)
         {
             enrollment.EnrollDate = command.EnrollDate.Value;
+        }
+
+        if (command.Track is not null)
+        {
+            enrollment.Track = RegistrationTrackHelper.ToTrackType(command.Track);
+        }
+
+        if (command.ClearSessionSelectionPattern)
+        {
+            enrollment.SessionSelectionPattern = null;
+        }
+        else if (command.SessionSelectionPattern is not null)
+        {
+            var selectionPatternValidation = studentSessionAssignmentService
+                .ValidateSelectionPattern(enrollment.Class, command.SessionSelectionPattern);
+            if (selectionPatternValidation.IsFailure)
+            {
+                return Result.Failure<UpdateEnrollmentResponse>(selectionPatternValidation.Error);
+            }
+
+            enrollment.SessionSelectionPattern = command.SessionSelectionPattern;
         }
 
         // Update TuitionPlan if provided
@@ -60,6 +84,7 @@ public sealed class UpdateEnrollmentCommandHandler(
         }
 
         enrollment.UpdatedAt = DateTime.UtcNow;
+        await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         // Navigation properties are already loaded from the initial query

@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -8,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Enrollments.CreateEnrollment;
 
 public sealed class CreateEnrollmentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<CreateEnrollmentCommand, CreateEnrollmentResponse>
 {
     public async Task<Result<CreateEnrollmentResponse>> Handle(CreateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -62,6 +65,13 @@ public sealed class CreateEnrollmentCommandHandler(
                 EnrollmentErrors.ClassFull);
         }
 
+        var selectionPatternValidation = studentSessionAssignmentService
+            .ValidateSelectionPattern(classEntity, command.SessionSelectionPattern);
+        if (selectionPatternValidation.IsFailure)
+        {
+            return Result.Failure<CreateEnrollmentResponse>(selectionPatternValidation.Error);
+        }
+
         // Check if tuition plan exists and is active (if provided)
         if (command.TuitionPlanId.HasValue)
         {
@@ -97,11 +107,14 @@ public sealed class CreateEnrollmentCommandHandler(
             EnrollDate = command.EnrollDate,
             Status = EnrollmentStatus.Active,
             TuitionPlanId = command.TuitionPlanId,
+            Track = RegistrationTrackHelper.ToTrackType(command.Track),
+            SessionSelectionPattern = command.SessionSelectionPattern,
             CreatedAt = now,
             UpdatedAt = now
         };
 
         context.ClassEnrollments.Add(enrollment);
+        await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         // Query enrollment with navigation properties for response

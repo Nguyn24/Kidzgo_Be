@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -12,7 +13,8 @@ namespace Kidzgo.Application.PauseEnrollmentRequests.ApprovePauseEnrollmentReque
 public sealed class ApprovePauseEnrollmentRequestCommandHandler(
     IDbContext context,
     IUserContext userContext,
-    ITemplateRenderer templateRenderer)
+    ITemplateRenderer templateRenderer,
+    StudentSessionAssignmentService studentSessionAssignmentService)
     : ICommandHandler<ApprovePauseEnrollmentRequestCommand>
 {
     public async Task<Result> Handle(ApprovePauseEnrollmentRequestCommand request, CancellationToken cancellationToken)
@@ -99,6 +101,11 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
             var previousStatus = enrollment.Status;
             enrollment.Status = EnrollmentStatus.Paused;
             enrollment.UpdatedAt = DateTime.UtcNow;
+            await studentSessionAssignmentService.CancelAssignmentsForEnrollmentInRangeAsync(
+                enrollment.Id,
+                pauseRequest.PauseFrom.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                pauseRequest.PauseTo.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc),
+                cancellationToken);
 
             var history = new PauseEnrollmentRequestHistory
             {

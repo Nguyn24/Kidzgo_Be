@@ -31,6 +31,22 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
 
         builder.Property(x => x.RegistrationId);
 
+        builder.Property(x => x.Track)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.SessionSelectionPattern)
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Track)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.SessionSelectionPattern)
+            .HasMaxLength(500);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -10,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.TransferClass.Handler;
 
 public sealed class TransferClassCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<TransferClassCommand, TransferClassResponse>
 {
     public async Task<Result<TransferClassResponse>> Handle(
@@ -72,6 +74,13 @@ public sealed class TransferClassCommandHandler(
                 RegistrationErrors.ClassNotMatchingProgram(command.NewClassId, targetProgramId ?? Guid.Empty));
         }
 
+        var selectionPatternValidation = studentSessionAssignmentService
+            .ValidateSelectionPattern(newClass, command.SessionSelectionPattern);
+        if (selectionPatternValidation.IsFailure)
+        {
+            return Result.Failure<TransferClassResponse>(selectionPatternValidation.Error);
+        }
+
         // 6. Check new class capacity
         if (newClass.ClassEnrollments.Count >= newClass.Capacity)
         {
@@ -103,6 +112,10 @@ public sealed class TransferClassCommandHandler(
         {
             oldEnrollment.Status = EnrollmentStatus.Dropped;
             oldEnrollment.UpdatedAt = now;
+            await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+                oldEnrollment.Id,
+                command.EffectiveDate,
+                cancellationToken);
         }
 
         // 10. Create new enrollment
@@ -115,11 +128,14 @@ public sealed class TransferClassCommandHandler(
             Status = EnrollmentStatus.Active,
             TuitionPlanId = registration.TuitionPlanId,
             RegistrationId = registration.Id,
+            Track = RegistrationTrackHelper.ToTrackType(track),
+            SessionSelectionPattern = command.SessionSelectionPattern,
             CreatedAt = now,
             UpdatedAt = now
         };
 
         context.ClassEnrollments.Add(newEnrollment);
+        await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(newEnrollment, cancellationToken);
 
         if (isSecondaryTrack)
         {

@@ -7,6 +7,9 @@ public sealed class GetSessionAttendanceResponse
     public Guid Id { get; set; }
     public Guid StudentProfileId { get; set; }
     public string StudentName { get; set; } = null!;
+    public Guid? RegistrationId { get; set; }
+    public string? Track { get; set; }
+    public bool IsMakeup { get; set; }
     public string AttendanceStatus { get; set; } = null!;
     public string? AbsenceType { get; set; }
     public bool HasMakeupCredit { get; set; }

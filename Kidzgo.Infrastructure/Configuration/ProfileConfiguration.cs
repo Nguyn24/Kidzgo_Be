@@ -75,6 +75,11 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .HasForeignKey(x => x.StudentProfileId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasMany(x => x.StudentSessionAssignments)
+            .WithOne(x => x.StudentProfile)
+            .HasForeignKey(x => x.StudentProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(x => x.LeaveRequests)
             .WithOne(x => x.StudentProfile)
             .HasForeignKey(x => x.StudentProfileId)
