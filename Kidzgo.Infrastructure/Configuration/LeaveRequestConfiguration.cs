@@ -19,6 +19,8 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.Property(x => x.ClassId)
             .IsRequired();
 
+        builder.Property(x => x.SessionId);
+
         builder.Property(x => x.SessionDate)
             .IsRequired();
 
@@ -53,9 +55,16 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
             .HasForeignKey(x => x.ClassId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasOne(x => x.Session)
+            .WithMany()
+            .HasForeignKey(x => x.SessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.ApprovedByUser)
             .WithMany(x => x.ApprovedLeaveRequests)
             .HasForeignKey(x => x.ApprovedBy)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.SessionId);
     }
 }

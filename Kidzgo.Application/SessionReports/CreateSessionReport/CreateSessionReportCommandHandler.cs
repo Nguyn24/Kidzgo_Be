@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -14,7 +15,8 @@ namespace Kidzgo.Application.SessionReports.CreateSessionReport;
 
 public sealed class CreateSessionReportCommandHandler(
     IDbContext context,
-    IUserContext userContext
+    IUserContext userContext,
+    SessionParticipantService sessionParticipantService
 ) : ICommandHandler<CreateSessionReportCommand, CreateSessionReportResponse>
 {
     public async Task<Result<CreateSessionReportResponse>> Handle(
@@ -60,6 +62,14 @@ public sealed class CreateSessionReportCommandHandler(
         {
             return Result.Failure<CreateSessionReportResponse>(
                 SessionErrors.UnauthorizedAccess(session.Id));
+        }
+
+        var assignmentCheck = await sessionParticipantService
+            .EnsureStudentAssignedToSessionAsync(command.SessionId, command.StudentProfileId, cancellationToken);
+
+        if (assignmentCheck.IsFailure)
+        {
+            return Result.Failure<CreateSessionReportResponse>(assignmentCheck.Error);
         }
 
         // Check if report already exists for this session and student

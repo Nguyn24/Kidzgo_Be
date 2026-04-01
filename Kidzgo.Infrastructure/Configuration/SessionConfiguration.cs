@@ -105,6 +105,11 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
             .HasForeignKey(x => x.SessionId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(x => x.StudentSessionAssignments)
+            .WithOne(x => x.Session)
+            .HasForeignKey(x => x.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(x => x.SourceMakeupCredits)
             .WithOne(x => x.SourceSession)
             .HasForeignKey(x => x.SourceSessionId)

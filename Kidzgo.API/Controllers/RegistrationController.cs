@@ -158,7 +158,8 @@ public class RegistrationController : ControllerBase
             RegistrationId = id,
             ClassId = request.ClassId,
             EntryType = request.EntryType,
-            Track = request.Track
+            Track = request.Track,
+            SessionSelectionPattern = request.SessionSelectionPattern
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -196,6 +197,7 @@ public class RegistrationController : ControllerBase
         Guid id,
         [FromQuery] Guid newClassId,
         [FromQuery] string track = "primary",
+        [FromQuery] string? sessionSelectionPattern = null,
         [FromQuery] DateTime? effectiveDate = null,
         CancellationToken cancellationToken = default)
     {
@@ -204,7 +206,8 @@ public class RegistrationController : ControllerBase
             RegistrationId = id,
             NewClassId = newClassId,
             EffectiveDate = effectiveDate ?? DateTime.UtcNow,
-            Track = track
+            Track = track,
+            SessionSelectionPattern = sessionSelectionPattern
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -129,6 +129,7 @@ public sealed class ApplicationDbContext(
     public DbSet<MakeupAllocation> MakeupAllocations => Set<MakeupAllocation>();
     public DbSet<MakeupCredit> MakeupCredits => Set<MakeupCredit>();
     public DbSet<Session> Sessions => Set<Session>();
+    public DbSet<StudentSessionAssignment> StudentSessionAssignments => Set<StudentSessionAssignment>();
 
     // Tickets
     public DbSet<Ticket> Tickets => Set<Ticket>();

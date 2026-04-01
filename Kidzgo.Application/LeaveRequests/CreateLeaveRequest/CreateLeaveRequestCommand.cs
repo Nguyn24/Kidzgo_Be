@@ -6,6 +6,7 @@ public sealed class CreateLeaveRequestCommand : ICommand<CreateLeaveRequestRespo
 {
     public Guid StudentProfileId { get; init; }
     public Guid ClassId { get; init; }
+    public Guid? SessionId { get; init; }
     public DateOnly SessionDate { get; init; }
     public DateOnly? EndDate { get; init; }
     public string? Reason { get; init; }

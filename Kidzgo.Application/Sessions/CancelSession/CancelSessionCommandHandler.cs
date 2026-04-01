@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Sessions.CancelSession;
 
 public sealed class CancelSessionCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<CancelSessionCommand>
 {
     public async Task<Result> Handle(CancelSessionCommand command, CancellationToken cancellationToken)
@@ -29,6 +31,7 @@ public sealed class CancelSessionCommandHandler(
         session.Status = SessionStatus.Cancelled;
         session.UpdatedAt = DateTime.UtcNow;
 
+        await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

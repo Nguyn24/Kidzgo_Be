@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -10,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.AssignClass.Handler;
 
 public sealed class AssignClassCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<AssignClassCommand, AssignClassResponse>
 {
     public async Task<Result<AssignClassResponse>> Handle(
@@ -93,6 +95,16 @@ public sealed class AssignClassCommandHandler(
                 RegistrationErrors.ClassNotMatchingProgram(classEntity.Id, targetProgramId));
         }
 
+        if (classEntity != null)
+        {
+            var selectionPatternValidation = studentSessionAssignmentService
+                .ValidateSelectionPattern(classEntity, command.SessionSelectionPattern);
+            if (selectionPatternValidation.IsFailure)
+            {
+                return Result.Failure<AssignClassResponse>(selectionPatternValidation.Error);
+            }
+        }
+
         // 6. Check class status - can only assign to active/recruiting classes (for non-wait types)
         if (classEntity != null)
         {
@@ -148,11 +160,14 @@ public sealed class AssignClassCommandHandler(
                 Status = EnrollmentStatus.Active,
                 TuitionPlanId = registration.TuitionPlanId,
                 RegistrationId = registration.Id,
+                Track = RegistrationTrackHelper.ToTrackType(track),
+                SessionSelectionPattern = command.SessionSelectionPattern,
                 CreatedAt = now,
                 UpdatedAt = now
             };
 
             context.ClassEnrollments.Add(enrollment);
+            await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
 
             // Add warning for mid-course entry
             if (classEntity!.Status == ClassStatus.Active)

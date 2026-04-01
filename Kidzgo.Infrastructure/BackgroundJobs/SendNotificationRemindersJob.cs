@@ -1,4 +1,5 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Finance;
 using Kidzgo.Domain.Homework;
@@ -45,13 +46,14 @@ public sealed class SendNotificationRemindersJob(
 
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IDbContext>();
+        var studentSessionAssignmentService = scope.ServiceProvider.GetRequiredService<StudentSessionAssignmentService>();
 
         logger.LogInformation("Starting notification reminders job at {Time}", now);
 
         try
         {
             // Send session reminders (UC-331)
-            await SendSessionRemindersAsync(db, now, cancellationToken);
+            await SendSessionRemindersAsync(db, studentSessionAssignmentService, now, cancellationToken);
 
             // Send homework reminders (UC-332)
             await SendHomeworkRemindersAsync(db, now, cancellationToken);
@@ -77,7 +79,11 @@ public sealed class SendNotificationRemindersJob(
         }
     }
 
-    private async Task SendSessionRemindersAsync(IDbContext db, DateTime now, CancellationToken cancellationToken)
+    private async Task SendSessionRemindersAsync(
+        IDbContext db,
+        StudentSessionAssignmentService studentSessionAssignmentService,
+        DateTime now,
+        CancellationToken cancellationToken)
     {
         var reminderTime = now.Add(SessionReminderWindow);
         var reminderTimeEnd = reminderTime.AddHours(1); // 1 hour window
@@ -85,9 +91,6 @@ public sealed class SendNotificationRemindersJob(
         var sessions = await db.Sessions
             .Include(s => s.Class)
             .Include(s => s.PlannedRoom)
-            .Include(s => s.Class.ClassEnrollments)
-                .ThenInclude(ce => ce.StudentProfile)
-                    .ThenInclude(sp => sp.User)
             .Where(s =>
                 s.Status == SessionStatus.Scheduled &&
                 s.PlannedDatetime >= reminderTime &&
@@ -107,13 +110,15 @@ public sealed class SendNotificationRemindersJob(
 
         foreach (var session in sessions)
         {
-            var enrollments = session.Class.ClassEnrollments
-                .Where(ce => ce.Status == EnrollmentStatus.Active)
-                .ToList();
+            var regularParticipants = await studentSessionAssignmentService
+                .GetRegularParticipantsAsync(session.Id, cancellationToken);
 
-            foreach (var enrollment in enrollments)
+            foreach (var participant in regularParticipants)
             {
-                var studentProfile = enrollment.StudentProfile;
+                var studentProfile = await db.Profiles
+                    .Include(sp => sp.User)
+                    .FirstOrDefaultAsync(sp => sp.Id == participant.StudentProfileId, cancellationToken);
+
                 if (studentProfile?.User == null || string.IsNullOrWhiteSpace(studentProfile.User.Email))
                     continue;
 

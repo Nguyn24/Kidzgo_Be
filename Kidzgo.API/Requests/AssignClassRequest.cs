@@ -3,7 +3,7 @@ namespace Kidzgo.API.Requests;
 public sealed class AssignClassRequest
 {
     /// <summary>
-    /// Class ID to assign. Required for immediate/makeup, optional for wait.
+     /// Class ID to assign. Required for immediate/makeup, optional for wait.
     /// </summary>
     public Guid? ClassId { get; set; }
     
@@ -19,4 +19,16 @@ public sealed class AssignClassRequest
     /// Track to assign: "primary" | "secondary"
     /// </summary>
     public string Track { get; set; } = "primary";
+
+    /// <summary>
+    /// Optional subset of class schedule for this student, using RRULE format.
+    /// If omitted, the student attends all sessions of the class.
+    /// Examples:
+    /// - If class runs Wednesday 08:30: FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=30
+    /// - If class runs Tuesday 18:00: FREQ=WEEKLY;BYDAY=TU;BYHOUR=18;BYMINUTE=0
+    /// - If class runs Tuesday and Thursday 18:00: FREQ=WEEKLY;BYDAY=TU,TH;BYHOUR=18;BYMINUTE=0
+    /// Note: the selection pattern must match the class slot time, not only the weekday.
+    /// The pattern must be a subset of the class SchedulePattern.
+    /// </summary>
+    public string? SessionSelectionPattern { get; set; }
 }
