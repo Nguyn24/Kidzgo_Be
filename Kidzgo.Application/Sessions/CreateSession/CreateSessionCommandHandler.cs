@@ -12,7 +12,8 @@ namespace Kidzgo.Application.Sessions.CreateSession;
 
 public sealed class CreateSessionCommandHandler(
     IDbContext context,
-    SessionConflictChecker conflictChecker
+    SessionConflictChecker conflictChecker,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<CreateSessionCommand, CreateSessionResponse>
 {
     public async Task<Result<CreateSessionResponse>> Handle(CreateSessionCommand command, CancellationToken cancellationToken)
@@ -67,6 +68,7 @@ public sealed class CreateSessionCommandHandler(
         };
 
         context.Sessions.Add(session);
+        await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new CreateSessionResponse

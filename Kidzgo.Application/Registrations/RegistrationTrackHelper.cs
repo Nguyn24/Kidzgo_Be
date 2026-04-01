@@ -14,6 +14,20 @@ internal static class RegistrationTrackHelper
             : PrimaryTrack;
     }
 
+    internal static RegistrationTrackType ToTrackType(string? track)
+    {
+        return string.Equals(track, SecondaryTrack, StringComparison.OrdinalIgnoreCase)
+            ? RegistrationTrackType.Secondary
+            : RegistrationTrackType.Primary;
+    }
+
+    internal static string ToTrackName(RegistrationTrackType trackType)
+    {
+        return trackType == RegistrationTrackType.Secondary
+            ? SecondaryTrack
+            : PrimaryTrack;
+    }
+
     internal static EntryType ParseEntryType(string? entryType)
     {
         return entryType?.ToLowerInvariant() switch

@@ -38,6 +38,7 @@ public class Session : Entity
     public User? ActualTeacher { get; set; }
     public User? ActualAssistant { get; set; }
     public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+    public ICollection<StudentSessionAssignment> StudentSessionAssignments { get; set; } = new List<StudentSessionAssignment>();
     public ICollection<MakeupCredit> SourceMakeupCredits { get; set; } = new List<MakeupCredit>();
     public ICollection<MakeupCredit> UsedMakeupCredits { get; set; } = new List<MakeupCredit>();
     public ICollection<MakeupAllocation> TargetMakeupAllocations { get; set; } = new List<MakeupAllocation>();

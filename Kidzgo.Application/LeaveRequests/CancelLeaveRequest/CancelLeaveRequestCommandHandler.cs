@@ -43,10 +43,12 @@ public sealed class CancelLeaveRequestCommandHandler(IDbContext context)
         // If was approved, also delete the makeup credits and allocations
         if (wasApproved)
         {
-            // Get makeup credits for this leave request's source session
-            var sourceSession = await context.Sessions
-                .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId 
-                    && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
+            var sourceSession = leaveRequest.SessionId.HasValue
+                ? await context.Sessions
+                    .FirstOrDefaultAsync(s => s.Id == leaveRequest.SessionId.Value, cancellationToken)
+                : await context.Sessions
+                    .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId
+                        && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
 
             if (sourceSession != null)
             {
@@ -72,10 +74,12 @@ public sealed class CancelLeaveRequestCommandHandler(IDbContext context)
 
     private async Task<bool> WasOriginallyApproved(LeaveRequest leaveRequest, CancellationToken cancellationToken)
     {
-        // Check if there's any makeup credit created for this leave request
-        var sourceSession = await context.Sessions
-            .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId 
-                && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
+        var sourceSession = leaveRequest.SessionId.HasValue
+            ? await context.Sessions
+                .FirstOrDefaultAsync(s => s.Id == leaveRequest.SessionId.Value, cancellationToken)
+            : await context.Sessions
+                .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId
+                    && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
 
         if (sourceSession == null) return false;
 

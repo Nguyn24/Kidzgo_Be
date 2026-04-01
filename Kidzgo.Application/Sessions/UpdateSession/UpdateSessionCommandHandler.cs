@@ -10,7 +10,8 @@ namespace Kidzgo.Application.Sessions.UpdateSession;
 
 public sealed class UpdateSessionCommandHandler(
     IDbContext context,
-    SessionConflictChecker conflictChecker
+    SessionConflictChecker conflictChecker,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<UpdateSessionCommand, UpdateSessionResponse>
 {
     public async Task<Result<UpdateSessionResponse>> Handle(UpdateSessionCommand command, CancellationToken cancellationToken)
@@ -52,6 +53,7 @@ public sealed class UpdateSessionCommandHandler(
         session.ParticipationType = command.ParticipationType;
         session.UpdatedAt = DateTime.UtcNow;
 
+        await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpdateSessionResponse

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
@@ -49,34 +50,185 @@ public sealed class GetStudentTimetableQueryHandler(
             return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
         }
 
-        // Get sessions from classes where student is enrolled (Status = Active)
-        var sessionsQuery = context.Sessions
-            .Where(s => s.Class.ClassEnrollments
-                .Any(ce => ce.StudentProfileId == studentId.Value && ce.Status == EnrollmentStatus.Active))
-            .Where(s => s.Status != SessionStatus.Cancelled);
-
-        // Filter by date range
-        // Convert to UTC if DateTime is Unspecified (from query string)
+        DateTime? fromUtc = null;
         if (query.From.HasValue)
         {
-            var fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
+            fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(query.From.Value, DateTimeKind.Utc)
                 : query.From.Value.ToUniversalTime();
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= fromUtc);
         }
 
+        DateTime? toUtc = null;
         if (query.To.HasValue)
         {
-            var toUtc = query.To.Value.Kind == DateTimeKind.Unspecified
+            var normalizedToUtc = query.To.Value.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(query.To.Value, DateTimeKind.Utc)
                 : query.To.Value.ToUniversalTime();
-            // Add one day to include the entire "to" date
-            toUtc = toUtc.Date.AddDays(1).AddTicks(-1);
-            sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= toUtc);
+            toUtc = normalizedToUtc.Date.AddDays(1).AddTicks(-1);
         }
 
-        var sessions = await sessionsQuery
-            .OrderBy(s => s.PlannedDatetime)
+        var regularAssignmentsQuery = context.StudentSessionAssignments
+            .AsNoTracking()
+            .Where(a => a.StudentProfileId == studentId.Value
+                && a.Status == StudentSessionAssignmentStatus.Assigned
+                && a.Session.Status != SessionStatus.Cancelled);
+
+        if (fromUtc.HasValue)
+        {
+            regularAssignmentsQuery = regularAssignmentsQuery
+                .Where(a => a.Session.PlannedDatetime >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            regularAssignmentsQuery = regularAssignmentsQuery
+                .Where(a => a.Session.PlannedDatetime <= toUtc.Value);
+        }
+
+        var regularAssignments = await regularAssignmentsQuery
+            .Select(a => new
+            {
+                a.SessionId,
+                a.ClassEnrollmentId,
+                a.RegistrationId,
+                a.Track
+            })
+            .ToListAsync(cancellationToken);
+
+        var studentActiveEnrollmentsQuery = context.ClassEnrollments
+            .AsNoTracking()
+            .Where(ce => ce.StudentProfileId == studentId.Value
+                && ce.Status == EnrollmentStatus.Active);
+
+        var enrollmentsWithAssignmentIds = await context.StudentSessionAssignments
+            .AsNoTracking()
+            .Where(a => a.StudentProfileId == studentId.Value)
+            .Select(a => a.ClassEnrollmentId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var enrollmentsWithAssignmentIdSet = enrollmentsWithAssignmentIds.ToHashSet();
+
+        var legacyEnrollments = await studentActiveEnrollmentsQuery
+            .Where(ce => !enrollmentsWithAssignmentIdSet.Contains(ce.Id))
+            .Select(ce => new
+            {
+                ce.Id,
+                ce.ClassId,
+                ce.EnrollDate,
+                ce.RegistrationId,
+                ce.Track
+            })
+            .ToListAsync(cancellationToken);
+
+        var legacyClassIds = legacyEnrollments
+            .Select(ce => ce.ClassId)
+            .Distinct()
+            .ToList();
+
+        var legacySessionsQuery = context.Sessions
+            .AsNoTracking()
+            .Where(s => s.Status != SessionStatus.Cancelled
+                && legacyClassIds.Contains(s.ClassId));
+
+        if (fromUtc.HasValue)
+        {
+            legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime <= toUtc.Value);
+        }
+
+        var legacySessions = await legacySessionsQuery
+            .ToListAsync(cancellationToken);
+
+        var legacyAssignments = legacySessions
+            .SelectMany(session => legacyEnrollments
+                .Where(enrollment =>
+                    enrollment.ClassId == session.ClassId &&
+                    enrollment.EnrollDate <= DateOnly.FromDateTime(session.PlannedDatetime))
+                .Select(enrollment => new
+                {
+                    SessionId = session.Id,
+                    enrollment.RegistrationId,
+                    enrollment.Track
+                }))
+            .GroupBy(x => x.SessionId)
+            .Select(group => group
+                .OrderByDescending(x => x.RegistrationId.HasValue)
+                .First())
+            .ToList();
+
+        var makeupAssignmentsQuery = context.MakeupAllocations
+            .AsNoTracking()
+            .Where(a => a.MakeupCredit.StudentProfileId == studentId.Value
+                && a.Status != MakeupAllocationStatus.Cancelled
+                && a.TargetSession.Status != SessionStatus.Cancelled);
+
+        if (fromUtc.HasValue)
+        {
+            makeupAssignmentsQuery = makeupAssignmentsQuery
+                .Where(a => a.TargetSession.PlannedDatetime >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            makeupAssignmentsQuery = makeupAssignmentsQuery
+                .Where(a => a.TargetSession.PlannedDatetime <= toUtc.Value);
+        }
+
+        var makeupAssignments = await makeupAssignmentsQuery
+            .Select(a => new
+            {
+                SessionId = a.TargetSessionId
+            })
+            .ToListAsync(cancellationToken);
+
+        var sessionMetadata = new Dictionary<Guid, (Guid? RegistrationId, string? Track, bool IsMakeup)>();
+
+        foreach (var assignment in regularAssignments)
+        {
+            sessionMetadata[assignment.SessionId] = (
+                assignment.RegistrationId,
+                RegistrationTrackHelper.ToTrackName(assignment.Track),
+                false);
+        }
+
+        foreach (var legacyAssignment in legacyAssignments)
+        {
+            sessionMetadata.TryAdd(
+                legacyAssignment.SessionId,
+                (
+                    legacyAssignment.RegistrationId,
+                    RegistrationTrackHelper.ToTrackName(legacyAssignment.Track),
+                    false));
+        }
+
+        foreach (var makeupAssignment in makeupAssignments)
+        {
+            if (sessionMetadata.TryGetValue(makeupAssignment.SessionId, out var existingMetadata))
+            {
+                sessionMetadata[makeupAssignment.SessionId] = (
+                    existingMetadata.RegistrationId,
+                    existingMetadata.Track,
+                    true);
+                continue;
+            }
+
+            sessionMetadata[makeupAssignment.SessionId] = (null, null, true);
+        }
+
+        var sessionIds = sessionMetadata.Keys.ToList();
+        if (sessionIds.Count == 0)
+        {
+            return Result.Success(new GetStudentTimetableResponse());
+        }
+
+        var sessionDetails = await context.Sessions
+            .AsNoTracking()
+            .Where(s => sessionIds.Contains(s.Id))
             .Select(s => new TimetableItemDto
             {
                 Id = s.Id,
@@ -101,8 +253,6 @@ public sealed class GetStudentTimetableQueryHandler(
                 PlannedAssistantName = s.PlannedAssistant != null ? s.PlannedAssistant.Name : null,
                 LessonPlanId = s.LessonPlan != null ? s.LessonPlan.Id : null,
                 LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null,
-                
-                // Attendance information for this student
                 AttendanceStatus = s.Attendances
                     .Where(a => a.StudentProfileId == studentId.Value)
                     .Select(a => a.AttendanceStatus.ToString())
@@ -117,6 +267,45 @@ public sealed class GetStudentTimetableQueryHandler(
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
+
+        var sessions = sessionDetails
+            .Select(s =>
+            {
+                var metadata = sessionMetadata[s.Id];
+                return new TimetableItemDto
+                {
+                    Id = s.Id,
+                    Color = s.Color,
+                    ClassId = s.ClassId,
+                    ClassCode = s.ClassCode,
+                    ClassTitle = s.ClassTitle,
+                    PlannedDatetime = s.PlannedDatetime,
+                    ActualDatetime = s.ActualDatetime,
+                    DurationMinutes = s.DurationMinutes,
+                    ParticipationType = s.ParticipationType,
+                    Status = s.Status,
+                    PlannedRoomId = s.PlannedRoomId,
+                    PlannedRoomName = s.PlannedRoomName,
+                    ActualRoomId = s.ActualRoomId,
+                    ActualRoomName = s.ActualRoomName,
+                    PlannedTeacherId = s.PlannedTeacherId,
+                    PlannedTeacherName = s.PlannedTeacherName,
+                    ActualTeacherId = s.ActualTeacherId,
+                    ActualTeacherName = s.ActualTeacherName,
+                    PlannedAssistantId = s.PlannedAssistantId,
+                    PlannedAssistantName = s.PlannedAssistantName,
+                    LessonPlanId = s.LessonPlanId,
+                    LessonPlanLink = s.LessonPlanLink,
+                    RegistrationId = metadata.RegistrationId,
+                    Track = metadata.Track,
+                    IsMakeup = metadata.IsMakeup,
+                    AttendanceStatus = s.AttendanceStatus,
+                    AbsenceType = s.AbsenceType,
+                    AttendanceMarkedAt = s.AttendanceMarkedAt
+                };
+            })
+            .OrderBy(s => s.PlannedDatetime)
+            .ToList();
 
         return Result.Success(new GetStudentTimetableResponse
         {

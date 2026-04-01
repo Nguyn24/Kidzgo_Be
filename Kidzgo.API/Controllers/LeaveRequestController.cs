@@ -36,6 +36,7 @@ public class LeaveRequestController : ControllerBase
         {
             StudentProfileId = request.StudentProfileId,
             ClassId = request.ClassId,
+            SessionId = request.SessionId,
             SessionDate = request.SessionDate,
             EndDate = request.EndDate,
             Reason = request.Reason

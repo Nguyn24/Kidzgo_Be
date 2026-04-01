@@ -40,6 +40,7 @@ public class Profile : Entity
     public ICollection<ParentStudentLink> ParentLinks { get; set; } = new List<ParentStudentLink>();
     public ICollection<ParentStudentLink> StudentLinks { get; set; } = new List<ParentStudentLink>();
     public ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
+    public ICollection<StudentSessionAssignment> StudentSessionAssignments { get; set; } = new List<StudentSessionAssignment>();
     public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
     public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public ICollection<MakeupCredit> MakeupCredits { get; set; } = new List<MakeupCredit>();

@@ -52,6 +52,7 @@ public sealed class GetLeaveRequestsQueryHandler(
                 Id = l.Id,
                 StudentProfileId = l.StudentProfileId,
                 ClassId = l.ClassId,
+                SessionId = l.SessionId,
                 SessionDate = l.SessionDate,
                 EndDate = l.EndDate,
                 Reason = l.Reason,
