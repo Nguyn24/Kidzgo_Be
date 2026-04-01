@@ -70,9 +70,29 @@ public sealed class UpdateLessonPlanTemplateCommandHandler(
             template.Level = command.Level;
         }
 
+        if (command.Title != null)
+        {
+            template.Title = command.Title;
+        }
+
         if (command.SessionIndex.HasValue)
         {
             template.SessionIndex = command.SessionIndex.Value;
+        }
+
+        if (command.SyllabusMetadata != null)
+        {
+            template.SyllabusMetadata = command.SyllabusMetadata;
+        }
+
+        if (command.SyllabusContent != null)
+        {
+            template.SyllabusContent = command.SyllabusContent;
+        }
+
+        if (command.SourceFileName != null)
+        {
+            template.SourceFileName = command.SourceFileName;
         }
 
         if (command.Attachment != null)
@@ -94,6 +114,9 @@ public sealed class UpdateLessonPlanTemplateCommandHandler(
             Title = template.Title,
             Level = template.Level,
             SessionIndex = template.SessionIndex,
+            SyllabusMetadata = template.SyllabusMetadata,
+            SyllabusContent = template.SyllabusContent,
+            SourceFileName = template.SourceFileName,
             Attachment = template.AttachmentUrl,
             IsActive = template.IsActive
         };
