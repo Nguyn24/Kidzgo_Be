@@ -8,5 +8,8 @@ public sealed class UpdateRegistrationResponse
     public string? Note { get; init; }
     public Guid? TuitionPlanId { get; init; }
     public string? TuitionPlanName { get; init; }
+    public Guid? SecondaryProgramId { get; init; }
+    public string? SecondaryProgramName { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

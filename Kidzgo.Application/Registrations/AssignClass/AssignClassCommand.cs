@@ -18,4 +18,9 @@ public sealed class AssignClassCommand : ICommand<AssignClassResponse>
     /// - wait: Chờ lớp mới, chưa xếp lớp
     /// </summary>
     public string EntryType { get; init; } = "immediate";
+
+    /// <summary>
+    /// Track to assign: "primary" | "secondary"
+    /// </summary>
+    public string Track { get; init; } = "primary";
 }

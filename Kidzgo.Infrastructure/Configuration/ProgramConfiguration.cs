@@ -51,6 +51,9 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.Property(x=>x.IsMakeup)
             .IsRequired();
 
+        builder.Property(x => x.IsSupplementary)
+            .IsRequired();
+
         builder.Property(x => x.DefaultMakeupClassId);
 
         // Relationships

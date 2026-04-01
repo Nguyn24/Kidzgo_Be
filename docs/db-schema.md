@@ -2674,129 +2674,188 @@ Khi phụ huynh xem kết quả:
 
 ## 16. Quan hệ giữa các bảng (Entity Relationships)
 
-### 1. Quan hệ User/Branch/RBAC (UPDATED)
-- `users` → `profiles` (1:N): Một user có thể có nhiều profile (CHỈ PARENT/STUDENT, không có TEACHER/STAFF/ADMIN).
-- `users` → `branches` (N:1): Mỗi user TEACHER/STAFF thuộc một branch (qua `users.branch_id`), ADMIN không ràng buộc branch.
+### 1. Quan hệ User/Branch/RBAC
+- `users` → `profiles` (1:N): Một user có thể có nhiều profile, nhưng chỉ áp dụng cho PARENT/STUDENT.
+- `users` → `branches` (N:1): Mỗi user TEACHER/STAFF thuộc một branch qua `users.branch_id`; ADMIN có thể không gắn branch.
 - `profiles` → `parent_student_links` (N:M): Phụ huynh và học sinh liên kết qua bảng trung gian.
-- **Lưu ý**: Bảng `roles` và `profile_roles` đã được bỏ (REMOVED). Role được quản lý trực tiếp qua `users.role` enum.
-- **ADMIN/TEACHER/STAFF**: Tất cả các bảng reference từ `profiles.id` → chuyển sang `users.id` (ví dụ: `classes.main_teacher_id`, `sessions.planned_teacher_id`, `invoices.issued_by`, v.v.).
-- **STUDENT**: Vẫn dùng `profiles.id` (ví dụ: `class_enrollments.student_profile_id`, `attendances.student_profile_id`, v.v.).
+- `users` → `device_tokens` (1:N): Một user có thể có nhiều thiết bị nhận push notification.
+- **Lưu ý**: Bảng `roles` và `profile_roles` đã bỏ; role được quản lý trực tiếp qua `users.role`.
+- **ADMIN/TEACHER/STAFF**: Các bảng nghiệp vụ dùng FK sang `users.id`.
+- **PARENT/STUDENT**: Các bảng nghiệp vụ gắn profile vẫn dùng `profiles.id`.
 
-### 2. Quan hệ Chương trình/Lớp/Session
-- `branches` → `programs` (1:N): Mỗi chương trình thuộc một branch (NEW: các chi nhánh không dùng chung program).
-- `branches` → `classrooms` (1:N): Mỗi phòng thuộc một branch.
+### 2. Quan hệ Chương trình/Gói học/Ghi danh/Lớp/Session
+- `branches` → `programs` (1:N): Mỗi chương trình thuộc một branch.
+- `branches` → `classrooms` (1:N): Mỗi phòng học thuộc một branch.
 - `branches` → `classes` (1:N): Mỗi lớp thuộc một branch.
+- `branches` → `tuition_plans` (1:N): Mỗi branch có nhiều gói học phí.
+- `branches` → `registrations` (1:N): Mỗi registration thuộc một branch.
+- `branches` → `sessions` (1:N): Mỗi session thuộc một branch.
 - `programs` → `classes` (1:N): Mỗi lớp thuộc một chương trình.
+- `programs` → `tuition_plans` (1:N): Mỗi chương trình có nhiều gói học phí.
+- `programs` → `lesson_plan_templates` (1:N): Mỗi chương trình có nhiều template giáo án.
+- `programs` → `program_leave_policies` (1:1): Mỗi chương trình có tối đa một cấu hình chính sách nghỉ học.
+- `users` → `program_leave_policies.updated_by` (1:N): Một user có thể cập nhật nhiều leave policy.
+- `programs.default_makeup_class_id` → `classes` (N:1, optional): Chương trình có thể cấu hình lớp makeup mặc định.
+- `profiles` → `registrations` (1:N): Một học sinh có thể có nhiều registration theo thời gian.
+- `programs` → `registrations` (1:N): Registration chính tham chiếu `program_id`.
+- `programs` → `registrations.secondary_program_id` (1:N, optional): Registration có thể gắn thêm chương trình phụ/secondary.
+- `tuition_plans` → `registrations` (1:N): Registration luôn chọn một tuition plan chính.
+- `classes` → `registrations.class_id` (1:N, optional): Registration có thể gắn lớp chính.
+- `classes` → `registrations.secondary_class_id` (1:N, optional): Registration có thể gắn lớp secondary.
+- `registrations` → `registrations.original_registration_id` (self 1:N, optional): Dùng để truy vết registration gốc khi upgrade/renew/replace.
+- **Lưu ý**: Registration hiện đóng vai trò “gói học/phí chung”; một registration có thể chứa `primary` và `secondary` program/class nhưng vẫn dùng chung session package.
 - `classes` → `class_enrollments` (1:N): Một lớp có nhiều học sinh ghi danh.
-- `profiles` → `class_enrollments` (1:N): Một học sinh có thể ghi danh nhiều lớp.
+- `profiles` → `class_enrollments` (1:N): Một học sinh có thể có nhiều enrollment.
+- `tuition_plans` → `class_enrollments` (1:N, optional): Enrollment có thể lưu tuition plan tại thời điểm vào lớp.
+- `registrations` → `class_enrollments` (1:N, optional): Nhiều enrollment có thể cùng trỏ về một registration/package chung.
 - `classes` → `sessions` (1:N): Một lớp có nhiều buổi học.
-- `classrooms` → `sessions` (1:N): Một phòng có thể được dùng cho nhiều buổi học (qua `planned_room_id` và `actual_room_id`).
-- `users` → `sessions` (1:N): Giáo viên có thể dạy nhiều buổi (qua `planned_teacher_id`, `actual_teacher_id`, `planned_assistant_id`, `actual_assistant_id`, reference users.id với role=TEACHER) (CHANGED: từ profiles → users).
-- `sessions` → `session_roles` (1:N): Một buổi học có thể có nhiều người tham gia với vai trò khác nhau (giáo viên chính, trợ giảng, club teacher...).
-- `users` → `session_roles` (1:N): Một staff/teacher có thể tham gia nhiều buổi với vai trò khác nhau (CHANGED: từ profiles → users).
+- `classrooms` → `sessions` (1:N): Một phòng có thể được dùng ở `planned_room_id` hoặc `actual_room_id`.
+- `users` → `sessions` (1:N): Giáo viên/trợ giảng được tham chiếu qua `planned_teacher_id`, `actual_teacher_id`, `planned_assistant_id`, `actual_assistant_id`.
+- `sessions` → `session_roles` (1:N): Một session có thể có nhiều vai trò tham gia.
+- `users` → `session_roles` (1:N): Một staff/teacher có thể xuất hiện ở nhiều session role.
 
 **Lưu ý về `sessions` vs `session_roles`:**
-- `sessions.planned_teacher_id` / `actual_teacher_id`: Thông tin giáo viên dự kiến/thực tế (đơn giản, 1 giáo viên chính, 1 trợ giảng).
-- `session_roles`: Chi tiết hơn, hỗ trợ nhiều người tham gia với vai trò khác nhau và lưu đơn giá để tính lương. Ví dụ: 1 buổi có thể có MAIN_TEACHER (500k), ASSISTANT (200k), CLUB teacher (300k).
+- `sessions.planned_teacher_id` / `actual_teacher_id`: Thông tin giáo viên chính/trợ giảng ở mức đơn giản.
+- `session_roles`: Mô hình chi tiết hơn để lưu nhiều người tham gia và đơn giá phục vụ tính lương.
 
-### 3. Quan hệ Điểm danh/MakeUp
-- `sessions` → `attendances` (1:N): Một buổi học có nhiều điểm danh (mỗi học sinh một record).
-- `profiles` → `attendances` (1:N): Một học sinh có nhiều điểm danh.
-- `sessions` → `leave_requests` (1:N): Một buổi học có thể có nhiều yêu cầu nghỉ.
-- `profiles` → `leave_requests` (1:N): Một học sinh có thể có nhiều yêu cầu nghỉ.
-- `classes` → `pause_enrollment_requests` (1:N): Một lớp có thể có nhiều yêu cầu bảo lưu.
+### 3. Quan hệ Điểm danh/Nghỉ học/Makeup/Bảo lưu
+- `sessions` → `attendances` (1:N): Một buổi học có nhiều bản ghi điểm danh.
+- `profiles` → `attendances` (1:N): Một học sinh có nhiều bản ghi điểm danh.
+- `users` → `attendances.marked_by` (1:N): Một user có thể điểm danh nhiều record.
+- `profiles` → `leave_requests` (1:N): Một học sinh có thể tạo nhiều yêu cầu nghỉ học.
+- `classes` → `leave_requests` (1:N): Yêu cầu nghỉ học gắn với lớp đang học.
+- `users` → `leave_requests.approved_by` (1:N): Một user có thể duyệt nhiều leave request.
+- `profiles` → `makeup_credits` (1:N): Một học sinh có thể có nhiều credit makeup.
+- `sessions` → `makeup_credits.source_session_id` (1:N): Một session gốc có thể sinh nhiều makeup credit.
+- `sessions` → `makeup_credits.used_session_id` (1:N): Một session có thể được dùng để tiêu nhiều credit.
+- `makeup_credits` → `makeup_allocations` (1:N): Một makeup credit có thể có nhiều allocation theo lịch sử phân bổ.
+- `sessions` → `makeup_allocations.target_session_id` (1:N): Một session đích có thể nhận nhiều allocation makeup.
+- `users` → `makeup_allocations.assigned_by` (1:N): Một user có thể phân bổ nhiều makeup allocation.
 - `profiles` → `pause_enrollment_requests` (1:N): Một học sinh có thể có nhiều yêu cầu bảo lưu.
+- `classes` → `pause_enrollment_requests` (1:N, optional): Yêu cầu bảo lưu có thể gắn lớp cụ thể.
+- `users` → `pause_enrollment_requests.approved_by/cancelled_by/outcome_by` (1:N): User nghiệp vụ duyệt, hủy hoặc cập nhật outcome bảo lưu.
 - `pause_enrollment_requests` → `pause_enrollment_request_histories` (1:N): Một yêu cầu bảo lưu có nhiều lịch sử thay đổi.
-- `class_enrollments` → `pause_enrollment_request_histories` (1:N): Một ghi danh có thể xuất hiện trong nhiều lịch sử bảo lưu.
-- `sessions` → `makeup_credits` (1:N): Một buổi học có thể tạo nhiều credit (nếu nhiều học sinh nghỉ hợp lệ).
-- `sessions` → `makeup_credits.used_session_id` (1:N): Một buổi học có thể được dùng để bù cho nhiều credit.
-- `makeup_credits` → `makeup_allocations` (1:1): Một credit được gán vào một buổi bù cụ thể.
+- `profiles` → `pause_enrollment_request_histories` (1:N): Lịch sử bảo lưu vẫn gắn học sinh.
+- `classes` → `pause_enrollment_request_histories` (1:N): Lịch sử bảo lưu gắn lớp liên quan.
+- `class_enrollments` → `pause_enrollment_request_histories.enrollment_id` (1:N, optional): Một enrollment có thể xuất hiện trong nhiều history record.
+- `users` → `pause_enrollment_request_histories.changed_by` (1:N): Một user có thể ghi nhiều thay đổi lịch sử.
 
-### 4. Quan hệ Giáo án/Bài tập
+### 4. Quan hệ Giáo án/Bài tập/Tài liệu
 - `programs` → `lesson_plan_templates` (1:N): Một chương trình có nhiều template giáo án.
-- `sessions` → `lesson_plans` (1:N về mặt DB, nhưng nghiệp vụ là 1:1): Mỗi buổi học chỉ nên có một giáo án. **Lưu ý**: Schema hiện tại chưa có unique constraint trên `lesson_plans.session_id`, nên về mặt database cho phép nhiều giáo án cho một buổi học. Nên thêm unique constraint để đảm bảo 1:1.
-- `lesson_plan_templates` → `lesson_plans` (1:N): Một template có thể dùng cho nhiều buổi học.
+- `sessions` → `lesson_plans` (1:1): Mỗi session có tối đa một lesson plan.
+- `lesson_plan_templates` → `lesson_plans` (1:N): Một template có thể được dùng cho nhiều lesson plan.
 - `classes` → `homework_assignments` (1:N): Một lớp có nhiều bài tập.
-- `sessions` → `homework_assignments` (1:N): Một buổi học có thể có nhiều bài tập.
+- `sessions` → `homework_assignments` (1:N): Một buổi học có thể sinh nhiều bài tập.
 - `homework_assignments` → `homework_questions` (1:N): Một bài tập quiz có nhiều câu hỏi.
-- `homework_assignments` → `homework_student` (1:N): Một bài tập có nhiều submission (mỗi học sinh một record).
-- `profiles` → `homework_student` (1:N): Một học sinh có nhiều bài tập đã làm.
-- `programs` → `question_bank_items` (1:N): Một program có nhiều câu hỏi trong ngân hàng.
+- `homework_assignments` → `homework_student` (1:N): Một bài tập có nhiều submission theo học sinh.
+- `profiles` → `homework_student` (1:N): Một học sinh có nhiều bài đã làm.
+- `programs` → `question_bank_items` (1:N): Một program có nhiều item trong question bank.
+- `programs` → `teaching_materials` (1:N): Một program có nhiều file/tài liệu học.
+- `users` → `teaching_materials.uploaded_by_user_id` (1:N): Một user có thể upload nhiều teaching material.
 
 ### 5. Quan hệ Kiểm tra/Báo cáo
 - `classes` → `exams` (1:N): Một lớp có nhiều kỳ kiểm tra.
-- `exams` → `exam_results` (1:N): Một kỳ kiểm tra có nhiều kết quả (mỗi học sinh một record).
-- `profiles` → `exam_results` (1:N): Một học sinh có nhiều kết quả kiểm tra.
-- `classes` → `exercises` (1:N): Một lớp có thể có nhiều bài tập/quiz (NEW).
-- `exercises` → `exercise_questions` (1:N): Một bài tập có nhiều câu hỏi (NEW).
-- `exercises` → `exercise_submissions` (1:N): Một bài tập có nhiều bài làm (mỗi học sinh một record) (NEW).
-- `exercise_submissions` → `exercise_submission_answers` (1:N): Một bài làm có nhiều đáp án (mỗi câu hỏi một đáp án) (NEW).
-- `profiles` → `exercise_submissions` (1:N): Một học sinh có nhiều bài làm (NEW).
-- `sessions` → `session_reports` (1:N): Một buổi học có nhiều báo cáo (mỗi học sinh một báo cáo) (NEW).
-- `profiles` → `session_reports` (1:N): Một học sinh có nhiều báo cáo buổi học (NEW).
-- `users` → `session_reports` (1:N): Một giáo viên tạo nhiều báo cáo (NEW).
+- `users` → `exams.created_by` (1:N): Một user có thể tạo nhiều exam.
+- `exams` → `exam_questions` (1:N): Một exam có nhiều câu hỏi.
+- `exams` → `exam_results` (1:N): Một exam có nhiều kết quả chấm điểm.
+- `profiles` → `exam_results` (1:N): Một học sinh có nhiều exam result.
+- `users` → `exam_results.graded_by` (1:N): Một user có thể chấm nhiều exam result.
+- `exams` → `exam_submissions` (1:N): Một exam có nhiều bài nộp.
+- `profiles` → `exam_submissions` (1:N): Một học sinh có nhiều bài nộp.
+- `users` → `exam_submissions.graded_by` (1:N): Một user có thể chấm nhiều submission.
+- `exam_submissions` → `exam_submission_answers` (1:N): Một bài nộp có nhiều câu trả lời.
+- `exam_questions` → `exam_submission_answers` (1:N): Một câu hỏi có thể xuất hiện trong nhiều answer record.
+- `sessions` → `session_reports` (1:N): Một session có nhiều báo cáo theo từng học sinh.
+- `profiles` → `session_reports` (1:N): Một học sinh có nhiều báo cáo buổi học.
+- `users` → `session_reports.teacher_user_id` (1:N): Giáo viên tạo báo cáo buổi học.
+- `users` → `session_reports.submitted_by_user_id` (1:N, optional): Người submit báo cáo buổi học.
+- `users` → `session_reports.reviewed_by_user_id` (1:N, optional): Người review báo cáo buổi học.
 - `profiles` → `student_monthly_reports` (1:N): Một học sinh có nhiều báo cáo tháng.
-- `student_monthly_reports` → `report_comments` (1:N): Một báo cáo có nhiều comment review.
+- `classes` → `student_monthly_reports` (1:N, optional): Báo cáo tháng có thể gắn lớp tại thời điểm tổng hợp.
+- `branches` → `monthly_report_jobs` (1:N): Mỗi branch có nhiều job tổng hợp báo cáo tháng.
+- `users` → `monthly_report_jobs.created_by` (1:N): Một user có thể tạo nhiều job báo cáo tháng.
+- `monthly_report_jobs` → `student_monthly_reports` (1:N): Một job có thể sinh nhiều báo cáo tháng.
+- `users` → `student_monthly_reports.submitted_by` (1:N, optional): Người submit báo cáo tháng.
+- `users` → `student_monthly_reports.reviewed_by` (1:N, optional): Người review báo cáo tháng.
+- `student_monthly_reports` → `monthly_report_data` (1:1): Mỗi báo cáo tháng có tối đa một bản dữ liệu tổng hợp.
+- `profiles` → `monthly_report_data` (1:N): Dữ liệu tổng hợp vẫn gắn học sinh.
+- `student_monthly_reports` → `report_comments` (1:N): Báo cáo tháng có nhiều comment.
+- `session_reports` → `report_comments` (1:N): Báo cáo buổi học cũng có nhiều comment.
+- `users` → `report_comments.commenter_id` (1:N): Một user có thể comment trên nhiều report.
 
 ### 6. Quan hệ Gamification
 - `classes` → `missions` (1:N): Một lớp có thể có nhiều nhiệm vụ.
-- `missions` → `mission_progress` (1:N): Một nhiệm vụ có nhiều tiến độ (mỗi học sinh một record).
+- `missions` → `mission_progress` (1:N): Một nhiệm vụ có nhiều tiến độ theo học sinh.
 - `profiles` → `mission_progress` (1:N): Một học sinh có nhiều tiến độ nhiệm vụ.
 - `profiles` → `star_transactions` (1:N): Một học sinh có nhiều giao dịch sao.
 - `profiles` → `student_levels` (1:1): Mỗi học sinh có một level hiện tại.
 - `reward_store_items` → `reward_redemptions` (1:N): Một item có thể được đổi nhiều lần.
-- `profiles` → `reward_redemptions` (1:N): Một học sinh có thể đổi nhiều quà.
-- `profiles` → `attendance_streaks` (1:N): Một học sinh có nhiều lần điểm danh (NEW).
+- `profiles` → `reward_redemptions` (1:N): Một học sinh có thể đổi nhiều phần quà.
+- `profiles` → `attendance_streaks` (1:N): Một học sinh có nhiều bản ghi chuỗi chuyên cần.
+- `gamification_settings`: Bảng cấu hình hệ thống, hiện là bảng standalone không có FK sang entity khác.
 
 ### 7. Quan hệ CRM/Placement
-- `branches` → `leads` (1:N): Một branch có nhiều lead.
-- `users` → `leads.owner_staff_id` (1:N): Một staff có thể quản lý nhiều lead (CHANGED: từ profiles → users, role=STAFF).
-- `leads` → `placement_tests` (1:N): Một lead có thể có nhiều lần test.
-- `profiles` → `placement_tests` (1:N): Một học sinh có thể có nhiều lần test.
+- `branches` → `leads.branch_preference` (1:N, optional): Lead có thể chọn branch mong muốn.
+- `users` → `leads.owner_staff_id` (1:N): Một staff có thể quản lý nhiều lead.
+- `leads` → `lead_activities` (1:N): Một lead có nhiều hoạt động chăm sóc.
+- `users` → `lead_activities.created_by` (1:N): Một user có thể tạo nhiều lead activity.
+- `leads` → `lead_children` (1:N): Một lead có thể có nhiều child record.
+- `profiles` → `lead_children.converted_student_profile_id` (1:N, optional): Lead child có thể được convert thành student profile.
+- `leads` → `placement_tests` (1:N): Một lead có thể có nhiều placement test.
+- `lead_children` → `placement_tests` (1:N): Một child của lead có thể có nhiều placement test.
+- `profiles` → `placement_tests` (1:N): Sau khi convert, placement test có thể gắn student profile thực.
+- `classes` → `placement_tests` (1:N, optional): Placement test có thể tham chiếu lớp liên quan.
+- `users` → `placement_tests.invigilator_user_id` (1:N, optional): User coi thi có thể phụ trách nhiều placement test.
+- `placement_tests` → `placement_tests.original_placement_test_id` (self 1:N, optional): Dùng để truy vết retake/retest từ bài test gốc.
 
-### 8. Quan hệ Media
-- `branches` → `media_assets` (1:N): Một branch có nhiều media.
-- `classes` → `media_assets` (1:N): Một lớp có nhiều media.
-- `profiles` → `media_assets` (1:N): Một học sinh/giáo viên có nhiều media.
-- `users` → `blogs` (1:N): Một admin/staff có thể tạo nhiều blog posts (NEW).
+### 8. Quan hệ Media/Blog
+- `branches` → `media_assets` (1:N): Một branch có nhiều media asset.
+- `classes` → `media_assets` (1:N, optional): Media có thể gắn với lớp.
+- `profiles` → `media_assets.student_profile_id` (1:N, optional): Media có thể gắn với học sinh.
+- `users` → `media_assets.uploader_id` (1:N): Một user có thể upload nhiều media.
+- `users` → `media_assets.approved_by_id` (1:N, optional): Một user có thể duyệt nhiều media.
+- `users` → `blogs.created_by` (1:N): Một admin/staff có thể tạo nhiều blog.
 
 ### 9. Quan hệ Tài chính/Lương
-- `branches` → `tuition_plans` (1:N): Một branch có nhiều gói học phí.
-- `programs` → `tuition_plans` (1:N): Một chương trình có nhiều gói học phí (theo branch).
 - `branches` → `invoices` (1:N): Một branch có nhiều hóa đơn.
 - `profiles` → `invoices` (1:N): Một học sinh có nhiều hóa đơn.
-- `classes` → `invoices` (1:N): Một lớp có thể liên quan đến nhiều hóa đơn.
+- `classes` → `invoices` (1:N, optional): Hóa đơn có thể gắn lớp liên quan.
+- `users` → `invoices.issued_by` (1:N, optional): Một user có thể phát hành nhiều invoice.
 - `invoices` → `invoice_lines` (1:N): Một hóa đơn có nhiều dòng chi tiết.
-- `invoices` → `payments` (1:N): Một hóa đơn có thể thanh toán nhiều lần (partial payment).
+- `invoices` → `payments` (1:N): Một hóa đơn có thể có nhiều lần thanh toán.
 - `branches` → `cashbook_entries` (1:N): Một branch có nhiều giao dịch sổ quỹ.
-- `users` → `contracts` (1:N): Một staff có thể có nhiều hợp đồng (theo thời gian) (CHANGED: từ profiles → users, role=STAFF/TEACHER).
+- `users` → `contracts` (1:N): Một staff/teacher có thể có nhiều hợp đồng theo thời gian.
 - `branches` → `contracts` (1:N): Một branch có nhiều hợp đồng lao động.
 - `contracts` → `shift_attendance` (1:N): Một hợp đồng có nhiều ca làm việc.
-- `contracts` → `monthly_work_hours` (1:N): Một hợp đồng có nhiều bản ghi giờ làm theo tháng (NEW).
-- `users` → `monthly_work_hours` (1:N): Một staff có nhiều bản ghi giờ làm theo tháng (NEW).
-- `branches` → `monthly_work_hours` (1:N): Một branch có nhiều bản ghi giờ làm (NEW).
-- `sessions` → `session_roles` (1:N): Một buổi học có nhiều vai trò (đã giải thích ở trên).
-- `session_roles` → `payroll_lines` (1:N): Một session_role có thể tạo nhiều dòng lương (nếu tính theo nhiều kỳ).
-- `contracts` → `payroll_lines` (1:N): Một hợp đồng có thể tạo nhiều dòng lương (BASE salary).
+- `contracts` → `monthly_work_hours` (1:N): Một hợp đồng có nhiều bản ghi giờ làm theo tháng.
+- `users` → `monthly_work_hours.staff_user_id` (1:N): Một staff có nhiều bản ghi giờ làm tháng.
+- `branches` → `monthly_work_hours` (1:N): Một branch có nhiều bản ghi giờ làm tháng.
+- `sessions` → `session_roles` (1:N): Một buổi học có nhiều vai trò tính lương.
+- `session_roles` → `payroll_lines` (1:N): Một session role có thể sinh nhiều payroll line theo nhiều kỳ.
+- `contracts` → `payroll_lines` (1:N): Một hợp đồng có thể sinh nhiều payroll line.
 - `branches` → `payroll_runs` (1:N): Một branch có nhiều kỳ lương.
 - `payroll_runs` → `payroll_lines` (1:N): Một kỳ lương có nhiều dòng chi tiết.
-- `users` → `payroll_lines` (1:N): Một staff có nhiều dòng lương (CHANGED: từ profiles → users, role=STAFF/TEACHER).
-- `payroll_runs` → `payroll_payments` (1:N): Một kỳ lương có thể thanh toán nhiều lần.
+- `users` → `payroll_lines` (1:N): Một staff/teacher có nhiều dòng lương.
+- `payroll_runs` → `payroll_payments` (1:N): Một kỳ lương có thể có nhiều lần thanh toán.
 - `cashbook_entries` → `payroll_payments` (1:1): Mỗi thanh toán lương ghi một dòng sổ quỹ.
 
 ### 10. Quan hệ Notification/Ticket
-- `users` → `notifications` (1:N): Một user nhận nhiều thông báo (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
-- `profiles` → `notifications` (1:N): Một profile nhận nhiều thông báo (optional, cho PARENT/STUDENT).
-- `notification_templates` → `notifications` (1:N): Một template có thể dùng cho nhiều thông báo.
-- `users` → `tickets` (1:N): Một user có thể mở nhiều ticket (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
-- `profiles` → `tickets` (1:N): Một profile có thể mở nhiều ticket (optional, cho PARENT/STUDENT).
+- `users` → `notifications` (1:N): Một user có thể nhận nhiều thông báo.
+- `profiles` → `notifications` (1:N, optional): Parent/student có thể nhận notification ở cấp profile.
+- `notification_templates`: Là bảng template độc lập; hiện `notifications` chưa có FK trực tiếp tới `notification_templates` trong model.
+- `email_templates`: Là bảng template email độc lập; hiện không có FK trực tiếp từ bảng nghiệp vụ khác.
+- `users` → `tickets.opened_by_user_id` (1:N): Một user có thể mở nhiều ticket.
+- `profiles` → `tickets.opened_by_profile_id` (1:N, optional): Parent/student có thể mở ticket dưới profile.
 - `branches` → `tickets` (1:N): Một branch có nhiều ticket.
-- `classes` → `tickets` (1:N): Một lớp có thể có nhiều ticket.
+- `classes` → `tickets` (1:N, optional): Ticket có thể gắn lớp.
+- `users` → `tickets.assigned_to_user_id` (1:N, optional): Một user có thể được assign nhiều ticket.
 - `tickets` → `ticket_comments` (1:N): Một ticket có nhiều comment.
+- `users` → `ticket_comments.commenter_user_id` (1:N): Một user có thể comment nhiều ticket.
+- `profiles` → `ticket_comments.commenter_profile_id` (1:N, optional): Parent/student có thể comment bằng profile.
 
 ### 11. Quan hệ Audit
-- `users` → `audit_logs` (1:N): Một user thực hiện nhiều thao tác được audit (CHANGED: từ profiles → users, có thể là bất kỳ role nào).
-- `profiles` → `audit_logs` (1:N): Một profile thực hiện nhiều thao tác được audit (optional, cho PARENT/STUDENT).
+- `users` → `audit_logs.actor_user_id` (1:N, optional): Một user có thể phát sinh nhiều audit log.
+- `profiles` → `audit_logs.actor_profile_id` (1:N, optional): Một profile có thể phát sinh nhiều audit log.
 
 ## 17. Gợi ý thực thi & mapping use-case
 - Multi-branch: mọi bảng nghiệp vụ có `branch_id`; truy vấn luôn kèm filter branch dựa trên `users.branch_id` (trừ admin).

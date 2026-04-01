@@ -19,6 +19,7 @@ public sealed class UpdateRegistrationCommandHandler(
 
         var registration = await context.Registrations
             .Include(r => r.TuitionPlan)
+            .Include(r => r.SecondaryProgram)
             .FirstOrDefaultAsync(r => r.Id == command.Id, cancellationToken);
 
         if (registration == null)
@@ -34,7 +35,6 @@ public sealed class UpdateRegistrationCommandHandler(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "update"));
         }
 
-        // Update fields
         if (command.ExpectedStartDate.HasValue)
         {
             registration.ExpectedStartDate = command.ExpectedStartDate;
@@ -50,8 +50,88 @@ public sealed class UpdateRegistrationCommandHandler(
             registration.Note = command.Note;
         }
 
-        // TuitionPlan can only be changed if student is not yet in a class
-        if (command.TuitionPlanId.HasValue && registration.ClassId == null)
+        if (command.RemoveSecondaryProgram)
+        {
+            if (registration.SecondaryClassId.HasValue)
+            {
+                return Result.Failure<UpdateRegistrationResponse>(
+                    Error.Validation("Registration.SecondaryClassAssigned", "Cannot remove the secondary program while a secondary class is assigned"));
+            }
+
+            registration.SecondaryProgramId = null;
+            registration.SecondaryProgramSkillFocus = null;
+            registration.SecondaryClassAssignedDate = null;
+            registration.SecondaryEntryType = null;
+            registration.SecondaryProgram = null;
+        }
+
+        if (command.SecondaryProgramId == registration.ProgramId)
+        {
+            return Result.Failure<UpdateRegistrationResponse>(
+                Error.Validation("Registration.SecondaryProgramDuplicated", "Secondary program must be different from primary program"));
+        }
+
+        if (command.SecondaryProgramId.HasValue)
+        {
+            var secondaryProgram = await context.Programs
+                .FirstOrDefaultAsync(
+                    p => p.Id == command.SecondaryProgramId.Value && p.IsActive && !p.IsDeleted,
+                    cancellationToken);
+
+            if (secondaryProgram is null)
+            {
+                return Result.Failure<UpdateRegistrationResponse>(
+                    RegistrationErrors.ProgramNotFound(command.SecondaryProgramId.Value));
+            }
+
+            if (registration.SecondaryClassId.HasValue &&
+                registration.SecondaryProgramId != command.SecondaryProgramId.Value)
+            {
+                return Result.Failure<UpdateRegistrationResponse>(
+                    Error.Validation("Registration.SecondaryClassAssigned", "Cannot change the secondary program while a secondary class is assigned"));
+            }
+
+            var hasConflict = await context.Registrations.AnyAsync(
+                r => r.Id != registration.Id &&
+                     r.StudentProfileId == registration.StudentProfileId &&
+                     r.Status != RegistrationStatus.Completed &&
+                     r.Status != RegistrationStatus.Cancelled &&
+                     (r.ProgramId == command.SecondaryProgramId.Value ||
+                      r.SecondaryProgramId == command.SecondaryProgramId.Value),
+                cancellationToken);
+
+            if (hasConflict)
+            {
+                return Result.Failure<UpdateRegistrationResponse>(
+                    RegistrationErrors.AlreadyExists(registration.StudentProfileId, command.SecondaryProgramId.Value));
+            }
+
+            registration.SecondaryProgramId = secondaryProgram.Id;
+            registration.SecondaryProgram = secondaryProgram;
+            registration.SecondaryEntryType = null;
+            registration.SecondaryClassAssignedDate = null;
+        }
+
+        if (command.SecondaryProgramSkillFocus is not null)
+        {
+            registration.SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
+                ? null
+                : command.SecondaryProgramSkillFocus.Trim();
+        }
+
+        if (command.SecondaryProgramId is null && command.SecondaryProgramSkillFocus is not null && registration.SecondaryProgramId is null)
+        {
+            return Result.Failure<UpdateRegistrationResponse>(
+                Error.Validation("Registration.SecondaryProgramMissing", "Secondary program skill focus can only be set when a secondary program exists"));
+        }
+
+        if (command.TuitionPlanId.HasValue && (registration.ClassId != null || registration.SecondaryClassId != null))
+        {
+            return Result.Failure<UpdateRegistrationResponse>(
+                Error.Validation("Registration.ClassAlreadyAssigned", "Tuition plan cannot be changed after any class has been assigned"));
+        }
+
+        if (command.TuitionPlanId.HasValue)
         {
             var tuitionPlan = await context.TuitionPlans.FindAsync(
                 new object[] { command.TuitionPlanId.Value }, 
@@ -71,6 +151,7 @@ public sealed class UpdateRegistrationCommandHandler(
             }
 
             registration.TuitionPlanId = command.TuitionPlanId.Value;
+            registration.TuitionPlan = tuitionPlan;
             registration.TotalSessions = tuitionPlan.TotalSessions;
             registration.RemainingSessions = tuitionPlan.TotalSessions - registration.UsedSessions;
         }
@@ -87,6 +168,9 @@ public sealed class UpdateRegistrationCommandHandler(
             Note = registration.Note,
             TuitionPlanId = registration.TuitionPlanId,
             TuitionPlanName = registration.TuitionPlan?.Name,
+            SecondaryProgramId = registration.SecondaryProgramId,
+            SecondaryProgramName = registration.SecondaryProgram?.Name,
+            SecondaryProgramSkillFocus = registration.SecondaryProgramSkillFocus,
             UpdatedAt = now
         };
     }

@@ -8,6 +8,8 @@ public sealed class CreateRegistrationRequest
     public Guid BranchId { get; set; }
     public Guid ProgramId { get; set; }
     public Guid TuitionPlanId { get; set; }
+    public Guid? SecondaryProgramId { get; set; }
+    public string? SecondaryProgramSkillFocus { get; set; }
     public DateTime? ExpectedStartDate { get; set; }
     public string? PreferredSchedule { get; set; }
     public string? Note { get; set; }
