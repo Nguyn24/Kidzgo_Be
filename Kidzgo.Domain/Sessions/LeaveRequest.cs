@@ -9,6 +9,7 @@ public class LeaveRequest : Entity
     public Guid Id { get; set; }
     public Guid StudentProfileId { get; set; }
     public Guid ClassId { get; set; }
+    public Guid? SessionId { get; set; }
     public DateOnly SessionDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public string? Reason { get; set; }
@@ -22,5 +23,6 @@ public class LeaveRequest : Entity
     // Navigation properties
     public Profile StudentProfile { get; set; } = null!;
     public Class Class { get; set; } = null!;
+    public Session? Session { get; set; }
     public User? ApprovedByUser { get; set; }
 }

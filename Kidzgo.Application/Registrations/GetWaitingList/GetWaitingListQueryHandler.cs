@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Microsoft.EntityFrameworkCore;
@@ -14,48 +15,99 @@ public sealed class GetWaitingListQueryHandler(
         GetWaitingListQuery query,
         CancellationToken cancellationToken)
     {
-        var baseQuery = context.Registrations
+        var track = string.IsNullOrWhiteSpace(query.Track)
+            ? null
+            : RegistrationTrackHelper.NormalizeTrack(query.Track);
+
+        var registrations = await context.Registrations
             .Include(r => r.StudentProfile)
             .Include(r => r.Branch)
             .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .Include(r => r.TuitionPlan)
-            .Where(r => r.Status == RegistrationStatus.New || r.Status == RegistrationStatus.WaitingForClass)
-            .AsQueryable();
+            .ToListAsync(cancellationToken);
 
         if (query.BranchId.HasValue)
         {
-            baseQuery = baseQuery.Where(r => r.BranchId == query.BranchId.Value);
+            registrations = registrations
+                .Where(r => r.BranchId == query.BranchId.Value)
+                .ToList();
         }
-
-        if (query.ProgramId.HasValue)
-        {
-            baseQuery = baseQuery.Where(r => r.ProgramId == query.ProgramId.Value);
-        }
-
-        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         var now = DateTime.UtcNow;
-        var items = await baseQuery
-            .OrderBy(r => r.ExpectedStartDate ?? r.RegistrationDate)
+        var items = new List<WaitingListItemDto>();
+
+        foreach (var registration in registrations)
+        {
+            if (registration.Status == RegistrationStatus.Completed || registration.Status == RegistrationStatus.Cancelled)
+            {
+                continue;
+            }
+
+            if ((track is null || track == RegistrationTrackHelper.PrimaryTrack) &&
+                registration.ClassId is null &&
+                (!query.ProgramId.HasValue || registration.ProgramId == query.ProgramId.Value))
+            {
+                items.Add(new WaitingListItemDto
+                {
+                    Id = registration.Id,
+                    StudentProfileId = registration.StudentProfileId,
+                    StudentName = registration.StudentProfile.Name ?? string.Empty,
+                    BranchId = registration.BranchId,
+                    BranchName = registration.Branch.Name,
+                    Track = RegistrationTrackHelper.PrimaryTrack,
+                    ProgramId = registration.ProgramId,
+                    ProgramName = registration.Program.Name,
+                    IsSupplementaryProgram = registration.Program.IsSupplementary,
+                    ProgramSkillFocus = null,
+                    TuitionPlanId = registration.TuitionPlanId,
+                    TuitionPlanName = registration.TuitionPlan.Name,
+                    RegistrationDate = registration.RegistrationDate,
+                    ExpectedStartDate = registration.ExpectedStartDate,
+                    PreferredSchedule = registration.PreferredSchedule,
+                    RegistrationStatus = registration.Status.ToString(),
+                    DaysWaiting = (int)(now - registration.RegistrationDate).TotalDays
+                });
+            }
+
+            if ((track is null || track == RegistrationTrackHelper.SecondaryTrack) &&
+                registration.SecondaryProgramId.HasValue &&
+                registration.SecondaryClassId is null &&
+                registration.SecondaryProgram is not null &&
+                (!query.ProgramId.HasValue || registration.SecondaryProgramId == query.ProgramId.Value))
+            {
+                items.Add(new WaitingListItemDto
+                {
+                    Id = registration.Id,
+                    StudentProfileId = registration.StudentProfileId,
+                    StudentName = registration.StudentProfile.Name ?? string.Empty,
+                    BranchId = registration.BranchId,
+                    BranchName = registration.Branch.Name,
+                    Track = RegistrationTrackHelper.SecondaryTrack,
+                    ProgramId = registration.SecondaryProgramId.Value,
+                    ProgramName = registration.SecondaryProgram.Name,
+                    IsSupplementaryProgram = registration.SecondaryProgram.IsSupplementary,
+                    ProgramSkillFocus = registration.SecondaryProgramSkillFocus,
+                    TuitionPlanId = registration.TuitionPlanId,
+                    TuitionPlanName = registration.TuitionPlan.Name,
+                    RegistrationDate = registration.RegistrationDate,
+                    ExpectedStartDate = registration.ExpectedStartDate,
+                    PreferredSchedule = registration.PreferredSchedule,
+                    RegistrationStatus = registration.Status.ToString(),
+                    DaysWaiting = (int)(now - registration.RegistrationDate).TotalDays
+                });
+            }
+        }
+
+        items = items
+            .OrderBy(i => i.ExpectedStartDate ?? i.RegistrationDate)
+            .ToList();
+
+        var totalCount = items.Count;
+        items = items
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(r => new WaitingListItemDto
-            {
-                Id = r.Id,
-                StudentProfileId = r.StudentProfileId,
-                StudentName = r.StudentProfile.Name != null ? r.StudentProfile.Name : string.Empty,
-                BranchId = r.BranchId,
-                BranchName = r.Branch.Name,
-                ProgramId = r.ProgramId,
-                ProgramName = r.Program.Name,
-                TuitionPlanId = r.TuitionPlanId,
-                TuitionPlanName = r.TuitionPlan.Name,
-                RegistrationDate = r.RegistrationDate,
-                ExpectedStartDate = r.ExpectedStartDate,
-                PreferredSchedule = r.PreferredSchedule,
-                DaysWaiting = (int)(now - r.RegistrationDate).TotalDays
-            })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new GetWaitingListResponse
         {

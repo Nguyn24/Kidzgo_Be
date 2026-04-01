@@ -29,7 +29,10 @@ public sealed class TimetableItemDto
     public string? PlannedAssistantName { get; init; }
     public Guid? LessonPlanId { get; init; }
     public string? LessonPlanLink { get; init; }
-    
+    public Guid? RegistrationId { get; init; }
+    public string? Track { get; init; }
+    public bool IsMakeup { get; init; }
+
     // Attendance information
     public string? AttendanceStatus { get; init; }
     public string? AbsenceType { get; init; }

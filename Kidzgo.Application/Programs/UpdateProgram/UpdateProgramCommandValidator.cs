@@ -19,5 +19,9 @@ public sealed class UpdateProgramCommandValidator : AbstractValidator<UpdateProg
         RuleFor(command => command.Code)
             .NotEmpty().WithMessage("Program code is required")
             .MaximumLength(10).WithMessage("Program code must not exceed 10 characters");
+
+        RuleFor(command => command)
+            .Must(command => !command.IsMakeup || !command.IsSupplementary)
+            .WithMessage("A program cannot be both makeup and supplementary.");
     }
 }

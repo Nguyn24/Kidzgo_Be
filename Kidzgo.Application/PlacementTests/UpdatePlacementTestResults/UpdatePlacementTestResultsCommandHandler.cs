@@ -47,6 +47,37 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                 ? null : command.ProgramRecommendation.Trim();
         }
 
+        if (command.SecondaryProgramRecommendation is not null)
+        {
+            if (string.IsNullOrWhiteSpace(command.SecondaryProgramRecommendation))
+            {
+                placementTest.SecondaryProgramRecommendation = null;
+                placementTest.IsSecondaryProgramSupplementary = false;
+                placementTest.SecondaryProgramSkillFocus = null;
+            }
+            else
+            {
+                placementTest.SecondaryProgramRecommendation = command.SecondaryProgramRecommendation.Trim();
+                placementTest.IsSecondaryProgramSupplementary = command.IsSecondaryProgramSupplementary ?? false;
+                placementTest.SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
+                    ? null
+                    : command.SecondaryProgramSkillFocus.Trim();
+            }
+        }
+        else if (command.SecondaryProgramSkillFocus is not null &&
+                 placementTest.SecondaryProgramRecommendation is not null)
+        {
+            placementTest.SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
+                ? null
+                : command.SecondaryProgramSkillFocus.Trim();
+        }
+
+        if (command.IsSecondaryProgramSupplementary.HasValue &&
+            placementTest.SecondaryProgramRecommendation is not null)
+        {
+            placementTest.IsSecondaryProgramSupplementary = command.IsSecondaryProgramSupplementary.Value;
+        }
+
         if (command.AttachmentUrl is not null)
         {
             placementTest.AttachmentUrl = string.IsNullOrWhiteSpace(command.AttachmentUrl)
@@ -124,6 +155,9 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
             WritingScore = placementTest.WritingScore,
             ResultScore = placementTest.ResultScore,
             ProgramRecommendation = placementTest.ProgramRecommendation,
+            SecondaryProgramRecommendation = placementTest.SecondaryProgramRecommendation,
+            IsSecondaryProgramSupplementary = placementTest.IsSecondaryProgramSupplementary,
+            SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
             AttachmentUrl = placementTest.AttachmentUrl,
             Status = placementTest.Status.ToString(),
             UpdatedAt = placementTest.UpdatedAt,

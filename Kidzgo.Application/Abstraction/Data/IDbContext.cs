@@ -122,6 +122,7 @@ public interface IDbContext
     DbSet<MakeupAllocation> MakeupAllocations { get; }
     DbSet<MakeupCredit> MakeupCredits { get; }
     DbSet<Session> Sessions { get; }
+    DbSet<StudentSessionAssignment> StudentSessionAssignments { get; }
 
     // Tickets
     DbSet<Ticket> Tickets { get; }

@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Enrollments.PauseEnrollment;
 
 public sealed class PauseEnrollmentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<PauseEnrollmentCommand, PauseEnrollmentResponse>
 {
     public async Task<Result<PauseEnrollmentResponse>> Handle(PauseEnrollmentCommand command, CancellationToken cancellationToken)
@@ -31,8 +33,13 @@ public sealed class PauseEnrollmentCommandHandler(
                 EnrollmentErrors.InvalidStatus);
         }
 
+        var now = DateTime.UtcNow;
         enrollment.Status = EnrollmentStatus.Paused;
-        enrollment.UpdatedAt = DateTime.UtcNow;
+        enrollment.UpdatedAt = now;
+        await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+            enrollment.Id,
+            now,
+            cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new PauseEnrollmentResponse

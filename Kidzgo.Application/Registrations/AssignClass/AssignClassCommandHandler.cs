@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -9,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.AssignClass.Handler;
 
 public sealed class AssignClassCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<AssignClassCommand, AssignClassResponse>
 {
     public async Task<Result<AssignClassResponse>> Handle(
@@ -17,10 +20,13 @@ public sealed class AssignClassCommandHandler(
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
+        var track = RegistrationTrackHelper.NormalizeTrack(command.Track);
+        var isSecondaryTrack = track == RegistrationTrackHelper.SecondaryTrack;
+        var entryType = RegistrationTrackHelper.ParseEntryType(command.EntryType);
 
-        // 1. Get registration
         var registration = await context.Registrations
             .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .FirstOrDefaultAsync(r => r.Id == command.RegistrationId, cancellationToken);
 
         if (registration == null)
@@ -36,28 +42,40 @@ public sealed class AssignClassCommandHandler(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "assign-class"));
         }
 
-        // 3. If registration already has EntryType = Immediate (already enrolled in class),
-        // cannot change back to Wait
-        var newEntryType = command.EntryType?.ToLowerInvariant() switch
+        if (isSecondaryTrack && !registration.SecondaryProgramId.HasValue)
         {
-            "makeup" => EntryType.Makeup,
-            "wait" => EntryType.Wait,
-            _ => EntryType.Immediate
-        };
+            return Result.Failure<AssignClassResponse>(
+                Error.Validation("Registration.SecondaryProgramMissing", "Registration does not have a secondary program to assign"));
+        }
 
-        if (registration.EntryType != null &&
-            registration.EntryType != EntryType.Wait &&
-            newEntryType == EntryType.Wait)
+        var currentEntryType = isSecondaryTrack ? registration.SecondaryEntryType : registration.EntryType;
+        var currentClassId = isSecondaryTrack ? registration.SecondaryClassId : registration.ClassId;
+        var targetProgramId = isSecondaryTrack ? registration.SecondaryProgramId!.Value : registration.ProgramId;
+
+        if (currentEntryType != null &&
+            currentEntryType != EntryType.Wait &&
+            entryType == EntryType.Wait)
         {
             return Result.Failure<AssignClassResponse>(
                 RegistrationErrors.InvalidStatus(
-                    $"Cannot change from EntryType '{registration.EntryType}' back to 'Wait'. Student is already enrolled in a class.",
+                    $"Cannot change track '{track}' back to 'Wait' after enrollment has been created.",
                     "assign-class"));
         }
 
-        // 4. Get class (only if not wait type - wait means no class yet)
-        var isWait = command.EntryType?.ToLowerInvariant() == "wait";
+        if (currentClassId.HasValue && entryType != EntryType.Wait)
+        {
+            return Result.Failure<AssignClassResponse>(
+                Error.Validation("Registration.ClassAlreadyAssigned", $"Track '{track}' already has a class assigned. Use transfer-class instead."));
+        }
+
+        var isWait = entryType == EntryType.Wait;
         var classId = command.ClassId;
+
+        if (!isWait && !classId.HasValue)
+        {
+            return Result.Failure<AssignClassResponse>(
+                Error.Validation("Registration.ClassIdRequired", "ClassId is required when assigning a class"));
+        }
         
         var classEntity = !isWait && classId.HasValue
             ? await context.Classes
@@ -71,11 +89,20 @@ public sealed class AssignClassCommandHandler(
             return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassNotFound(classId ?? Guid.Empty));
         }
 
-        // 5. Validate class matches program (for non-wait types)
-        if (classEntity != null && classEntity.ProgramId != registration.ProgramId)
+        if (classEntity != null && classEntity.ProgramId != targetProgramId)
         {
             return Result.Failure<AssignClassResponse>(
-                RegistrationErrors.ClassNotMatchingProgram(classEntity.Id, registration.ProgramId));
+                RegistrationErrors.ClassNotMatchingProgram(classEntity.Id, targetProgramId));
+        }
+
+        if (classEntity != null)
+        {
+            var selectionPatternValidation = studentSessionAssignmentService
+                .ValidateSelectionPattern(classEntity, command.SessionSelectionPattern);
+            if (selectionPatternValidation.IsFailure)
+            {
+                return Result.Failure<AssignClassResponse>(selectionPatternValidation.Error);
+            }
         }
 
         // 6. Check class status - can only assign to active/recruiting classes (for non-wait types)
@@ -110,11 +137,10 @@ public sealed class AssignClassCommandHandler(
         }
 
         // 9. Handle entry type logic
-        string warningMessage = null;
-        var entryType = newEntryType;
+        string? warningMessage = null;
 
         // Determine new status based on entry type
-        var newStatus = entryType switch
+        _ = entryType switch
         {
             EntryType.Immediate => RegistrationStatus.Studying,      // Vào học ngay
             EntryType.Makeup => RegistrationStatus.ClassAssigned,     // Đã xếp lớp nhưng cần học bổ trước
@@ -123,7 +149,7 @@ public sealed class AssignClassCommandHandler(
         };
 
         // For immediate and makeup, create enrollment
-        if (entryType == EntryType.Immediate || entryType == EntryType.Makeup)
+        if (entryType == EntryType.Immediate || entryType == EntryType.Makeup || entryType == EntryType.Retake)
         {
             var enrollment = new ClassEnrollment
             {
@@ -133,14 +159,18 @@ public sealed class AssignClassCommandHandler(
                 EnrollDate = DateOnly.FromDateTime(now),
                 Status = EnrollmentStatus.Active,
                 TuitionPlanId = registration.TuitionPlanId,
+                RegistrationId = registration.Id,
+                Track = RegistrationTrackHelper.ToTrackType(track),
+                SessionSelectionPattern = command.SessionSelectionPattern,
                 CreatedAt = now,
                 UpdatedAt = now
             };
 
             context.ClassEnrollments.Add(enrollment);
+            await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
 
             // Add warning for mid-course entry
-            if (classEntity?.Status == ClassStatus.Active)
+            if (classEntity!.Status == ClassStatus.Active)
             {
                 warningMessage = entryType == EntryType.Makeup
                     ? "Học viên sẽ tham gia lớp sau khi hoàn thành buổi học bù."
@@ -165,11 +195,25 @@ public sealed class AssignClassCommandHandler(
         }
 
         // 10. Update registration
-        registration.ClassId = entryType == EntryType.Wait ? null : classEntity?.Id;
-        registration.ClassAssignedDate = entryType == EntryType.Wait ? null : now;
-        registration.EntryType = entryType;
-        registration.Status = newStatus;
-        registration.ActualStartDate = entryType == EntryType.Immediate ? now : null;
+        if (isSecondaryTrack)
+        {
+            registration.SecondaryClassId = entryType == EntryType.Wait ? null : classEntity?.Id;
+            registration.SecondaryClassAssignedDate = entryType == EntryType.Wait ? null : now;
+            registration.SecondaryEntryType = entryType;
+        }
+        else
+        {
+            registration.ClassId = entryType == EntryType.Wait ? null : classEntity?.Id;
+            registration.ClassAssignedDate = entryType == EntryType.Wait ? null : now;
+            registration.EntryType = entryType;
+        }
+
+        registration.Status = RegistrationTrackHelper.ResolveStatus(registration);
+        if (entryType == EntryType.Immediate && !registration.ActualStartDate.HasValue)
+        {
+            registration.ActualStartDate = now;
+        }
+
         registration.UpdatedAt = now;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -179,10 +223,13 @@ public sealed class AssignClassCommandHandler(
             RegistrationId = registration.Id,
             RegistrationStatus = registration.Status.ToString(),
             ClassId = classEntity?.Id ?? Guid.Empty,
-            ClassCode = classEntity?.Code,
-            ClassTitle = classEntity?.Title,
+            ClassCode = classEntity?.Code ?? string.Empty,
+            ClassTitle = classEntity?.Title ?? string.Empty,
+            Track = track,
             EntryType = entryType.ToString(),
-            ClassAssignedDate = registration.ClassAssignedDate ?? now,
+            ClassAssignedDate = isSecondaryTrack
+                ? registration.SecondaryClassAssignedDate ?? now
+                : registration.ClassAssignedDate ?? now,
             WarningMessage = warningMessage
         };
     }

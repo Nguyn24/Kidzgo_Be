@@ -1,14 +1,17 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
-using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Attendance.GetSessionAttendance;
 
-public sealed class GetSessionAttendanceQueryHandler(IDbContext context)
+public sealed class GetSessionAttendanceQueryHandler(
+    IDbContext context,
+    SessionParticipantService sessionParticipantService)
     : IQueryHandler<GetSessionAttendanceQuery, GetSessionAttendanceListResponse>
 {
     public async Task<Result<GetSessionAttendanceListResponse>> Handle(GetSessionAttendanceQuery request, CancellationToken cancellationToken)
@@ -24,38 +27,58 @@ public sealed class GetSessionAttendanceQueryHandler(IDbContext context)
             return Result.Failure<GetSessionAttendanceListResponse>(SessionErrors.NotFound(request.SessionId));
         }
 
-        // Get enrollments and attendance data
-        var enrollmentsQuery = context.ClassEnrollments
-            .AsNoTracking()
-            .Include(ce => ce.StudentProfile)
-            .Where(ce => ce.ClassId == session.ClassId && ce.Status == EnrollmentStatus.Active);
+        var participants = await sessionParticipantService
+            .GetParticipantsAsync(request.SessionId, cancellationToken);
 
-        var attendancesQuery = context.Attendances
-            .AsNoTracking()
-            .Where(a => a.SessionId == request.SessionId);
+        var studentIds = participants
+            .Select(p => p.StudentProfileId)
+            .Distinct()
+            .ToList();
 
-        var data = await enrollmentsQuery
-            .GroupJoin(
-                attendancesQuery,
-                ce => ce.StudentProfileId,
-                a => a.StudentProfileId,
-                (ce, attendances) => new { Enrollment = ce, Attendance = attendances.FirstOrDefault() })
-            .Select(x => new GetSessionAttendanceResponse
+        var students = await context.Profiles
+            .AsNoTracking()
+            .Where(p => studentIds.Contains(p.Id))
+            .Select(p => new
             {
-                Id = x.Attendance != null ? x.Attendance.Id : Guid.Empty,
-                StudentProfileId = x.Enrollment.StudentProfileId,
-                StudentName = x.Enrollment.StudentProfile.DisplayName,
-                AttendanceStatus = x.Attendance != null ? x.Attendance.AttendanceStatus.ToString() : "NotMarked",
-                AbsenceType = x.Attendance != null && x.Attendance.AbsenceType.HasValue
-                    ? x.Attendance.AbsenceType.Value.ToString()
-                    : null,
-                HasMakeupCredit = context.MakeupCredits.Any(c =>
-                    c.StudentProfileId == x.Enrollment.StudentProfileId &&
-                    c.Status == MakeupCreditStatus.Available),
-                Note = x.Attendance != null ? x.Attendance.Note : null,
-                MarkedAt = x.Attendance != null ? x.Attendance.MarkedAt : null
+                p.Id,
+                p.DisplayName
             })
-            .ToListAsync(cancellationToken);
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+        var attendances = await context.Attendances
+            .AsNoTracking()
+            .Where(a => a.SessionId == request.SessionId && studentIds.Contains(a.StudentProfileId))
+            .ToDictionaryAsync(a => a.StudentProfileId, cancellationToken);
+
+        var studentsWithCredit = await context.MakeupCredits
+            .AsNoTracking()
+            .Where(c => studentIds.Contains(c.StudentProfileId) && c.Status == MakeupCreditStatus.Available)
+            .Select(c => c.StudentProfileId)
+            .Distinct()
+            .ToHashSetAsync(cancellationToken);
+
+        var data = participants
+            .Where(p => students.ContainsKey(p.StudentProfileId))
+            .Select(p =>
+            {
+                attendances.TryGetValue(p.StudentProfileId, out var attendance);
+                return new GetSessionAttendanceResponse
+                {
+                    Id = attendance?.Id ?? Guid.Empty,
+                    StudentProfileId = p.StudentProfileId,
+                    StudentName = students[p.StudentProfileId].DisplayName,
+                    RegistrationId = p.RegistrationId,
+                    Track = p.Track.HasValue ? RegistrationTrackHelper.ToTrackName(p.Track.Value) : null,
+                    IsMakeup = p.IsMakeup,
+                    AttendanceStatus = attendance?.AttendanceStatus.ToString() ?? "NotMarked",
+                    AbsenceType = attendance?.AbsenceType?.ToString(),
+                    HasMakeupCredit = studentsWithCredit.Contains(p.StudentProfileId),
+                    Note = attendance?.Note,
+                    MarkedAt = attendance?.MarkedAt
+                };
+            })
+            .OrderBy(x => x.StudentName)
+            .ToList();
 
         // Calculate summary
         var summary = new AttendanceSummary

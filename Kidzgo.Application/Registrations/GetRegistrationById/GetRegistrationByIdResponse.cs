@@ -11,6 +11,9 @@ public sealed class GetRegistrationByIdResponse
     public string BranchName { get; init; } = null!;
     public Guid ProgramId { get; init; }
     public string ProgramName { get; init; } = null!;
+    public Guid? SecondaryProgramId { get; init; }
+    public string? SecondaryProgramName { get; init; }
+    public string? SecondaryProgramSkillFocus { get; init; }
     public Guid TuitionPlanId { get; init; }
     public string TuitionPlanName { get; init; } = null!;
     public DateTime RegistrationDate { get; init; }
@@ -22,6 +25,9 @@ public sealed class GetRegistrationByIdResponse
     public Guid? ClassId { get; init; }
     public string? ClassName { get; init; }
     public string? EntryType { get; init; }
+    public Guid? SecondaryClassId { get; init; }
+    public string? SecondaryClassName { get; init; }
+    public string? SecondaryEntryType { get; init; }
     public int TotalSessions { get; init; }
     public int UsedSessions { get; init; }
     public int RemainingSessions { get; init; }

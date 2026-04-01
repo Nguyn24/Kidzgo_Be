@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -9,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.TransferClass.Handler;
 
 public sealed class TransferClassCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<TransferClassCommand, TransferClassResponse>
 {
     public async Task<Result<TransferClassResponse>> Handle(
@@ -17,10 +20,12 @@ public sealed class TransferClassCommandHandler(
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
+        var track = RegistrationTrackHelper.NormalizeTrack(command.Track);
+        var isSecondaryTrack = track == RegistrationTrackHelper.SecondaryTrack;
 
-        // 1. Get registration with class info
         var registration = await context.Registrations
             .Include(r => r.Class)
+            .Include(r => r.SecondaryClass)
             .FirstOrDefaultAsync(r => r.Id == command.RegistrationId, cancellationToken);
 
         if (registration == null)
@@ -28,21 +33,29 @@ public sealed class TransferClassCommandHandler(
             return Result.Failure<TransferClassResponse>(RegistrationErrors.NotFound(command.RegistrationId));
         }
 
-        // 2. Validate registration is studying
-        if (registration.Status != RegistrationStatus.Studying)
+        if (registration.Status == RegistrationStatus.Completed ||
+            registration.Status == RegistrationStatus.Cancelled)
         {
             return Result.Failure<TransferClassResponse>(
                 RegistrationErrors.InvalidStatus(registration.Status.ToString(), "transfer-class"));
         }
 
-        // 3. Get old class info
-        if (registration.ClassId == null)
+        var currentClassId = isSecondaryTrack ? registration.SecondaryClassId : registration.ClassId;
+        var targetProgramId = isSecondaryTrack ? registration.SecondaryProgramId : registration.ProgramId;
+
+        if (isSecondaryTrack && !registration.SecondaryProgramId.HasValue)
         {
             return Result.Failure<TransferClassResponse>(
-                Error.Validation("NoClassAssigned", "Registration has no class assigned"));
+                Error.Validation("Registration.SecondaryProgramMissing", "Registration does not have a secondary program to transfer"));
         }
 
-        var oldClassId = registration.ClassId.Value;
+        if (currentClassId == null)
+        {
+            return Result.Failure<TransferClassResponse>(
+                Error.Validation("NoClassAssigned", $"Registration track '{track}' has no class assigned"));
+        }
+
+        var oldClassId = currentClassId.Value;
         var oldClass = await context.Classes.FindAsync(new object[] { oldClassId }, cancellationToken);
 
         // 4. Get new class
@@ -55,11 +68,17 @@ public sealed class TransferClassCommandHandler(
             return Result.Failure<TransferClassResponse>(RegistrationErrors.ClassNotFound(command.NewClassId));
         }
 
-        // 5. Validate new class matches program
-        if (newClass.ProgramId != registration.ProgramId)
+        if (newClass.ProgramId != targetProgramId)
         {
             return Result.Failure<TransferClassResponse>(
-                RegistrationErrors.ClassNotMatchingProgram(command.NewClassId, registration.ProgramId));
+                RegistrationErrors.ClassNotMatchingProgram(command.NewClassId, targetProgramId ?? Guid.Empty));
+        }
+
+        var selectionPatternValidation = studentSessionAssignmentService
+            .ValidateSelectionPattern(newClass, command.SessionSelectionPattern);
+        if (selectionPatternValidation.IsFailure)
+        {
+            return Result.Failure<TransferClassResponse>(selectionPatternValidation.Error);
         }
 
         // 6. Check new class capacity
@@ -85,6 +104,7 @@ public sealed class TransferClassCommandHandler(
         var oldEnrollment = await context.ClassEnrollments
             .FirstOrDefaultAsync(ce => ce.ClassId == oldClassId 
                 && ce.StudentProfileId == registration.StudentProfileId 
+                && (!ce.RegistrationId.HasValue || ce.RegistrationId == registration.Id)
                 && ce.Status == EnrollmentStatus.Active, 
                 cancellationToken);
 
@@ -92,6 +112,10 @@ public sealed class TransferClassCommandHandler(
         {
             oldEnrollment.Status = EnrollmentStatus.Dropped;
             oldEnrollment.UpdatedAt = now;
+            await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+                oldEnrollment.Id,
+                command.EffectiveDate,
+                cancellationToken);
         }
 
         // 10. Create new enrollment
@@ -103,16 +127,29 @@ public sealed class TransferClassCommandHandler(
             EnrollDate = DateOnly.FromDateTime(command.EffectiveDate),
             Status = EnrollmentStatus.Active,
             TuitionPlanId = registration.TuitionPlanId,
+            RegistrationId = registration.Id,
+            Track = RegistrationTrackHelper.ToTrackType(track),
+            SessionSelectionPattern = command.SessionSelectionPattern,
             CreatedAt = now,
             UpdatedAt = now
         };
 
         context.ClassEnrollments.Add(newEnrollment);
+        await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(newEnrollment, cancellationToken);
 
-        // 11. Update registration
-        registration.ClassId = command.NewClassId;
-        registration.ClassAssignedDate = now;
+        if (isSecondaryTrack)
+        {
+            registration.SecondaryClassId = command.NewClassId;
+            registration.SecondaryClassAssignedDate = now;
+        }
+        else
+        {
+            registration.ClassId = command.NewClassId;
+            registration.ClassAssignedDate = now;
+        }
+
         registration.OperationType = OperationType.Transfer;
+        registration.Status = RegistrationTrackHelper.ResolveStatus(registration);
         registration.UpdatedAt = now;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -124,6 +161,7 @@ public sealed class TransferClassCommandHandler(
             OldClassName = oldClass?.Title ?? "Unknown",
             NewClassId = newClass.Id,
             NewClassName = newClass.Title,
+            Track = track,
             EffectiveDate = command.EffectiveDate,
             Status = registration.Status.ToString()
         };

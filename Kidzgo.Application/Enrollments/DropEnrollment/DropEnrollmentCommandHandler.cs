@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Enrollments.DropEnrollment;
 
 public sealed class DropEnrollmentCommandHandler(
-    IDbContext context
+    IDbContext context,
+    StudentSessionAssignmentService studentSessionAssignmentService
 ) : ICommandHandler<DropEnrollmentCommand, DropEnrollmentResponse>
 {
     public async Task<Result<DropEnrollmentResponse>> Handle(DropEnrollmentCommand command, CancellationToken cancellationToken)
@@ -31,8 +33,13 @@ public sealed class DropEnrollmentCommandHandler(
                 EnrollmentErrors.AlreadyDropped);
         }
 
+        var now = DateTime.UtcNow;
         enrollment.Status = EnrollmentStatus.Dropped;
-        enrollment.UpdatedAt = DateTime.UtcNow;
+        enrollment.UpdatedAt = now;
+        await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+            enrollment.Id,
+            now,
+            cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new DropEnrollmentResponse

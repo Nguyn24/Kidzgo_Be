@@ -53,6 +53,9 @@ public sealed class GetPlacementTestByIdQueryHandler(
             WritingScore = placementTest.WritingScore,
             LevelRecommendation = placementTest.LevelRecommendation,
             ProgramRecommendation = placementTest.ProgramRecommendation,
+            SecondaryProgramRecommendation = placementTest.SecondaryProgramRecommendation,
+            IsSecondaryProgramSupplementary = placementTest.IsSecondaryProgramSupplementary,
+            SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
             Notes = placementTest.Notes,
             AttachmentUrl = placementTest.AttachmentUrl,
             IsAccountProfileCreated = placementTest.StudentProfileId.HasValue ||

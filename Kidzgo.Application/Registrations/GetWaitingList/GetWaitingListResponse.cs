@@ -9,13 +9,17 @@ public sealed class WaitingListItemDto
     public string StudentName { get; init; } = null!;
     public Guid BranchId { get; init; }
     public string BranchName { get; init; } = null!;
+    public string Track { get; init; } = null!;
     public Guid ProgramId { get; init; }
     public string ProgramName { get; init; } = null!;
+    public bool IsSupplementaryProgram { get; init; }
+    public string? ProgramSkillFocus { get; init; }
     public Guid TuitionPlanId { get; init; }
     public string TuitionPlanName { get; init; } = null!;
     public DateTime RegistrationDate { get; init; }
     public DateTime? ExpectedStartDate { get; init; }
     public string? PreferredSchedule { get; init; }
+    public string RegistrationStatus { get; init; } = null!;
     public int DaysWaiting { get; init; }
 }
 

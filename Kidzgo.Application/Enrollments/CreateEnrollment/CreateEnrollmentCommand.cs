@@ -8,5 +8,7 @@ public sealed class CreateEnrollmentCommand : ICommand<CreateEnrollmentResponse>
     public Guid StudentProfileId { get; init; }
     public DateOnly EnrollDate { get; init; }
     public Guid? TuitionPlanId { get; init; }
+    public string? Track { get; init; }
+    public string? SessionSelectionPattern { get; init; }
 }
 

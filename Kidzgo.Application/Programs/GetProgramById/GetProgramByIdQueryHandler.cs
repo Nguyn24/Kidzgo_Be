@@ -22,6 +22,7 @@ public sealed class GetProgramByIdQueryHandler(
                 BranchName = p.Branch.Name,
                 Name = p.Name,
                 IsMakeup = p.IsMakeup,
+                IsSupplementary = p.IsSupplementary,
                 DefaultMakeupClassId = p.DefaultMakeupClassId,
                 Code = p.Code,
                 TotalSessions = p.TotalSessions,
