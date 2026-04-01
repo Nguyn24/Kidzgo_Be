@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.LessonPlans.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -72,10 +73,12 @@ public sealed class CreateLessonPlanCommandHandler(
                 LessonPlanErrors.SessionAlreadyHasLessonPlan(command.SessionId));
         }
 
+        LessonPlanTemplate? template = null;
+
         // Validate template if provided
         if (command.TemplateId.HasValue)
         {
-            var template = await context.LessonPlanTemplates
+            template = await context.LessonPlanTemplates
                 .FirstOrDefaultAsync(t => t.Id == command.TemplateId.Value, cancellationToken);
 
             if (template is null)
@@ -84,17 +87,24 @@ public sealed class CreateLessonPlanCommandHandler(
                     LessonPlanErrors.TemplateNotFound(command.TemplateId));
             }
         }
-
-        var currentUserId = currentUser.Id;
-        var now = DateTime.UtcNow;
+        else
+        {
+            template = await LessonPlanTemplateResolver.ResolveForSessionAsync(
+                context,
+                command.ClassId,
+                command.SessionId,
+                cancellationToken);
+        }
 
         var lessonPlan = new LessonPlan
         {
             Id = Guid.NewGuid(),
             ClassId = command.ClassId,
             SessionId = command.SessionId,
-            TemplateId = command.TemplateId,
-            PlannedContent = command.PlannedContent,
+            TemplateId = template?.Id ?? command.TemplateId,
+            PlannedContent = string.IsNullOrWhiteSpace(command.PlannedContent)
+                ? template?.SyllabusContent
+                : command.PlannedContent,
             ActualContent = command.ActualContent,
             ActualHomework = command.ActualHomework,
             TeacherNotes = command.TeacherNotes,

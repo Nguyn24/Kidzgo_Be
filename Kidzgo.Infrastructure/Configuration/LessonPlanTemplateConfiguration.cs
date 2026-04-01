@@ -26,6 +26,13 @@ public class LessonPlanTemplateConfiguration : IEntityTypeConfiguration<LessonPl
         builder.Property(x => x.SessionIndex)
             .IsRequired();
 
+        builder.Property(x => x.SyllabusMetadata);
+
+        builder.Property(x => x.SyllabusContent);
+
+        builder.Property(x => x.SourceFileName)
+            .HasMaxLength(255);
+
         builder.Property(x => x.AttachmentUrl)
             .HasMaxLength(500);
 

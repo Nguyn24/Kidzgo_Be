@@ -44,7 +44,7 @@ public class ProgramController : ControllerBase
 
     /// UC-040: Xem danh sách Programs
     [HttpGet]
-    [Authorize(Roles = "Admin,ManagementStaff")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
     public async Task<IResult> GetPrograms(
         [FromQuery] Guid? branchId,
         [FromQuery] string? searchTerm,

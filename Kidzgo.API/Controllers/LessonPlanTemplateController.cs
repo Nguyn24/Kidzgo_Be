@@ -1,13 +1,12 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.LessonPlanTemplates.CreateLessonPlanTemplate;
-using Kidzgo.Application.LessonPlanTemplates.DeleteLessonPlanTemplate;
 using Kidzgo.Application.LessonPlanTemplates.GetLessonPlanTemplateById;
 using Kidzgo.Application.LessonPlanTemplates.GetLessonPlanTemplates;
+using Kidzgo.Application.LessonPlanTemplates.ImportLessonPlanTemplates;
 using Kidzgo.Application.LessonPlanTemplates.UpdateLessonPlanTemplate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kidzgo.API.Controllers;
@@ -24,9 +23,6 @@ public class LessonPlanTemplateController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Tạo Lesson Plan Template mới
-    /// </summary>
     [HttpPost]
     [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> CreateLessonPlanTemplate(
@@ -39,6 +35,9 @@ public class LessonPlanTemplateController : ControllerBase
             Title = request.Title,
             Level = request.Level,
             SessionIndex = request.SessionIndex,
+            SyllabusMetadata = request.SyllabusMetadata,
+            SyllabusContent = request.SyllabusContent,
+            SourceFileName = request.SourceFileName,
             Attachment = request.Attachment
         };
 
@@ -46,9 +45,6 @@ public class LessonPlanTemplateController : ControllerBase
         return result.MatchCreated(r => $"/api/lesson-plan-templates/{r.Id}");
     }
 
-    /// <summary>
-    /// Lấy Lesson Plan Template theo ID
-    /// </summary>
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> GetLessonPlanTemplateById(
@@ -64,11 +60,8 @@ public class LessonPlanTemplateController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// Lấy danh sách Lesson Plan Templates với filter và pagination
-    /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> GetLessonPlanTemplates(
         [FromQuery] Guid? programId,
         [FromQuery] string? level,
@@ -94,11 +87,36 @@ public class LessonPlanTemplateController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// Cập nhật Lesson Plan Template
-    /// </summary>
+    [HttpPost("import")]
+    [Authorize(Roles = "ManagementStaff,Admin")]
+    [RequestSizeLimit(20_971_520)]
+    public async Task<IResult> ImportLessonPlanTemplates(
+        [FromQuery] Guid? programId,
+        [FromQuery] string? level,
+        IFormFile file,
+        [FromQuery] bool overwriteExisting = true,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var command = new ImportLessonPlanTemplatesFromFileCommand
+        {
+            ProgramId = programId,
+            Level = level,
+            OverwriteExisting = overwriteExisting,
+            FileName = file.FileName,
+            FileStream = file.OpenReadStream()
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> UpdateLessonPlanTemplate(
         Guid id,
         [FromBody] UpdateLessonPlanTemplateRequest request,
@@ -110,6 +128,9 @@ public class LessonPlanTemplateController : ControllerBase
             Level = request.Level,
             Title = request.Title,
             SessionIndex = request.SessionIndex,
+            SyllabusMetadata = request.SyllabusMetadata,
+            SyllabusContent = request.SyllabusContent,
+            SourceFileName = request.SourceFileName,
             Attachment = request.Attachment,
             IsActive = request.IsActive
         };
@@ -117,23 +138,4 @@ public class LessonPlanTemplateController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-
-    /// <summary>
-    /// Xóa Lesson Plan Template (soft delete)
-    /// </summary>
-    [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
-    public async Task<IResult> DeleteLessonPlanTemplate(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var command = new DeleteLessonPlanTemplateCommand
-        {
-            Id = id
-        };
-
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchOk();
-    }
 }
-
