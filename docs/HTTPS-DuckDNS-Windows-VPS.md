@@ -59,8 +59,16 @@ The script will:
 
 - download `caddy.exe`
 - write the `Caddyfile`
-- install the Windows service `caddy`
+- register the Windows service `caddy` with `sc.exe`
 - start the service
+
+If you previously ran an older version of the script and saw:
+
+```text
+unknown command "service" for "caddy"
+```
+
+pull the latest code and run `.\scripts\install-caddy-win.ps1` again. The updated script no longer depends on `caddy service ...`.
 
 ## 5. Verify
 
