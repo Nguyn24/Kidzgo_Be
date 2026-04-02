@@ -10,6 +10,23 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Installing Caddy $Version to $InstallRoot" -ForegroundColor Cyan
 
+function Remove-ServiceIfExists {
+    param([string]$Name)
+
+    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+    if ($null -eq $service) {
+        return
+    }
+
+    if ($service.Status -eq "Running") {
+        Stop-Service -Name $Name -Force -ErrorAction Stop
+        $service.WaitForStatus("Stopped", "00:00:20")
+    }
+
+    sc.exe delete $Name | Out-Null
+    Start-Sleep -Seconds 2
+}
+
 New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
 
 $zipPath = Join-Path $env:TEMP "caddy_${Version}_windows_amd64.zip"
@@ -38,18 +55,13 @@ Set-Content -Path $caddyFilePath -Value $caddyFile -Encoding ASCII
 
 Push-Location $InstallRoot
 
-if (-not [string]::IsNullOrWhiteSpace($Email)) {
-    & .\caddy.exe trust
-    & .\caddy.exe validate --config $caddyFilePath
-    & .\caddy.exe service uninstall 2>$null
-    & .\caddy.exe service install --config $caddyFilePath --adapter caddyfile
-}
-else {
-    & .\caddy.exe trust
-    & .\caddy.exe validate --config $caddyFilePath
-    & .\caddy.exe service uninstall 2>$null
-    & .\caddy.exe service install --config $caddyFilePath --adapter caddyfile
-}
+& .\caddy.exe validate --config $caddyFilePath --adapter caddyfile
+
+Remove-ServiceIfExists -Name "caddy"
+
+$binPath = "`"$InstallRoot\caddy.exe`" run --environ --config `"$caddyFilePath`" --adapter caddyfile"
+sc.exe create caddy binPath= $binPath start= auto DisplayName= "Caddy" | Out-Null
+sc.exe description caddy "Caddy reverse proxy for Kidzgo API" | Out-Null
 
 Start-Service caddy
 Get-Service caddy
