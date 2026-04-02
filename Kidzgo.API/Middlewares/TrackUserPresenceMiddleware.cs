@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Users.Shared;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.API.Middlewares;
@@ -18,6 +19,7 @@ public sealed class TrackUserPresenceMiddleware(RequestDelegate next, ILogger<Tr
                 {
                     var now = DateTime.UtcNow;
                     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, context.RequestAborted);
+                    var hasChanges = false;
 
                     if (user != null &&
                         (!user.LastSeenAt.HasValue ||
@@ -25,6 +27,30 @@ public sealed class TrackUserPresenceMiddleware(RequestDelegate next, ILogger<Tr
                     {
                         user.LastSeenAt = now;
                         user.UpdatedAt = now;
+                        hasChanges = true;
+                    }
+
+                    var studentIdRaw = context.User.FindFirstValue("StudentId");
+                    if (user != null && Guid.TryParse(studentIdRaw, out var studentProfileId))
+                    {
+                        var studentProfile = await dbContext.Profiles.FirstOrDefaultAsync(
+                            p => p.Id == studentProfileId &&
+                                 p.UserId == userId &&
+                                 p.ProfileType == ProfileType.Student,
+                            context.RequestAborted);
+
+                        if (studentProfile != null &&
+                            (!studentProfile.LastSeenAt.HasValue ||
+                             now - studentProfile.LastSeenAt.Value >= UserPresenceHelper.HeartbeatUpdateInterval))
+                        {
+                            studentProfile.LastSeenAt = now;
+                            studentProfile.UpdatedAt = now;
+                            hasChanges = true;
+                        }
+                    }
+
+                    if (hasChanges)
+                    {
                         await dbContext.SaveChangesAsync(context.RequestAborted);
                     }
                 }

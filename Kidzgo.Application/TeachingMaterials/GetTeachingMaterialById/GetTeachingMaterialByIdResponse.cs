@@ -22,6 +22,7 @@ public sealed class GetTeachingMaterialByIdResponse
     public string EncryptionKeyVersion { get; init; } = null!;
     public Guid UploadedByUserId { get; init; }
     public string UploadedByName { get; init; } = null!;
+    public string PreviewUrl { get; init; } = null!;
     public string DownloadUrl { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }

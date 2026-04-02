@@ -48,6 +48,10 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
         builder.Property(x => x.IsApproved)
             .IsRequired();
 
+        builder.Property(x => x.LastLoginAt);
+
+        builder.Property(x => x.LastSeenAt);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

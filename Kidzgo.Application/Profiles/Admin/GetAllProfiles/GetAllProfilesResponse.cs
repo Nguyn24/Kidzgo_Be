@@ -15,6 +15,10 @@ public sealed class GetAllProfilesResponse
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsApproved { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastSeenAt { get; set; }
+    public bool IsOnline { get; set; }
+    public long? OfflineDurationSeconds { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
