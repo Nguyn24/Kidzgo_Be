@@ -1,8 +1,8 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
-using Kidzgo.Application.Profiles.Admin.GetAllProfiles;
 using Kidzgo.Application.Profiles.Admin.ChangeParentPin;
+using Kidzgo.Application.Profiles.Admin.GetAllProfiles;
 using Kidzgo.Application.Profiles.ApproveProfile;
 using Kidzgo.Application.Profiles.CreateProfile;
 using Kidzgo.Application.Profiles.DeleteProfile;
@@ -16,6 +16,8 @@ using Kidzgo.Domain.Users.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using What2Gift.Infrastructure.Shared;
 
 namespace Kidzgo.API.Controllers;
 
@@ -24,15 +26,15 @@ namespace Kidzgo.API.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private const string FrontendUrl = "https://kidzgo-centre-pvjj.vercel.app/vi";
     private readonly ISender _mediator;
+    private readonly ClientSettings _clientSettings;
 
-    public ProfileController(ISender mediator)
+    public ProfileController(ISender mediator, IOptions<ClientSettings> clientSettingsOptions)
     {
         _mediator = mediator;
+        _clientSettings = clientSettingsOptions.Value;
     }
 
-  
     [HttpPost]
     public async Task<IResult> CreateProfile(
         [FromBody] CreateProfileRequest request,
@@ -51,13 +53,6 @@ public class ProfileController : ControllerBase
         return result.MatchCreated(p => $"/api/admin/profiles/{p.Id}");
     }
 
- 
-    /// <param name="userId">Filter by user ID</param>
-    /// <param name="profileType">Filter by profile type</param>
-    /// <param name="searchTerm">Search by profile display name</param>
-    /// <param name="branchId">Filter by branch ID (for students)</param>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
     public async Task<IResult> GetProfiles(
         [FromQuery] Guid? userId,
@@ -88,7 +83,6 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
-    
     [HttpGet("{id:guid}")]
     public async Task<IResult> GetProfileById(
         Guid id,
@@ -102,7 +96,6 @@ public class ProfileController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
-
 
     [HttpPut("{id:guid}")]
     public async Task<IResult> UpdateProfile(
@@ -121,7 +114,6 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
-
     [HttpDelete("{id:guid}")]
     public async Task<IResult> DeleteProfile(
         Guid id,
@@ -136,9 +128,6 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
-    /// <summary>
-    /// Reactivate a soft-deleted profile
-    /// </summary>
     [HttpPut("{id:guid}/reactivate")]
     public async Task<IResult> ReactivateProfile(
         Guid id,
@@ -153,6 +142,7 @@ public class ProfileController : ControllerBase
         return result.MatchOk();
     }
 
+    [AllowAnonymous]
     [HttpGet("{id:guid}/reactivate-and-update")]
     public async Task<IResult> ReactivateAndRedirectToUpdate(
         Guid id,
@@ -169,9 +159,14 @@ public class ProfileController : ControllerBase
         {
             return CustomResults.Problem(result);
         }
-        //để đây sửa lại endpoint sau
-        return Results.Redirect($"{FrontendUrl}/profile/update?profileId={id}");
+
+        var frontendUrl = string.IsNullOrWhiteSpace(_clientSettings.FrontendUrl)
+            ? "https://kidzgo-centre-pvjj.vercel.app/vi"
+            : _clientSettings.FrontendUrl.TrimEnd('/');
+
+        return Results.Redirect($"{frontendUrl}/profile/update?profileId={id}");
     }
+
     [HttpPost("link")]
     public async Task<IResult> LinkParentStudent(
         [FromBody] LinkParentStudentRequest request,
@@ -187,7 +182,6 @@ public class ProfileController : ControllerBase
         return result.MatchCreated(l => $"/api/admin/profiles/link/{l.Id}");
     }
 
- 
     [HttpPost("unlink")]
     public async Task<IResult> UnlinkParentStudent(
         [FromBody] UnlinkParentStudentRequest request,
