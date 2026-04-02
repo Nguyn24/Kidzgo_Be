@@ -29,6 +29,7 @@ public sealed class TeachingMaterialBundleItem
     public long FileSize { get; init; }
     public string FileType { get; init; } = null!;
     public string Category { get; init; } = null!;
+    public string PreviewUrl { get; init; } = null!;
     public string DownloadUrl { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
 }

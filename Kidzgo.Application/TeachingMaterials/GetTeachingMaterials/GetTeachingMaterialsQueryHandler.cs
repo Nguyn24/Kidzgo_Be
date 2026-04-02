@@ -85,6 +85,7 @@ public sealed class GetTeachingMaterialsQueryHandler(
                 UploadedByUserId = tm.UploadedByUserId,
                 UploadedByName = tm.UploadedByUser.Name,
                 IsEncrypted = tm.IsEncrypted,
+                PreviewUrl = $"/api/teaching-materials/{tm.Id}/preview",
                 DownloadUrl = $"/api/teaching-materials/{tm.Id}/download",
                 CreatedAt = tm.CreatedAt,
                 UpdatedAt = tm.UpdatedAt
