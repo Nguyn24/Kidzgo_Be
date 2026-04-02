@@ -34,6 +34,18 @@ public class QuestionBankItemConfiguration : IEntityTypeConfiguration<QuestionBa
 
         builder.Property(x => x.Explanation);
 
+        builder.Property(x => x.Topic)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.Skill)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.GrammarTags)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.VocabularyTags)
+            .HasColumnType("jsonb");
+
         builder.Property(x => x.Level)
             .HasConversion<string>()
             .HasMaxLength(10)

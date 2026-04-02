@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Homework.Shared;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -83,8 +84,16 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
             Book = homeworkStudent.Assignment.Book,
             Pages = homeworkStudent.Assignment.Pages,
             Skills = homeworkStudent.Assignment.Skills,
+            Topic = homeworkStudent.Assignment.Topic,
+            GrammarTags = StringListJson.Deserialize(homeworkStudent.Assignment.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(homeworkStudent.Assignment.VocabularyTags),
             SubmissionType = SubmissionTypeMapper.ToApiString(homeworkStudent.Assignment.SubmissionType),
             MaxScore = homeworkStudent.Assignment.MaxScore,
+            AiHintEnabled = homeworkStudent.Assignment.AiHintEnabled,
+            AiRecommendEnabled = homeworkStudent.Assignment.AiRecommendEnabled,
+            SpeakingMode = homeworkStudent.Assignment.SpeakingMode,
+            TargetWords = StringListJson.Deserialize(homeworkStudent.Assignment.TargetWords),
+            SpeakingExpectedText = homeworkStudent.Assignment.SpeakingExpectedText,
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt,
             GradedAt = homeworkStudent.GradedAt,
@@ -93,6 +102,9 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
             AiFeedback = homeworkStudent.AiFeedback,
             AttachmentUrls = homeworkStudent.AttachmentUrl,
             TextAnswer = homeworkStudent.TextAnswer,
+            LinkUrl = homeworkStudent.Assignment.SubmissionType == SubmissionType.Link
+                ? homeworkStudent.AttachmentUrl
+                : null,
             IsLate = homeworkStudent.Status == HomeworkStatus.Late,
             IsOverdue = isOverdue,
             Questions = questions,

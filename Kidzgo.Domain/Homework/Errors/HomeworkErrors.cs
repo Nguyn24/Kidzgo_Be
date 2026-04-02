@@ -101,6 +101,34 @@ public static class HomeworkErrors
         "HomeworkSubmission.NotSubmitted",
         "Can only grade homework that has been submitted");
 
+    public static readonly Error AiHintNotEnabled = Error.Validation(
+        "Homework.AiHintNotEnabled",
+        "AI hint is not enabled for this homework");
+
+    public static readonly Error AiRecommendNotEnabled = Error.Validation(
+        "Homework.AiRecommendNotEnabled",
+        "AI recommendation is not enabled for this homework");
+
+    public static readonly Error AiSpeakingNotAvailable = Error.Validation(
+        "Homework.AiSpeakingNotAvailable",
+        "AI speaking analysis is not available for this homework");
+
+    public static readonly Error AiSpeakingPracticeFileRequired = Error.Validation(
+        "Homework.AiSpeakingPracticeFileRequired",
+        "An audio or video file is required for instant AI speaking analysis");
+
+    public static readonly Error AiCreatorTopicRequired = Error.Validation(
+        "Homework.AiCreatorTopicRequired",
+        "Topic is required for AI question generation");
+
+    public static Error AiCreatorQuestionCountInvalid(int min, int max) => Error.Validation(
+        "Homework.AiCreatorQuestionCountInvalid",
+        $"Question count must be between {min} and {max}");
+
+    public static readonly Error AiCreatorInvalidPoints = Error.Validation(
+        "Homework.AiCreatorInvalidPoints",
+        "Points per question must be greater than 0");
+
     // Input validation errors
     public static readonly Error InvalidSubmissionType = Error.Validation(
         "Homework.InvalidSubmissionType",

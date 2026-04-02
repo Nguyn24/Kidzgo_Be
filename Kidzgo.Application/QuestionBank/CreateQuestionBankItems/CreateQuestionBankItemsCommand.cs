@@ -17,5 +17,9 @@ public sealed class CreateQuestionBankItemDto
     public string CorrectAnswer { get; init; } = null!;
     public int Points { get; init; } = 1;
     public string? Explanation { get; init; }
+    public string? Topic { get; init; }
+    public string? Skill { get; init; }
+    public List<string>? GrammarTags { get; init; }
+    public List<string>? VocabularyTags { get; init; }
     public QuestionLevel Level { get; init; }
 }

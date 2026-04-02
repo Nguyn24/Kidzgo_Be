@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.Shared;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
@@ -47,16 +48,25 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
             Book = homework.Book,
             Pages = homework.Pages,
             Skills = homework.Skills,
+            Topic = homework.Topic,
+            GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
             SubmissionType = SubmissionTypeMapper.ToApiString(homework.SubmissionType),
             MaxScore = homework.MaxScore,
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
             AllowResubmit = homework.AllowResubmit,
+            AiHintEnabled = homework.AiHintEnabled,
+            AiRecommendEnabled = homework.AiRecommendEnabled,
             MissionId = homework.MissionId,
             MissionTitle = homework.Mission?.Title,
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,
             Rubric = homework.Rubric,
+            SpeakingMode = homework.SpeakingMode,
+            TargetWords = StringListJson.Deserialize(homework.TargetWords),
+            SpeakingExpectedText = homework.SpeakingExpectedText,
+            AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             Students = homework.HomeworkStudents.Select(hs => new HomeworkStudentDto
             {

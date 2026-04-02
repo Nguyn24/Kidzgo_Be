@@ -2,6 +2,7 @@ using System.Text.Json;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,6 +48,10 @@ public sealed class GetQuestionBankItemsQueryHandler(
             CorrectAnswer = q.CorrectAnswer,
             Points = q.Points,
             Explanation = q.Explanation,
+            Topic = q.Topic,
+            Skill = q.Skill,
+            GrammarTags = StringListJson.Deserialize(q.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(q.VocabularyTags),
             Level = q.Level,
             CreatedAt = q.CreatedAt
         }).ToList();
