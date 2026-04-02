@@ -15,6 +15,7 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
     {
         var user = await context.Users
             .Include(u => u.Branch)
+            .Include(u => u.Profiles.Where(p => !p.IsDeleted))
             .FirstOrDefaultAsync(u => u.Id == query.Id, cancellationToken);
 
         if (user is null)
@@ -45,7 +46,26 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
             IsOnline = UserPresenceHelper.IsOnline(user.LastSeenAt, now),
             OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(user.LastSeenAt, now),
             CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
+            UpdatedAt = user.UpdatedAt,
+            Profiles = user.Profiles
+                .Where(p => !p.IsDeleted)
+                .Select(p => new UserProfilePresenceDto
+                {
+                    Id = p.Id,
+                    ProfileType = p.ProfileType.ToString(),
+                    DisplayName = p.DisplayName,
+                    IsActive = p.IsActive,
+                    LastLoginAt = p.ProfileType == ProfileType.Parent ? user.LastLoginAt : p.LastLoginAt,
+                    LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                    IsOnline = UserPresenceHelper.IsOnline(
+                        p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                        now),
+                    OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
+                        p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                        now),
+                    CreatedAt = p.CreatedAt
+                })
+                .ToList()
         });
     }
 }

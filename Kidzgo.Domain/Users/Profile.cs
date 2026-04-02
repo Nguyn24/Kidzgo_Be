@@ -32,6 +32,8 @@ public class Profile : Entity
     public bool IsApproved { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastSeenAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

@@ -27,6 +27,15 @@ public sealed class SelectStudentProfileCommandHandler(
             return Result.Failure<SelectStudentProfileResponse>(ProfileErrors.Invalid);
         }
 
+        var now = DateTime.UtcNow;
+        profile.LastLoginAt = now;
+        profile.LastSeenAt = now;
+        profile.UpdatedAt = now;
+        profile.User.LastSeenAt = now;
+        profile.User.UpdatedAt = now;
+
+        await context.SaveChangesAsync(cancellationToken);
+
         // Generate new token with selected student ID
         string newAccessToken = tokenProvider.Create(profile.User, profile.Id);
 

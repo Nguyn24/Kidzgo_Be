@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
 {
     public async Task<Result<Page<GetAllProfilesResponse>>> Handle(GetAllProfilesQuery request, CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
         var query = context.Profiles
             .Include(p => p.User)
             .AsQueryable();
@@ -77,6 +79,14 @@ public sealed class GetAllProfilesQueryHandler(IDbContext context)
                 IsActive = p.IsActive,
                 IsDeleted = p.IsDeleted,
                 IsApproved = p.IsApproved,
+                LastLoginAt = p.ProfileType == ProfileType.Parent ? p.User.LastLoginAt : p.LastLoginAt,
+                LastSeenAt = p.ProfileType == ProfileType.Parent ? p.User.LastSeenAt : p.LastSeenAt,
+                IsOnline = UserPresenceHelper.IsOnline(
+                    p.ProfileType == ProfileType.Parent ? p.User.LastSeenAt : p.LastSeenAt,
+                    now),
+                OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
+                    p.ProfileType == ProfileType.Parent ? p.User.LastSeenAt : p.LastSeenAt,
+                    now),
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             })

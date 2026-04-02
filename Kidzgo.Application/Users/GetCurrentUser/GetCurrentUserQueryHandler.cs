@@ -47,7 +47,15 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                 {
                     Id = p.Id,
                     DisplayName = p.DisplayName,
-                    ProfileType = p.ProfileType.ToString()
+                    ProfileType = p.ProfileType.ToString(),
+                    LastLoginAt = p.ProfileType == ProfileType.Parent ? user.LastLoginAt : p.LastLoginAt,
+                    LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                    IsOnline = UserPresenceHelper.IsOnline(
+                        p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                        now),
+                    OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
+                        p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                        now)
                 }).ToList(),
                 SelectedProfileId = null, // TODO: Get from claim or session if needed
                 IsActive = user.IsActive,
