@@ -23,9 +23,6 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.Property(x => x.Code)
             .HasMaxLength(10);
 
-        builder.Property(x => x.TotalSessions)
-            .IsRequired();
-
         builder.Property(x => x.DefaultTuitionAmount)
             .HasColumnType("numeric")
             .IsRequired();
