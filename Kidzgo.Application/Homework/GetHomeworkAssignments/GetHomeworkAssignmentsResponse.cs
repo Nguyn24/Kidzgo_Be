@@ -20,11 +20,15 @@ public sealed class HomeworkAssignmentDto
     public string? Book { get; init; }
     public string? Pages { get; init; }
     public string? Skills { get; init; }
+    public string? Topic { get; init; }
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
     public bool AllowResubmit { get; init; }
+    public bool AiHintEnabled { get; init; }
+    public bool AiRecommendEnabled { get; init; }
+    public string? SpeakingMode { get; init; }
     public Guid? MissionId { get; init; }
     public DateTime CreatedAt { get; init; }
     public int TotalStudents { get; init; }

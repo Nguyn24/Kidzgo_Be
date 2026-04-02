@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Homework.AiGradeHomework;
 using Kidzgo.Application.Homework.CreateHomeworkAssignment;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomeworkFromBank;
@@ -60,15 +61,23 @@ public class HomeworkController : ControllerBase
             Book = request.Book,
             Pages = request.Pages,
             Skills = request.Skills,
+            Topic = request.Topic,
+            GrammarTags = request.GrammarTags,
+            VocabularyTags = request.VocabularyTags,
             SubmissionType = submissionType,
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
             AllowResubmit = request.AllowResubmit,
+            AiHintEnabled = request.AiHintEnabled,
+            AiRecommendEnabled = request.AiRecommendEnabled,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
             Rubric = request.Rubric,
+            SpeakingMode = request.SpeakingMode,
+            TargetWords = request.TargetWords,
+            SpeakingExpectedText = request.SpeakingExpectedText,
             AttachmentUrl = request.Attachment
         };
 
@@ -113,9 +122,14 @@ public class HomeworkController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             DueAt = request.DueAt,
+            Topic = request.Topic,
+            GrammarTags = request.GrammarTags,
+            VocabularyTags = request.VocabularyTags,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
             AllowResubmit = request.AllowResubmit,
+            AiHintEnabled = request.AiHintEnabled,
+            AiRecommendEnabled = request.AiRecommendEnabled,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             Questions = questions
@@ -159,9 +173,14 @@ public class HomeworkController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             DueAt = request.DueAt,
+            Topic = request.Topic,
+            GrammarTags = request.GrammarTags,
+            VocabularyTags = request.VocabularyTags,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
             AllowResubmit = request.AllowResubmit,
+            AiHintEnabled = request.AiHintEnabled,
+            AiRecommendEnabled = request.AiRecommendEnabled,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             Distribution = distribution
@@ -250,15 +269,24 @@ public class HomeworkController : ControllerBase
             Book = request.Book,
             Pages = request.Pages,
             Skills = request.Skills,
+            Topic = request.Topic,
+            GrammarTags = request.GrammarTags,
+            VocabularyTags = request.VocabularyTags,
             SubmissionType = parsedSubmissionType,
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
             AllowResubmit = request.AllowResubmit,
+            AiHintEnabled = request.AiHintEnabled,
+            AiRecommendEnabled = request.AiRecommendEnabled,
             MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
-            Rubric = request.Rubric
+            Rubric = request.Rubric,
+            SpeakingMode = request.SpeakingMode,
+            TargetWords = request.TargetWords,
+            SpeakingExpectedText = request.SpeakingExpectedText,
+            AttachmentUrl = request.Attachment
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -342,6 +370,32 @@ public class HomeworkController : ControllerBase
 
     /// <summary>
     /// UC-132: Đánh dấu Homework quá hạn (LATE/MISSING)
+    /// </summary>
+    /// <summary>
+    /// UC-130: Teacher trigger AI quick grade for a homework submission
+    /// </summary>
+    [HttpPost("submissions/{homeworkStudentId:guid}/quick-grade")]
+    [Authorize(Roles = "Teacher,TeachingAssistant,ManagementStaff,Admin")]
+    public async Task<IResult> AiGradeHomework(
+        Guid homeworkStudentId,
+        [FromBody] AiGradeHomeworkRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AiGradeHomeworkCommand
+        {
+            HomeworkStudentId = homeworkStudentId,
+            Language = string.IsNullOrWhiteSpace(request.Language) ? "vi" : request.Language,
+            Instructions = request.Instructions,
+            Rubric = request.Rubric,
+            ExpectedAnswerText = request.ExpectedAnswerText
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// UC-132: Mark homework overdue status (LATE/MISSING)
     /// </summary>
     [HttpPut("submissions/{homeworkStudentId:guid}/mark-status")]
     [Authorize(Roles = "Teacher,TeachingAssistant,ManagementStaff,Admin")]

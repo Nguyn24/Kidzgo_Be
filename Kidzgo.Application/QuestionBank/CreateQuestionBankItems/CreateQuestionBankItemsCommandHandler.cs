@@ -2,6 +2,7 @@ using System.Text.Json;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -82,6 +83,10 @@ public sealed class CreateQuestionBankItemsCommandHandler(
                 CorrectAnswer = item.CorrectAnswer,
                 Points = item.Points,
                 Explanation = item.Explanation,
+                Topic = item.Topic,
+                Skill = item.Skill,
+                GrammarTags = StringListJson.Serialize(item.GrammarTags),
+                VocabularyTags = StringListJson.Serialize(item.VocabularyTags),
                 Level = item.Level,
                 CreatedBy = createdBy,
                 CreatedAt = now
@@ -107,6 +112,10 @@ public sealed class CreateQuestionBankItemsCommandHandler(
                 CorrectAnswer = entity.CorrectAnswer,
                 Points = entity.Points,
                 Explanation = entity.Explanation,
+                Topic = entity.Topic,
+                Skill = entity.Skill,
+                GrammarTags = StringListJson.Deserialize(entity.GrammarTags),
+                VocabularyTags = StringListJson.Deserialize(entity.VocabularyTags),
                 Level = entity.Level,
                 CreatedAt = entity.CreatedAt
             });

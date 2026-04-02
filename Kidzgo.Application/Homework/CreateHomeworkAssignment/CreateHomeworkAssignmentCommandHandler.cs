@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.Shared;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -119,15 +120,24 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             Book = command.Book,
             Pages = command.Pages,
             Skills = command.Skills,
+            Topic = command.Topic,
+            GrammarTags = StringListJson.Serialize(command.GrammarTags),
+            VocabularyTags = StringListJson.Serialize(command.VocabularyTags),
             SubmissionType = command.SubmissionType,
             MaxScore = command.MaxScore ?? 10,
             RewardStars = command.RewardStars,
             TimeLimitMinutes = command.TimeLimitMinutes,
             AllowResubmit = command.AllowResubmit ?? false,
+            AiHintEnabled = command.AiHintEnabled ?? false,
+            AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
             ExpectedAnswer = command.ExpectedAnswer,
             Rubric = command.Rubric,
+            SpeakingMode = command.SpeakingMode,
+            TargetWords = StringListJson.Serialize(command.TargetWords),
+            SpeakingExpectedText = command.SpeakingExpectedText,
+            AttachmentUrl = command.AttachmentUrl,
             CreatedBy = currentUserId,
             CreatedAt = now
         };
@@ -173,15 +183,23 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             Book = homework.Book,
             Pages = homework.Pages,
             Skills = homework.Skills,
+            Topic = homework.Topic,
+            GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
             SubmissionType = SubmissionTypeMapper.ToApiString(homework.SubmissionType),
             MaxScore = homework.MaxScore,
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
             AllowResubmit = homework.AllowResubmit,
+            AiHintEnabled = homework.AiHintEnabled,
+            AiRecommendEnabled = homework.AiRecommendEnabled,
             MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,
             Rubric = homework.Rubric,
+            SpeakingMode = homework.SpeakingMode,
+            TargetWords = StringListJson.Deserialize(homework.TargetWords),
+            SpeakingExpectedText = homework.SpeakingExpectedText,
             AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count

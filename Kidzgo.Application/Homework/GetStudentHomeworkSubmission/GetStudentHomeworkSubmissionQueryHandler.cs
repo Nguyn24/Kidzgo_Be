@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.Shared;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -89,11 +90,19 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             Book = homeworkStudent.Assignment.Book,
             Pages = homeworkStudent.Assignment.Pages,
             Skills = homeworkStudent.Assignment.Skills,
+            Topic = homeworkStudent.Assignment.Topic,
+            GrammarTags = StringListJson.Deserialize(homeworkStudent.Assignment.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(homeworkStudent.Assignment.VocabularyTags),
             SubmissionType = SubmissionTypeMapper.ToApiString(homeworkStudent.Assignment.SubmissionType),
             MaxScore = homeworkStudent.Assignment.MaxScore,
             RewardStars = homeworkStudent.Assignment.RewardStars,
             TimeLimitMinutes = homeworkStudent.Assignment.TimeLimitMinutes,
             AllowResubmit = homeworkStudent.Assignment.AllowResubmit,
+            AiHintEnabled = homeworkStudent.Assignment.AiHintEnabled,
+            AiRecommendEnabled = homeworkStudent.Assignment.AiRecommendEnabled,
+            SpeakingMode = homeworkStudent.Assignment.SpeakingMode,
+            TargetWords = StringListJson.Deserialize(homeworkStudent.Assignment.TargetWords),
+            SpeakingExpectedText = homeworkStudent.Assignment.SpeakingExpectedText,
             Status = homeworkStudent.Status.ToString(),
             StartedAt = homeworkStudent.StartedAt,
             SubmittedAt = homeworkStudent.SubmittedAt,
@@ -103,6 +112,9 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             AiFeedback = homeworkStudent.AiFeedback,
             AttachmentUrls = homeworkStudent.AttachmentUrl,
             TextAnswer = homeworkStudent.TextAnswer,
+            LinkUrl = homeworkStudent.Assignment.SubmissionType == SubmissionType.Link
+                ? homeworkStudent.AttachmentUrl
+                : null,
             IsLate = homeworkStudent.Status == HomeworkStatus.Late,
             IsOverdue = isOverdue,
             Questions = questions,

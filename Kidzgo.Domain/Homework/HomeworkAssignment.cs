@@ -18,15 +18,23 @@ public class HomeworkAssignment : Entity
     public string? Book { get; set; }
     public string? Pages { get; set; }
     public string? Skills { get; set; }
+    public string? Topic { get; set; }
+    public string? GrammarTags { get; set; }
+    public string? VocabularyTags { get; set; }
     public SubmissionType SubmissionType { get; set; }
     public decimal? MaxScore { get; set; }
     public int? RewardStars { get; set; }
     public int? TimeLimitMinutes { get; set; }
     public bool AllowResubmit { get; set; }
+    public bool AiHintEnabled { get; set; }
+    public bool AiRecommendEnabled { get; set; }
     public Guid? MissionId { get; set; }
     public string? Instructions { get; set; }
     public string? ExpectedAnswer { get; set; }
     public string? Rubric { get; set; }
+    public string? SpeakingMode { get; set; }
+    public string? TargetWords { get; set; }
+    public string? SpeakingExpectedText { get; set; }
     public string? AttachmentUrl { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }

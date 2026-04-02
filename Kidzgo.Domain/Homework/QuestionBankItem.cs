@@ -13,6 +13,10 @@ public class QuestionBankItem : Entity
     public string? CorrectAnswer { get; set; } // Correct answer (option index for MC, or text)
     public int Points { get; set; }
     public string? Explanation { get; set; }
+    public string? Topic { get; set; }
+    public string? Skill { get; set; }
+    public string? GrammarTags { get; set; }
+    public string? VocabularyTags { get; set; }
     public QuestionLevel Level { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
