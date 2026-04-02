@@ -1,6 +1,7 @@
 using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Homework;
 using Kidzgo.Application.Abstraction.Payments;
 using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Application.Abstraction.Reports;
@@ -280,6 +281,13 @@ public static class DependencyInjection
 
         // Register AI Feedback Enhancer (UC-174)
         services.AddHttpClient<IAiFeedbackEnhancer, HttpAiFeedbackEnhancer>(client =>
+        {
+            var baseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:8000";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        services.AddHttpClient<IAiHomeworkAssistant, HttpAiHomeworkAssistant>(client =>
         {
             var baseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:8000";
             client.BaseAddress = new Uri(baseUrl);

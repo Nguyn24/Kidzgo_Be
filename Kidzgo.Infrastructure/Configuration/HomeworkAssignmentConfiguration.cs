@@ -36,6 +36,15 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
         builder.Property(x => x.Skills)
             .HasMaxLength(100);
 
+        builder.Property(x => x.Topic)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.GrammarTags)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.VocabularyTags)
+            .HasColumnType("jsonb");
+
         builder.Property(x => x.SubmissionType)
             .HasConversion<string>()
             .HasMaxLength(20)
@@ -51,6 +60,12 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
         builder.Property(x => x.AllowResubmit)
             .HasDefaultValue(false);
 
+        builder.Property(x => x.AiHintEnabled)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.AiRecommendEnabled)
+            .HasDefaultValue(false);
+
         builder.Property(x => x.MissionId);
 
         builder.Property(x => x.Instructions);
@@ -58,6 +73,14 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
         builder.Property(x => x.ExpectedAnswer);
 
         builder.Property(x => x.Rubric);
+
+        builder.Property(x => x.SpeakingMode)
+            .HasMaxLength(20);
+
+        builder.Property(x => x.TargetWords)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.SpeakingExpectedText);
 
         builder.Property(x => x.AttachmentUrl);
 

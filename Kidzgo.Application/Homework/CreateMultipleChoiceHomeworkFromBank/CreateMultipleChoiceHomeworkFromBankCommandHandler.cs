@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
@@ -146,11 +147,16 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = command.Title,
             Description = command.Description,
             DueAt = dueAtUtc,
+            Topic = command.Topic,
+            GrammarTags = StringListJson.Serialize(command.GrammarTags),
+            VocabularyTags = StringListJson.Serialize(command.VocabularyTags),
             SubmissionType = SubmissionType.Quiz,
             MaxScore = maxScore,
             RewardStars = command.RewardStars,
             TimeLimitMinutes = command.TimeLimitMinutes,
             AllowResubmit = command.AllowResubmit ?? false,
+            AiHintEnabled = command.AiHintEnabled ?? false,
+            AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
             CreatedBy = userContext.UserId,
@@ -224,9 +230,14 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = homework.Title,
             Description = homework.Description,
             DueAt = homework.DueAt,
+            Topic = homework.Topic,
+            GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
+            VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
             AllowResubmit = homework.AllowResubmit,
+            AiHintEnabled = homework.AiHintEnabled,
+            AiRecommendEnabled = homework.AiRecommendEnabled,
             MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             CreatedAt = homework.CreatedAt,

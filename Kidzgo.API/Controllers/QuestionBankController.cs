@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.QuestionBank;
 using Kidzgo.Application.QuestionBank.CreateQuestionBankItems;
 using Kidzgo.Application.QuestionBank.GetQuestionBank;
 using Kidzgo.Application.QuestionBank.ImportQuestionBank;
@@ -55,6 +56,10 @@ public class QuestionBankController : ControllerBase
                 CorrectAnswer = item.CorrectAnswer,
                 Points = item.Points,
                 Explanation = item.Explanation,
+                Topic = item.Topic,
+                Skill = item.Skill,
+                GrammarTags = item.GrammarTags,
+                VocabularyTags = item.VocabularyTags,
                 Level = level
             });
         }
@@ -127,6 +132,54 @@ public class QuestionBankController : ControllerBase
         };
 
         var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Generate draft question bank items with AI Creator
+    /// </summary>
+    [HttpPost("ai-generate")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> GenerateQuestionBankItems(
+        [FromBody] GenerateQuestionBankItemsRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!Enum.TryParse<HomeworkQuestionType>(request.QuestionType, ignoreCase: true, out var questionType))
+        {
+            return Results.BadRequest($"Invalid question type: {request.QuestionType}");
+        }
+
+        if (!Enum.TryParse<QuestionLevel>(request.Level, ignoreCase: true, out var level))
+        {
+            return Results.BadRequest($"Invalid level: {request.Level}");
+        }
+
+        var taskStyle = string.IsNullOrWhiteSpace(request.TaskStyle)
+            ? "standard"
+            : request.TaskStyle.Trim().ToLowerInvariant();
+
+        if (taskStyle is not ("standard" or "translation"))
+        {
+            return Results.BadRequest($"Invalid task style: {request.TaskStyle}");
+        }
+
+        var query = new GenerateAiQuestionBankItemsQuery
+        {
+            ProgramId = request.ProgramId,
+            Topic = request.Topic,
+            QuestionType = questionType,
+            QuestionCount = request.QuestionCount,
+            Level = level,
+            Skill = request.Skill,
+            TaskStyle = taskStyle,
+            GrammarTags = request.GrammarTags,
+            VocabularyTags = request.VocabularyTags,
+            Instructions = request.Instructions,
+            Language = request.Language,
+            PointsPerQuestion = request.PointsPerQuestion
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
 }
