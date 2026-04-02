@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Profiles.ApproveProfile;
 
-public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator mediator)
+public sealed class ApproveProfileCommandHandler(IDbContext context, IPublisher publisher)
     : ICommandHandler<ApproveProfileCommand, ApproveProfileResponse>
 {
     public async Task<Result<ApproveProfileResponse>> Handle(ApproveProfileCommand command, CancellationToken cancellationToken)
@@ -26,7 +26,18 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
             .Select(p => new
             {
                 p.Id,
-                p.IsApproved
+                p.IsApproved,
+                p.UserId,
+                p.ProfileType,
+                p.DisplayName,
+                p.Name,
+                p.Gender,
+                p.DateOfBirth,
+                p.ZaloId,
+                p.CreatedAt,
+                UserName = p.User.Name,
+                UserEmail = p.User.Email,
+                UserPhoneNumber = p.User.PhoneNumber
             })
             .ToListAsync(cancellationToken);
 
@@ -62,15 +73,11 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
 
         result.ApprovedCount = updatedCount;
 
-        var approvedProfiles = await context.Profiles
-            .Include(p => p.User)
-            .Where(p => idsToApprove.Contains(p.Id))
-            .ToListAsync(cancellationToken);
-
         const string defaultPassword = "123456";
         const string defaultPin = "1234";
 
-        var emailEvents = approvedProfiles
+        var emailEvents = profiles
+            .Where(profile => idsToApprove.Contains(profile.Id))
             .GroupBy(profile => profile.UserId)
             .Select(group =>
             {
@@ -81,7 +88,7 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
                 var recipientName = group
                     .Select(profile => profile.DisplayName)
                     .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
-                    ?? firstProfile.User?.Name
+                    ?? firstProfile.UserName
                     ?? string.Empty;
 
                 var emailProfiles = group
@@ -101,8 +108,8 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
                 return new ProfileCreatedDomainEvent(
                     group.Key,
                     recipientName,
-                    firstProfile.User?.Email ?? string.Empty,
-                    firstProfile.User?.PhoneNumber ?? string.Empty,
+                    firstProfile.UserEmail ?? string.Empty,
+                    firstProfile.UserPhoneNumber ?? string.Empty,
                     defaultPassword,
                     defaultPin,
                     emailProfiles
@@ -112,7 +119,7 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IMediator m
 
         foreach (var emailEvent in emailEvents)
         {
-            await mediator.Publish(emailEvent, cancellationToken);
+            await publisher.Publish(emailEvent, cancellationToken);
         }
 
         return Result.Success(result);

@@ -109,6 +109,7 @@ public sealed class GetLessonBundleQueryHandler(
             FileSize = material.FileSize,
             FileType = material.FileType.ToString(),
             Category = material.Category.ToString(),
+            PreviewUrl = $"/api/teaching-materials/{material.Id}/preview",
             DownloadUrl = $"/api/teaching-materials/{material.Id}/download",
             CreatedAt = material.CreatedAt
         };

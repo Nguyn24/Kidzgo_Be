@@ -47,6 +47,7 @@ public sealed class GetTeachingMaterialByIdQueryHandler(
             EncryptionKeyVersion = material.EncryptionKeyVersion,
             UploadedByUserId = material.UploadedByUserId,
             UploadedByName = material.UploadedByUser.Name,
+            PreviewUrl = $"/api/teaching-materials/{material.Id}/preview",
             DownloadUrl = $"/api/teaching-materials/{material.Id}/download",
             CreatedAt = material.CreatedAt,
             UpdatedAt = material.UpdatedAt

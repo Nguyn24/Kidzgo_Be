@@ -174,6 +174,22 @@ public class TeachingMaterialsController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpGet("{id:guid}/preview")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> Preview(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new DownloadTeachingMaterialQuery
+        {
+            TeachingMaterialId = id
+        }, cancellationToken);
+
+        return result.Match(
+            success => Results.File(success.Content, success.MimeType, enableRangeProcessing: true),
+            failure => CustomResults.Problem(failure));
+    }
+
     [HttpGet("{id:guid}/download")]
     [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
     public async Task<IResult> Download(

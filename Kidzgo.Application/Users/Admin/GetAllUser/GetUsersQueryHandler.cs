@@ -67,6 +67,14 @@ public sealed class GetUsersQueryHandler(IDbContext context)
                     ProfileType = p.ProfileType.ToString(),
                     DisplayName = p.DisplayName,
                     IsActive = p.IsActive,
+                    LastLoginAt = p.ProfileType == ProfileType.Parent ? u.LastLoginAt : p.LastLoginAt,
+                    LastSeenAt = p.ProfileType == ProfileType.Parent ? u.LastSeenAt : p.LastSeenAt,
+                    IsOnline = UserPresenceHelper.IsOnline(
+                        p.ProfileType == ProfileType.Parent ? u.LastSeenAt : p.LastSeenAt,
+                        now),
+                    OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
+                        p.ProfileType == ProfileType.Parent ? u.LastSeenAt : p.LastSeenAt,
+                        now),
                     CreatedAt = p.CreatedAt
                 })
                 .ToList()

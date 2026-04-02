@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Errors;
@@ -127,7 +128,15 @@ public sealed class UpdateCurrentUserCommandHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
-                ProfileType = p.ProfileType.ToString()
+                ProfileType = p.ProfileType.ToString(),
+                LastLoginAt = p.ProfileType == ProfileType.Parent ? user.LastLoginAt : p.LastLoginAt,
+                LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                IsOnline = UserPresenceHelper.IsOnline(
+                    p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                    DateTime.UtcNow),
+                OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
+                    p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
+                    DateTime.UtcNow)
             }).ToList()
         };
 
