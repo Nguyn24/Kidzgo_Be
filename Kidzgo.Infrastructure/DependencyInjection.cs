@@ -192,6 +192,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.Configure<ClientSettings>(configuration.GetSection(nameof(ClientSettings)));
+        services.AddSingleton<Application.Abstraction.Services.IClientUrlProvider, ClientUrlProvider>();
         return services;
     }
 
