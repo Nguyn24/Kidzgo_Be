@@ -31,6 +31,9 @@ public static class MigrationExtensions
             {
                 logger.LogInformation("No pending migrations");
             }
+
+            var templateSeeder = scope.ServiceProvider.GetRequiredService<TemplateRuntimeSeeder>();
+            templateSeeder.SeedAsync().GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
