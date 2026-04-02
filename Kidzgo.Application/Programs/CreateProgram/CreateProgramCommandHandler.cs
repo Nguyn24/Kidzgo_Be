@@ -49,7 +49,6 @@ public sealed class CreateProgramCommandHandler(
             IsMakeup = program.IsMakeup,
             IsSupplementary = program.IsSupplementary,
             DefaultMakeupClassId = program.DefaultMakeupClassId,
-            TotalSessions = program.TotalSessions,
             DefaultTuitionAmount = program.DefaultTuitionAmount,
             UnitPriceSession = program.UnitPriceSession,
             Description = program.Description,

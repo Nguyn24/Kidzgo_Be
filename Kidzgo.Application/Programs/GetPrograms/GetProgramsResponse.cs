@@ -17,7 +17,6 @@ public sealed class ProgramDto
     public bool IsMakeup { get; init; }
     public bool IsSupplementary { get; init; }
     public Guid? DefaultMakeupClassId { get; init; }
-    public int TotalSessions { get; init; }
     public decimal DefaultTuitionAmount { get; init; }
     public decimal UnitPriceSession { get; init; }
     public string? Description { get; init; }

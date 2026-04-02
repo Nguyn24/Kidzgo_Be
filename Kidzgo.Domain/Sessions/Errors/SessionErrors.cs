@@ -16,6 +16,14 @@ public static class SessionErrors
         "Session.InvalidClassStatus",
         "Sessions can only be created for Planned or Active classes");
 
+    public static Error MissingSchedulePattern(Guid classId) => Error.Validation(
+        "Session.MissingSchedulePattern",
+        $"Class '{classId}' does not have a schedule pattern");
+
+    public static Error MissingClassEndDate(Guid classId) => Error.Validation(
+        "Session.MissingClassEndDate",
+        $"Class '{classId}' must have an end date before generating sessions from schedule pattern");
+
     public static Error AlreadyCancelled => Error.Validation(
         "Session.AlreadyCancelled",
         "Session is already cancelled");

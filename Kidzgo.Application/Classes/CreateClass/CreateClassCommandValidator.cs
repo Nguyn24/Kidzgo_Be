@@ -26,6 +26,8 @@ public sealed class CreateClassCommandValidator : AbstractValidator<CreateClassC
             .WithMessage("Start date cannot be in the past");
 
         RuleFor(command => command.EndDate)
+            .NotNull().WithMessage("End date is required when schedule pattern is provided")
+            .When(command => !string.IsNullOrWhiteSpace(command.SchedulePattern))
             .GreaterThanOrEqualTo(command => command.StartDate)
             .WithMessage("End date must be greater than or equal to start date")
             .When(command => command.EndDate.HasValue)

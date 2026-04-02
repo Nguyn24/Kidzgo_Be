@@ -25,7 +25,6 @@ public sealed class GetProgramByIdQueryHandler(
                 IsSupplementary = p.IsSupplementary,
                 DefaultMakeupClassId = p.DefaultMakeupClassId,
                 Code = p.Code,
-                TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,
                 Description = p.Description,

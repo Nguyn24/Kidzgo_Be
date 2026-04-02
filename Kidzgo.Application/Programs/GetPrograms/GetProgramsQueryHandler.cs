@@ -62,7 +62,6 @@ public sealed class GetProgramsQueryHandler(
                 IsMakeup = p.IsMakeup,
                 IsSupplementary = p.IsSupplementary,
                 DefaultMakeupClassId = p.DefaultMakeupClassId,
-                TotalSessions = p.TotalSessions,
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,
                 Description = p.Description,
