@@ -27,6 +27,11 @@
 | BR-008 | Reward stars are granted to students upon successful submission |
 | BR-009 | Late submissions are automatically marked by background job |
 | BR-010 | Multiple choice homework auto-grades upon submission |
+| BR-011 | AI Hint is only available when the homework assignment enables it |
+| BR-012 | AI Recommend is only available when the homework assignment enables it |
+| BR-013 | AI Speaking Analysis can run from submitted transcript/audio/video without changing homework status |
+| BR-014 | AI Speaking Practice can run directly from uploaded audio/video without requiring homework submission |
+| BR-015 | AI Quick Grade only persists score/feedback when `aiUsed=true` |
 
 ### 1.2 Submission Types
 
@@ -95,6 +100,10 @@
 | Submit Homework | ✓ | Submit homework answer |
 | Submit Multiple Choice | ✓ | Submit quiz answers |
 | View My Feedback | ✓ | View grades and feedback |
+| Get AI Hint | ✓ | Request AI hint for current homework |
+| Get AI Recommendations | ✓ | Request follow-up practice suggestions |
+| Get AI Speaking Analysis | ✓ | Analyze submitted speaking answer |
+| Get AI Speaking Practice | ✓ | Upload audio/video directly for instant speaking feedback |
 
 ---
 
@@ -119,6 +128,9 @@ Submitted → Late (when past due and manually marked)
 Assigned → Missing (when past due and manually marked)
 Any → Graded (re-grade allowed)
 ```
+
+*AI Hint, AI Recommend, AI Speaking Analysis, and AI Speaking Practice do not change homework status.*
+*AI Quick Grade keeps status unchanged when `aiUsed=false`, and moves submission to `Graded` when `aiUsed=true`.*
 
 ### 4.3 Allowed Status Transitions
 
@@ -624,6 +636,71 @@ Any → Graded (re-grade allowed)
 
 ---
 
+#### 5.2.3a AI Quick Grade Homework
+
+| Item | Details |
+|------|---------|
+| **Endpoint** | `POST /api/homework/submissions/{homeworkStudentId}/quick-grade` |
+| **Method** | POST |
+| **Roles** | Teacher, TeachingAssistant, ManagementStaff, Admin |
+| **Scope** | Own Classes |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `Language` | string | No | Default `vi` |
+| `Instructions` | string | No | Override instructions sent to AI |
+| `Rubric` | string | No | Override rubric sent to AI |
+| `ExpectedAnswerText` | string | No | Override expected answer / expected speaking text |
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "assignmentId": "guid",
+    "isSpeakingAnalysis": true,
+    "aiUsed": true,
+    "persisted": true,
+    "status": "Graded",
+    "score": 8.5,
+    "rawAiScore": 8.5,
+    "rawAiMaxScore": 10,
+    "summary": "Good pronunciation overall",
+    "strengths": ["Clear ending sounds"],
+    "issues": ["Word stress is inconsistent"],
+    "suggestions": ["Slow down on long words"],
+    "stars": 4,
+    "pronunciationScore": 8.5,
+    "fluencyScore": 7.5,
+    "accuracyScore": 8.0,
+    "mispronouncedWords": ["family"],
+    "wordFeedback": [
+      {
+        "word": "family",
+        "heardAs": "famly",
+        "issue": "Missing middle vowel",
+        "tip": "Say fa-mi-ly in three beats"
+      }
+    ],
+    "practicePlan": ["Repeat target words 3 times"],
+    "warnings": [],
+    "gradedAt": "2025-01-16T10:00:00Z"
+  }
+}
+```
+
+**Notes:**
+
+- If the assignment has `SpeakingMode`, the backend routes to A8 speaking analysis.
+- Otherwise the backend routes to A3 grading.
+- If `aiUsed=false`, the API still returns `200`, but score/status/aiFeedback are not persisted.
+
+---
+
 #### 5.2.4 Mark Homework Late or Missing
 
 | Item | Details |
@@ -812,6 +889,11 @@ Any → Graded (re-grade allowed)
     "status": "Graded",
     "dueAt": "2025-01-15T23:59:00Z",
     "submissionType": "MULTIPLE_CHOICE",
+    "aiHintEnabled": true,
+    "aiRecommendEnabled": true,
+    "speakingMode": "speaking",
+    "targetWords": ["hello", "family"],
+    "speakingExpectedText": "Hello, my name is Rex.",
     "timeLimitMinutes": 30,
     "allowResubmit": false,
     "startedAt": "2025-01-14T09:30:00Z",
@@ -1014,6 +1096,241 @@ Any → Graded (re-grade allowed)
 
 ---
 
+#### 5.3.7 Get AI Hint
+
+| Item | Details |
+|------|---------|
+| **Endpoint** | `POST /api/students/homework/{homeworkStudentId}/hint` |
+| **Method** | POST |
+| **Roles** | Student |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `CurrentAnswerText` | string | No | Optional latest answer text from UI |
+| `Language` | string | No | Default `vi` |
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "aiUsed": true,
+    "summary": "Focus on present simple structure",
+    "hints": ["Check the verb after he/she/it"],
+    "grammarFocus": ["Present simple"],
+    "vocabularyFocus": ["family members"],
+    "encouragement": "You are close. Try one more time.",
+    "warnings": []
+  }
+}
+```
+
+**Notes:**
+
+- This endpoint does not change homework status, score, or feedback in DB.
+- If `CurrentAnswerText` is empty, backend falls back to stored `TextAnswer`.
+
+---
+
+#### 5.3.8 Get AI Recommendations
+
+| Item | Details |
+|------|---------|
+| **Endpoint** | `POST /api/students/homework/{homeworkStudentId}/recommendations` |
+| **Method** | POST |
+| **Roles** | Student |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `CurrentAnswerText` | string | No | Optional latest answer text from UI |
+| `Language` | string | No | Default `vi` |
+| `MaxItems` | int | No | Recommended 1..10, default 5 |
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "aiUsed": true,
+    "summary": "Practice more present simple sentence building",
+    "focusSkill": "grammar",
+    "topics": ["family"],
+    "grammarTags": ["present simple"],
+    "vocabularyTags": ["family members"],
+    "recommendedLevels": ["Easy", "Medium"],
+    "practiceTypes": ["text_input"],
+    "warnings": [],
+    "items": [
+      {
+        "questionBankItemId": "guid",
+        "questionText": "My mother ____ a doctor.",
+        "questionType": "TextInput",
+        "options": [],
+        "topic": "family",
+        "skill": "grammar",
+        "grammarTags": ["present simple"],
+        "vocabularyTags": ["jobs"],
+        "level": "Easy",
+        "points": 1,
+        "reason": "Matches the same grammar pattern"
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 5.3.9 Get AI Speaking Analysis
+
+| Item | Details |
+|------|---------|
+| **Endpoint** | `POST /api/students/homework/{homeworkStudentId}/speaking-analysis` |
+| **Method** | POST |
+| **Roles** | Student |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `CurrentTranscript` | string | No | Optional transcript from UI |
+| `Language` | string | No | Default `vi` |
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "aiUsed": true,
+    "summary": "Clear overall reading with a few weak words",
+    "transcript": "Hello my name is Rex",
+    "overallScore": 8.2,
+    "pronunciationScore": 8.4,
+    "fluencyScore": 7.8,
+    "accuracyScore": 8.3,
+    "stars": 4,
+    "strengths": ["Good pacing"],
+    "issues": ["Word stress on 'family'"],
+    "mispronouncedWords": ["family"],
+    "wordFeedback": [
+      {
+        "word": "family",
+        "heardAs": "famly",
+        "issue": "Missing middle vowel",
+        "tip": "Say fa-mi-ly in three beats"
+      }
+    ],
+    "suggestions": ["Repeat difficult words slowly"],
+    "practicePlan": ["Read the sentence 3 more times"],
+    "confidence": {
+      "overall": 0.88
+    },
+    "warnings": []
+  }
+}
+```
+
+**Notes:**
+
+- If `CurrentTranscript` is provided, backend prioritizes transcript analysis.
+- If transcript is empty but the submission already has an audio/video attachment, backend analyzes the attachment instead.
+- This endpoint does not persist score or AI feedback.
+
+---
+
+#### 5.3.10 Get AI Speaking Practice (Instant, no submit required)
+
+| Item | Details |
+|------|---------|
+| **Endpoint** | `POST /api/students/ai-speaking/analyze` |
+| **Method** | POST |
+| **Roles** | Student |
+| **Content-Type** | `multipart/form-data` |
+
+**Form Data:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `File` | binary | Yes | Audio/video file to analyze immediately |
+| `HomeworkStudentId` | GUID | No | Optional homework context; does not submit the homework |
+| `Language` | string | No | Default `vi` |
+| `Mode` | string | No | Example: `speaking`, `phonics` |
+| `ExpectedText` | string | No | Expected reading text |
+| `TargetWords` | string | No | Comma-separated target words |
+| `Instructions` | string | No | Extra speaking instructions |
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "aiUsed": true,
+    "summary": "Good practice attempt with clear consonants",
+    "transcript": "Hello my name is Rex",
+    "overallScore": 8.0,
+    "pronunciationScore": 8.1,
+    "fluencyScore": 7.7,
+    "accuracyScore": 8.0,
+    "stars": 4,
+    "strengths": ["Clear ending sounds"],
+    "issues": ["Word stress needs work"],
+    "mispronouncedWords": ["family"],
+    "wordFeedback": [
+      {
+        "word": "family",
+        "heardAs": "famly",
+        "issue": "Missing middle vowel",
+        "tip": "Say fa-mi-ly in three beats"
+      }
+    ],
+    "suggestions": ["Read slower on long words"],
+    "practicePlan": ["Repeat target words 3 times"],
+    "warnings": []
+  }
+}
+```
+
+**Swagger / form-data example:**
+
+| Field | Example |
+|-------|---------|
+| `File` | `student-reading.webm` |
+| `HomeworkStudentId` | `7d7c38d4-7d8d-4f49-92f3-4d2b70f4ef11` |
+| `Language` | `vi` |
+| `Mode` | `speaking` |
+| `ExpectedText` | `Hello, my name is Rex.` |
+| `TargetWords` | `hello, name, rex` |
+| `Instructions` | `Read slowly and clearly.` |
+
+**cURL example:**
+
+```bash
+curl -X POST "https://your-domain/api/students/ai-speaking/analyze" \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@student-reading.webm" \
+  -F "language=vi" \
+  -F "mode=speaking" \
+  -F "expectedText=Hello, my name is Rex." \
+  -F "targetWords=hello, name, rex" \
+  -F "instructions=Read slowly and clearly."
+```
+
+**Notes:**
+
+- This endpoint is for instant speaking practice and does not require `submit homework`.
+- If `HomeworkStudentId` is provided, backend borrows homework context but still does not submit or grade the homework.
+- If the uploaded file is not audio/video, backend may return `200` with `aiUsed=false` and `warnings[]`.
+
+---
+
 ## 6. Validation Rules
 
 ### 6.1 Create Homework Assignment
@@ -1061,6 +1378,18 @@ Any → Graded (re-grade allowed)
 | `CorrectAnswer` | Must be valid index/text | Question {n} has invalid correct answer index |
 | `Points` | Must be > 0 | Question {n} points must be greater than 0 |
 
+### 6.6 AI Homework Endpoints
+
+| Endpoint / Field | Rule | Error Message |
+|------------------|------|---------------|
+| `POST /api/students/homework/{homeworkStudentId}/hint` | Homework must enable AI Hint | AI hint is not enabled for this homework |
+| `POST /api/students/homework/{homeworkStudentId}/recommendations` | Homework must enable AI Recommend | AI recommendation is not enabled for this homework |
+| `POST /api/students/homework/{homeworkStudentId}/speaking-analysis` | Homework must have `SpeakingMode` | AI speaking analysis is not available for this homework |
+| `POST /api/students/homework/{homeworkStudentId}/speaking-analysis` | Must have transcript or attachment | Submission data is required for speaking analysis |
+| `POST /api/students/ai-speaking/analyze` | `File` is required | An audio or video file is required for instant AI speaking analysis |
+| `POST /api/homework/submissions/{homeworkStudentId}/quick-grade` | Submission must be `Submitted` or `Graded` | Can only grade homework that has been submitted |
+| `POST /api/homework/submissions/{homeworkStudentId}/quick-grade` | Submission must have text or attachment | Submission data is required for grading |
+
 ---
 
 ## 7. Error Codes
@@ -1103,7 +1432,16 @@ Any → Graded (re-grade allowed)
 | `HomeworkSubmission.TimeExpired` | Time limit expired | 400 |
 | `HomeworkSubmission.QuestionNotFound` | Question not found | 404 |
 
-### 7.3 Multiple Choice Errors
+### 7.3 AI Homework Errors
+
+| Code | Message | HTTP Status |
+|------|---------|--------------|
+| `Homework.AiHintNotEnabled` | AI hint is not enabled for this homework | 400 |
+| `Homework.AiRecommendNotEnabled` | AI recommendation is not enabled for this homework | 400 |
+| `Homework.AiSpeakingNotAvailable` | AI speaking analysis is not available for this homework | 400 |
+| `Homework.AiSpeakingPracticeFileRequired` | Audio/video file is required for instant practice | 400 |
+
+### 7.4 Multiple Choice Errors
 
 | Code | Message | HTTP Status |
 |------|---------|--------------|

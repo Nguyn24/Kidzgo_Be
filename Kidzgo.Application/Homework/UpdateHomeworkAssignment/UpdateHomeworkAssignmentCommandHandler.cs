@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -120,6 +121,21 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
             homework.Skills = command.Skills;
         }
 
+        if (command.Topic != null)
+        {
+            homework.Topic = command.Topic;
+        }
+
+        if (command.GrammarTags != null)
+        {
+            homework.GrammarTags = StringListJson.Serialize(command.GrammarTags);
+        }
+
+        if (command.VocabularyTags != null)
+        {
+            homework.VocabularyTags = StringListJson.Serialize(command.VocabularyTags);
+        }
+
         if (command.SubmissionType.HasValue)
         {
             homework.SubmissionType = command.SubmissionType.Value;
@@ -145,6 +161,16 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
             homework.AllowResubmit = command.AllowResubmit.Value;
         }
 
+        if (command.AiHintEnabled.HasValue)
+        {
+            homework.AiHintEnabled = command.AiHintEnabled.Value;
+        }
+
+        if (command.AiRecommendEnabled.HasValue)
+        {
+            homework.AiRecommendEnabled = command.AiRecommendEnabled.Value;
+        }
+
         if (command.MissionId.HasValue)
         {
             homework.MissionId = command.MissionId;
@@ -163,6 +189,26 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
         if (command.Rubric != null)
         {
             homework.Rubric = command.Rubric;
+        }
+
+        if (command.SpeakingMode != null)
+        {
+            homework.SpeakingMode = command.SpeakingMode;
+        }
+
+        if (command.TargetWords != null)
+        {
+            homework.TargetWords = StringListJson.Serialize(command.TargetWords);
+        }
+
+        if (command.SpeakingExpectedText != null)
+        {
+            homework.SpeakingExpectedText = command.SpeakingExpectedText;
+        }
+
+        if (command.AttachmentUrl != null)
+        {
+            homework.AttachmentUrl = command.AttachmentUrl;
         }
 
         // Update LATE status for submissions if due date changed

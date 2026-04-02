@@ -2,6 +2,10 @@ using Kidzgo.API.Extensions;
 using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Classes.GetStudentClasses;
+using Kidzgo.Application.Homework.AnalyzeSpeakingPractice;
+using Kidzgo.Application.Homework.GetHomeworkHint;
+using Kidzgo.Application.Homework.GetHomeworkRecommendations;
+using Kidzgo.Application.Homework.GetHomeworkSpeakingAnalysis;
 using Kidzgo.Application.Homework.GetStudentHomeworks;
 using Kidzgo.Application.Homework.GetStudentHomeworkFeedback;
 using Kidzgo.Application.Homework.GetStudentHomeworkSubmission;
@@ -206,6 +210,41 @@ public class StudentController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpPost("homework/{homeworkStudentId:guid}/hint")]
+    public async Task<IResult> GetHomeworkHint(
+        Guid homeworkStudentId,
+        [FromBody] GetHomeworkHintRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetHomeworkHintQuery
+        {
+            HomeworkStudentId = homeworkStudentId,
+            CurrentAnswerText = request.CurrentAnswerText,
+            Language = request.Language
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("homework/{homeworkStudentId:guid}/recommendations")]
+    public async Task<IResult> GetHomeworkRecommendations(
+        Guid homeworkStudentId,
+        [FromBody] GetHomeworkRecommendationsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetHomeworkRecommendationsQuery
+        {
+            HomeworkStudentId = homeworkStudentId,
+            CurrentAnswerText = request.CurrentAnswerText,
+            Language = request.Language,
+            MaxItems = request.MaxItems
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
     /// <summary>
     /// Xem điểm và feedback của bản thân
     /// </summary>
@@ -221,6 +260,61 @@ public class StudentController : ControllerBase
             ClassId = classId,
             PageNumber = pageNumber,
             PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("homework/{homeworkStudentId:guid}/speaking-analysis")]
+    public async Task<IResult> GetHomeworkSpeakingAnalysis(
+        Guid homeworkStudentId,
+        [FromBody] GetHomeworkSpeakingAnalysisRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetHomeworkSpeakingAnalysisQuery
+        {
+            HomeworkStudentId = homeworkStudentId,
+            CurrentTranscript = request.CurrentTranscript,
+            Language = request.Language
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("ai-speaking/analyze")]
+    [RequestSizeLimit(100_000_000)]
+    [Consumes("multipart/form-data")]
+    public async Task<IResult> AnalyzeSpeakingPractice(
+        [FromForm] AnalyzeSpeakingPracticeRequest request,
+        CancellationToken cancellationToken)
+    {
+        byte[] fileBytes = Array.Empty<byte>();
+        var fileName = request.File?.FileName ?? "speaking-practice";
+        var contentType = string.IsNullOrWhiteSpace(request.File?.ContentType)
+            ? "application/octet-stream"
+            : request.File!.ContentType;
+
+        if (request.File is not null)
+        {
+            await using var inputStream = request.File.OpenReadStream();
+            using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, cancellationToken);
+            fileBytes = memoryStream.ToArray();
+        }
+
+        var query = new AnalyzeSpeakingPracticeQuery
+        {
+            HomeworkStudentId = request.HomeworkStudentId,
+            FileBytes = fileBytes,
+            FileName = fileName,
+            ContentType = contentType,
+            Language = request.Language,
+            Mode = request.Mode,
+            ExpectedText = request.ExpectedText,
+            TargetWords = request.TargetWords,
+            Instructions = request.Instructions
         };
 
         var result = await _mediator.Send(query, cancellationToken);

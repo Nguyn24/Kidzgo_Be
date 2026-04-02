@@ -6,6 +6,7 @@ using ExcelDataReader;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -51,6 +52,10 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
         var pointsIdx = FindHeaderIndex(headerIndex, "points", "score");
         var explanationIdx = FindHeaderIndex(headerIndex, "explanation", "explain");
         var questionTypeIdx = FindHeaderIndex(headerIndex, "questiontype", "question_type", "type");
+        var topicIdx = FindHeaderIndex(headerIndex, "topic", "subject");
+        var skillIdx = FindHeaderIndex(headerIndex, "skill", "skills");
+        var grammarTagsIdx = FindHeaderIndex(headerIndex, "grammartags", "grammar_tags", "grammar");
+        var vocabularyTagsIdx = FindHeaderIndex(headerIndex, "vocabularytags", "vocabulary_tags", "vocabulary", "vocabtags", "vocab_tags");
 
         if (questionTextIdx < 0 || optionsIdx < 0 || correctAnswerIdx < 0 || levelIdx < 0)
         {
@@ -79,6 +84,14 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
             var pointsRaw = pointsIdx >= 0 ? GetField(fields, pointsIdx) : null;
             var explanation = explanationIdx >= 0 ? GetField(fields, explanationIdx) : null;
             var questionTypeRaw = questionTypeIdx >= 0 ? GetField(fields, questionTypeIdx) : null;
+            var topic = topicIdx >= 0 ? GetField(fields, topicIdx) : null;
+            var skill = skillIdx >= 0 ? GetField(fields, skillIdx) : null;
+            var grammarTags = grammarTagsIdx >= 0
+                ? StringListJson.ParseTags(GetField(fields, grammarTagsIdx))
+                : new List<string>();
+            var vocabularyTags = vocabularyTagsIdx >= 0
+                ? StringListJson.ParseTags(GetField(fields, vocabularyTagsIdx))
+                : new List<string>();
 
             if (string.IsNullOrWhiteSpace(questionText))
             {
@@ -167,6 +180,10 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
                 CorrectAnswer = correctAnswer,
                 Points = points,
                 Explanation = string.IsNullOrWhiteSpace(explanation) ? null : explanation,
+                Topic = string.IsNullOrWhiteSpace(topic) ? null : topic,
+                Skill = string.IsNullOrWhiteSpace(skill) ? null : skill,
+                GrammarTags = StringListJson.Serialize(grammarTags),
+                VocabularyTags = StringListJson.Serialize(vocabularyTags),
                 Level = level,
                 CreatedBy = createdBy,
                 CreatedAt = now
