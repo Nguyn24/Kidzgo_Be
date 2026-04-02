@@ -1,4 +1,7 @@
 rexengswagger.duckdns.org {
+    @root path /
+    redir @root /swagger/index.html 308
+
     encode zstd gzip
 
     header {

@@ -38,6 +38,9 @@ Expand-Archive -Path $zipPath -DestinationPath $InstallRoot -Force
 $caddyFilePath = Join-Path $InstallRoot "Caddyfile"
 $caddyFile = @"
 $Domain {
+    @root path /
+    redir @root /swagger/index.html 308
+
     encode zstd gzip
 
     header {
