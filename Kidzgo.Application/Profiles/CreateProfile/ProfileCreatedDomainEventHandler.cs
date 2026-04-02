@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Users.Events;
 using MediatR;
@@ -12,11 +13,11 @@ namespace Kidzgo.Application.Profiles.CreateProfile;
 public sealed class ProfileCreatedDomainEventHandler(
     IDbContext context,
     IMailService mailService,
-    ITemplateRenderer templateRenderer
+    ITemplateRenderer templateRenderer,
+    IClientUrlProvider clientUrlProvider
 ) : INotificationHandler<ProfileCreatedDomainEvent>
 {
     private const string TemplateCode = "PROFILE_CREATED";
-    private const string ApiUrl = "http://103.146.22.206:5000";
 
     public async Task Handle(ProfileCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
@@ -37,7 +38,7 @@ public sealed class ProfileCreatedDomainEventHandler(
         var orderedProfiles = notification.Profiles.ToList();
 
         var firstProfile = orderedProfiles[0];
-        var verifyLink = $"{ApiUrl}/api/profiles/{firstProfile.ProfileId}/reactivate-and-update";
+        var verifyLink = $"{clientUrlProvider.GetApiUrl()}/api/profiles/{firstProfile.ProfileId}/reactivate-and-update";
         var recipientName = string.IsNullOrWhiteSpace(notification.RecipientName)
             ? firstProfile.DisplayName
             : notification.RecipientName;
