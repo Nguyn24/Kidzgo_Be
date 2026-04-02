@@ -160,6 +160,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<TemplateRuntimeSeeder>();
 
         return services;
     }

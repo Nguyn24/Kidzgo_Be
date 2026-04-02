@@ -16,7 +16,7 @@ public sealed class ProfileCreatedDomainEventHandler(
 ) : INotificationHandler<ProfileCreatedDomainEvent>
 {
     private const string TemplateCode = "PROFILE_CREATED";
-    private const string FrontendUrl = "https://kidzgo-centre-pvjj.vercel.app/vi";
+    private const string ApiUrl = "http://103.146.22.206:5000";
 
     public async Task Handle(ProfileCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
@@ -37,7 +37,7 @@ public sealed class ProfileCreatedDomainEventHandler(
         var orderedProfiles = notification.Profiles.ToList();
 
         var firstProfile = orderedProfiles[0];
-        var verifyLink = $"{FrontendUrl}/activate-profile?id={firstProfile.ProfileId}";
+        var verifyLink = $"{ApiUrl}/api/profiles/{firstProfile.ProfileId}/reactivate-and-update";
         var recipientName = string.IsNullOrWhiteSpace(notification.RecipientName)
             ? firstProfile.DisplayName
             : notification.RecipientName;
