@@ -91,8 +91,7 @@ public sealed class CreateProfileCommandHandler(
             var existingStudentProfiles = await context.Profiles
                 .Where(p => p.UserId == command.UserId && 
                            p.ProfileType == ProfileType.Student && 
-                           !p.IsDeleted && 
-                           p.IsActive)
+                           !p.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var studentProfile in existingStudentProfiles)
@@ -113,8 +112,7 @@ public sealed class CreateProfileCommandHandler(
             var existingParentProfiles = await context.Profiles
                 .Where(p => p.UserId == command.UserId && 
                            p.ProfileType == ProfileType.Parent && 
-                           !p.IsDeleted && 
-                           p.IsActive)
+                           !p.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var parentProfile in existingParentProfiles)

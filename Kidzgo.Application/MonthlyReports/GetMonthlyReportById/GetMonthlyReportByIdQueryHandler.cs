@@ -25,6 +25,7 @@ public sealed class GetMonthlyReportByIdQueryHandler(
         var report = await context.StudentMonthlyReports
             .Include(r => r.StudentProfile)
             .Include(r => r.Class)
+                .ThenInclude(c => c!.Program)
             .Include(r => r.SubmittedByUser)
             .Include(r => r.ReviewedByUser)
             .Include(r => r.ReportComments)
@@ -123,6 +124,8 @@ public sealed class GetMonthlyReportByIdQueryHandler(
             StudentName = report.StudentProfile.DisplayName,
             ClassId = report.ClassId,
             ClassName = report.Class?.Title,
+            ProgramId = report.Class?.ProgramId,
+            ProgramName = report.Class?.Program?.Name,
             JobId = report.JobId,
             Month = report.Month,
             Year = report.Year,
@@ -145,7 +148,8 @@ public sealed class GetMonthlyReportByIdQueryHandler(
                 HomeworkData = reportData.HomeworkData,
                 TestData = reportData.TestData,
                 MissionData = reportData.MissionData,
-                NotesData = reportData.NotesData
+                NotesData = reportData.NotesData,
+                TopicsData = reportData.TopicsData
             } : null,
             Comments = comments
         };

@@ -1,5 +1,10 @@
 # Program -> Placement Test -> Registration Flow Guide
 
+> Update 2026-04-03:
+> Placement test recommendation contract da duoc doi sang `ProgramRecommendationId` va
+> `SecondaryProgramRecommendationId`.
+> Khong con su dung `IsSecondaryProgramSupplementary`; supplementary duoc suy ra tu `Program.IsSupplementary`.
+
 ## Business rule
 
 ### Phạm vi tài liệu

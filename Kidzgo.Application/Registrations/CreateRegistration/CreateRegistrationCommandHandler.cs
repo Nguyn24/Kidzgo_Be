@@ -65,6 +65,12 @@ public sealed class CreateRegistrationCommandHandler(
                 return Result.Failure<CreateRegistrationResponse>(
                     RegistrationErrors.ProgramNotFound(command.SecondaryProgramId.Value));
             }
+
+            if (secondaryProgram.IsSupplementary)
+            {
+                return Result.Failure<CreateRegistrationResponse>(
+                    RegistrationErrors.SecondarySupplementaryRequiresSeparateRegistration(command.SecondaryProgramId.Value));
+            }
         }
 
         var activeRegistrations = context.Registrations

@@ -56,9 +56,9 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        // Deduplicate: Only keep the latest enrollment for each student (by EnrollDate descending)
+        // Keep the latest enrollment for each student/class pair within the month context.
         var latestEnrollments = enrollments
-            .GroupBy(e => e.StudentProfileId)
+            .GroupBy(e => new { e.StudentProfileId, e.ClassId })
             .Select(g => g.OrderByDescending(e => e.EnrollDate).First())
             .ToList();
 
@@ -69,11 +69,14 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
 
         // Load ALL existing reports and report data ONCE at the beginning
         var studentProfileIds = latestEnrollments.Select(e => e.StudentProfileId).Distinct().ToList();
+        var classIds = latestEnrollments.Select(e => e.ClassId).Distinct().ToList();
         
         var existingReports = await context.StudentMonthlyReports
             .Where(r => studentProfileIds.Contains(r.StudentProfileId) &&
                        r.Month == job.Month &&
-                       r.Year == job.Year)
+                       r.Year == job.Year &&
+                       r.ClassId.HasValue &&
+                       classIds.Contains(r.ClassId.Value))
             .ToListAsync(cancellationToken);
 
         var existingReportData = await context.MonthlyReportData
@@ -85,7 +88,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
 
         // Track reports in memory
         var reportsInMemory = existingReports
-            .ToDictionary(r => (r.StudentProfileId, r.Month, r.Year), r => r);
+            .ToDictionary(r => (r.StudentProfileId, r.ClassId, r.Month, r.Year), r => r);
         
         var reportDataInMemory = existingReportData
             .ToDictionary(rd => rd.ReportId, rd => rd);
@@ -97,7 +100,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         {
             try
             {
-                var key = (enrollment.StudentProfileId, job.Month, job.Year);
+                var key = (enrollment.StudentProfileId, (Guid?)enrollment.ClassId, job.Month, job.Year);
 
                 // Check if report already exists
                 bool isNewReport = !reportsInMemory.TryGetValue(key, out var report);
@@ -123,15 +126,22 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                 }
                 else
                 {
-                    // Update existing report - attach to context
-                    context.StudentMonthlyReports.Attach(report);
+                    // Update existing report in-place
+                    report.ClassId = enrollment.ClassId;
+                    report.JobId = job.Id;
                     report.UpdatedAt = now;
                     totalUpdated++;
+                }
+
+                if (report is null)
+                {
+                    continue;
                 }
 
                 // Aggregate data
                 var aggregatedDataJson = await dataAggregator.AggregateDataAsync(
                     enrollment.StudentProfileId,
+                    enrollment.ClassId,
                     job.Month,
                     job.Year,
                     cancellationToken);
@@ -162,8 +172,13 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                 else
                 {
                     // Update existing report data - attach to context
-                    context.MonthlyReportData.Attach(reportData);
+                    context.MonthlyReportData.Attach(reportData!);
                     reportData.UpdatedAt = now;
+                }
+
+                if (reportData is null)
+                {
+                    continue;
                 }
 
                 // Set individual data fields
@@ -197,6 +212,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
                 {
                     var sessionReports = await context.SessionReports
                         .Where(sr => sr.StudentProfileId == enrollment.StudentProfileId &&
+                                   sr.Session.ClassId == enrollment.ClassId &&
                                    sr.ReportDate >= DateOnly.FromDateTime(startDate) &&
                                    sr.ReportDate <= DateOnly.FromDateTime(endDate) &&
                                    !sr.IsMonthlyCompiled)

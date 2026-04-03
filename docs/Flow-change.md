@@ -1,6 +1,11 @@
 
 # Flow Change - Mixed Program + Session-Level Assignment
 
+> Update 2026-04-03:
+> Placement test recommendation contract da duoc doi tu string sang Guid.
+> Su dung `programRecommendationId` va `secondaryProgramRecommendationId`.
+> Field `isSecondaryProgramSupplementary` da bi loai bo; supplementary duoc suy ra tu `Program.IsSupplementary`.
+
 ## 1. Mục đích và phạm vi
 
 Tài liệu này tổng hợp toàn bộ thay đổi BE đã được sửa cho flow:
