@@ -22,9 +22,10 @@ public sealed class GetPlacementTestByIdResponse
     public decimal? ReadingScore { get; init; }
     public decimal? WritingScore { get; init; }
     public string? LevelRecommendation { get; init; }
-    public string? ProgramRecommendation { get; init; }
-    public string? SecondaryProgramRecommendation { get; init; }
-    public bool IsSecondaryProgramSupplementary { get; init; }
+    public Guid? ProgramRecommendationId { get; init; }
+    public string? ProgramRecommendationName { get; init; }
+    public Guid? SecondaryProgramRecommendationId { get; init; }
+    public string? SecondaryProgramRecommendationName { get; init; }
     public string? SecondaryProgramSkillFocus { get; init; }
     public string? Notes { get; init; }
     public string? AttachmentUrl { get; init; }

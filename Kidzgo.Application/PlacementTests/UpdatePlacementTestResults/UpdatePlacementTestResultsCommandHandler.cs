@@ -18,6 +18,8 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
     {
         var placementTest = await context.PlacementTests
             .Include(pt => pt.LeadChild)
+            .Include(pt => pt.ProgramRecommendationProgram)
+            .Include(pt => pt.SecondaryProgramRecommendationProgram)
             .FirstOrDefaultAsync(pt => pt.Id == command.PlacementTestId, cancellationToken);
 
         if (placementTest is null)
@@ -41,41 +43,67 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         if (command.ResultScore.HasValue)
             placementTest.ResultScore = command.ResultScore.Value;
 
-        if (command.ProgramRecommendation is not null)
+        if (command.ProgramRecommendationId.HasValue)
         {
-            placementTest.ProgramRecommendation = string.IsNullOrWhiteSpace(command.ProgramRecommendation)
-                ? null : command.ProgramRecommendation.Trim();
+            if (command.ProgramRecommendationId.Value == Guid.Empty)
+            {
+                placementTest.ProgramRecommendationId = null;
+            }
+            else
+            {
+                var recommendedProgram = await GetActiveProgramAsync(command.ProgramRecommendationId.Value, cancellationToken);
+                if (recommendedProgram is null)
+                {
+                    return Result.Failure<UpdatePlacementTestResultsResponse>(
+                        Error.NotFound(
+                            "PlacementTest.ProgramRecommendationNotFound",
+                            $"Recommended primary program '{command.ProgramRecommendationId.Value}' was not found."));
+                }
+
+                placementTest.ProgramRecommendationId = recommendedProgram.Id;
+            }
         }
 
-        if (command.SecondaryProgramRecommendation is not null)
+        if (command.SecondaryProgramRecommendationId.HasValue)
         {
-            if (string.IsNullOrWhiteSpace(command.SecondaryProgramRecommendation))
+            if (command.SecondaryProgramRecommendationId.Value == Guid.Empty)
             {
-                placementTest.SecondaryProgramRecommendation = null;
-                placementTest.IsSecondaryProgramSupplementary = false;
+                placementTest.SecondaryProgramRecommendationId = null;
                 placementTest.SecondaryProgramSkillFocus = null;
             }
             else
             {
-                placementTest.SecondaryProgramRecommendation = command.SecondaryProgramRecommendation.Trim();
-                placementTest.IsSecondaryProgramSupplementary = command.IsSecondaryProgramSupplementary ?? false;
+                var secondaryRecommendedProgram = await GetActiveProgramAsync(command.SecondaryProgramRecommendationId.Value, cancellationToken);
+                if (secondaryRecommendedProgram is null)
+                {
+                    return Result.Failure<UpdatePlacementTestResultsResponse>(
+                        Error.NotFound(
+                            "PlacementTest.SecondaryProgramRecommendationNotFound",
+                            $"Recommended secondary program '{command.SecondaryProgramRecommendationId.Value}' was not found."));
+                }
+
+                placementTest.SecondaryProgramRecommendationId = secondaryRecommendedProgram.Id;
                 placementTest.SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
                     ? null
                     : command.SecondaryProgramSkillFocus.Trim();
             }
         }
         else if (command.SecondaryProgramSkillFocus is not null &&
-                 placementTest.SecondaryProgramRecommendation is not null)
+                 placementTest.SecondaryProgramRecommendationId is not null)
         {
             placementTest.SecondaryProgramSkillFocus = string.IsNullOrWhiteSpace(command.SecondaryProgramSkillFocus)
                 ? null
                 : command.SecondaryProgramSkillFocus.Trim();
         }
 
-        if (command.IsSecondaryProgramSupplementary.HasValue &&
-            placementTest.SecondaryProgramRecommendation is not null)
+        if (placementTest.ProgramRecommendationId.HasValue &&
+            placementTest.SecondaryProgramRecommendationId.HasValue &&
+            placementTest.ProgramRecommendationId == placementTest.SecondaryProgramRecommendationId)
         {
-            placementTest.IsSecondaryProgramSupplementary = command.IsSecondaryProgramSupplementary.Value;
+            return Result.Failure<UpdatePlacementTestResultsResponse>(
+                Error.Validation(
+                    "PlacementTest.SecondaryProgramDuplicated",
+                    "Secondary program recommendation must be different from the primary program recommendation."));
         }
 
         if (command.AttachmentUrl is not null)
@@ -154,9 +182,10 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
             ReadingScore = placementTest.ReadingScore,
             WritingScore = placementTest.WritingScore,
             ResultScore = placementTest.ResultScore,
-            ProgramRecommendation = placementTest.ProgramRecommendation,
-            SecondaryProgramRecommendation = placementTest.SecondaryProgramRecommendation,
-            IsSecondaryProgramSupplementary = placementTest.IsSecondaryProgramSupplementary,
+            ProgramRecommendationId = placementTest.ProgramRecommendationId,
+            ProgramRecommendationName = await GetProgramNameAsync(placementTest.ProgramRecommendationId, cancellationToken),
+            SecondaryProgramRecommendationId = placementTest.SecondaryProgramRecommendationId,
+            SecondaryProgramRecommendationName = await GetProgramNameAsync(placementTest.SecondaryProgramRecommendationId, cancellationToken),
             SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
             AttachmentUrl = placementTest.AttachmentUrl,
             Status = placementTest.Status.ToString(),
@@ -174,7 +203,7 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         if (pt.OriginalPlacementTestId is null)
             return null;
 
-        if (pt.StudentProfileId is null || string.IsNullOrWhiteSpace(pt.ProgramRecommendation))
+        if (pt.StudentProfileId is null || !pt.ProgramRecommendationId.HasValue)
             return null;
 
         var activeReg = await context.Registrations
@@ -190,7 +219,7 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
 
         var targetProgram = await context.Programs
             .FirstOrDefaultAsync(p =>
-                p.Name == pt.ProgramRecommendation && p.IsActive && !p.IsDeleted,
+                p.Id == pt.ProgramRecommendationId.Value && p.IsActive && !p.IsDeleted,
                 cancellationToken);
 
         if (targetProgram is null)
@@ -259,5 +288,24 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         var months = remainingSessions / 4;
         if (remainingSessions % 4 > 0) months++;
         return Math.Max(1, months);
+    }
+
+    private Task<Kidzgo.Domain.Programs.Program?> GetActiveProgramAsync(Guid programId, CancellationToken cancellationToken)
+    {
+        return context.Programs
+            .FirstOrDefaultAsync(p => p.Id == programId && p.IsActive && !p.IsDeleted, cancellationToken);
+    }
+
+    private async Task<string?> GetProgramNameAsync(Guid? programId, CancellationToken cancellationToken)
+    {
+        if (!programId.HasValue)
+        {
+            return null;
+        }
+
+        return await context.Programs
+            .Where(p => p.Id == programId.Value)
+            .Select(p => p.Name)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

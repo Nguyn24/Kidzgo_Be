@@ -2,12 +2,13 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Reports;
 using Kidzgo.Domain.Exams;
 using Kidzgo.Domain.Gamification;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using Kidzgo.Domain.Homework;
+using Kidzgo.Application.Shared;
 
 namespace Kidzgo.Infrastructure.Services;
 
@@ -21,6 +22,7 @@ public sealed class MonthlyReportDataAggregator(
 {
     public async Task<string> AggregateDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         int month,
         int year,
         CancellationToken cancellationToken = default)
@@ -29,12 +31,12 @@ public sealed class MonthlyReportDataAggregator(
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
         // Aggregate all data sequentially (DbContext is not thread-safe)
-        var attendance = await AggregateAttendanceDataAsync(studentProfileId, startDate, endDate, cancellationToken);
-        var homework = await AggregateHomeworkDataAsync(studentProfileId, startDate, endDate, cancellationToken);
-        var test = await AggregateTestDataAsync(studentProfileId, startDate, endDate, cancellationToken);
-        var mission = await AggregateMissionDataAsync(studentProfileId, startDate, endDate, cancellationToken);
-        var notes = await AggregateSessionReportsDataAsync(studentProfileId, startDate, endDate, cancellationToken);
-        var topics = await AggregateTopicsCoveredAsync(studentProfileId, startDate, endDate, cancellationToken);
+        var attendance = await AggregateAttendanceDataAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
+        var homework = await AggregateHomeworkDataAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
+        var test = await AggregateTestDataAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
+        var mission = await AggregateMissionDataAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
+        var notes = await AggregateSessionReportsDataAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
+        var topics = await AggregateTopicsCoveredAsync(studentProfileId, classId, startDate, endDate, cancellationToken);
 
         var aggregatedData = new
         {
@@ -55,15 +57,23 @@ public sealed class MonthlyReportDataAggregator(
 
     private async Task<object> AggregateAttendanceDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var attendances = await context.Attendances
+        var attendancesQuery = context.Attendances
             .Include(a => a.Session)
             .Where(a => a.StudentProfileId == studentProfileId &&
                        a.Session.PlannedDatetime >= startDate &&
-                       a.Session.PlannedDatetime <= endDate)
+                       a.Session.PlannedDatetime <= endDate);
+
+        if (classId.HasValue)
+        {
+            attendancesQuery = attendancesQuery.Where(a => a.Session.ClassId == classId.Value);
+        }
+
+        var attendances = await attendancesQuery
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -87,15 +97,23 @@ public sealed class MonthlyReportDataAggregator(
 
     private async Task<object> AggregateHomeworkDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var homeworkSubmissions = await context.HomeworkStudents
+        var homeworkQuery = context.HomeworkStudents
             .Include(hs => hs.Assignment)
             .Where(hs => hs.StudentProfileId == studentProfileId &&
                         hs.Assignment.CreatedAt >= startDate &&
-                        hs.Assignment.CreatedAt <= endDate)
+                        hs.Assignment.CreatedAt <= endDate);
+
+        if (classId.HasValue)
+        {
+            homeworkQuery = homeworkQuery.Where(hs => hs.Assignment.ClassId == classId.Value);
+        }
+
+        var homeworkSubmissions = await homeworkQuery
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -116,6 +134,35 @@ public sealed class MonthlyReportDataAggregator(
 
         var completionRate = total > 0 ? Math.Round((decimal)(completed + submitted) / total * 100, 2) : 0;
 
+        var topics = homeworkSubmissions
+            .Select(hs => hs.Assignment.Topic)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Select(static value => value!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static value => value)
+            .ToList();
+
+        var skills = homeworkSubmissions
+            .SelectMany(hs => ParseFlexibleTags(hs.Assignment.Skills))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static value => value)
+            .ToList();
+
+        var grammarTags = homeworkSubmissions
+            .SelectMany(hs => ParseFlexibleTags(hs.Assignment.GrammarTags))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static value => value)
+            .ToList();
+
+        var vocabularyTags = homeworkSubmissions
+            .SelectMany(hs => ParseFlexibleTags(hs.Assignment.VocabularyTags))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static value => value)
+            .ToList();
+
+        var speakingAssignments = homeworkSubmissions.Count(hs => !string.IsNullOrWhiteSpace(hs.Assignment.SpeakingMode));
+        var aiSupportedAssignments = homeworkSubmissions.Count(hs => hs.Assignment.AiHintEnabled || hs.Assignment.AiRecommendEnabled);
+
         return new
         {
             total,
@@ -125,21 +172,35 @@ public sealed class MonthlyReportDataAggregator(
             late,
             missing,
             average,
-            completionRate
+            completionRate,
+            topics,
+            skills,
+            grammarTags,
+            vocabularyTags,
+            speakingAssignments,
+            aiSupportedAssignments
         };
     }
 
     private async Task<object> AggregateTestDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var examResults = await context.ExamResults
+        var examResultsQuery = context.ExamResults
             .Include(er => er.Exam)
             .Where(er => er.StudentProfileId == studentProfileId &&
                         er.Exam.Date >= DateOnly.FromDateTime(startDate) &&
-                        er.Exam.Date <= DateOnly.FromDateTime(endDate))
+                        er.Exam.Date <= DateOnly.FromDateTime(endDate));
+
+        if (classId.HasValue)
+        {
+            examResultsQuery = examResultsQuery.Where(er => er.Exam.ClassId == classId.Value);
+        }
+
+        var examResults = await examResultsQuery
             .OrderBy(er => er.Exam.Date)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -163,15 +224,27 @@ public sealed class MonthlyReportDataAggregator(
 
     private async Task<object> AggregateMissionDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var missionProgresses = await context.MissionProgresses
+        var missionProgressesQuery = context.MissionProgresses
             .Include(mp => mp.Mission)
             .Where(mp => mp.StudentProfileId == studentProfileId &&
                         mp.Mission.StartAt >= startDate &&
-                        mp.Mission.StartAt <= endDate)
+                        mp.Mission.StartAt <= endDate);
+
+        if (classId.HasValue)
+        {
+            // Monthly report is class-scoped, so mission counts/stars/xp should only
+            // reflect missions targeted to the current class. Student level/xp stays global.
+            missionProgressesQuery = missionProgressesQuery.Where(mp =>
+                mp.Mission.Scope == MissionScope.Class &&
+                mp.Mission.TargetClassId == classId.Value);
+        }
+
+        var missionProgresses = await missionProgressesQuery
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -211,16 +284,24 @@ public sealed class MonthlyReportDataAggregator(
 
     private async Task<object> AggregateSessionReportsDataAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
-        var sessionReports = await context.SessionReports
+        var sessionReportsQuery = context.SessionReports
             .Include(sr => sr.Session)
             .Include(sr => sr.TeacherUser)
             .Where(sr => sr.StudentProfileId == studentProfileId &&
                         sr.ReportDate >= DateOnly.FromDateTime(startDate) &&
-                        sr.ReportDate <= DateOnly.FromDateTime(endDate))
+                        sr.ReportDate <= DateOnly.FromDateTime(endDate));
+
+        if (classId.HasValue)
+        {
+            sessionReportsQuery = sessionReportsQuery.Where(sr => sr.Session.ClassId == classId.Value);
+        }
+
+        var sessionReports = await sessionReportsQuery
             .OrderBy(sr => sr.ReportDate)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -244,19 +325,27 @@ public sealed class MonthlyReportDataAggregator(
 
     private async Task<object> AggregateTopicsCoveredAsync(
         Guid studentProfileId,
+        Guid? classId,
         DateTime startDate,
         DateTime endDate,
         CancellationToken cancellationToken)
     {
         // Get sessions with lesson plans for the student in the given period
-        var sessionsWithLessonPlans = await context.Sessions
+        var sessionsQuery = context.Sessions
             .Include(s => s.LessonPlan)
             .ThenInclude(lp => lp!.Template)
             .Where(s => s.Attendances.Any(a => a.StudentProfileId == studentProfileId) &&
                        s.PlannedDatetime >= startDate &&
                        s.PlannedDatetime <= endDate &&
                        s.LessonPlan != null &&
-                       s.LessonPlan.Template != null)
+                       s.LessonPlan.Template != null);
+
+        if (classId.HasValue)
+        {
+            sessionsQuery = sessionsQuery.Where(s => s.ClassId == classId.Value);
+        }
+
+        var sessionsWithLessonPlans = await sessionsQuery
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -279,6 +368,22 @@ public sealed class MonthlyReportDataAggregator(
             topics,
             lessonContents
         };
+    }
+
+    private static IEnumerable<string> ParseFlexibleTags(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return Array.Empty<string>();
+        }
+
+        var deserialized = StringListJson.Deserialize(raw);
+        if (deserialized.Count > 0)
+        {
+            return deserialized;
+        }
+
+        return StringListJson.ParseTags(raw);
     }
 }
 

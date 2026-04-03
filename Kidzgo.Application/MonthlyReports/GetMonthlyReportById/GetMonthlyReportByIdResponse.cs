@@ -7,6 +7,8 @@ public sealed class GetMonthlyReportByIdResponse
     public string StudentName { get; init; } = null!;
     public Guid? ClassId { get; init; }
     public string? ClassName { get; init; }
+    public Guid? ProgramId { get; init; }
+    public string? ProgramName { get; init; }
     public Guid? JobId { get; init; }
     public int Month { get; init; }
     public int Year { get; init; }
@@ -34,6 +36,7 @@ public sealed class MonthlyReportDataDto
     public string? TestData { get; init; }
     public string? MissionData { get; init; }
     public string? NotesData { get; init; }
+    public string? TopicsData { get; init; }
 }
 
 public sealed class ReportCommentDto

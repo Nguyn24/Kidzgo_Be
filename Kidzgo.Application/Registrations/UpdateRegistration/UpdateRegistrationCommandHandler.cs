@@ -84,6 +84,12 @@ public sealed class UpdateRegistrationCommandHandler(
                     RegistrationErrors.ProgramNotFound(command.SecondaryProgramId.Value));
             }
 
+            if (secondaryProgram.IsSupplementary)
+            {
+                return Result.Failure<UpdateRegistrationResponse>(
+                    RegistrationErrors.SecondarySupplementaryRequiresSeparateRegistration(command.SecondaryProgramId.Value));
+            }
+
             if (registration.SecondaryClassId.HasValue &&
                 registration.SecondaryProgramId != command.SecondaryProgramId.Value)
             {
