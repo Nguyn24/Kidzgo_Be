@@ -14,5 +14,11 @@ public sealed class GetProgramByIdResponse
     public decimal UnitPriceSession { get; init; }
     public string? Description { get; init; }
     public bool IsActive { get; init; }
+    public int TotalSessions { get; init; }
+    public decimal BaseFee => DefaultTuitionAmount;
+    public decimal Fee => DefaultTuitionAmount;
+    public int ClassCount { get; init; }
+    public int StudentCount { get; init; }
+    public string Status => IsActive ? "Active" : "Inactive";
 }
 

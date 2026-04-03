@@ -37,6 +37,21 @@ public sealed class GetBroadcastNotificationHistoryQueryHandler(
             notificationsQuery = notificationsQuery.Where(n => n.SenderRole == query.SenderRole);
         }
 
+        if (query.BranchId.HasValue)
+        {
+            notificationsQuery = notificationsQuery.Where(n => n.ScopeBranchId == query.BranchId.Value);
+        }
+
+        if (query.ClassId.HasValue)
+        {
+            notificationsQuery = notificationsQuery.Where(n => n.ScopeClassId == query.ClassId.Value);
+        }
+
+        if (query.StudentProfileId.HasValue)
+        {
+            notificationsQuery = notificationsQuery.Where(n => n.ScopeStudentProfileId == query.StudentProfileId.Value);
+        }
+
         if (query.FromDate.HasValue)
         {
             notificationsQuery = notificationsQuery.Where(n => n.CreatedAt >= query.FromDate.Value);
@@ -55,6 +70,11 @@ public sealed class GetBroadcastNotificationHistoryQueryHandler(
                 n.Title,
                 n.Content,
                 n.Deeplink,
+                n.Kind,
+                n.Priority,
+                n.ScopeBranchId,
+                n.ScopeClassId,
+                n.ScopeStudentProfileId,
                 n.SenderRole,
                 n.SenderName,
                 n.TargetRole
@@ -67,15 +87,23 @@ public sealed class GetBroadcastNotificationHistoryQueryHandler(
             .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(g => new BroadcastNotificationHistoryDto
             {
+                Id = g.OrderBy(n => n.Id).Select(n => n.Id).FirstOrDefault(),
                 CreatedAt = g.Key.CreatedAt,
                 Channel = g.Key.Channel,
                 Title = g.Key.Title,
                 Content = g.Key.Content,
                 Deeplink = g.Key.Deeplink,
+                Kind = g.Key.Kind,
+                Priority = g.Key.Priority,
+                BranchId = g.Key.ScopeBranchId,
+                ClassId = g.Key.ScopeClassId,
+                StudentProfileId = g.Key.ScopeStudentProfileId,
                 SenderRole = g.Key.SenderRole,
                 SenderName = g.Key.SenderName,
                 TargetRole = g.Key.TargetRole,
                 RecipientCount = g.Count(),
+                CreatedCount = g.Count(),
+                DeliveredCount = g.Count(n => n.Status == NotificationStatus.Sent),
                 PendingCount = g.Count(n => n.Status == NotificationStatus.Pending),
                 SentCount = g.Count(n => n.Status == NotificationStatus.Sent),
                 FailedCount = g.Count(n => n.Status == NotificationStatus.Failed)

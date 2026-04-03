@@ -27,5 +27,8 @@ public sealed class InvoiceDto
     public DateTime? IssuedAt { get; init; }
     public string? PayosPaymentLink { get; init; }
     public string? PayosQr { get; init; }
+    public decimal RemainingAmount { get; init; }
+    public string? PaymentLink => PayosPaymentLink;
+    public string? PaymentQr => PayosQr;
 }
 

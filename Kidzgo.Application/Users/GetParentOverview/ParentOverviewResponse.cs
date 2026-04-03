@@ -14,6 +14,18 @@ public sealed class ParentOverviewResponse
     public List<InvoiceSummaryDto> PendingInvoices { get; set; } = new();
     public List<MissionSummaryDto> ActiveMissions { get; set; } = new();
     public List<TicketSummaryDto> OpenTickets { get; set; } = new();
+    public StudentProfileDto? StudentInfo { get; set; }
+    public ClassSummaryDto? ClassInfo { get; set; }
+    public decimal AttendanceRate { get; set; }
+    public decimal HomeworkCompletion { get; set; }
+    public int Xp { get; set; }
+    public int? Level { get; set; }
+    public int Streak { get; set; }
+    public int Stars { get; set; }
+    public List<SessionSummaryDto> NextClasses { get; set; } = new();
+    public List<ParentPendingApprovalDto> PendingApprovals { get; set; } = new();
+    public decimal TuitionDue { get; set; }
+    public int UnreadNotifications { get; set; }
 }
 
 public sealed class DashboardStatistics
@@ -34,6 +46,7 @@ public sealed class StudentProfileDto
     public string DisplayName { get; set; } = null!;
     public int? Level { get; set; }
     public int TotalStars { get; set; }
+    public int Xp { get; set; }
 }
 
 public sealed class ClassSummaryDto
@@ -127,5 +140,17 @@ public sealed class TicketSummaryDto
     public string Title { get; set; } = null!;
     public string Status { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
+}
+
+public sealed class ParentPendingApprovalDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = null!;
+    public string? Description { get; set; }
+    public string Type { get; set; } = null!;
+    public string Status { get; set; } = null!;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DueAt { get; set; }
+    public string? ActionUrl { get; set; }
 }
 

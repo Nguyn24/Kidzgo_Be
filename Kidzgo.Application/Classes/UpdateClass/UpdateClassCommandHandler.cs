@@ -94,12 +94,14 @@ public sealed class UpdateClassCommandHandler(
         classEntity.ProgramId = command.ProgramId;
         classEntity.Code = command.Code;
         classEntity.Title = command.Title;
+        classEntity.RoomId = command.RoomId;
         classEntity.MainTeacherId = command.MainTeacherId;
         classEntity.AssistantTeacherId = command.AssistantTeacherId;
         classEntity.StartDate = command.StartDate;
         classEntity.EndDate = command.EndDate;
         classEntity.Capacity = command.Capacity;
         classEntity.SchedulePattern = command.SchedulePattern;
+        classEntity.Description = command.Description;
         classEntity.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -111,13 +113,15 @@ public sealed class UpdateClassCommandHandler(
             ProgramId = classEntity.ProgramId,
             Code = classEntity.Code,
             Title = classEntity.Title,
+            RoomId = classEntity.RoomId,
             MainTeacherId = classEntity.MainTeacherId,
             AssistantTeacherId = classEntity.AssistantTeacherId,
             StartDate = classEntity.StartDate,
             EndDate = classEntity.EndDate,
             Status = classEntity.Status.ToString(),
             Capacity = classEntity.Capacity,
-            SchedulePattern = classEntity.SchedulePattern
+            SchedulePattern = classEntity.SchedulePattern,
+            Description = classEntity.Description
         };
     }
 }

@@ -1,4 +1,5 @@
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Schools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -30,6 +31,8 @@ public class ClassConfiguration : IEntityTypeConfiguration<Class>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.RoomId);
+
         builder.Property(x => x.MainTeacherId);
 
         builder.Property(x => x.AssistantTeacherId);
@@ -49,6 +52,8 @@ public class ClassConfiguration : IEntityTypeConfiguration<Class>
 
         builder.Property(x => x.SchedulePattern);
 
+        builder.Property(x => x.Description);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
@@ -65,6 +70,11 @@ public class ClassConfiguration : IEntityTypeConfiguration<Class>
             .WithMany(x => x.Classes)
             .HasForeignKey(x => x.ProgramId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Room)
+            .WithMany()
+            .HasForeignKey(x => x.RoomId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(x => x.MainTeacher)
             .WithMany(x => x.MainTeacherClasses)

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.NotificationTemplates;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,11 +56,14 @@ public sealed class GetAllNotificationTemplatesQueryHandler(
                 Channel = t.Channel,
                 Title = t.Title,
                 Content = t.Content,
-                Placeholders = t.Placeholders,
+                PlaceholdersRaw = t.Placeholders,
+                Placeholders = ParsePlaceholders(t.Placeholders),
                 IsActive = t.IsActive,
                 IsDeleted = t.IsDeleted,
                 CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
+                UpdatedAt = t.UpdatedAt,
+                Category = t.Category ?? NotificationTemplateContractMapper.InferCategory(t.Code, t.Channel),
+                UsageCount = context.Notifications.Count(n => n.NotificationTemplateId == t.Id)
             })
             .ToListAsync(cancellationToken);
 
@@ -73,6 +77,27 @@ public sealed class GetAllNotificationTemplatesQueryHandler(
         {
             Templates = page
         };
+    }
+
+    private static List<string> ParsePlaceholders(string? placeholders)
+    {
+        if (string.IsNullOrWhiteSpace(placeholders))
+        {
+            return [];
+        }
+
+        var trimmed = placeholders.Trim();
+        if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+        {
+            trimmed = trimmed[1..^1];
+        }
+
+        return trimmed
+            .Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Trim().Trim('"'))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }
 

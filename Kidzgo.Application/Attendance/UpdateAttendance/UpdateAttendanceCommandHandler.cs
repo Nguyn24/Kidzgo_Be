@@ -63,6 +63,7 @@ public sealed class UpdateAttendanceCommandHandler(
             EntityId = attendance.Id,
             DataBefore = JsonSerializer.Serialize(new { oldStatus = oldStatus.ToString(), oldNote }),
             DataAfter = JsonSerializer.Serialize(new { newStatus = request.AttendanceStatus.ToString(), newNote = request.Note }),
+            IpAddress = userContext.IpAddress,
             CreatedAt = DateTime.UtcNow
         };
         context.AuditLogs.Add(auditLog);

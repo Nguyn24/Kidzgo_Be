@@ -138,6 +138,7 @@ public sealed class CreateClassCommandHandler(
             ProgramId = command.ProgramId,
             Code = command.Code,
             Title = command.Title,
+            RoomId = command.RoomId,
             MainTeacherId = command.MainTeacherId,
             AssistantTeacherId = command.AssistantTeacherId,
             StartDate = command.StartDate,
@@ -145,6 +146,7 @@ public sealed class CreateClassCommandHandler(
             Status = ClassStatus.Planned,
             Capacity = command.Capacity,
             SchedulePattern = command.SchedulePattern,
+            Description = command.Description,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -159,13 +161,15 @@ public sealed class CreateClassCommandHandler(
             ProgramId = classEntity.ProgramId,
             Code = classEntity.Code,
             Title = classEntity.Title,
+            RoomId = classEntity.RoomId,
             MainTeacherId = classEntity.MainTeacherId,
             AssistantTeacherId = classEntity.AssistantTeacherId,
             StartDate = classEntity.StartDate,
             EndDate = classEntity.EndDate,
             Status = classEntity.Status.ToString(),
             Capacity = classEntity.Capacity,
-            SchedulePattern = classEntity.SchedulePattern
+            SchedulePattern = classEntity.SchedulePattern,
+            Description = classEntity.Description
         };
     }
 }

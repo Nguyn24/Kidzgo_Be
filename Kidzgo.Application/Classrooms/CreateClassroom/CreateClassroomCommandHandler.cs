@@ -4,6 +4,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Schools;
 using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Kidzgo.Application.Classrooms.CreateClassroom;
 
@@ -13,7 +14,6 @@ public sealed class CreateClassroomCommandHandler(
 {
     public async Task<Result<CreateClassroomResponse>> Handle(CreateClassroomCommand command, CancellationToken cancellationToken)
     {
-        // Check if branch exists
         bool branchExists = await context.Branches
             .AnyAsync(b => b.Id == command.BranchId && b.IsActive, cancellationToken);
 
@@ -22,6 +22,8 @@ public sealed class CreateClassroomCommandHandler(
             return Result.Failure<CreateClassroomResponse>(ClassroomErrors.BranchNotFound);
         }
 
+        var equipment = command.Equipment ?? new List<string>();
+
         var classroom = new Classroom
         {
             Id = Guid.NewGuid(),
@@ -29,7 +31,10 @@ public sealed class CreateClassroomCommandHandler(
             Name = command.Name,
             Capacity = command.Capacity,
             Note = command.Note,
-            IsActive = true, // Mặc định false, cần duyệt qua toggle-status API để active
+            Floor = command.Floor,
+            Area = command.Area,
+            EquipmentJson = equipment.Count > 0 ? JsonSerializer.Serialize(equipment) : null,
+            IsActive = true
         };
 
         context.Classrooms.Add(classroom);
@@ -42,8 +47,10 @@ public sealed class CreateClassroomCommandHandler(
             Name = classroom.Name,
             Capacity = classroom.Capacity,
             Note = classroom.Note,
+            Floor = classroom.Floor,
+            Area = classroom.Area,
+            Equipment = equipment,
             IsActive = classroom.IsActive
         };
     }
 }
-

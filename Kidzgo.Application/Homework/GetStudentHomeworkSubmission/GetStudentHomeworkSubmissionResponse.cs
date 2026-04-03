@@ -50,5 +50,24 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public bool ShowReview { get; init; }
     public bool ShowCorrectAnswer { get; init; }
     public bool ShowExplanation { get; init; }
+    public Guid HomeworkId => AssignmentId;
+    public string Title => AssignmentTitle;
+    public string? Description => AssignmentDescription;
+    public DateTime? DueDate => DueAt;
+    public string? Subject => Topic ?? Skills;
+    public string? TeacherName { get; init; }
+    public List<string> AssignmentAttachmentUrls { get; init; } = new();
+    public HomeworkSubmissionPayloadDto Submission { get; init; } = new();
+}
+
+public sealed class HomeworkSubmissionPayloadDto
+{
+    public string? TextAnswer { get; init; }
+    public List<string> AttachmentUrls { get; init; } = new();
+    public List<string> Links { get; init; } = new();
+    public DateTime? SubmittedAt { get; init; }
+    public DateTime? GradedAt { get; init; }
+    public decimal? Score { get; init; }
+    public string? TeacherFeedback { get; init; }
 }
 

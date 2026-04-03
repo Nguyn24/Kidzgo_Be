@@ -14,7 +14,7 @@ public sealed class GetTeacherTimetableQueryHandler(
 {
     public async Task<Result<GetTeacherTimetableResponse>> Handle(GetTeacherTimetableQuery query, CancellationToken cancellationToken)
     {
-        var userId = userContext.UserId;
+        var userId = query.TeacherUserId ?? userContext.UserId;
 
         // Get sessions where teacher is PlannedTeacher or ActualTeacher
         // Note: When using Select projection, Include is not needed as EF Core will only load what's referenced
@@ -42,6 +42,16 @@ public sealed class GetTeacherTimetableQueryHandler(
             sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= toUtc);
         }
 
+        if (query.BranchId.HasValue)
+        {
+            sessionsQuery = sessionsQuery.Where(s => s.BranchId == query.BranchId.Value);
+        }
+
+        if (query.ClassId.HasValue)
+        {
+            sessionsQuery = sessionsQuery.Where(s => s.ClassId == query.ClassId.Value);
+        }
+
         var sessions = await sessionsQuery
             .OrderBy(s => s.PlannedDatetime)
             .Select(s => new TimetableItemDto
@@ -67,7 +77,8 @@ public sealed class GetTeacherTimetableQueryHandler(
                 PlannedAssistantId = s.PlannedAssistantId,
                 PlannedAssistantName = s.PlannedAssistant != null ? s.PlannedAssistant.Name : null,
                 LessonPlanId = s.LessonPlan != null ? s.LessonPlan.Id : null,
-                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null
+                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null,
+                AttendanceStatus = null
             })
             .ToListAsync(cancellationToken);
 

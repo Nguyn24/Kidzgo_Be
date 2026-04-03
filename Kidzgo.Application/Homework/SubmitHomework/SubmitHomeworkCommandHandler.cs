@@ -61,6 +61,9 @@ public sealed class SubmitHomeworkCommandHandler(
         }
 
         var submissionType = homeworkStudent.Assignment.SubmissionType;
+        var effectiveLink = !string.IsNullOrWhiteSpace(command.LinkUrl)
+            ? command.LinkUrl
+            : command.Links?.FirstOrDefault();
         bool hasValidSubmission = false;
 
         switch (submissionType)
@@ -73,12 +76,12 @@ public sealed class SubmitHomeworkCommandHandler(
                 hasValidSubmission = !string.IsNullOrWhiteSpace(command.TextAnswer);
                 break;
             case SubmissionType.Link:
-                hasValidSubmission = !string.IsNullOrWhiteSpace(command.LinkUrl);
+                hasValidSubmission = !string.IsNullOrWhiteSpace(effectiveLink);
                 break;
             case SubmissionType.Quiz:
                 hasValidSubmission = command.AttachmentUrls != null && command.AttachmentUrls.Count > 0 ||
                                     !string.IsNullOrWhiteSpace(command.TextAnswer) ||
-                                    !string.IsNullOrWhiteSpace(command.LinkUrl);
+                                    !string.IsNullOrWhiteSpace(effectiveLink);
                 break;
         }
 
@@ -116,7 +119,7 @@ public sealed class SubmitHomeworkCommandHandler(
                 break;
 
             case SubmissionType.Link:
-                homeworkStudent.AttachmentUrl = command.LinkUrl;
+                homeworkStudent.AttachmentUrl = effectiveLink;
                 break;
 
             case SubmissionType.Quiz:
@@ -124,9 +127,9 @@ public sealed class SubmitHomeworkCommandHandler(
                 {
                     homeworkStudent.TextAnswer = command.TextAnswer;
                 }
-                if (!string.IsNullOrWhiteSpace(command.LinkUrl))
+                if (!string.IsNullOrWhiteSpace(effectiveLink))
                 {
-                    homeworkStudent.AttachmentUrl = command.LinkUrl;
+                    homeworkStudent.AttachmentUrl = effectiveLink;
                 }
                 break;
         }
@@ -216,7 +219,15 @@ public sealed class SubmitHomeworkCommandHandler(
             Id = homeworkStudent.Id,
             AssignmentId = homeworkStudent.AssignmentId,
             Status = homeworkStudent.Status.ToString(),
-            SubmittedAt = homeworkStudent.SubmittedAt!.Value
+            SubmittedAt = homeworkStudent.SubmittedAt!.Value,
+            AttachmentUrls = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
+                             submissionType is SubmissionType.File or SubmissionType.Image or SubmissionType.Quiz
+                ? new List<string> { homeworkStudent.AttachmentUrl }
+                : new List<string>(),
+            Links = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
+                    submissionType == SubmissionType.Link
+                ? new List<string> { homeworkStudent.AttachmentUrl }
+                : new List<string>()
         };
     }
 }

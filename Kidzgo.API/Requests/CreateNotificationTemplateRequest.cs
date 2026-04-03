@@ -9,6 +9,7 @@ public sealed class CreateNotificationTemplateRequest
     public string Title { get; set; } = null!;
     public string? Content { get; set; }
     public string? Placeholders { get; set; }
+    public string? Category { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
