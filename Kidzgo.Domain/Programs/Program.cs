@@ -1,5 +1,6 @@
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.Schools;
@@ -30,4 +31,6 @@ public class Program : Entity
     public ICollection<TuitionPlan> TuitionPlans { get; set; } = new List<TuitionPlan>();
     public ICollection<LessonPlanTemplate> LessonPlanTemplates { get; set; } = new List<LessonPlanTemplate>();
     public ICollection<QuestionBankItem> QuestionBankItems { get; set; } = new List<QuestionBankItem>();
+    public ICollection<PlacementTest> PrimaryPlacementTestRecommendations { get; set; } = new List<PlacementTest>();
+    public ICollection<PlacementTest> SecondaryPlacementTestRecommendations { get; set; } = new List<PlacementTest>();
 }

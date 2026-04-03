@@ -63,18 +63,16 @@ public sealed class GenerateMonthlyReportDraftCommandHandler(
         var reportData = await context.MonthlyReportData
             .FirstOrDefaultAsync(rd => rd.ReportId == report.Id, cancellationToken);
 
-        string aggregatedDataJson;
+        // Always refresh aggregated data so the draft reflects the latest class-scoped data.
+        var aggregatedDataJson = await dataAggregator.AggregateDataAsync(
+            report.StudentProfileId,
+            report.ClassId,
+            report.Month,
+            report.Year,
+            cancellationToken);
 
         if (reportData is null)
         {
-            // Aggregate data if not exists
-            aggregatedDataJson = await dataAggregator.AggregateDataAsync(
-                report.StudentProfileId,
-                report.Month,
-                report.Year,
-                cancellationToken);
-
-            // Create MonthlyReportData
             reportData = new MonthlyReportData
             {
                 Id = Guid.NewGuid(),
@@ -86,70 +84,34 @@ public sealed class GenerateMonthlyReportDraftCommandHandler(
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // Parse and set individual data fields
-            using var doc = JsonDocument.Parse(aggregatedDataJson);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("attendance", out var attendance))
-            {
-                reportData.AttendanceData = attendance.GetRawText();
-            }
-            if (root.TryGetProperty("homework", out var homework))
-            {
-                reportData.HomeworkData = homework.GetRawText();
-            }
-            if (root.TryGetProperty("test", out var test))
-            {
-                reportData.TestData = test.GetRawText();
-            }
-            if (root.TryGetProperty("mission", out var mission))
-            {
-                reportData.MissionData = mission.GetRawText();
-            }
-            if (root.TryGetProperty("notes", out var notes))
-            {
-                reportData.NotesData = notes.GetRawText();
-            }
-
             context.MonthlyReportData.Add(reportData);
         }
         else
         {
-            // Reconstruct aggregated data JSON from individual fields
-            var aggregatedData = new Dictionary<string, JsonElement>();
-
-            if (!string.IsNullOrWhiteSpace(reportData.AttendanceData))
-            {
-                using var attendanceDoc = JsonDocument.Parse(reportData.AttendanceData);
-                aggregatedData["attendance"] = attendanceDoc.RootElement.Clone();
-            }
-            if (!string.IsNullOrWhiteSpace(reportData.HomeworkData))
-            {
-                using var homeworkDoc = JsonDocument.Parse(reportData.HomeworkData);
-                aggregatedData["homework"] = homeworkDoc.RootElement.Clone();
-            }
-            if (!string.IsNullOrWhiteSpace(reportData.TestData))
-            {
-                using var testDoc = JsonDocument.Parse(reportData.TestData);
-                aggregatedData["test"] = testDoc.RootElement.Clone();
-            }
-            if (!string.IsNullOrWhiteSpace(reportData.MissionData))
-            {
-                using var missionDoc = JsonDocument.Parse(reportData.MissionData);
-                aggregatedData["mission"] = missionDoc.RootElement.Clone();
-            }
-            if (!string.IsNullOrWhiteSpace(reportData.NotesData))
-            {
-                using var notesDoc = JsonDocument.Parse(reportData.NotesData);
-                aggregatedData["notes"] = notesDoc.RootElement.Clone();
-            }
-
-            aggregatedDataJson = JsonSerializer.Serialize(aggregatedData, new JsonSerializerOptions
-            {
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            reportData.UpdatedAt = DateTime.UtcNow;
         }
+
+        using var doc = JsonDocument.Parse(aggregatedDataJson);
+        var root = doc.RootElement;
+
+        reportData.AttendanceData = root.TryGetProperty("attendance", out var attendance)
+            ? attendance.GetRawText()
+            : null;
+        reportData.HomeworkData = root.TryGetProperty("homework", out var homework)
+            ? homework.GetRawText()
+            : null;
+        reportData.TestData = root.TryGetProperty("test", out var test)
+            ? test.GetRawText()
+            : null;
+        reportData.MissionData = root.TryGetProperty("mission", out var mission)
+            ? mission.GetRawText()
+            : null;
+        reportData.NotesData = root.TryGetProperty("notes", out var notes)
+            ? notes.GetRawText()
+            : null;
+        reportData.TopicsData = root.TryGetProperty("topics", out var topics)
+            ? topics.GetRawText()
+            : null;
 
         // Generate draft using AI
         try
@@ -164,6 +126,7 @@ public sealed class GenerateMonthlyReportDraftCommandHandler(
             var draftContent = await aiReportGenerator.GenerateDraftAsync(
                 aggregatedDataJson,
                 report.StudentProfileId,
+                report.ClassId,
                 report.Month,
                 report.Year,
                 cancellationToken);

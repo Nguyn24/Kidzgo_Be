@@ -14,6 +14,8 @@ public sealed class MonthlyReportSummaryDto
     public string StudentName { get; init; } = string.Empty;
     public Guid? ClassId { get; init; }
     public string? ClassName { get; init; }
+    public Guid? ProgramId { get; init; }
+    public string? ProgramName { get; init; }
     public Guid? JobId { get; init; }
     public int Month { get; init; }
     public int Year { get; init; }

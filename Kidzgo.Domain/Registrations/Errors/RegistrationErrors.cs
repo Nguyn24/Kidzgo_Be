@@ -36,6 +36,10 @@ public static class RegistrationErrors
         "Registration.ProgramNotFound",
         $"Program with ID {programId} not found");
 
+    public static Error SecondarySupplementaryRequiresSeparateRegistration(Guid programId) => Error.Validation(
+        "Registration.SecondarySupplementaryRequiresSeparateRegistration",
+        $"Supplementary program with ID {programId} must be created as a separate registration because it uses a separate tuition plan");
+
     public static Error TuitionPlanNotFound(Guid tuitionPlanId) => Error.NotFound(
         "Registration.TuitionPlanNotFound",
         $"Tuition plan with ID {tuitionPlanId} not found");

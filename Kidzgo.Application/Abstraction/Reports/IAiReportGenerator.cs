@@ -6,6 +6,7 @@ public interface IAiReportGenerator
     /// Generate draft Monthly Report content from aggregated data
     /// <param name="dataJson">JSON string containing aggregated data (attendance, homework, test, mission, notes)</param>
     /// <param name="studentProfileId">Student profile ID for fetching student info and recent reports</param>
+    /// <param name="classId">Class context for selecting program and report history</param>
     /// <param name="month">Report month</param>
     /// <param name="year">Report year</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -13,6 +14,7 @@ public interface IAiReportGenerator
     Task<string> GenerateDraftAsync(
         string dataJson,
         Guid studentProfileId,
+        Guid? classId,
         int month,
         int year,
         CancellationToken cancellationToken = default);

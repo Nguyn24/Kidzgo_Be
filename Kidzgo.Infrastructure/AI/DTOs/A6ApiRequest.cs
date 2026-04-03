@@ -15,6 +15,9 @@ public sealed class A6StudentInfo
     
     [JsonPropertyName("program")]
     public string? Program { get; set; }
+
+    [JsonPropertyName("class_name")]
+    public string? ClassName { get; set; }
 }
 
 public sealed class A6ReportRange
@@ -72,6 +75,24 @@ public sealed class A6HomeworkData
     
     [JsonPropertyName("completion_rate")]
     public float CompletionRate { get; set; }
+
+    [JsonPropertyName("topics")]
+    public List<string> Topics { get; set; } = new();
+
+    [JsonPropertyName("skills")]
+    public List<string> Skills { get; set; } = new();
+
+    [JsonPropertyName("grammar_tags")]
+    public List<string> GrammarTags { get; set; } = new();
+
+    [JsonPropertyName("vocabulary_tags")]
+    public List<string> VocabularyTags { get; set; } = new();
+
+    [JsonPropertyName("speaking_assignments")]
+    public int SpeakingAssignments { get; set; }
+
+    [JsonPropertyName("ai_supported_assignments")]
+    public int AiSupportedAssignments { get; set; }
 }
 
 public sealed class A6TestResult
