@@ -7,6 +7,7 @@ using Kidzgo.Application.Classes.CreateClass;
 using Kidzgo.Application.Classes.DeleteClass;
 using Kidzgo.Application.Classes.GetClassById;
 using Kidzgo.Application.Classes.GetClasses;
+using Kidzgo.Application.Classes.GetClassStudents;
 using Kidzgo.Application.Classes.UpdateClass;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -37,13 +38,15 @@ public class ClassController : ControllerBase
             BranchId = request.BranchId,
             ProgramId = request.ProgramId,
             Code = request.Code,
-            Title = request.Title,
+            Title = request.Name ?? request.Title ?? request.Code,
+            RoomId = request.RoomId,
             MainTeacherId = request.MainTeacherId,
             AssistantTeacherId = request.AssistantTeacherId,
             StartDate = request.StartDate,
             EndDate = request.EndDate, 
             Capacity = request.Capacity,
-            SchedulePattern = request.SchedulePattern
+            SchedulePattern = request.SchedulePattern,
+            Description = request.Description
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -63,6 +66,7 @@ public class ClassController : ControllerBase
     public async Task<IResult> GetClasses(
         [FromQuery] Guid? branchId,
         [FromQuery] Guid? programId,
+        [FromQuery] Guid? teacherId,
         [FromQuery] Guid? studentId,
         [FromQuery] string? status,
         [FromQuery] string? searchTerm,
@@ -80,6 +84,7 @@ public class ClassController : ControllerBase
         {
             BranchId = branchId,
             ProgramId = programId,
+            TeacherId = teacherId,
             StudentId = studentId,
             Status = classStatus,
             SearchTerm = searchTerm,
@@ -107,6 +112,25 @@ public class ClassController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpGet("{id:guid}/students")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
+    public async Task<IResult> GetClassStudents(
+        Guid id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetClassStudentsQuery
+        {
+            ClassId = id,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
     /// UC-060: Cáº­p nháº­t Class
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
@@ -121,13 +145,15 @@ public class ClassController : ControllerBase
             BranchId = request.BranchId,
             ProgramId = request.ProgramId,
             Code = request.Code,
-            Title = request.Title,
+            Title = request.Name ?? request.Title ?? request.Code,
+            RoomId = request.RoomId,
             MainTeacherId = request.MainTeacherId,
             AssistantTeacherId = request.AssistantTeacherId,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             Capacity = request.Capacity,
-            SchedulePattern = request.SchedulePattern
+            SchedulePattern = request.SchedulePattern,
+            Description = request.Description
         };
 
         var result = await _mediator.Send(command, cancellationToken);

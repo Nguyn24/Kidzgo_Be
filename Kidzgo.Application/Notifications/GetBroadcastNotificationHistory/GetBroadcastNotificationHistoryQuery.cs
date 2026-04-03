@@ -7,6 +7,9 @@ public sealed class GetBroadcastNotificationHistoryQuery : IQuery<GetBroadcastNo
 {
     public NotificationChannel? Channel { get; init; }
     public string? SenderRole { get; init; }
+    public Guid? BranchId { get; init; }
+    public Guid? ClassId { get; init; }
+    public Guid? StudentProfileId { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
     public int PageNumber { get; init; } = 1;

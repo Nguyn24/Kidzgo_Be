@@ -10,6 +10,8 @@ public sealed class UpdateNotificationTemplateResponse
     public string Title { get; init; } = null!;
     public string? Content { get; init; }
     public string? Placeholders { get; init; }
+    public string? Category { get; init; }
+    public int UsageCount { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public DateTime CreatedAt { get; init; }

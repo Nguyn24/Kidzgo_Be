@@ -1,4 +1,6 @@
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Notifications;
+using Kidzgo.Domain.Schools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -43,8 +45,16 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.Property(x => x.TemplateId)
             .HasMaxLength(100);
 
+        builder.Property(x => x.NotificationTemplateId);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
+
+        builder.Property(x => x.ScopeBranchId);
+
+        builder.Property(x => x.ScopeClassId);
+
+        builder.Property(x => x.ScopeStudentProfileId);
 
         // Relationships
         builder.HasOne(x => x.RecipientUser)
@@ -56,5 +66,20 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .WithMany(x => x.ReceivedNotifications)
             .HasForeignKey(x => x.RecipientProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.NotificationTemplate)
+            .WithMany()
+            .HasForeignKey(x => x.NotificationTemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<Branch>()
+            .WithMany()
+            .HasForeignKey(x => x.ScopeBranchId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<Class>()
+            .WithMany()
+            .HasForeignKey(x => x.ScopeClassId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

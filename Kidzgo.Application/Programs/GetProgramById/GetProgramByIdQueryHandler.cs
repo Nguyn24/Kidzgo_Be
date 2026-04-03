@@ -28,7 +28,15 @@ public sealed class GetProgramByIdQueryHandler(
                 DefaultTuitionAmount = p.DefaultTuitionAmount,
                 UnitPriceSession = p.UnitPriceSession,
                 Description = p.Description,
-                IsActive = p.IsActive
+                IsActive = p.IsActive,
+                TotalSessions = p.TuitionPlans
+                    .Where(tp => tp.IsActive && !tp.IsDeleted)
+                    .Select(tp => (int?)tp.TotalSessions)
+                    .Max() ?? 0,
+                ClassCount = p.Classes.Count(c => c.Status != Domain.Classes.ClassStatus.Cancelled),
+                StudentCount = p.Classes
+                    .SelectMany(c => c.ClassEnrollments)
+                    .Count(ce => ce.Status == Domain.Classes.EnrollmentStatus.Active)
             })
             .FirstOrDefaultAsync(cancellationToken);
 

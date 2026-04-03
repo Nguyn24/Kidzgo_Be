@@ -80,12 +80,19 @@ public sealed class PushNotificationDomainEventHandler(
             string title = notificationRecord.Title;
             string body = notificationRecord.Content ?? string.Empty;
 
+            var templateId = notificationRecord.NotificationTemplateId;
+            if (!templateId.HasValue &&
+                !string.IsNullOrWhiteSpace(notificationRecord.TemplateId) &&
+                Guid.TryParse(notificationRecord.TemplateId, out var parsedTemplateId))
+            {
+                templateId = parsedTemplateId;
+            }
+
             // If template ID is provided, use template
-            if (!string.IsNullOrWhiteSpace(notificationRecord.TemplateId) &&
-                Guid.TryParse(notificationRecord.TemplateId, out var templateId))
+            if (templateId.HasValue)
             {
                 var template = await context.NotificationTemplates
-                    .FirstOrDefaultAsync(t => t.Id == templateId && t.IsActive && !t.IsDeleted, cancellationToken);
+                    .FirstOrDefaultAsync(t => t.Id == templateId.Value && t.IsActive && !t.IsDeleted, cancellationToken);
 
                 if (template != null)
                 {
