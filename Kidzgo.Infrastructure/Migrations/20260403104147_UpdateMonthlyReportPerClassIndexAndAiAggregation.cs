@@ -23,8 +23,6 @@ namespace Kidzgo.Infrastructure.Migrations
                 columns: new[] { "StudentProfileId", "ClassId", "Month", "Year" },
                 unique: true);
 
-            return;
-
             migrationBuilder.DropColumn(
                 name: "IsSecondaryProgramSupplementary",
                 schema: "public",
@@ -141,8 +139,6 @@ namespace Kidzgo.Infrastructure.Migrations
                 table: "StudentMonthlyReports",
                 columns: new[] { "StudentProfileId", "Month", "Year" },
                 unique: true);
-
-            return;
 
             migrationBuilder.DropForeignKey(
                 name: "FK_PlacementTests_Programs_ProgramRecommendationId",
