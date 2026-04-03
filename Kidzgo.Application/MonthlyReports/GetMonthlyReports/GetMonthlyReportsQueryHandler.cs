@@ -36,6 +36,7 @@ public sealed class GetMonthlyReportsQueryHandler(
         var reportsQuery = context.StudentMonthlyReports
             .Include(r => r.StudentProfile)
             .Include(r => r.Class)
+                .ThenInclude(c => c!.Program)
             .AsQueryable();
 
         // Apply authorization filters based on user role
@@ -163,6 +164,8 @@ public sealed class GetMonthlyReportsQueryHandler(
             StudentName = r.StudentProfile.DisplayName,
             ClassId = r.ClassId,
             ClassName = r.Class?.Title,
+            ProgramId = r.Class?.ProgramId,
+            ProgramName = r.Class?.Program?.Name,
             JobId = r.JobId,
             Month = r.Month,
             Year = r.Year,

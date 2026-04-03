@@ -22,6 +22,8 @@ public sealed class GetPlacementTestByIdQueryHandler(
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
             .Include(pt => pt.InvigilatorUser)
+            .Include(pt => pt.ProgramRecommendationProgram)
+            .Include(pt => pt.SecondaryProgramRecommendationProgram)
             .FirstOrDefaultAsync(pt => pt.Id == query.PlacementTestId, cancellationToken);
 
         if (placementTest is null)
@@ -52,9 +54,10 @@ public sealed class GetPlacementTestByIdQueryHandler(
             ReadingScore = placementTest.ReadingScore,
             WritingScore = placementTest.WritingScore,
             LevelRecommendation = placementTest.LevelRecommendation,
-            ProgramRecommendation = placementTest.ProgramRecommendation,
-            SecondaryProgramRecommendation = placementTest.SecondaryProgramRecommendation,
-            IsSecondaryProgramSupplementary = placementTest.IsSecondaryProgramSupplementary,
+            ProgramRecommendationId = placementTest.ProgramRecommendationId,
+            ProgramRecommendationName = placementTest.ProgramRecommendationProgram?.Name,
+            SecondaryProgramRecommendationId = placementTest.SecondaryProgramRecommendationId,
+            SecondaryProgramRecommendationName = placementTest.SecondaryProgramRecommendationProgram?.Name,
             SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
             Notes = placementTest.Notes,
             AttachmentUrl = placementTest.AttachmentUrl,

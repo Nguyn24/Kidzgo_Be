@@ -83,9 +83,14 @@ public sealed class GetPlacementTestsQueryHandler(
                 ReadingScore = pt.ReadingScore,
                 WritingScore = pt.WritingScore,
                 LevelRecommendation = pt.LevelRecommendation,
-                ProgramRecommendation = pt.ProgramRecommendation,
-                SecondaryProgramRecommendation = pt.SecondaryProgramRecommendation,
-                IsSecondaryProgramSupplementary = pt.IsSecondaryProgramSupplementary,
+                ProgramRecommendationId = pt.ProgramRecommendationId,
+                ProgramRecommendationName = pt.ProgramRecommendationProgram != null
+                    ? pt.ProgramRecommendationProgram.Name
+                    : null,
+                SecondaryProgramRecommendationId = pt.SecondaryProgramRecommendationId,
+                SecondaryProgramRecommendationName = pt.SecondaryProgramRecommendationProgram != null
+                    ? pt.SecondaryProgramRecommendationProgram.Name
+                    : null,
                 SecondaryProgramSkillFocus = pt.SecondaryProgramSkillFocus,
                 Notes = pt.Notes,
                 AttachmentUrl = pt.AttachmentUrl,

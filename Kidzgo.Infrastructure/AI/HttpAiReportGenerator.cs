@@ -32,6 +32,7 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
     public async Task<string> GenerateDraftAsync(
         string dataJson,
         Guid studentProfileId,
+        Guid? classId,
         int month,
         int year,
         CancellationToken cancellationToken = default)
@@ -150,7 +151,13 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                 Late = hwElement.TryGetProperty("late", out var l) ? l.GetInt32() : 0,
                 Missing = hwElement.TryGetProperty("missing", out var m) ? m.GetInt32() : 0,
                 Average = hwElement.TryGetProperty("average", out var avg) ? avg.GetSingle() : 0,
-                CompletionRate = hwElement.TryGetProperty("completionRate", out var cr) ? cr.GetSingle() : 0
+                CompletionRate = hwElement.TryGetProperty("completionRate", out var cr) ? cr.GetSingle() : 0,
+                Topics = ReadStringList(hwElement, "topics", "Topics"),
+                Skills = ReadStringList(hwElement, "skills", "Skills"),
+                GrammarTags = ReadStringList(hwElement, "grammarTags", "GrammarTags"),
+                VocabularyTags = ReadStringList(hwElement, "vocabularyTags", "VocabularyTags"),
+                SpeakingAssignments = hwElement.TryGetProperty("speakingAssignments", out var sa) ? sa.GetInt32() : 0,
+                AiSupportedAssignments = hwElement.TryGetProperty("aiSupportedAssignments", out var asa) ? asa.GetInt32() : 0
             };
         }
 
@@ -243,20 +250,35 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
         var studentId = studentProfile.Id.ToString();
         var studentName = studentProfile.DisplayName ?? "Unknown Student";
         
-        // Get program from class enrollment (if any)
-        var enrollment = await _context.ClassEnrollments
-            .Include(e => e.Class)
-                .ThenInclude(c => c.Program)
-            .Where(e => e.StudentProfileId == studentProfileId && 
-                       e.Status == Domain.Classes.EnrollmentStatus.Active)
-            .OrderByDescending(e => e.EnrollDate)
-            .FirstOrDefaultAsync(cancellationToken);
-        
-        var programName = enrollment?.Class?.Program?.Name;
+        Domain.Classes.Class? reportClass = null;
+
+        if (classId.HasValue)
+        {
+            reportClass = await _context.Classes
+                .Include(c => c.Program)
+                .FirstOrDefaultAsync(c => c.Id == classId.Value, cancellationToken);
+        }
+
+        if (reportClass is null)
+        {
+            reportClass = await _context.ClassEnrollments
+                .Include(e => e.Class)
+                    .ThenInclude(c => c.Program)
+                .Where(e => e.StudentProfileId == studentProfileId &&
+                           e.Status == Domain.Classes.EnrollmentStatus.Active)
+                .OrderByDescending(e => e.EnrollDate)
+                .Select(e => e.Class)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        var programId = reportClass?.ProgramId;
+        var programName = reportClass?.Program?.Name;
+        var className = reportClass?.Title;
 
         // Get recent reports (3 months before current month)
         var recentReports = await GetRecentReportsAsync(
             studentProfileId,
+            programId,
             month,
             year,
             cancellationToken);
@@ -272,7 +294,8 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
             {
                 StudentId = studentId,
                 Name = studentName,
-                Program = programName
+                Program = programName,
+                ClassName = className
             },
             Range = new A6ReportRange
             {
@@ -335,6 +358,7 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
 
     private async Task<List<A6RecentMonthlyReport>> GetRecentReportsAsync(
         Guid studentProfileId,
+        Guid? programId,
         int currentMonth,
         int currentYear,
         CancellationToken cancellationToken)
@@ -358,12 +382,21 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
                 targetYear--;
             }
 
-            var report = await _context.StudentMonthlyReports
+            var reportsQuery = _context.StudentMonthlyReports
+                .Include(r => r.Class)
                 .Where(r => r.StudentProfileId == studentProfileId &&
                            r.Month == targetMonth &&
                            r.Year == targetYear &&
                            r.Status == ReportStatus.Published &&
-                           r.FinalContent != null)
+                           r.FinalContent != null);
+
+            if (programId.HasValue)
+            {
+                reportsQuery = reportsQuery
+                    .Where(r => r.ClassId.HasValue && r.Class != null && r.Class.ProgramId == programId.Value);
+            }
+
+            var report = await reportsQuery
                 .OrderByDescending(r => r.PublishedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -437,5 +470,21 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
         }
 
         return recentReports;
+    }
+
+    private static List<string> ReadStringList(JsonElement element, string primaryProperty, string fallbackProperty)
+    {
+        if (element.TryGetProperty(primaryProperty, out var valuesElement) ||
+            element.TryGetProperty(fallbackProperty, out valuesElement))
+        {
+            return valuesElement.ValueKind == JsonValueKind.Array
+                ? valuesElement.EnumerateArray()
+                    .Select(item => item.GetString() ?? string.Empty)
+                    .Where(static item => !string.IsNullOrWhiteSpace(item))
+                    .ToList()
+                : new List<string>();
+        }
+
+        return new List<string>();
     }
 }

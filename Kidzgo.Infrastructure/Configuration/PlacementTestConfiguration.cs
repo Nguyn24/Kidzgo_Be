@@ -49,14 +49,9 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.Property(x => x.LevelRecommendation)
             .HasMaxLength(100);
 
-        builder.Property(x => x.ProgramRecommendation)
-            .HasMaxLength(100);
+        builder.Property(x => x.ProgramRecommendationId);
 
-        builder.Property(x => x.SecondaryProgramRecommendation)
-            .HasMaxLength(100);
-
-        builder.Property(x => x.IsSecondaryProgramSupplementary)
-            .IsRequired();
+        builder.Property(x => x.SecondaryProgramRecommendationId);
 
         builder.Property(x => x.SecondaryProgramSkillFocus)
             .HasMaxLength(50);
@@ -95,6 +90,16 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.HasOne(x => x.InvigilatorUser)
             .WithMany(x => x.InvigilatedPlacementTests)
             .HasForeignKey(x => x.InvigilatorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.ProgramRecommendationProgram)
+            .WithMany(x => x.PrimaryPlacementTestRecommendations)
+            .HasForeignKey(x => x.ProgramRecommendationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.SecondaryProgramRecommendationProgram)
+            .WithMany(x => x.SecondaryPlacementTestRecommendations)
+            .HasForeignKey(x => x.SecondaryProgramRecommendationId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
