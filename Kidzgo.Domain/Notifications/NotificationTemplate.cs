@@ -10,6 +10,7 @@ public class NotificationTemplate : Entity
     public string Title { get; set; } = null!;
     public string? Content { get; set; }
     public string? Placeholders { get; set; }
+    public string? Category { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }

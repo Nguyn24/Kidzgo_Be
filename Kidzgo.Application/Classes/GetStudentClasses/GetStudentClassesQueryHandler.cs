@@ -69,6 +69,8 @@ public sealed class GetStudentClassesQueryHandler(
                 .ThenInclude(c => c.AssistantTeacher)
             .Include(ce => ce.Class!)
                 .ThenInclude(c => c.ClassEnrollments)
+            .Include(ce => ce.Class!)
+                .ThenInclude(c => c.Sessions)
             .OrderByDescending(ce => ce.Class!.CreatedAt)
             .ThenBy(ce => ce.Class!.Title)
             .ApplyPagination(query.PageNumber, query.PageSize)
@@ -93,6 +95,8 @@ public sealed class GetStudentClassesQueryHandler(
             Capacity = ce.Class.Capacity,
             CurrentEnrollmentCount = ce.Class.ClassEnrollments.Count(e => e.Status == EnrollmentStatus.Active),
             SchedulePattern = ce.Class.SchedulePattern,
+            TotalSessions = ce.Class.Sessions.Count,
+            CompletedSessions = ce.Class.Sessions.Count(s => s.Status == Domain.Sessions.SessionStatus.Completed),
             EnrollDate = ce.EnrollDate,
             EnrollmentStatus = ce.Status.ToString()
         }).ToList();

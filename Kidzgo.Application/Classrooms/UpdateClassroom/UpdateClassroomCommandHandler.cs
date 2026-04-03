@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Kidzgo.Application.Classrooms.UpdateClassroom;
 
@@ -20,7 +21,6 @@ public sealed class UpdateClassroomCommandHandler(
             return Result.Failure<UpdateClassroomResponse>(ClassroomErrors.NotFound(command.Id));
         }
 
-        // Check if branch exists
         bool branchExists = await context.Branches
             .AnyAsync(b => b.Id == command.BranchId && b.IsActive, cancellationToken);
 
@@ -29,17 +29,17 @@ public sealed class UpdateClassroomCommandHandler(
             return Result.Failure<UpdateClassroomResponse>(ClassroomErrors.BranchNotFound);
         }
 
+        var equipment = command.Equipment ?? new List<string>();
+
         classroom.BranchId = command.BranchId;
         classroom.Name = command.Name;
         classroom.Capacity = command.Capacity;
         classroom.Note = command.Note;
+        classroom.Floor = command.Floor;
+        classroom.Area = command.Area;
+        classroom.EquipmentJson = equipment.Count > 0 ? JsonSerializer.Serialize(equipment) : null;
 
         await context.SaveChangesAsync(cancellationToken);
-
-        // Re-query with Branch for response
-        var updatedClassroom = await context.Classrooms
-            .Include(c => c.Branch)
-            .FirstOrDefaultAsync(c => c.Id == command.Id, cancellationToken);
 
         return new UpdateClassroomResponse
         {
@@ -48,8 +48,10 @@ public sealed class UpdateClassroomCommandHandler(
             Name = classroom.Name,
             Capacity = classroom.Capacity,
             Note = classroom.Note,
+            Floor = classroom.Floor,
+            Area = classroom.Area,
+            Equipment = equipment,
             IsActive = classroom.IsActive
         };
     }
 }
-

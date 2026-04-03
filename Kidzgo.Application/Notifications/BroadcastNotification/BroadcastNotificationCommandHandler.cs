@@ -23,8 +23,12 @@ public sealed class BroadcastNotificationCommandHandler(
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userContext.UserId, cancellationToken);
 
-        var senderRole = sender?.Role.ToString();
-        var senderName = sender?.Name;
+        var senderRole = string.IsNullOrWhiteSpace(command.SenderRole)
+            ? sender?.Role.ToString()
+            : command.SenderRole;
+        var senderName = string.IsNullOrWhiteSpace(command.SenderName)
+            ? sender?.Name
+            : command.SenderName;
         var targetRole = string.IsNullOrWhiteSpace(command.Role) ? null : command.Role;
 
         // Determine recipients based on filters
@@ -225,9 +229,14 @@ public sealed class BroadcastNotificationCommandHandler(
                 Deeplink = command.Deeplink,
                 Status = NotificationStatus.Pending,
                 CreatedAt = now,
+                Kind = command.Kind,
+                Priority = command.Priority,
                 SenderRole = senderRole,
                 SenderName = senderName,
-                TargetRole = targetRole
+                TargetRole = targetRole,
+                ScopeBranchId = command.BranchId,
+                ScopeClassId = command.ClassId,
+                ScopeStudentProfileId = command.StudentProfileId
             };
 
             // Raise domain event to trigger email/push/zalo sending
@@ -247,7 +256,11 @@ public sealed class BroadcastNotificationCommandHandler(
 
         return new BroadcastNotificationResponse
         {
+            Id = createdIds.FirstOrDefault(),
+            CampaignId = createdIds.FirstOrDefault(),
+            CreatedAt = now,
             CreatedCount = notifications.Count,
+            DeliveredCount = notifications.Count,
             CreatedNotificationIds = createdIds
         };
     }

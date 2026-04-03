@@ -21,6 +21,7 @@ public class Class : Entity
     public Guid ProgramId { get; set; }
     public string Code { get; set; } = null!;
     public string Title { get; set; } = null!;
+    public Guid? RoomId { get; set; }
     public Guid? MainTeacherId { get; set; }
     public Guid? AssistantTeacherId { get; set; }
     public DateOnly StartDate { get; set; }
@@ -28,12 +29,14 @@ public class Class : Entity
     public ClassStatus Status { get; set; }
     public int Capacity { get; set; }
     public string? SchedulePattern { get; set; }
+    public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public Branch Branch { get; set; } = null!;
     public Program Program { get; set; } = null!;
+    public Classroom? Room { get; set; }
     public User? MainTeacher { get; set; }
     public User? AssistantTeacher { get; set; }
     public ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();

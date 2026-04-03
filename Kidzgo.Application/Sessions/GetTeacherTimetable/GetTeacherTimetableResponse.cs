@@ -29,5 +29,16 @@ public sealed class TimetableItemDto
     public string? PlannedAssistantName { get; init; }
     public Guid? LessonPlanId { get; init; }
     public string? LessonPlanLink { get; init; }
+    public Guid SessionId => Id;
+    public string ClassName => ClassTitle;
+    public DateOnly PlannedDate => DateOnly.FromDateTime(PlannedDatetime);
+    public TimeOnly StartTime => TimeOnly.FromDateTime(PlannedDatetime);
+    public TimeOnly EndTime => TimeOnly.FromDateTime(PlannedDatetime.AddMinutes(DurationMinutes));
+    public Guid? RoomId => ActualRoomId ?? PlannedRoomId;
+    public string? RoomName => ActualRoomName ?? PlannedRoomName;
+    public Guid? TeacherId => ActualTeacherId ?? PlannedTeacherId;
+    public string? TeacherName => ActualTeacherName ?? PlannedTeacherName;
+    public string StatusText => Status.ToString();
+    public string? AttendanceStatus { get; init; }
 }
 

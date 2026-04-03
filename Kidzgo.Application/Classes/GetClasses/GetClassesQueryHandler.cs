@@ -17,6 +17,7 @@ public sealed class GetClassesQueryHandler(
         var classesQuery = context.Classes
             .Include(c => c.Branch)
             .Include(c => c.Program)
+            .Include(c => c.Room)
             .Include(c => c.MainTeacher)
             .Include(c => c.AssistantTeacher)
             .AsQueryable();
@@ -36,6 +37,13 @@ public sealed class GetClassesQueryHandler(
         if (query.ProgramId.HasValue)
         {
             classesQuery = classesQuery.Where(c => c.ProgramId == query.ProgramId.Value);
+        }
+
+        if (query.TeacherId.HasValue)
+        {
+            classesQuery = classesQuery.Where(c =>
+                c.MainTeacherId == query.TeacherId.Value ||
+                c.AssistantTeacherId == query.TeacherId.Value);
         }
 
         // Filter by status
@@ -80,6 +88,8 @@ public sealed class GetClassesQueryHandler(
                 ProgramName = c.Program.Name,
                 Code = c.Code,
                 Title = c.Title,
+                RoomId = c.RoomId,
+                RoomName = c.Room != null ? c.Room.Name : null,
                 MainTeacherId = c.MainTeacherId,
                 MainTeacherName = c.MainTeacher != null ? c.MainTeacher.Name : null,
                 AssistantTeacherId = c.AssistantTeacherId,
@@ -89,7 +99,10 @@ public sealed class GetClassesQueryHandler(
                 Status = c.Status.ToString(),
                 Capacity = c.Capacity,
                 CurrentEnrollmentCount = c.ClassEnrollments.Count(ce => ce.Status == Domain.Classes.EnrollmentStatus.Active),
-                SchedulePattern = c.SchedulePattern
+                SchedulePattern = c.SchedulePattern,
+                Description = c.Description,
+                TotalSessions = c.Sessions.Count(),
+                CompletedSessions = c.Sessions.Count(s => s.Status == Domain.Sessions.SessionStatus.Completed)
             })
             .ToListAsync(cancellationToken);
 

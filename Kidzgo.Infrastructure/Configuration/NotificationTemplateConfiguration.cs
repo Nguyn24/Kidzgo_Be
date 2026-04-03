@@ -34,6 +34,9 @@ public class NotificationTemplateConfiguration : IEntityTypeConfiguration<Notifi
         builder.Property(x => x.Placeholders)
             .HasColumnType("jsonb");
 
+        builder.Property(x => x.Category)
+            .HasMaxLength(100);
+
         builder.Property(x => x.IsActive)
             .IsRequired();
 
