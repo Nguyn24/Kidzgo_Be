@@ -5,4 +5,5 @@ public interface IUserContext
     Guid UserId { get; }
     Guid? StudentId { get; }
     Guid? ParentId { get; }
+    string? IpAddress { get; }
 }

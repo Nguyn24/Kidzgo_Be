@@ -9,10 +9,14 @@ public sealed class GetNotificationTemplateByIdResponse
     public NotificationChannel Channel { get; init; }
     public string Title { get; init; } = null!;
     public string? Content { get; init; }
-    public string? Placeholders { get; init; }
+    public List<string> Placeholders { get; init; } = new();
+    public string? PlaceholdersRaw { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+    public string Status => IsActive ? "Active" : "Inactive";
+    public string? Category { get; init; }
+    public int? UsageCount { get; init; }
 }
 

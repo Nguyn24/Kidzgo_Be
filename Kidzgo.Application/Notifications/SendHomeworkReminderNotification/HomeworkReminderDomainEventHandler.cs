@@ -78,6 +78,7 @@ public sealed class HomeworkReminderDomainEventHandler(
             Content = body,
             Status = NotificationStatus.Sent,
             SentAt = DateTime.UtcNow,
+            NotificationTemplateId = template.Id,
             TemplateId = notification.HomeworkId.ToString(),
             CreatedAt = DateTime.UtcNow
         };

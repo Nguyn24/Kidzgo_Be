@@ -10,6 +10,9 @@ public class Classroom : Entity
     public string Name { get; set; } = null!;
     public int Capacity { get; set; }
     public string? Note { get; set; }
+    public string? Floor { get; set; }
+    public decimal? Area { get; set; }
+    public string? EquipmentJson { get; set; }
     public bool IsActive { get; set; }
 
     // Navigation properties

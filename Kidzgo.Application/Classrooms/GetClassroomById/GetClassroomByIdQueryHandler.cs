@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Schools.Errors;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Kidzgo.Application.Classrooms.GetClassroomById;
 
@@ -12,27 +13,53 @@ public sealed class GetClassroomByIdQueryHandler(
 {
     public async Task<Result<GetClassroomByIdResponse>> Handle(GetClassroomByIdQuery query, CancellationToken cancellationToken)
     {
-        var classroom = await context.Classrooms
+        var classroomRow = await context.Classrooms
             .Include(c => c.Branch)
             .Where(c => c.Id == query.Id)
-            .Select(c => new GetClassroomByIdResponse
+            .Select(c => new
             {
-                Id = c.Id,
-                BranchId = c.BranchId,
+                c.Id,
+                c.BranchId,
                 BranchName = c.Branch.Name,
-                Name = c.Name,
-                Capacity = c.Capacity,
-                Note = c.Note,
-                IsActive = c.IsActive
+                c.Name,
+                c.Capacity,
+                c.Note,
+                c.IsActive,
+                c.Floor,
+                c.Area,
+                c.EquipmentJson,
+                UtilizationPercent = c.Capacity <= 0
+                    ? 0
+                    : Math.Round(
+                        (decimal)context.Sessions.Count(s =>
+                            (s.PlannedRoomId == c.Id || s.ActualRoomId == c.Id) &&
+                            s.PlannedDatetime >= DateTime.UtcNow.Date &&
+                            s.PlannedDatetime < DateTime.UtcNow.Date.AddDays(30)) * 100 / c.Capacity,
+                        2)
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (classroom is null)
+        if (classroomRow is null)
         {
             return Result.Failure<GetClassroomByIdResponse>(ClassroomErrors.NotFound(query.Id));
         }
 
-        return classroom;
+        return new GetClassroomByIdResponse
+        {
+            Id = classroomRow.Id,
+            BranchId = classroomRow.BranchId,
+            BranchName = classroomRow.BranchName,
+            Name = classroomRow.Name,
+            Capacity = classroomRow.Capacity,
+            Note = classroomRow.Note,
+            IsActive = classroomRow.IsActive,
+            Floor = classroomRow.Floor,
+            Area = classroomRow.Area,
+            Equipment = string.IsNullOrWhiteSpace(classroomRow.EquipmentJson)
+                ? new List<string>()
+                : JsonSerializer.Deserialize<List<string>>(classroomRow.EquipmentJson!) ?? new List<string>(),
+            UtilizationPercent = classroomRow.UtilizationPercent
+        };
     }
 }
 

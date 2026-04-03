@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.AuditLogs;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,26 +63,14 @@ public sealed class GetAuditLogsQueryHandler(IDbContext context)
 
         var totalCount = await auditLogsQuery.CountAsync(cancellationToken);
 
-        var logs = await auditLogsQuery
+        var auditLogs = await auditLogsQuery
             .OrderByDescending(a => a.CreatedAt)
             .ApplyPagination(query.PageNumber, query.PageSize)
-            .Select(a => new AuditLogDto
-            {
-                Id = a.Id,
-                ActorUserId = a.ActorUserId,
-                ActorUserName = a.ActorUser != null
-                    ? (a.ActorUser.Name ?? a.ActorUser.Username ?? a.ActorUser.Email)
-                    : null,
-                ActorProfileId = a.ActorProfileId,
-                ActorProfileName = a.ActorProfile != null ? a.ActorProfile.DisplayName : null,
-                Action = a.Action,
-                EntityType = a.EntityType,
-                EntityId = a.EntityId,
-                DataBefore = a.DataBefore,
-                DataAfter = a.DataAfter,
-                CreatedAt = a.CreatedAt
-            })
             .ToListAsync(cancellationToken);
+
+        var logs = auditLogs
+            .Select(AuditLogContractMapper.ToDto)
+            .ToList();
 
         return Result.Success(new Page<AuditLogDto>(logs, totalCount, query.PageNumber, query.PageSize));
     }

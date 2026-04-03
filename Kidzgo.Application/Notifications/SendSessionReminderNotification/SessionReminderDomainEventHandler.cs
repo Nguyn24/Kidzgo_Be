@@ -86,6 +86,7 @@ public sealed class SessionReminderDomainEventHandler(
             Content = body,
             Status = NotificationStatus.Sent,
             SentAt = DateTime.UtcNow,
+            NotificationTemplateId = template.Id,
             TemplateId = notification.SessionId.ToString(), // Store session ID to avoid duplicates
             CreatedAt = DateTime.UtcNow
         };

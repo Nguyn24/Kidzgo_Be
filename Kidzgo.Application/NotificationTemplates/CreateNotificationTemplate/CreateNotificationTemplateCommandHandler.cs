@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.NotificationTemplates;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Errors;
@@ -34,6 +35,7 @@ public sealed class CreateNotificationTemplateCommandHandler(
             Title = command.Title,
             Content = command.Content,
             Placeholders = command.Placeholders,
+            Category = command.Category ?? NotificationTemplateContractMapper.InferCategory(command.Code, command.Channel),
             IsActive = command.IsActive,
             IsDeleted = false,
             CreatedAt = now,
@@ -51,6 +53,8 @@ public sealed class CreateNotificationTemplateCommandHandler(
             Title = template.Title,
             Content = template.Content,
             Placeholders = template.Placeholders,
+            Category = template.Category,
+            UsageCount = 0,
             IsActive = template.IsActive,
             IsDeleted = template.IsDeleted,
             CreatedAt = template.CreatedAt,

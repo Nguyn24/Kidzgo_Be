@@ -13,4 +13,11 @@ public sealed class AuditLogDto
     public string? DataBefore { get; init; }
     public string? DataAfter { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime Timestamp => CreatedAt;
+    public string? User => ActorProfileName ?? ActorUserName;
+    public string? Role { get; init; }
+    public string Type => EntityType;
+    public string? Reference => EntityId.HasValue ? $"{EntityType}:{EntityId.Value}" : EntityType;
+    public string? IpAddress { get; init; }
+    public string? Details { get; init; }
 }

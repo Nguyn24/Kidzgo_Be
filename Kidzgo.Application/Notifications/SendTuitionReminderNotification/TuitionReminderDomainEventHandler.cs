@@ -77,6 +77,7 @@ public sealed class TuitionReminderDomainEventHandler(
             Content = body,
             Status = NotificationStatus.Sent,
             SentAt = DateTime.UtcNow,
+            NotificationTemplateId = template.Id,
             TemplateId = notification.InvoiceId.ToString(),
             CreatedAt = DateTime.UtcNow
         };

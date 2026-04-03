@@ -97,9 +97,11 @@ public interface IDbContext
     DbSet<PayrollRun> PayrollRuns { get; }
     DbSet<SessionRole> SessionRoles { get; }
     DbSet<ShiftAttendance> ShiftAttendances { get; }
+    DbSet<MonthlyWorkHours> MonthlyWorkHours { get; }
 
     // Programs
     DbSet<Program> Programs { get; }
+    DbSet<ExtracurricularProgram> ExtracurricularPrograms { get; }
     DbSet<ProgramLeavePolicy> ProgramLeavePolicies { get; }
     DbSet<TuitionPlan> TuitionPlans { get; }
 
