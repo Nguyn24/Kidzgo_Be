@@ -75,8 +75,10 @@ public sealed class UpdateCurrentUserCommandHandler(
             user.PhoneNumber = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.PhoneNumber);
         }
 
-        // AvatarUrl - TODO: Add AvatarUrl field to User entity if needed
-        // For now, we just update the timestamp if any field was updated
+        if (!string.IsNullOrWhiteSpace(command.AvatarUrl))
+        {
+            user.AvatarUrl = command.AvatarUrl;
+        }
 
         // Update profiles if provided
         if (command.Profiles != null && command.Profiles.Any())
@@ -119,7 +121,7 @@ public sealed class UpdateCurrentUserCommandHandler(
             Email = user.Email,
             Role = user.Role.ToString(),
             BranchId = user.BranchId,
-            AvatarUrl = null, // TODO: Add AvatarUrl to User entity if needed
+            AvatarUrl = user.AvatarUrl,
             PhoneNumber = user.PhoneNumber,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,

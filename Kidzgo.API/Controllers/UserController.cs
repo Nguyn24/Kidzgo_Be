@@ -1,6 +1,9 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Authentication.Logout;
+using Kidzgo.Application.Files.UploadFile;
 using Kidzgo.Application.Users.GetCurrentUser;
 using Kidzgo.Application.Users.UpdateCurrentUser;
 using Kidzgo.Application.Users.GetAdminOverview;
@@ -21,10 +24,12 @@ namespace Kidzgo.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly IUserContext _userContext;
 
-    public UserController(ISender mediator)
+    public UserController(ISender mediator, IUserContext userContext)
     {
         _mediator = mediator;
+        _userContext = userContext;
     }
 
     /// Get current user information with role, branchId, permissions, and selected profile
@@ -35,12 +40,41 @@ public class UserController : ControllerBase
         return result.MatchOk();
     }
 
-    /// Update current user information and profiles
+    /// Update current user information and profiles, supports avatar upload via multipart/form-data
     [HttpPut]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(5_242_880)]
     public async Task<IResult> UpdateCurrentUser(
-        [FromBody] UpdateCurrentUserRequest request,
+        [FromForm] UpdateCurrentUserFormRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.Avatar is { Length: 0 })
+        {
+            return Results.BadRequest(new { error = "Avatar file is empty" });
+        }
+
+        if (request.Avatar is not null)
+        {
+            using var avatarStream = request.Avatar.OpenReadStream();
+
+            var uploadAvatarResult = await _mediator.Send(new UploadFileCommand
+            {
+                FileName = request.Avatar.FileName,
+                FileSize = request.Avatar.Length,
+                Folder = $"avatars/{_userContext.UserId}",
+                ResourceType = "image",
+                ContentType = request.Avatar.ContentType,
+                UpdateUserAvatar = true,
+                UpdateProfileAvatar = true,
+                FileStream = avatarStream
+            }, cancellationToken);
+
+            if (uploadAvatarResult.IsFailure)
+            {
+                return CustomResults.Problem(uploadAvatarResult);
+            }
+        }
+
         var command = new UpdateCurrentUserCommand
         {
             FullName = request.FullName,
