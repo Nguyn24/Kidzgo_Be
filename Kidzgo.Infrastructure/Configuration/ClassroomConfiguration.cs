@@ -25,6 +25,13 @@ public class ClassroomConfiguration : IEntityTypeConfiguration<Classroom>
 
         builder.Property(x => x.Note);
 
+        builder.Property(x => x.Floor)
+            .HasMaxLength(50);
+
+        builder.Property(x => x.Area);
+
+        builder.Property(x => x.EquipmentJson);
+
         builder.Property(x => x.IsActive)
             .IsRequired();
 

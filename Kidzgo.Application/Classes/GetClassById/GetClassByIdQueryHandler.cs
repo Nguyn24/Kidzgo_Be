@@ -15,32 +15,10 @@ public sealed class GetClassByIdQueryHandler(
         var classEntity = await context.Classes
             .Include(c => c.Branch)
             .Include(c => c.Program)
+            .Include(c => c.Room)
             .Include(c => c.MainTeacher)
             .Include(c => c.AssistantTeacher)
-            .Where(c => c.Id == query.Id)
-            .Select(c => new GetClassByIdResponse
-            {
-                Id = c.Id,
-                BranchId = c.BranchId,
-                BranchName = c.Branch.Name,
-                ProgramId = c.ProgramId,
-                ProgramName = c.Program.Name,
-                Code = c.Code,
-                Title = c.Title,
-                MainTeacherId = c.MainTeacherId,
-                MainTeacherName = c.MainTeacher != null ? c.MainTeacher.Name : null,
-                AssistantTeacherId = c.AssistantTeacherId,
-                AssistantTeacherName = c.AssistantTeacher != null ? c.AssistantTeacher.Name : null,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Status = c.Status.ToString(),
-                Capacity = c.Capacity,
-                CurrentEnrollmentCount = c.ClassEnrollments.Count(ce => ce.Status == Domain.Classes.EnrollmentStatus.Active),
-                SchedulePattern = c.SchedulePattern,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == query.Id, cancellationToken);
 
         if (classEntity is null)
         {
@@ -48,7 +26,41 @@ public sealed class GetClassByIdQueryHandler(
                 ClassErrors.NotFound(query.Id));
         }
 
-        return classEntity;
+        return new GetClassByIdResponse
+        {
+            Id = classEntity.Id,
+            BranchId = classEntity.BranchId,
+            BranchName = classEntity.Branch.Name,
+            ProgramId = classEntity.ProgramId,
+            ProgramName = classEntity.Program.Name,
+            Code = classEntity.Code,
+            Title = classEntity.Title,
+            RoomId = classEntity.RoomId,
+            RoomName = classEntity.Room?.Name,
+            Description = classEntity.Description,
+            MainTeacherId = classEntity.MainTeacherId,
+            MainTeacherName = classEntity.MainTeacher?.Name,
+            AssistantTeacherId = classEntity.AssistantTeacherId,
+            AssistantTeacherName = classEntity.AssistantTeacher?.Name,
+            StartDate = classEntity.StartDate,
+            EndDate = classEntity.EndDate,
+            Status = classEntity.Status.ToString(),
+            Capacity = classEntity.Capacity,
+            CurrentEnrollmentCount = classEntity.ClassEnrollments.Count(ce => ce.Status == Domain.Classes.EnrollmentStatus.Active),
+            SchedulePattern = classEntity.SchedulePattern,
+            TeacherIds = new[] { classEntity.MainTeacherId, classEntity.AssistantTeacherId }
+                .Where(x => x.HasValue)
+                .Select(x => x!.Value)
+                .ToList(),
+            TeacherNames = new[] { classEntity.MainTeacher?.Name, classEntity.AssistantTeacher?.Name }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToList(),
+            TotalSessions = classEntity.Sessions.Count,
+            CompletedSessions = classEntity.Sessions.Count(s => s.Status == Domain.Sessions.SessionStatus.Completed),
+            CreatedAt = classEntity.CreatedAt,
+            UpdatedAt = classEntity.UpdatedAt
+        };
     }
 }
 

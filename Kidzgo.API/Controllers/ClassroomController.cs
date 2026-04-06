@@ -35,7 +35,10 @@ public class ClassroomController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Capacity = request.Capacity,
-            Note = request.Note
+            Note = request.Note,
+            Floor = request.Floor,
+            Area = request.Area,
+            Equipment = request.Equipment
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -119,7 +122,10 @@ public class ClassroomController : ControllerBase
             BranchId = request.BranchId,
             Name = request.Name,
             Capacity = request.Capacity,
-            Note = request.Note
+            Note = request.Note,
+            Floor = request.Floor,
+            Area = request.Area,
+            Equipment = request.Equipment
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -40,7 +40,7 @@ public sealed class GetParentOverviewQueryHandler(
         }
 
         // Get StudentId from context (token) - only get data for selected student
-        var selectedStudentId = userContext.StudentId;
+        var selectedStudentId = query.StudentProfileId ?? userContext.StudentId;
 
         if (!selectedStudentId.HasValue)
         {
@@ -87,7 +87,12 @@ public sealed class GetParentOverviewQueryHandler(
                 .AsNoTracking()
                 .CountAsync(mc => studentProfileIds.Contains(mc.StudentProfileId) &&
                                  mc.Status == MakeupCreditStatus.Available, cancellationToken),
-            PendingHomeworks = 0, // TODO: Implement homework count
+            PendingHomeworks = await context.HomeworkStudents
+                .AsNoTracking()
+                .CountAsync(hs => hs.StudentProfileId == selectedStudentId.Value &&
+                                  (hs.Status == Domain.Homework.HomeworkStatus.Assigned ||
+                                   hs.Status == Domain.Homework.HomeworkStatus.Missing ||
+                                   hs.Status == Domain.Homework.HomeworkStatus.Late), cancellationToken),
             PendingInvoices = await context.Invoices
                 .AsNoTracking()
                 .CountAsync(i => studentProfileIds.Contains(i.StudentProfileId) &&
@@ -112,7 +117,8 @@ public sealed class GetParentOverviewQueryHandler(
                 Id = p.Id,
                 DisplayName = p.DisplayName,
                 Level = p.StudentLevel != null ? int.Parse(p.StudentLevel.CurrentLevel) : null,
-                TotalStars = p.StarTransactions.Sum(st => st.Amount)
+                TotalStars = p.StarTransactions.Sum(st => st.Amount),
+                Xp = p.StudentLevel != null ? p.StudentLevel.CurrentXp : 0
             })
             .ToListAsync(cancellationToken);
 
@@ -197,8 +203,25 @@ public sealed class GetParentOverviewQueryHandler(
             })
             .ToListAsync(cancellationToken);
 
-        // Pending Homeworks (TODO: Implement when Homework entity is available)
-        var pendingHomeworks = new List<HomeworkSummaryDto>();
+        var pendingHomeworks = await context.HomeworkStudents
+            .AsNoTracking()
+            .Where(hs => hs.StudentProfileId == selectedStudentId.Value &&
+                         (hs.Status == Domain.Homework.HomeworkStatus.Assigned ||
+                          hs.Status == Domain.Homework.HomeworkStatus.Missing ||
+                          hs.Status == Domain.Homework.HomeworkStatus.Late))
+            .OrderBy(hs => hs.Assignment.DueAt)
+            .Take(20)
+            .Select(hs => new HomeworkSummaryDto
+            {
+                Id = hs.AssignmentId,
+                Title = hs.Assignment.Title,
+                ClassId = hs.Assignment.ClassId,
+                ClassCode = hs.Assignment.Class.Code,
+                StudentProfileId = hs.StudentProfileId,
+                DueDate = hs.Assignment.DueAt,
+                SubmissionStatus = hs.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
 
         // Recent Exams
         var recentExams = await context.ExamResults
@@ -288,6 +311,46 @@ public sealed class GetParentOverviewQueryHandler(
             })
             .ToListAsync(cancellationToken);
 
+        var attendanceTotal = await context.Attendances
+            .AsNoTracking()
+            .CountAsync(a => a.StudentProfileId == selectedStudentId.Value &&
+                             a.Session.PlannedDatetime >= fromDate &&
+                             a.Session.PlannedDatetime <= toDate, cancellationToken);
+        var attendancePresent = attendanceTotal == 0
+            ? 0
+            : await context.Attendances
+                .AsNoTracking()
+                .CountAsync(a => a.StudentProfileId == selectedStudentId.Value &&
+                                 a.Session.PlannedDatetime >= fromDate &&
+                                 a.Session.PlannedDatetime <= toDate &&
+                                 a.AttendanceStatus == Domain.Sessions.AttendanceStatus.Present, cancellationToken);
+
+        var homeworkTotal = await context.HomeworkStudents
+            .AsNoTracking()
+            .CountAsync(hs => hs.StudentProfileId == selectedStudentId.Value, cancellationToken);
+        var completedHomework = homeworkTotal == 0
+            ? 0
+            : await context.HomeworkStudents
+                .AsNoTracking()
+                .CountAsync(hs => hs.StudentProfileId == selectedStudentId.Value &&
+                                  (hs.Status == Domain.Homework.HomeworkStatus.Submitted ||
+                                   hs.Status == Domain.Homework.HomeworkStatus.Graded), cancellationToken);
+
+        var currentStreak = await context.AttendanceStreaks
+            .AsNoTracking()
+            .Where(s => s.StudentProfileId == selectedStudentId.Value)
+            .OrderByDescending(s => s.AttendanceDate)
+            .Select(s => (int?)s.CurrentStreak)
+            .FirstOrDefaultAsync(cancellationToken) ?? 0;
+
+        var unreadNotifications = await context.Notifications
+            .AsNoTracking()
+            .CountAsync(n => (n.RecipientUserId == userId || n.RecipientProfileId == selectedStudentId.Value) &&
+                             n.ReadAt == null, cancellationToken);
+
+        var selectedStudent = studentProfiles.FirstOrDefault();
+        var selectedClass = classes.FirstOrDefault();
+
         return new ParentOverviewResponse
         {
             Statistics = statistics,
@@ -301,7 +364,23 @@ public sealed class GetParentOverviewQueryHandler(
             Reports = reports,
             PendingInvoices = pendingInvoices,
             ActiveMissions = activeMissions,
-            OpenTickets = openTickets
+            OpenTickets = openTickets,
+            StudentInfo = selectedStudent,
+            ClassInfo = selectedClass,
+            AttendanceRate = attendanceTotal == 0
+                ? 0
+                : Math.Round((decimal)attendancePresent * 100 / attendanceTotal, 2),
+            HomeworkCompletion = homeworkTotal == 0
+                ? 0
+                : Math.Round((decimal)completedHomework * 100 / homeworkTotal, 2),
+            Xp = selectedStudent?.Xp ?? 0,
+            Level = selectedStudent?.Level,
+            Streak = currentStreak,
+            Stars = selectedStudent?.TotalStars ?? 0,
+            NextClasses = upcomingSessions,
+            PendingApprovals = new List<ParentPendingApprovalDto>(),
+            TuitionDue = pendingInvoices.Sum(i => i.Amount),
+            UnreadNotifications = unreadNotifications
         };
     }
 }

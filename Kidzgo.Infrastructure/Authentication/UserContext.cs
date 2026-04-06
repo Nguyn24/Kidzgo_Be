@@ -29,4 +29,11 @@ public class UserContext : IUserContext
             .HttpContext?
             .User
             .GetParentId();
+
+    public string? IpAddress =>
+        _httpContextAccessor
+            .HttpContext?
+            .Connection
+            .RemoteIpAddress?
+            .ToString();
 }

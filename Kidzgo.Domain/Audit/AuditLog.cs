@@ -13,6 +13,7 @@ public class AuditLog : Entity
     public Guid? EntityId { get; set; }
     public string? DataBefore { get; set; }
     public string? DataAfter { get; set; }
+    public string? IpAddress { get; set; }
     public DateTime CreatedAt { get; set; }
 
     // Navigation properties

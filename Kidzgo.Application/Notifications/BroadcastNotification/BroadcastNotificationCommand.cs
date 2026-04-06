@@ -9,6 +9,10 @@ public sealed class BroadcastNotificationCommand : ICommand<BroadcastNotificatio
     public string? Content { get; init; }
     public string? Deeplink { get; init; }
     public NotificationChannel Channel { get; init; } = NotificationChannel.InApp;
+    public string? Kind { get; init; }
+    public string? Priority { get; init; }
+    public string? SenderRole { get; init; }
+    public string? SenderName { get; init; }
     
     // Filters for recipients
     public string? Role { get; init; }  // Filter by user role

@@ -73,6 +73,10 @@ public class NotificationController : ControllerBase
             Content = request.Content,
             Deeplink = request.Deeplink,
             Channel = request.Channel,
+            Kind = request.Kind,
+            Priority = request.Priority,
+            SenderRole = request.SenderRole,
+            SenderName = request.SenderName,
             Role = request.Role,
             BranchId = request.BranchId,
             ClassId = request.ClassId,
@@ -82,7 +86,7 @@ public class NotificationController : ControllerBase
         };
 
         var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchCreated(br => $"/api/notifications/broadcast/{br.CreatedCount}");
+        return result.MatchCreated(br => $"/api/notifications/broadcast/{br.CampaignId ?? br.Id ?? Guid.Empty}");
     }
 
     /// View broadcast notification history (grouped)
@@ -91,6 +95,11 @@ public class NotificationController : ControllerBase
     public async Task<IResult> GetBroadcastNotificationHistory(
         [FromQuery] NotificationChannel? channel,
         [FromQuery] string? senderRole,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? classId,
+        [FromQuery] Guid? studentProfileId,
+        [FromQuery(Name = "from")] DateTime? from,
+        [FromQuery(Name = "to")] DateTime? to,
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
         [FromQuery] int pageNumber = 1,
@@ -101,8 +110,11 @@ public class NotificationController : ControllerBase
         {
             Channel = channel,
             SenderRole = senderRole,
-            FromDate = fromDate,
-            ToDate = toDate,
+            BranchId = branchId,
+            ClassId = classId,
+            StudentProfileId = studentProfileId,
+            FromDate = from ?? fromDate,
+            ToDate = to ?? toDate,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -142,6 +154,7 @@ public class NotificationController : ControllerBase
             Title = request.Title,
             Content = request.Content,
             Placeholders = request.Placeholders,
+            Category = request.Category,
             IsActive = request.IsActive
         };
 
@@ -204,6 +217,7 @@ public class NotificationController : ControllerBase
             Title = request.Title,
             Content = request.Content,
             Placeholders = request.Placeholders,
+            Category = request.Category,
             IsActive = request.IsActive
         };
 

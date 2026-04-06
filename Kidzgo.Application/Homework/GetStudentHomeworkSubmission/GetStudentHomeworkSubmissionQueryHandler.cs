@@ -32,6 +32,8 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
         var homeworkStudent = await context.HomeworkStudents
             .Include(hs => hs.Assignment)
                 .ThenInclude(a => a.Class)
+            .Include(hs => hs.Assignment)
+                .ThenInclude(a => a.CreatedByUser)
             .FirstOrDefaultAsync(hs => hs.Id == query.HomeworkStudentId, cancellationToken);
 
         if (homeworkStudent is null)
@@ -121,7 +123,29 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             Review = showReview ? new HomeworkReviewDto { AnswerResults = reviewResults } : null,
             ShowReview = showReview,
             ShowCorrectAnswer = showReview,
-            ShowExplanation = showReview
+            ShowExplanation = showReview,
+            TeacherName = homeworkStudent.Assignment.CreatedByUser != null
+                ? homeworkStudent.Assignment.CreatedByUser.Name
+                : null,
+            AssignmentAttachmentUrls = string.IsNullOrWhiteSpace(homeworkStudent.Assignment.AttachmentUrl)
+                ? new List<string>()
+                : new List<string> { homeworkStudent.Assignment.AttachmentUrl },
+            Submission = new HomeworkSubmissionPayloadDto
+            {
+                TextAnswer = homeworkStudent.TextAnswer,
+                AttachmentUrls = homeworkStudent.Assignment.SubmissionType == SubmissionType.Link ||
+                                 string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl)
+                    ? new List<string>()
+                    : new List<string> { homeworkStudent.AttachmentUrl },
+                Links = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
+                        homeworkStudent.Assignment.SubmissionType == SubmissionType.Link
+                    ? new List<string> { homeworkStudent.AttachmentUrl }
+                    : new List<string>(),
+                SubmittedAt = homeworkStudent.SubmittedAt,
+                GradedAt = homeworkStudent.GradedAt,
+                Score = homeworkStudent.Score,
+                TeacherFeedback = homeworkStudent.TeacherFeedback
+            }
         };
     }
 }

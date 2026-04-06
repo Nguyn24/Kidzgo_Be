@@ -33,6 +33,9 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(x => x.DataAfter)
             .HasColumnType("jsonb");
 
+        builder.Property(x => x.IpAddress)
+            .HasMaxLength(64);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

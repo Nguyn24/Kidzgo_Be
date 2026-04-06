@@ -29,6 +29,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-253: Tạo Invoice
     [HttpPost]
+    [HttpPost("/api/finance/invoices")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreateInvoice(
         [FromBody] CreateInvoiceRequest request,
@@ -68,6 +69,7 @@ public class InvoiceController : ControllerBase
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     [HttpGet]
+    [HttpGet("/api/finance/invoices")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetInvoices(
         [FromQuery] Guid? branchId,
@@ -135,6 +137,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-256: Cập nhật Invoice
     [HttpPut("{id:guid}")]
+    [HttpPut("/api/finance/invoices/{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> UpdateInvoice(
         Guid id,
@@ -176,6 +179,7 @@ public class InvoiceController : ControllerBase
 
     /// UC-260/261: Sinh PayOS payment link và QR code
     [HttpPost("{id:guid}/payos/create-link")]
+    [HttpPost("/api/finance/invoices/{id:guid}/send")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> CreatePayOSLink(
         Guid id,
