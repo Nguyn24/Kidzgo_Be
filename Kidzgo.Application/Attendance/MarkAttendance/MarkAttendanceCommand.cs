@@ -6,6 +6,7 @@ namespace Kidzgo.Application.Attendance.MarkAttendance;
 public sealed class MarkAttendanceCommand : ICommand<MarkAttendanceResponse>
 {
     public Guid SessionId { get; init; }
+    public bool IsAdmin { get; init; }
     public List<StudentAttendanceItem> Attendances { get; init; } = new();
 }
 

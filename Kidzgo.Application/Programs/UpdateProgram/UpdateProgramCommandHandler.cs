@@ -47,8 +47,8 @@ public sealed class UpdateProgramCommandHandler(
             IsMakeup = program.IsMakeup,
             IsSupplementary = program.IsSupplementary,
             DefaultMakeupClassId = program.DefaultMakeupClassId,
-            DefaultTuitionAmount = program.DefaultTuitionAmount,
-            UnitPriceSession = program.UnitPriceSession,
+            DefaultTuitionAmount = 0,
+            UnitPriceSession = 0,
             Description = program.Description,
             IsActive = program.IsActive
         };
