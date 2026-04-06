@@ -25,8 +25,14 @@ public sealed class GetProgramByIdQueryHandler(
                 IsSupplementary = p.IsSupplementary,
                 DefaultMakeupClassId = p.DefaultMakeupClassId,
                 Code = p.Code,
-                DefaultTuitionAmount = p.DefaultTuitionAmount,
-                UnitPriceSession = p.UnitPriceSession,
+                DefaultTuitionAmount = p.TuitionPlans
+                    .Where(tp => tp.IsActive && !tp.IsDeleted)
+                    .Select(tp => (decimal?)tp.TuitionAmount)
+                    .Min() ?? 0,
+                UnitPriceSession = p.TuitionPlans
+                    .Where(tp => tp.IsActive && !tp.IsDeleted)
+                    .Select(tp => (decimal?)tp.UnitPriceSession)
+                    .Min() ?? 0,
                 Description = p.Description,
                 IsActive = p.IsActive,
                 TotalSessions = p.TuitionPlans
