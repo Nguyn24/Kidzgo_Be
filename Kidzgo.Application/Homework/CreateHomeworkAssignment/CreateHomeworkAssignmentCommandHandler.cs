@@ -193,7 +193,6 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             AllowResubmit = homework.AllowResubmit,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
-            MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,
             Rubric = homework.Rubric,

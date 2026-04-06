@@ -92,7 +92,6 @@ public sealed class GetRegistrationsQueryHandler(
                 TotalSessions = r.TotalSessions,
                 UsedSessions = r.UsedSessions,
                 RemainingSessions = r.RemainingSessions,
-                ExpiryDate = r.ExpiryDate,
                 CreatedAt = r.CreatedAt
             })
             .ToListAsync(cancellationToken);

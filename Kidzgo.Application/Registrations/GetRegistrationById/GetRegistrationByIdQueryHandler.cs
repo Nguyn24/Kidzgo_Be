@@ -58,7 +58,6 @@ public sealed class GetRegistrationByIdQueryHandler(
             TotalSessions = registration.TotalSessions,
             UsedSessions = registration.UsedSessions,
             RemainingSessions = registration.RemainingSessions,
-            ExpiryDate = registration.ExpiryDate,
             OriginalRegistrationId = registration.OriginalRegistrationId,
             OperationType = registration.OperationType?.ToString(),
             CreatedAt = registration.CreatedAt,

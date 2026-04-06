@@ -230,7 +230,6 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             AllowResubmit = homework.AllowResubmit,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
-            MissionId = homework.MissionId,
             Instructions = homework.Instructions,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count,

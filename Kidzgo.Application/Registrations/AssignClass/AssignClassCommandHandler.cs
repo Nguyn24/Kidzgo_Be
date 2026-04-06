@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.Registrations;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
@@ -70,6 +71,7 @@ public sealed class AssignClassCommandHandler(
 
         var isWait = entryType == EntryType.Wait;
         var classId = command.ClassId;
+        var currentActiveEnrollmentCount = 0;
 
         if (!isWait && !classId.HasValue)
         {
@@ -108,6 +110,11 @@ public sealed class AssignClassCommandHandler(
         // 6. Check class status - can only assign to active/recruiting classes (for non-wait types)
         if (classEntity != null)
         {
+            currentActiveEnrollmentCount = classEntity.ClassEnrollments
+                .Count(ce => ce.Status == EnrollmentStatus.Active);
+
+            ClassCapacityStatusHelper.SyncAvailabilityStatus(classEntity, currentActiveEnrollmentCount, now);
+
             if (classEntity.Status == ClassStatus.Completed || 
                 classEntity.Status == ClassStatus.Cancelled ||
                 classEntity.Status == ClassStatus.Suspended)
@@ -117,7 +124,7 @@ public sealed class AssignClassCommandHandler(
             }
 
             // 7. Check capacity
-            if (classEntity.ClassEnrollments.Count >= classEntity.Capacity)
+            if (currentActiveEnrollmentCount >= classEntity.Capacity)
             {
                 return Result.Failure<AssignClassResponse>(RegistrationErrors.ClassFull(classEntity.Id));
             }
@@ -178,11 +185,10 @@ public sealed class AssignClassCommandHandler(
             }
 
             // Auto set class to Full when capacity is reached
-            var newEnrollmentCount = classEntity!.ClassEnrollments.Count + 1;
-            if (newEnrollmentCount >= classEntity.Capacity && classEntity.Status != ClassStatus.Full)
+            var previousClassStatus = classEntity.Status;
+            ClassCapacityStatusHelper.SyncAvailabilityStatus(classEntity, currentActiveEnrollmentCount + 1, now);
+            if (classEntity.Status == ClassStatus.Full && previousClassStatus != ClassStatus.Full)
             {
-                classEntity.Status = ClassStatus.Full;
-                classEntity.UpdatedAt = now;
                 warningMessage = string.IsNullOrEmpty(warningMessage) 
                     ? "Lớp đã đầy sau khi thêm học viên này."
                     : warningMessage + " Lớp đã đầy sau khi thêm học viên này.";

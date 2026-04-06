@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.Registrations;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
@@ -56,7 +57,9 @@ public sealed class TransferClassCommandHandler(
         }
 
         var oldClassId = currentClassId.Value;
-        var oldClass = await context.Classes.FindAsync(new object[] { oldClassId }, cancellationToken);
+        var oldClass = await context.Classes
+            .Include(c => c.ClassEnrollments)
+            .FirstOrDefaultAsync(c => c.Id == oldClassId, cancellationToken);
 
         // 4. Get new class
         var newClass = await context.Classes
@@ -81,8 +84,12 @@ public sealed class TransferClassCommandHandler(
             return Result.Failure<TransferClassResponse>(selectionPatternValidation.Error);
         }
 
+        var newClassActiveEnrollmentCount = newClass.ClassEnrollments
+            .Count(ce => ce.Status == EnrollmentStatus.Active);
+        ClassCapacityStatusHelper.SyncAvailabilityStatus(newClass, newClassActiveEnrollmentCount, now);
+
         // 6. Check new class capacity
-        if (newClass.ClassEnrollments.Count >= newClass.Capacity)
+        if (newClassActiveEnrollmentCount >= newClass.Capacity)
         {
             return Result.Failure<TransferClassResponse>(RegistrationErrors.ClassFull(command.NewClassId));
         }
@@ -136,6 +143,12 @@ public sealed class TransferClassCommandHandler(
 
         context.ClassEnrollments.Add(newEnrollment);
         await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(newEnrollment, cancellationToken);
+        if (oldClass != null)
+        {
+            await ClassCapacityStatusHelper.SyncAvailabilityStatusAsync(context, oldClass.Id, now, cancellationToken);
+        }
+
+        ClassCapacityStatusHelper.SyncAvailabilityStatus(newClass, newClassActiveEnrollmentCount + 1, now);
 
         if (isSecondaryTrack)
         {

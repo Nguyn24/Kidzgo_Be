@@ -62,6 +62,14 @@ public sealed class GetClassesQueryHandler(
                     ce.Status == Domain.Classes.EnrollmentStatus.Active));
         }
 
+        if (!string.IsNullOrWhiteSpace(query.SchedulePattern))
+        {
+            var schedulePattern = query.SchedulePattern.Trim();
+            classesQuery = classesQuery.Where(c =>
+                c.SchedulePattern != null &&
+                c.SchedulePattern.Contains(schedulePattern));
+        }
+
         // Filter by search term
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
