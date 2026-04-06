@@ -260,7 +260,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
             TotalSessions = remainingSessions,
             UsedSessions = 0,
             RemainingSessions = remainingSessions,
-            ExpiryDate = now.AddMonths(EstimateDurationMonths(remainingSessions)),
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -280,14 +279,6 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         }
 
         return newReg.Id;
-    }
-
-    private static int EstimateDurationMonths(int remainingSessions)
-    {
-        if (remainingSessions <= 0) return 3;
-        var months = remainingSessions / 4;
-        if (remainingSessions % 4 > 0) months++;
-        return Math.Max(1, months);
     }
 
     private Task<Kidzgo.Domain.Programs.Program?> GetActiveProgramAsync(Guid programId, CancellationToken cancellationToken)

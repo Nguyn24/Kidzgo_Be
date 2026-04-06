@@ -21,7 +21,6 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
         var homework = await context.HomeworkAssignments
             .Include(h => h.Class)
             .Include(h => h.Session)
-            .Include(h => h.Mission)
             .Include(h => h.HomeworkStudents)
                 .ThenInclude(hs => hs.StudentProfile)
             .FirstOrDefaultAsync(h => h.Id == query.Id, cancellationToken);
@@ -58,8 +57,6 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
             AllowResubmit = homework.AllowResubmit,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
-            MissionId = homework.MissionId,
-            MissionTitle = homework.Mission?.Title,
             Instructions = homework.Instructions,
             ExpectedAnswer = homework.ExpectedAnswer,
             Rubric = homework.Rubric,

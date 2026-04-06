@@ -7,6 +7,7 @@ using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.Users.Errors;
@@ -72,6 +73,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         }
 
         var now = DateTime.UtcNow;
+        var isFirstSubmission = !homeworkStudent.SubmittedAt.HasValue;
 
         if (homeworkStudent.Assignment.TimeLimitMinutes.HasValue)
         {
@@ -217,12 +219,68 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             ? (decimal)earnedPoints / totalPoints * maxScore
             : 0;
 
+        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
+
+        // Keep HomeworkStreak consistent with the regular homework submit flow.
+        // Only count the first on-time quiz submission so resubmits do not farm mission progress.
+        if (isFirstSubmission && isOnTime)
+        {
+            var activeHomeworkStreakMissions = await context.MissionProgresses
+                .Include(mp => mp.Mission)
+                .Where(mp => mp.StudentProfileId == studentId.Value)
+                .Where(mp => mp.Mission.MissionType == MissionType.HomeworkStreak)
+                .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
+                             mp.Status == MissionProgressStatus.InProgress)
+                .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
+                .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
+                .ToListAsync(cancellationToken);
+
+            foreach (var missionProgress in activeHomeworkStreakMissions)
+            {
+                if (missionProgress.Status == MissionProgressStatus.Assigned)
+                {
+                    missionProgress.Status = MissionProgressStatus.InProgress;
+                }
+
+                missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
+
+                var totalRequired = missionProgress.Mission.TotalRequired;
+                if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
+                {
+                    missionProgress.Status = MissionProgressStatus.Completed;
+                    missionProgress.CompletedAt = now;
+
+                    if (missionProgress.Mission.RewardStars.HasValue &&
+                        missionProgress.Mission.RewardStars.Value > 0)
+                    {
+                        await gamificationService.AddStarsForMissionCompletion(
+                            studentId.Value,
+                            missionProgress.Mission.RewardStars.Value,
+                            missionProgress.MissionId,
+                            reason: $"Completed HomeworkStreak Mission: {missionProgress.Mission.Title}",
+                            cancellationToken);
+                    }
+
+                    if (missionProgress.Mission.RewardExp.HasValue &&
+                        missionProgress.Mission.RewardExp.Value > 0)
+                    {
+                        await gamificationService.AddXpForMissionCompletion(
+                            studentId.Value,
+                            missionProgress.Mission.RewardExp.Value,
+                            missionProgress.MissionId,
+                            reason: $"Completed HomeworkStreak Mission: {missionProgress.Mission.Title}",
+                            cancellationToken);
+                    }
+                }
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
         // Award stars for on-time submission
         var rewardStars = 0;
-        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
-        if (isOnTime &&
+        if (isFirstSubmission &&
+            isOnTime &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)
         {

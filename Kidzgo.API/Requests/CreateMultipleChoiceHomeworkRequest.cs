@@ -15,7 +15,6 @@ public sealed class CreateMultipleChoiceHomeworkRequest
     public bool? AllowResubmit { get; init; }
     public bool? AiHintEnabled { get; init; }
     public bool? AiRecommendEnabled { get; init; }
-    public Guid? MissionId { get; init; }
     public string? Instructions { get; init; }
     public List<CreateHomeworkQuestionRequest> Questions { get; init; } = new();
 }

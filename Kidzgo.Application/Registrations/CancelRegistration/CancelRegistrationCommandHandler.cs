@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
@@ -42,6 +43,10 @@ public sealed class CancelRegistrationCommandHandler(
                     (!ce.RegistrationId.HasValue &&
                      (ce.ClassId == registration.ClassId || ce.ClassId == registration.SecondaryClassId))))
             .ToListAsync(cancellationToken);
+        var impactedClassIds = enrollments
+            .Select(e => e.ClassId)
+            .Distinct()
+            .ToList();
 
         foreach (var enrollment in enrollments)
         {
@@ -59,6 +64,11 @@ public sealed class CancelRegistrationCommandHandler(
             ? command.Reason 
             : $"{registration.Note} | Cancel reason: {command.Reason}";
         registration.UpdatedAt = now;
+
+        foreach (var classId in impactedClassIds)
+        {
+            await ClassCapacityStatusHelper.SyncAvailabilityStatusAsync(context, classId, now, cancellationToken);
+        }
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -69,8 +69,8 @@ public sealed class SuggestClassesQueryHandler(
             .Include(c => c.ClassEnrollments)
             .Where(c => c.ProgramId == programId
                 && c.BranchId == branchId
-                && (c.Status == ClassStatus.Recruiting || c.Status == ClassStatus.Active || c.Status == ClassStatus.Planned)
-                && c.Capacity > c.ClassEnrollments.Count)
+                && (c.Status == ClassStatus.Recruiting || c.Status == ClassStatus.Active || c.Status == ClassStatus.Planned || c.Status == ClassStatus.Full)
+                && c.Capacity > c.ClassEnrollments.Count(ce => ce.Status == EnrollmentStatus.Active))
             .OrderBy(c => c.StartDate)
             .ToListAsync(cancellationToken);
 
@@ -94,14 +94,19 @@ public sealed class SuggestClassesQueryHandler(
 
     private static SuggestedClassDto MapSuggestedClass(Kidzgo.Domain.Classes.Class classEntity, DateOnly now)
     {
+        var currentEnrollment = classEntity.ClassEnrollments.Count(ce => ce.Status == EnrollmentStatus.Active);
+        var status = classEntity.Status == ClassStatus.Full && currentEnrollment < classEntity.Capacity
+            ? (classEntity.StartDate <= now ? ClassStatus.Active : ClassStatus.Recruiting)
+            : classEntity.Status;
+
         return new SuggestedClassDto
         {
             Id = classEntity.Id,
             Code = classEntity.Code,
             Title = classEntity.Title,
-            Status = classEntity.Status.ToString(),
+            Status = status.ToString(),
             Capacity = classEntity.Capacity,
-            CurrentEnrollment = classEntity.ClassEnrollments.Count,
+            CurrentEnrollment = currentEnrollment,
             StartDate = classEntity.StartDate,
             EndDate = classEntity.EndDate,
             SchedulePattern = classEntity.SchedulePattern,

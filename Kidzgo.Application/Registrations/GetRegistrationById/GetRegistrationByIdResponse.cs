@@ -31,7 +31,6 @@ public sealed class GetRegistrationByIdResponse
     public int TotalSessions { get; init; }
     public int UsedSessions { get; init; }
     public int RemainingSessions { get; init; }
-    public DateTime? ExpiryDate { get; init; }
     public Guid? OriginalRegistrationId { get; init; }
     public string? OperationType { get; init; }
     public DateTime CreatedAt { get; init; }
