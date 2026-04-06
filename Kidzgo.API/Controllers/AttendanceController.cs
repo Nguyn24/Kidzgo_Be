@@ -33,6 +33,7 @@ public class AttendanceController : ControllerBase
         var command = new MarkAttendanceCommand
         {
             SessionId = sessionId,
+            IsAdmin = User.IsInRole("Admin"),
             Attendances = request.Attendances
         };
 

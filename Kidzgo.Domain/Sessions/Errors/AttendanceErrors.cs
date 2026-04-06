@@ -15,5 +15,9 @@ public static class AttendanceErrors
     public static Error UpdateWindowClosed(Guid sessionId) => Error.Validation(
         "Attendance.UpdateWindowClosed",
         $"Attendance for session '{sessionId}' can only be updated within 24 hours after it ends.");
+
+    public static Error FutureSessionNotAllowed(Guid sessionId) => Error.Validation(
+        "Attendance.FutureSessionNotAllowed",
+        $"Teachers cannot mark attendance for future session '{sessionId}'.");
 }
 
