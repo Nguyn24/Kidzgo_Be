@@ -9,7 +9,7 @@ public sealed class UpdateCurrentUserResponse
     public string? PhoneNumber { get; set; }
     public string? Role { get; set; }
     public Guid? BranchId { get; set; }
-    public string? AvatarUrl { get; set; } // TODO: Add AvatarUrl to User entity if needed
+    public string? AvatarUrl { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

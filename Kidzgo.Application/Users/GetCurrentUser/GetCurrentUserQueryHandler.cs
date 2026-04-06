@@ -33,6 +33,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                 PhoneNumber = user.PhoneNumber,
                 Role = user.Role.ToString(),
                 BranchId = user.BranchId,
+                AvatarUrl = user.AvatarUrl,
                 Branch = user.Branch != null ? new BranchDto
                 {
                     Id = user.Branch.Id,
