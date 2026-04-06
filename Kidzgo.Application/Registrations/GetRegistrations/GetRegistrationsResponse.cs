@@ -29,7 +29,6 @@ public sealed class RegistrationDto
     public int TotalSessions { get; init; }
     public int UsedSessions { get; init; }
     public int RemainingSessions { get; init; }
-    public DateTime? ExpiryDate { get; init; }
     public DateTime CreatedAt { get; init; }
 }
 

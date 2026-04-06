@@ -58,6 +58,7 @@ public class ClassController : ControllerBase
     /// <param name="programId">Filter by program ID</param>
     /// <param name="studentId">Filter by enrolled student ID</param>
     /// <param name="status">Class status: Planned, Active, or Closed</param>
+    /// <param name="schedulePattern">Filter by class schedule pattern (partial match)</param>
     /// <param name="searchTerm">Search by class code or title</param>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
@@ -69,6 +70,7 @@ public class ClassController : ControllerBase
         [FromQuery] Guid? teacherId,
         [FromQuery] Guid? studentId,
         [FromQuery] string? status,
+        [FromQuery] string? schedulePattern,
         [FromQuery] string? searchTerm,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -87,6 +89,7 @@ public class ClassController : ControllerBase
             TeacherId = teacherId,
             StudentId = studentId,
             Status = classStatus,
+            SchedulePattern = schedulePattern,
             SearchTerm = searchTerm,
             PageNumber = pageNumber,
             PageSize = pageSize

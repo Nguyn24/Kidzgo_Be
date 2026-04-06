@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
@@ -38,17 +39,23 @@ public sealed class ReactivateEnrollmentCommandHandler(
             return Result.Failure<ReactivateEnrollmentResponse>(
                 EnrollmentErrors.CannotReactivateDropped);
         }
-
-        // Check if class is still available
-        if (enrollment.Class.Status != ClassStatus.Active && enrollment.Class.Status != ClassStatus.Planned)
-        {
-            return Result.Failure<ReactivateEnrollmentResponse>(
-                EnrollmentErrors.ClassNotAvailable);
-        }
+        
+        var now = DateTime.UtcNow;
 
         // Check class capacity
         int currentEnrollmentCount = await context.ClassEnrollments
             .CountAsync(ce => ce.ClassId == enrollment.ClassId && ce.Status == EnrollmentStatus.Active, cancellationToken);
+
+        ClassCapacityStatusHelper.SyncAvailabilityStatus(enrollment.Class, currentEnrollmentCount, now);
+
+        // Check if class is still available
+        if (enrollment.Class.Status != ClassStatus.Active &&
+            enrollment.Class.Status != ClassStatus.Planned &&
+            enrollment.Class.Status != ClassStatus.Recruiting)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(
+                EnrollmentErrors.ClassNotAvailable);
+        }
 
         if (currentEnrollmentCount >= enrollment.Class.Capacity)
         {
@@ -57,8 +64,9 @@ public sealed class ReactivateEnrollmentCommandHandler(
         }
 
         enrollment.Status = EnrollmentStatus.Active;
-        enrollment.UpdatedAt = DateTime.UtcNow;
+        enrollment.UpdatedAt = now;
         await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
+        ClassCapacityStatusHelper.SyncAvailabilityStatus(enrollment.Class, currentEnrollmentCount + 1, now);
         await context.SaveChangesAsync(cancellationToken);
 
         return new ReactivateEnrollmentResponse

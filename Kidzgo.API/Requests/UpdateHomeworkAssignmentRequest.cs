@@ -18,7 +18,6 @@ public sealed class UpdateHomeworkAssignmentRequest
     public bool? AllowResubmit { get; init; }
     public bool? AiHintEnabled { get; init; }
     public bool? AiRecommendEnabled { get; init; }
-    public Guid? MissionId { get; init; }
     public string? Instructions { get; init; }
     public string? ExpectedAnswer { get; init; }
     public string? Rubric { get; init; }

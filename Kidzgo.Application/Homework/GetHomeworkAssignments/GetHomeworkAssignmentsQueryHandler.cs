@@ -94,7 +94,6 @@ public sealed class GetHomeworkAssignmentsQueryHandler(
                 AiHintEnabled = h.AiHintEnabled,
                 AiRecommendEnabled = h.AiRecommendEnabled,
                 SpeakingMode = h.SpeakingMode,
-                MissionId = h.MissionId,
                 CreatedAt = h.CreatedAt,
                 TotalStudents = h.HomeworkStudents.Count,
                 SubmittedCount = h.HomeworkStudents.Count(hs => hs.Status == HomeworkStatus.Submitted || hs.Status == HomeworkStatus.Graded),
