@@ -30,6 +30,14 @@ public sealed class UpdateAttendanceCommandHandler(
                 AttendanceErrors.NotFoundForSessionStudent(request.SessionId, request.StudentProfileId));
         }
 
+        var sessionDate = DateOnly.FromDateTime(attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (!request.IsAdmin && sessionDate > today)
+        {
+            return Result.Failure<UpdateAttendanceResponse>(
+                AttendanceErrors.FutureSessionNotAllowed(attendance.SessionId));
+        }
+
         var sessionEndUtc = (attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime)
             .AddMinutes(attendance.Session.DurationMinutes);
         if (!request.IsAdmin && DateTime.UtcNow - sessionEndUtc > TimeSpan.FromHours(24))

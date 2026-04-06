@@ -25,6 +25,14 @@ public sealed class MarkAttendanceCommandHandler(
             return Result.Failure<MarkAttendanceResponse>(AttendanceErrors.NotFound(command.SessionId));
         }
 
+        var sessionDate = DateOnly.FromDateTime(session.ActualDatetime ?? session.PlannedDatetime);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (!command.IsAdmin && sessionDate > today)
+        {
+            return Result.Failure<MarkAttendanceResponse>(
+                AttendanceErrors.FutureSessionNotAllowed(command.SessionId));
+        }
+
         var results = new List<AttendanceResultItem>();
         var participants = await sessionParticipantService.GetParticipantsAsync(command.SessionId, cancellationToken);
         var participantsByStudent = participants.ToDictionary(p => p.StudentProfileId);
