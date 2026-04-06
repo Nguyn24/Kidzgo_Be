@@ -23,6 +23,7 @@ public class AuditLogController : ControllerBase
     /// Xem danh sách audit logs, có hỗ trợ filter theo actor và entity.
     /// </summary>
     [HttpGet]
+    [HttpGet("/api/finance/audit-logs")]
     public async Task<IResult> GetAuditLogs(
         [FromQuery] Guid? actorId = null,
         [FromQuery] Guid? actorUserId = null,
@@ -30,6 +31,8 @@ public class AuditLogController : ControllerBase
         [FromQuery] string? entityType = null,
         [FromQuery] Guid? entityId = null,
         [FromQuery] string? action = null,
+        [FromQuery(Name = "from")] DateTime? from = null,
+        [FromQuery(Name = "to")] DateTime? to = null,
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
         [FromQuery] int pageNumber = 1,
@@ -44,8 +47,8 @@ public class AuditLogController : ControllerBase
             EntityType = entityType,
             EntityId = entityId,
             Action = action,
-            FromDate = fromDate,
-            ToDate = toDate,
+            FromDate = from ?? fromDate,
+            ToDate = to ?? toDate,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
@@ -58,6 +61,7 @@ public class AuditLogController : ControllerBase
     /// Xem chi tiết 1 audit log (bao gồm data_before và data_after).
     /// </summary>
     [HttpGet("{id:guid}")]
+    [HttpGet("/api/finance/audit-logs/{id:guid}")]
     public async Task<IResult> GetAuditLogById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetAuditLogByIdQuery { Id = id }, cancellationToken);

@@ -196,6 +196,7 @@ public class UserController : ControllerBase
     [HttpGet("parent/overview")]
     [Authorize]
     public async Task<IResult> GetParentOverview(
+        [FromQuery] Guid? studentProfileId,
         [FromQuery] Guid? classId,
         [FromQuery] Guid? sessionId,
         [FromQuery] DateTime? fromDate,
@@ -204,6 +205,7 @@ public class UserController : ControllerBase
     {
         var query = new GetParentOverviewQuery
         {
+            StudentProfileId = studentProfileId,
             ClassId = classId,
             SessionId = sessionId,
             FromDate = fromDate,

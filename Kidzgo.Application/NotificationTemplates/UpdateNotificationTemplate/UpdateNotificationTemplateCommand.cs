@@ -10,6 +10,7 @@ public sealed class UpdateNotificationTemplateCommand : ICommand<UpdateNotificat
     public string Title { get; init; } = null!;
     public string? Content { get; init; }
     public string? Placeholders { get; init; }
+    public string? Category { get; init; }
     public bool IsActive { get; init; }
 }
 

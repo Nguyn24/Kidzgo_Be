@@ -36,6 +36,10 @@ public static class TeachingMaterialErrors
         "TeachingMaterial.UnsupportedFileType",
         $"Unsupported teaching material file type: {extension}");
 
+    public static Error OnlyZipArchivesSupported() => Error.Validation(
+        "TeachingMaterial.OnlyZipArchivesSupported",
+        "Only .zip archives are supported for archive upload");
+
     public static Error FileTooLarge(long maxSizeInMb) => Error.Validation(
         "TeachingMaterial.FileTooLarge",
         $"Teaching material file size exceeds maximum allowed size of {maxSizeInMb}MB");

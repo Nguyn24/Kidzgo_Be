@@ -23,5 +23,18 @@ public sealed class GetClassByIdResponse
     public string? SchedulePattern { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+    public string Name => Title;
+    public Guid? RoomId { get; init; }
+    public string? RoomName { get; init; }
+    public string? Description { get; init; }
+    public List<Guid> TeacherIds { get; init; } = new();
+    public List<string> TeacherNames { get; init; } = new();
+    public string? ScheduleText => SchedulePattern;
+    public int StudentCount => CurrentEnrollmentCount;
+    public int TotalSessions { get; init; }
+    public int CompletedSessions { get; init; }
+    public decimal ProgressPercent => TotalSessions <= 0
+        ? 0
+        : Math.Round((decimal)CompletedSessions * 100 / TotalSessions, 2);
 }
 

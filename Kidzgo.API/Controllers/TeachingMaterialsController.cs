@@ -10,7 +10,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.IO.Compression;
 
 namespace Kidzgo.API.Controllers;
 
@@ -33,88 +32,67 @@ public class TeachingMaterialsController : ControllerBase
         [FromForm] UploadTeachingMaterialRequest request,
         CancellationToken cancellationToken = default)
     {
-        var importedFiles = new List<ImportTeachingMaterialFile>();
-        var openedStreams = new List<Stream>();
-
-        try
-        {
-            if (request.Archive is not null)
+        var uploadBuildResult = await ImportTeachingMaterialsUploadBuilder.BuildAsync(
+            new ImportTeachingMaterialsUploadRequest
             {
-                if (!request.Archive.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Results.BadRequest(new { error = "Only .zip archives are supported for archive upload" });
-                }
-
-                await AddArchiveEntriesAsync(request.Archive, importedFiles, openedStreams, cancellationToken);
-            }
-
-            if (request.File is not null && request.File.Length > 0)
-            {
-                var stream = request.File.OpenReadStream();
-                openedStreams.Add(stream);
-                importedFiles.Add(new ImportTeachingMaterialFile
-                {
-                    FileName = request.File.FileName,
-                    RelativePath = request.File.FileName,
-                    ContentType = request.File.ContentType,
-                    FileSize = request.File.Length,
-                    FileStream = stream
-                });
-            }
-
-            if (request.Files is not null)
-            {
-                for (var index = 0; index < request.Files.Count; index++)
-                {
-                    var file = request.Files[index];
-                    if (file.Length <= 0)
+                Archive = request.Archive is null
+                    ? null
+                    : new ImportTeachingMaterialUploadSource
                     {
-                        continue;
-                    }
-
-                    var stream = file.OpenReadStream();
-                    openedStreams.Add(stream);
-                    importedFiles.Add(new ImportTeachingMaterialFile
+                        FileName = request.Archive.FileName,
+                        ContentType = request.Archive.ContentType,
+                        FileSize = request.Archive.Length,
+                        FileStream = request.Archive.OpenReadStream()
+                    },
+                File = request.File is null
+                    ? null
+                    : new ImportTeachingMaterialUploadSource
                     {
-                        FileName = file.FileName,
-                        RelativePath = ResolveRelativePath(request.RelativePaths, index, file.FileName),
-                        ContentType = file.ContentType,
-                        FileSize = file.Length,
-                        FileStream = stream
-                    });
-                }
-            }
+                        FileName = request.File.FileName,
+                        ContentType = request.File.ContentType,
+                        FileSize = request.File.Length,
+                        FileStream = request.File.OpenReadStream()
+                    },
+                Files = request.Files?.Select(file => new ImportTeachingMaterialUploadSource
+                {
+                    FileName = file.FileName,
+                    ContentType = file.ContentType,
+                    FileSize = file.Length,
+                    FileStream = file.OpenReadStream()
+                }).ToList(),
+                RelativePaths = request.RelativePaths
+            },
+            cancellationToken);
 
-            if (importedFiles.Count == 0)
-            {
-                return Results.BadRequest(new { error = "No file provided" });
-            }
-
-            var command = new ImportTeachingMaterialsCommand
-            {
-                ProgramId = request.ProgramId,
-                UnitNumber = request.UnitNumber,
-                LessonNumber = request.LessonNumber,
-                LessonTitle = request.LessonTitle,
-                DisplayName = request.DisplayName,
-                Category = request.Category,
-                Files = importedFiles
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return result.MatchOk();
-        }
-        finally
+        if (uploadBuildResult.IsFailure)
         {
-            foreach (var stream in openedStreams)
-            {
-                await stream.DisposeAsync();
-            }
+            return CustomResults.Problem(uploadBuildResult);
         }
+
+        await using var uploadPackage = uploadBuildResult.Value;
+
+        if (uploadPackage.Files.Count == 0)
+        {
+            return Results.BadRequest(new { error = "No file provided" });
+        }
+
+        var command = new ImportTeachingMaterialsCommand
+        {
+            ProgramId = request.ProgramId,
+            UnitNumber = request.UnitNumber,
+            LessonNumber = request.LessonNumber,
+            LessonTitle = request.LessonTitle,
+            DisplayName = request.DisplayName,
+            Category = request.Category,
+            Files = uploadPackage.Files
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
     }
 
     [HttpGet]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin, Parent")]
     public async Task<IResult> Get(
         [FromQuery] Guid? programId,
         [FromQuery] int? unitNumber,
@@ -143,7 +121,7 @@ public class TeachingMaterialsController : ControllerBase
     }
 
     [HttpGet("lesson-bundle")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin,Parent")]
     public async Task<IResult> GetLessonBundle(
         [FromQuery] Guid programId,
         [FromQuery] int unitNumber,
@@ -161,7 +139,7 @@ public class TeachingMaterialsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin,Parent")]
     public async Task<IResult> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -175,7 +153,7 @@ public class TeachingMaterialsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/preview")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin,Parent")]
     public async Task<IResult> Preview(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -191,7 +169,7 @@ public class TeachingMaterialsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/download")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin,Parent")]
     public async Task<IResult> Download(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -206,64 +184,4 @@ public class TeachingMaterialsController : ControllerBase
             failure => CustomResults.Problem(failure));
     }
 
-    private static string ResolveRelativePath(IReadOnlyList<string>? relativePaths, int index, string fallbackFileName)
-    {
-        if (relativePaths is null || index >= relativePaths.Count || string.IsNullOrWhiteSpace(relativePaths[index]))
-        {
-            return fallbackFileName;
-        }
-
-        return relativePaths[index];
-    }
-
-    private static async Task AddArchiveEntriesAsync(
-        IFormFile archiveFile,
-        ICollection<ImportTeachingMaterialFile> importedFiles,
-        ICollection<Stream> openedStreams,
-        CancellationToken cancellationToken)
-    {
-        await using var archiveStream = archiveFile.OpenReadStream();
-        using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: false);
-        var archiveRoot = Path.GetFileNameWithoutExtension(archiveFile.FileName);
-
-        foreach (var entry in archive.Entries)
-        {
-            if (string.IsNullOrWhiteSpace(entry.Name))
-            {
-                continue;
-            }
-
-            await using var entryStream = entry.Open();
-            var memoryStream = new MemoryStream();
-            await entryStream.CopyToAsync(memoryStream, cancellationToken);
-            memoryStream.Position = 0;
-            openedStreams.Add(memoryStream);
-
-            importedFiles.Add(new ImportTeachingMaterialFile
-            {
-                FileName = entry.Name,
-                RelativePath = NormalizeArchiveEntryPath(entry.FullName, archiveRoot),
-                ContentType = null,
-                FileSize = memoryStream.Length,
-                FileStream = memoryStream
-            });
-        }
-    }
-
-    private static string NormalizeArchiveEntryPath(string entryFullName, string archiveRoot)
-    {
-        var normalized = entryFullName
-            .Replace('\\', '/')
-            .Trim()
-            .Trim('/');
-
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return archiveRoot;
-        }
-
-        return normalized.Contains('/', StringComparison.Ordinal)
-            ? normalized
-            : $"{archiveRoot}/{normalized}";
-    }
 }

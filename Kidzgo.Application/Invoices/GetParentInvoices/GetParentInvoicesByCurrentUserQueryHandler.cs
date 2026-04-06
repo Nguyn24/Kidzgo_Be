@@ -36,7 +36,7 @@ public sealed class GetParentInvoicesByCurrentUserQueryHandler(
         }
 
         // Get StudentId from context (token) - only get data for selected student
-        var selectedStudentId = userContext.StudentId;
+        var selectedStudentId = query.StudentProfileId ?? userContext.StudentId;
 
         if (!selectedStudentId.HasValue)
         {
@@ -95,7 +95,8 @@ public sealed class GetParentInvoicesByCurrentUserQueryHandler(
                 Description = i.Description,
                 IssuedAt = i.IssuedAt,
                 PayosPaymentLink = i.PayosPaymentLink,
-                PayosQr = i.PayosQr
+                PayosQr = i.PayosQr,
+                RemainingAmount = i.Amount - i.Payments.Sum(p => p.Amount)
             })
             .ToListAsync(cancellationToken);
 

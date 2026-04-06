@@ -27,5 +27,16 @@ public sealed class ClassDto
     public int Capacity { get; init; }
     public int CurrentEnrollmentCount { get; init; }
     public string? SchedulePattern { get; init; }
+    public string? Description { get; init; }
+    public string Name => Title;
+    public Guid? RoomId { get; init; }
+    public string? RoomName { get; init; }
+    public string? ScheduleText => SchedulePattern;
+    public int StudentCount => CurrentEnrollmentCount;
+    public int TotalSessions { get; init; }
+    public int CompletedSessions { get; init; }
+    public decimal ProgressPercent => TotalSessions <= 0
+        ? 0
+        : Math.Round((decimal)CompletedSessions * 100 / TotalSessions, 2);
 }
 

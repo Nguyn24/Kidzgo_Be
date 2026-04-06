@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Kidzgo.Application.Classrooms.GetClassrooms;
 
@@ -41,20 +42,50 @@ public sealed class GetClassroomsQueryHandler(
 
         // Apply pagination
         // Sắp xếp theo Name để dễ tìm
-        var classrooms = await classroomsQuery
+        var classroomRows = await classroomsQuery
             .OrderBy(c => c.Name)
             .ApplyPagination(query.PageNumber, query.PageSize)
+            .Select(c => new
+            {
+                c.Id,
+                c.BranchId,
+                BranchName = c.Branch.Name,
+                c.Name,
+                c.Capacity,
+                c.Note,
+                c.IsActive,
+                c.Floor,
+                c.Area,
+                c.EquipmentJson,
+                UtilizationPercent = c.Capacity <= 0
+                    ? 0
+                    : Math.Round(
+                        (decimal)context.Sessions.Count(s =>
+                            (s.PlannedRoomId == c.Id || s.ActualRoomId == c.Id) &&
+                            s.PlannedDatetime >= DateTime.UtcNow.Date &&
+                            s.PlannedDatetime < DateTime.UtcNow.Date.AddDays(30)) * 100 / c.Capacity,
+                        2)
+            })
+            .ToListAsync(cancellationToken);
+
+        var classrooms = classroomRows
             .Select(c => new ClassroomDto
             {
                 Id = c.Id,
                 BranchId = c.BranchId,
-                BranchName = c.Branch.Name,
+                BranchName = c.BranchName,
                 Name = c.Name,
                 Capacity = c.Capacity,
                 Note = c.Note,
-                IsActive = c.IsActive
+                IsActive = c.IsActive,
+                Floor = c.Floor,
+                Area = c.Area,
+                Equipment = string.IsNullOrWhiteSpace(c.EquipmentJson)
+                    ? new List<string>()
+                    : JsonSerializer.Deserialize<List<string>>(c.EquipmentJson!) ?? new List<string>(),
+                UtilizationPercent = c.UtilizationPercent
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var page = new Page<ClassroomDto>(
             classrooms,

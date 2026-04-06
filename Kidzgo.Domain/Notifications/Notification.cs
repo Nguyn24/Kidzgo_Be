@@ -16,6 +16,7 @@ public class Notification : Entity
     public DateTime? SentAt { get; set; }
     public DateTime? ReadAt { get; set; }
     public string? TemplateId { get; set; }
+    public Guid? NotificationTemplateId { get; set; }
     public DateTime CreatedAt { get; set; }
 
     // Push notification metadata
@@ -24,8 +25,12 @@ public class Notification : Entity
     public string? Priority { get; set; } // Độ ưu tiên: high, normal, low
     public string? SenderRole { get; set; } // Role người gửi: System, Teacher, Admin, Staff
     public string? SenderName { get; set; } // Tên người gửi/hệ thống
+    public Guid? ScopeBranchId { get; set; }
+    public Guid? ScopeClassId { get; set; }
+    public Guid? ScopeStudentProfileId { get; set; }
 
     // Navigation properties
     public User RecipientUser { get; set; } = null!;
     public Profile? RecipientProfile { get; set; }
+    public NotificationTemplate? NotificationTemplate { get; set; }
 }
