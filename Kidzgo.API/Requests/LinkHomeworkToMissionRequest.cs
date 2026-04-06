@@ -1,7 +1,2 @@
-namespace Kidzgo.API.Requests;
-
-public sealed class LinkHomeworkToMissionRequest
-{
-    public Guid MissionId { get; init; }
-}
+// Homework link-to-mission API is intentionally not exposed for now.
 

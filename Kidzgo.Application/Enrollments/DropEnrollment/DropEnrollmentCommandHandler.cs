@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
@@ -40,6 +41,7 @@ public sealed class DropEnrollmentCommandHandler(
             enrollment.Id,
             now,
             cancellationToken);
+        await ClassCapacityStatusHelper.SyncAvailabilityStatusAsync(context, enrollment.ClassId, now, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
         return new DropEnrollmentResponse

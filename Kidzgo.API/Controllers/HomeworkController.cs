@@ -11,7 +11,6 @@ using Kidzgo.Application.Homework.GetHomeworkSubmissionDetail;
 using Kidzgo.Application.Homework.GetHomeworkSubmissions;
 using Kidzgo.Application.Homework.GetStudentHomeworkHistory;
 using Kidzgo.Application.Homework.GradeHomework;
-using Kidzgo.Application.Homework.LinkHomeworkToMission;
 using Kidzgo.Application.Homework.MarkHomeworkLateOrMissing;
 using Kidzgo.Application.Homework.SetHomeworkRewardStars;
 using Kidzgo.Application.Homework.UpdateHomeworkAssignment;
@@ -71,7 +70,6 @@ public class HomeworkController : ControllerBase
             AllowResubmit = request.AllowResubmit,
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
-            MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
             Rubric = request.Rubric,
@@ -130,7 +128,6 @@ public class HomeworkController : ControllerBase
             AllowResubmit = request.AllowResubmit,
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
-            MissionId = request.MissionId,
             Instructions = request.Instructions,
             Questions = questions
         };
@@ -181,7 +178,6 @@ public class HomeworkController : ControllerBase
             AllowResubmit = request.AllowResubmit,
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
-            MissionId = request.MissionId,
             Instructions = request.Instructions,
             Distribution = distribution
         };
@@ -279,7 +275,6 @@ public class HomeworkController : ControllerBase
             AllowResubmit = request.AllowResubmit,
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
-            MissionId = request.MissionId,
             Instructions = request.Instructions,
             ExpectedAnswer = request.ExpectedAnswer,
             Rubric = request.Rubric,
@@ -310,23 +305,6 @@ public class HomeworkController : ControllerBase
     /// <summary>
     /// UC-123: Gắn Homework với Mission
     /// </summary>
-    [HttpPost("{id:guid}/link-mission")]
-    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
-    public async Task<IResult> LinkHomeworkToMission(
-        Guid id,
-        [FromBody] LinkHomeworkToMissionRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new LinkHomeworkToMissionCommand
-        {
-            HomeworkId = id,
-            MissionId = request.MissionId
-        };
-
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.MatchOk();
-    }
-
     /// <summary>
     /// UC-124: Thiết lập reward stars cho Homework
     /// </summary>

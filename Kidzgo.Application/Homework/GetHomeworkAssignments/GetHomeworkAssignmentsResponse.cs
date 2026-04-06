@@ -29,7 +29,6 @@ public sealed class HomeworkAssignmentDto
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? SpeakingMode { get; init; }
-    public Guid? MissionId { get; init; }
     public DateTime CreatedAt { get; init; }
     public int TotalStudents { get; init; }
     public int SubmittedCount { get; init; }

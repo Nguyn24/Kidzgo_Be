@@ -1124,13 +1124,16 @@ Giới hạn truy cập theo chi nhánh đối với giáo viên & staff.
 
 
 Độ tin cậy (Reliability)
-Cơ chế retry tự động cho webhook PayOS, job gửi báo cáo, job AI.
+Các tích hợp bên ngoài như PayOS webhook, Zalo webhook, email/notification và AI service phải có cơ chế xử lý lỗi phù hợp, bao gồm idempotency cho webhook, ghi nhận trạng thái thất bại và hỗ trợ retry có kiểm soát.
 
 
-Backup CSDL định kỳ; có quy trình restore.
+Lỗi từ dịch vụ ngoài không được làm mất dữ liệu nghiệp vụ chính; hệ thống phải ưu tiên lưu trạng thái xử lý, trả về thông báo phù hợp và cho phép tiếp tục hoặc xử lý lại khi dịch vụ phụ thuộc sẵn sàng.
 
 
-Lưu log giao dịch, log sửa dữ liệu quan trọng (audit trail).
+Backup CSDL phải được thực hiện định kỳ; cần có quy trình restore và kiểm tra restore định kỳ để bảo đảm khả năng phục hồi dữ liệu.
+
+
+Hệ thống phải lưu log giao dịch và audit trail cho các thay đổi dữ liệu quan trọng; mỗi bản ghi cần có thời gian, actor, hành động và thực thể liên quan.
 
 
 Tính dễ sử dụng (Usability)

@@ -1,7 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
-using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
@@ -10,8 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Registrations.UpgradeTuitionPlan.Handler;
 
 public sealed class UpgradeTuitionPlanCommandHandler(
-    IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    IDbContext context
 ) : ICommandHandler<UpgradeTuitionPlanCommand, UpgradeTuitionPlanResponse>
 {
     public async Task<Result<UpgradeTuitionPlanResponse>> Handle(
@@ -57,14 +55,22 @@ public sealed class UpgradeTuitionPlanCommandHandler(
                 Error.Validation("DifferentProgram", "New tuition plan must belong to the same program"));
         }
 
-        // 5. Mark original registration as completed after calculating carried-over sessions
+        // 5. Extend the current registration in place
         var oldTotalSessions = registration.TotalSessions;
         var carriedForwardSessions = Math.Max(registration.RemainingSessions, 0);
-        var upgradedTotalSessions = carriedForwardSessions + newTuitionPlan.TotalSessions;
+        var upgradedRemainingSessions = carriedForwardSessions + newTuitionPlan.TotalSessions;
+        var upgradedTotalSessions = registration.UsedSessions + upgradedRemainingSessions;
         var oldTuitionPlanName = registration.TuitionPlan.Name;
-        registration.Status = RegistrationStatus.Completed;
+
+        registration.TuitionPlanId = newTuitionPlan.Id;
+        registration.TuitionPlan = newTuitionPlan;
+        registration.TotalSessions = upgradedTotalSessions;
+        registration.RemainingSessions = upgradedRemainingSessions;
+        registration.OperationType = OperationType.Upgrade;
+        registration.Status = RegistrationTrackHelper.ResolveStatus(registration);
         registration.UpdatedAt = now;
 
+        /*
         // 7. Create new registration with upgraded tuition plan
         var newRegistration = new Registration
         {
@@ -92,13 +98,13 @@ public sealed class UpgradeTuitionPlanCommandHandler(
             TotalSessions = upgradedTotalSessions,
             UsedSessions = 0,
             RemainingSessions = upgradedTotalSessions,
-            ExpiryDate = now.AddMonths(GetDurationMonths(upgradedTotalSessions)),
             CreatedAt = now,
             UpdatedAt = now
         };
 
         context.Registrations.Add(newRegistration);
         newRegistration.Status = RegistrationTrackHelper.ResolveStatus(newRegistration);
+        */
 
         var enrollments = await context.ClassEnrollments
             .Where(ce => ce.StudentProfileId == registration.StudentProfileId
@@ -111,36 +117,22 @@ public sealed class UpgradeTuitionPlanCommandHandler(
         foreach (var enrollment in enrollments)
         {
             enrollment.TuitionPlanId = newTuitionPlan.Id;
-            enrollment.RegistrationId = newRegistration.Id;
             enrollment.UpdatedAt = now;
         }
-
-        await studentSessionAssignmentService.ReassignFutureAssignmentsToRegistrationAsync(
-            registration.Id,
-            newRegistration.Id,
-            now,
-            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpgradeTuitionPlanResponse
         {
             OriginalRegistrationId = registration.Id,
-            NewRegistrationId = newRegistration.Id,
+            NewRegistrationId = registration.Id,
             OldTuitionPlanName = oldTuitionPlanName,
             NewTuitionPlanName = newTuitionPlan.Name,
             OldTotalSessions = oldTotalSessions,
             NewTotalSessions = upgradedTotalSessions,
             AddedSessions = newTuitionPlan.TotalSessions,
-            Status = newRegistration.Status.ToString()
+            Status = registration.Status.ToString()
         };
     }
 
-    private static int GetDurationMonths(int totalSessions)
-    {
-        var months = totalSessions / 4;
-        if (totalSessions % 4 > 0) months++;
-
-        return Math.Max(1, months);
-    }
 }
