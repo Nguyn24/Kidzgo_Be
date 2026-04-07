@@ -301,8 +301,10 @@ public class StudentController : ControllerBase
             ContentType = contentType,
             Language = request.Language,
             Mode = request.Mode,
+            Topic = request.Topic,
             ExpectedText = request.ExpectedText,
             TargetWords = request.TargetWords,
+            ConversationHistory = request.ConversationHistory,
             Instructions = request.Instructions
         };
 
