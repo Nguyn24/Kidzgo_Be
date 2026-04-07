@@ -69,6 +69,8 @@ public sealed class HttpAiHomeworkAssistant : IAiHomeworkAssistant
                     mode = string.IsNullOrWhiteSpace(request.Context.SpeakingMode) ? "speaking" : request.Context.SpeakingMode,
                     target_words = request.Context.TargetWords,
                     expected_text = request.ExpectedText,
+                    topic = request.Context.Topic,
+                    conversation_history = request.Context.ConversationHistory,
                     instructions = request.Context.Instructions,
                     language = string.IsNullOrWhiteSpace(request.Language) ? "vi" : request.Language,
                 },
@@ -390,6 +392,16 @@ public sealed class HttpAiHomeworkAssistant : IAiHomeworkAssistant
         content.Add(new StringContent(string.IsNullOrWhiteSpace(context.SpeakingMode) ? "speaking" : context.SpeakingMode), "mode");
         content.Add(new StringContent(string.IsNullOrWhiteSpace(language) ? "vi" : language), "language");
         content.Add(new StringContent(string.Join(", ", context.TargetWords ?? [])), "target_words");
+
+        if (!string.IsNullOrWhiteSpace(context.Topic))
+        {
+            content.Add(new StringContent(context.Topic), "topic");
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.ConversationHistory))
+        {
+            content.Add(new StringContent(context.ConversationHistory), "conversation_history");
+        }
 
         if (!string.IsNullOrWhiteSpace(expectedText))
         {

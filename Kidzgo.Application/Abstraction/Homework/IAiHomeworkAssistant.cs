@@ -52,6 +52,9 @@ public sealed class AiHomeworkContext
     [JsonPropertyName("topic")]
     public string? Topic { get; set; }
 
+    [JsonPropertyName("conversation_history")]
+    public string? ConversationHistory { get; set; }
+
     [JsonPropertyName("grammar_tags")]
     public List<string> GrammarTags { get; set; } = new();
 
