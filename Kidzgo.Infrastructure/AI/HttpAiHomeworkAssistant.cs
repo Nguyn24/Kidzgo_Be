@@ -420,10 +420,18 @@ public sealed class HttpAiHomeworkAssistant : IAiHomeworkAssistant
         content.Add(fileContent, "file", fileName);
 
         return await PostMultipartAsync<AiHomeworkSpeakingResult>(
-            $"{_baseUrl}/a8/analyze-media",
+            BuildAnalyzeSpeakingMediaUrl(context),
             content,
             "A8 analyze-media",
             cancellationToken);
+    }
+
+    private string BuildAnalyzeSpeakingMediaUrl(AiHomeworkContext context)
+    {
+        var baseUrl = $"{_baseUrl}/a8/analyze-media";
+        var homeworkId = Uri.EscapeDataString(context.HomeworkId);
+        var studentId = Uri.EscapeDataString(context.StudentId);
+        return $"{baseUrl}?homework_id={homeworkId}&student_id={studentId}";
     }
 
     private async Task<TResponse> PostAsync<TRequest, TResponse>(
