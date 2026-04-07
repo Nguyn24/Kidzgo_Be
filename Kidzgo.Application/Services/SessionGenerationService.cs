@@ -31,10 +31,11 @@ public sealed class SessionGenerationService
 
     public async Task<Result<int>> GenerateSessionsFromPatternAsync(
         Class classEntity,
-        Guid? roomId = null,
         bool onlyFutureSessions = true,
         CancellationToken cancellationToken = default)
     {
+        var roomId = classEntity.RoomId;
+
         if (classEntity.Status is not ClassStatus.Planned and not ClassStatus.Active)
         {
             return Result.Failure<int>(SessionErrors.InvalidClassStatus);
