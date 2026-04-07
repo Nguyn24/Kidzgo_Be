@@ -5,13 +5,8 @@ namespace Kidzgo.Application.Sessions.GenerateSessionsFromPattern;
 public sealed class GenerateSessionsFromPatternCommand : ICommand<GenerateSessionsFromPatternResponse>
 {
     public Guid ClassId { get; init; }
-    
-    /// Room ID để gán cho các sessions được tạo. Nếu null, sessions sẽ không có room.
-    public Guid? RoomId { get; init; }
-  
-    /// Nếu true, chỉ generate các sessions từ hiện tại trở đi.
-    /// Nếu false, generate tất cả từ StartDate của Class.
+
+    /// Neu true, chi generate cac sessions tu hien tai tro di.
+    /// Neu false, generate tat ca tu StartDate cua Class.
     public bool OnlyFutureSessions { get; init; } = true;
 }
-
-
