@@ -6,5 +6,6 @@ public enum SubmissionType
     Image,
     Text,
     Link,
-    Quiz
+    Quiz,
+    Video
 }
