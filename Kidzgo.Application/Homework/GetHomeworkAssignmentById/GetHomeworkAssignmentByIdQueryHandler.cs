@@ -23,6 +23,8 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
             .Include(h => h.Session)
             .Include(h => h.HomeworkStudents)
                 .ThenInclude(hs => hs.StudentProfile)
+            .Include(h => h.HomeworkStudents)
+                .ThenInclude(hs => hs.SubmissionAttempts)
             .FirstOrDefaultAsync(h => h.Id == query.Id, cancellationToken);
 
         if (homework is null)
@@ -54,7 +56,8 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
             MaxScore = homework.MaxScore,
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
-            AllowResubmit = homework.AllowResubmit,
+            AllowResubmit = homework.MaxAttempts > 1,
+            MaxAttempts = homework.MaxAttempts,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,
@@ -74,7 +77,8 @@ public sealed class GetHomeworkAssignmentByIdQueryHandler(
                 SubmittedAt = hs.SubmittedAt,
                 GradedAt = hs.GradedAt,
                 Score = hs.Score,
-                TeacherFeedback = hs.TeacherFeedback
+                TeacherFeedback = hs.TeacherFeedback,
+                AttemptCount = hs.SubmissionAttempts.Count
             }).ToList()
         };
 

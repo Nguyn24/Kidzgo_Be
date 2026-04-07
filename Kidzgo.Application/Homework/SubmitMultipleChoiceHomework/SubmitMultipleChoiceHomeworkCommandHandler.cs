@@ -4,12 +4,12 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Application.Homework.Shared;
-using Kidzgo.Domain.LessonPlans;
-using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
+using Kidzgo.Domain.LessonPlans;
+using Kidzgo.Domain.LessonPlans.Errors;
 using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,7 +32,6 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(ProfileErrors.StudentNotFound);
         }
 
-        // Get homework submission
         var homeworkStudent = await context.HomeworkStudents
             .Include(hs => hs.Assignment)
             .FirstOrDefaultAsync(hs => hs.Id == command.HomeworkStudentId, cancellationToken);
@@ -43,21 +42,32 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.SubmissionNotFound(command.HomeworkStudentId));
         }
 
-        // Verify ownership
         if (homeworkStudent.StudentProfileId != studentId.Value)
         {
             return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
                 HomeworkErrors.SubmissionUnauthorized);
         }
 
-        // Check if already submitted
-        if (homeworkStudent.Status == HomeworkStatus.Submitted || homeworkStudent.Status == HomeworkStatus.Graded)
+        var persistedAttemptCount = await context.HomeworkSubmissionAttempts
+            .CountAsync(a => a.HomeworkStudentId == homeworkStudent.Id, cancellationToken);
+
+        if (persistedAttemptCount == 0 &&
+            HomeworkSubmissionAttemptMapper.HasLegacyAttempt(homeworkStudent))
         {
-            if (!homeworkStudent.Assignment.AllowResubmit)
-            {
-                return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
-                    HomeworkErrors.SubmissionAlreadySubmitted);
-            }
+            context.HomeworkSubmissionAttempts.Add(
+                HomeworkSubmissionAttemptMapper.BuildLegacyAttempt(
+                    homeworkStudent,
+                    attemptNumber: 1,
+                    id: Guid.NewGuid()));
+            persistedAttemptCount = 1;
+        }
+
+        var currentAttemptCount = persistedAttemptCount;
+        var maxAttempts = homeworkStudent.Assignment.MaxAttempts;
+        if (currentAttemptCount >= maxAttempts)
+        {
+            return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.SubmissionAttemptLimitReached(maxAttempts));
         }
 
         if (homeworkStudent.Status == HomeworkStatus.Missing)
@@ -73,12 +83,11 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         }
 
         var now = DateTime.UtcNow;
-        var isFirstSubmission = !homeworkStudent.SubmittedAt.HasValue;
+        var isFirstSubmission = currentAttemptCount == 0;
 
         if (homeworkStudent.Assignment.TimeLimitMinutes.HasValue)
         {
-            if (!homeworkStudent.StartedAt.HasValue ||
-                (homeworkStudent.Assignment.AllowResubmit && homeworkStudent.Status == HomeworkStatus.Graded))
+            if (!homeworkStudent.StartedAt.HasValue || currentAttemptCount > 0)
             {
                 homeworkStudent.StartedAt = now;
             }
@@ -91,14 +100,12 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             }
         }
 
-        // Validate answers
         if (command.Answers == null || command.Answers.Count == 0)
         {
             return Result.Failure<SubmitMultipleChoiceHomeworkResponse>(
                 HomeworkErrors.NoAnswersProvided);
         }
 
-        // Get questions for this homework
         var questions = await context.HomeworkQuestions
             .Where(q => q.HomeworkAssignmentId == homeworkStudent.AssignmentId)
             .OrderBy(q => q.OrderIndex)
@@ -111,10 +118,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.NoQuestionsProvided);
         }
 
-        // Build question lookup
         var questionLookup = questions.ToDictionary(q => q.Id);
-
-        // Validate all answers correspond to existing questions
         foreach (var answer in command.Answers)
         {
             if (!questionLookup.ContainsKey(answer.QuestionId))
@@ -124,23 +128,18 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             }
         }
 
-        var answersByQuestionId = new Dictionary<Guid, Guid?>();
-        foreach (var answer in command.Answers)
-        {
-            answersByQuestionId[answer.QuestionId] = answer.SelectedOptionId;
-        }
+        var answersByQuestionId = command.Answers
+            .ToDictionary(answer => answer.QuestionId, answer => answer.SelectedOptionId);
 
-        // Calculate score and build results
         var totalPoints = questions.Sum(q => q.Points);
         var totalCount = questions.Count;
         var earnedPoints = 0;
         var correctCount = 0;
-        var answerResults = new List<QuizAnswerResultDto>();
         var skippedCount = 0;
+        var answerResults = new List<QuizAnswerResultDto>();
 
         foreach (var question in questions)
         {
-            // Parse options for display
             var optionTexts = QuizOptionUtils.ParseOptions(question.Options);
             var optionIdByIndex = optionTexts
                 .Select((_, idx) => QuizOptionUtils.BuildOptionId(question.Id, idx))
@@ -149,24 +148,20 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 .Select((id, idx) => new { id, text = optionTexts[idx] })
                 .ToDictionary(x => x.id, x => x.text);
 
-            var correctOptionId = (Guid?)null;
-            var correctOptionText = (string?)null;
-            if (int.TryParse(question.CorrectAnswer, out var correctIdx) &&
-                correctIdx >= 0 &&
-                correctIdx < optionTexts.Count)
-            {
-                correctOptionId = optionIdByIndex[correctIdx];
-                correctOptionText = optionTexts[correctIdx];
-            }
+            QuizOptionUtils.TryBuildCorrectOption(
+                question.Id,
+                optionTexts,
+                question.CorrectAnswer,
+                out var correctOptionId,
+                out var correctOptionText);
 
             var selectedOptionId = answersByQuestionId.TryGetValue(question.Id, out var selectedId)
                 ? selectedId
                 : null;
 
-            var selectedOptionText = selectedOptionId.HasValue
-                ? optionTextById.TryGetValue(selectedOptionId.Value, out var text)
-                    ? text
-                    : null
+            var selectedOptionText = selectedOptionId.HasValue &&
+                                     optionTextById.TryGetValue(selectedOptionId.Value, out var text)
+                ? text
                 : null;
 
             var isSkipped = !selectedOptionId.HasValue || selectedOptionId == Guid.Empty;
@@ -204,8 +199,9 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         homeworkStudent.Status = HomeworkStatus.Graded;
         homeworkStudent.SubmittedAt = now;
         homeworkStudent.GradedAt = now;
+        homeworkStudent.TeacherFeedback = null;
+        homeworkStudent.AiFeedback = null;
 
-        // Store answers as JSON in TextAnswer field
         var answersJson = JsonSerializer.Serialize(command.Answers.Select(a => new
         {
             a.QuestionId,
@@ -213,16 +209,30 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         }).ToList());
         homeworkStudent.TextAnswer = answersJson;
 
-        // Calculate and store score
         var maxScore = homeworkStudent.Assignment.MaxScore ?? totalPoints;
         homeworkStudent.Score = totalPoints > 0
             ? (decimal)earnedPoints / totalPoints * maxScore
             : 0;
 
-        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
+        var attempt = new HomeworkSubmissionAttempt
+        {
+            Id = Guid.NewGuid(),
+            HomeworkStudentId = homeworkStudent.Id,
+            AttemptNumber = currentAttemptCount + 1,
+            Status = homeworkStudent.Status,
+            StartedAt = homeworkStudent.StartedAt,
+            SubmittedAt = homeworkStudent.SubmittedAt,
+            GradedAt = homeworkStudent.GradedAt,
+            Score = homeworkStudent.Score,
+            TeacherFeedback = homeworkStudent.TeacherFeedback,
+            AiFeedback = homeworkStudent.AiFeedback,
+            TextAnswer = homeworkStudent.TextAnswer,
+            AttachmentUrl = homeworkStudent.AttachmentUrl,
+            CreatedAt = now
+        };
+        context.HomeworkSubmissionAttempts.Add(attempt);
 
-        // Keep HomeworkStreak consistent with the regular homework submit flow.
-        // Only count the first on-time quiz submission so resubmits do not farm mission progress.
+        var isOnTime = !homeworkStudent.Assignment.DueAt.HasValue || now <= homeworkStudent.Assignment.DueAt.Value;
         if (isFirstSubmission && isOnTime)
         {
             var activeHomeworkStreakMissions = await context.MissionProgresses
@@ -277,7 +287,6 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        // Award stars for on-time submission
         var rewardStars = 0;
         if (isFirstSubmission &&
             isOnTime &&
@@ -300,6 +309,9 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt!.Value,
             GradedAt = homeworkStudent.GradedAt!.Value,
+            AttemptId = attempt.Id,
+            AttemptNumber = attempt.AttemptNumber,
+            AttemptCount = attempt.AttemptNumber,
             MaxScore = maxScore,
             Score = homeworkStudent.Score,
             RewardStars = rewardStars,

@@ -1,4 +1,5 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Application.Homework.Shared;
 
 namespace Kidzgo.Application.Homework.GetStudentHomeworkHistory;
 
@@ -22,6 +23,10 @@ public sealed class StudentHomeworkHistoryDto
     public decimal? Score { get; init; }
     public decimal? MaxScore { get; init; }
     public string? TeacherFeedback { get; init; }
+    public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
+    public int AttemptCount { get; init; }
+    public List<HomeworkSubmissionAttemptDto> Attempts { get; init; } = new();
     public bool IsLate { get; init; }
 }
 

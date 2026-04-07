@@ -57,8 +57,9 @@ public class HomeworkAssignmentConfiguration : IEntityTypeConfiguration<Homework
 
         builder.Property(x => x.TimeLimitMinutes);
 
-        builder.Property(x => x.AllowResubmit)
-            .HasDefaultValue(false);
+        builder.Property(x => x.MaxAttempts)
+            .IsRequired()
+            .HasDefaultValue(1);
 
         builder.Property(x => x.AiHintEnabled)
             .HasDefaultValue(false);

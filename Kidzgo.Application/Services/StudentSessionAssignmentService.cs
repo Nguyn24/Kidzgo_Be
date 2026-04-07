@@ -139,6 +139,75 @@ public sealed class StudentSessionAssignmentService(
         }
     }
 
+    public async Task RestoreAssignmentsForEnrollmentAsync(
+        ClassEnrollment enrollment,
+        DateOnly effectiveFrom,
+        CancellationToken cancellationToken)
+    {
+        var sessionDateFrom = effectiveFrom > enrollment.EnrollDate
+            ? effectiveFrom
+            : enrollment.EnrollDate;
+
+        var sessions = await context.Sessions
+            .Where(s => s.ClassId == enrollment.ClassId &&
+                        DateOnly.FromDateTime(s.PlannedDatetime) >= sessionDateFrom)
+            .ToListAsync(cancellationToken);
+
+        if (sessions.Count == 0)
+        {
+            return;
+        }
+
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+        var existingAssignments = await context.StudentSessionAssignments
+            .Where(a => a.ClassEnrollmentId == enrollment.Id && sessionIds.Contains(a.SessionId))
+            .ToListAsync(cancellationToken);
+
+        var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
+        var now = DateTime.UtcNow;
+
+        foreach (var session in sessions)
+        {
+            var shouldBeAssigned =
+                session.Status != SessionStatus.Cancelled &&
+                MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
+
+            assignmentsBySessionId.TryGetValue(session.Id, out var assignment);
+
+            if (shouldBeAssigned)
+            {
+                if (assignment == null)
+                {
+                    context.StudentSessionAssignments.Add(new StudentSessionAssignment
+                    {
+                        Id = Guid.NewGuid(),
+                        SessionId = session.Id,
+                        StudentProfileId = enrollment.StudentProfileId,
+                        ClassEnrollmentId = enrollment.Id,
+                        RegistrationId = enrollment.RegistrationId,
+                        Track = enrollment.Track,
+                        Status = StudentSessionAssignmentStatus.Assigned,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+                else
+                {
+                    assignment.StudentProfileId = enrollment.StudentProfileId;
+                    assignment.RegistrationId = enrollment.RegistrationId;
+                    assignment.Track = enrollment.Track;
+                    assignment.Status = StudentSessionAssignmentStatus.Assigned;
+                    assignment.UpdatedAt = now;
+                }
+            }
+            else if (assignment is not null && assignment.Status != StudentSessionAssignmentStatus.Cancelled)
+            {
+                assignment.Status = StudentSessionAssignmentStatus.Cancelled;
+                assignment.UpdatedAt = now;
+            }
+        }
+    }
+
     public async Task SyncAssignmentsForSessionAsync(
         Session session,
         CancellationToken cancellationToken)

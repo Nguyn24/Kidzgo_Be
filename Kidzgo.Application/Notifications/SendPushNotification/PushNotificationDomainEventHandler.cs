@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Notifications.Shared;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
 using MediatR;
@@ -79,6 +80,10 @@ public sealed class PushNotificationDomainEventHandler(
 
             string title = notificationRecord.Title;
             string body = notificationRecord.Content ?? string.Empty;
+            var resolvedPlaceholders = NotificationPlaceholderResolver.ContainsPlaceholders(title) ||
+                                       NotificationPlaceholderResolver.ContainsPlaceholders(body)
+                ? await NotificationPlaceholderResolver.ResolveAsync(context, notificationRecord, cancellationToken)
+                : new Dictionary<string, string>();
 
             var templateId = notificationRecord.NotificationTemplateId;
             if (!templateId.HasValue &&
@@ -88,8 +93,8 @@ public sealed class PushNotificationDomainEventHandler(
                 templateId = parsedTemplateId;
             }
 
-            // If template ID is provided, use template
-            if (templateId.HasValue)
+            // If content was pre-rendered on the notification record, keep it.
+            if (string.IsNullOrWhiteSpace(title) && templateId.HasValue)
             {
                 var template = await context.NotificationTemplates
                     .FirstOrDefaultAsync(t => t.Id == templateId.Value && t.IsActive && !t.IsDeleted, cancellationToken);
@@ -114,9 +119,22 @@ public sealed class PushNotificationDomainEventHandler(
                         }
                     }
 
+                    if (resolvedPlaceholders.Count > 0)
+                    {
+                        foreach (var placeholder in resolvedPlaceholders)
+                        {
+                            placeholders[placeholder.Key] = placeholder.Value;
+                        }
+                    }
+
                     title = templateRenderer.Render(template.Title, placeholders);
                     body = templateRenderer.Render(template.Content ?? string.Empty, placeholders);
                 }
+            }
+            else if (resolvedPlaceholders.Count > 0)
+            {
+                title = templateRenderer.Render(title, resolvedPlaceholders);
+                body = templateRenderer.Render(body, resolvedPlaceholders);
             }
 
             // Prepare data payload
