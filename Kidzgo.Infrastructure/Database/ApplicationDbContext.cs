@@ -121,6 +121,7 @@ public sealed class ApplicationDbContext(
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
     public DbSet<MonthlyReportData> MonthlyReportData => Set<MonthlyReportData>();
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
+    public DbSet<ReportRequest> ReportRequests => Set<ReportRequest>();
     public DbSet<StudentMonthlyReport> StudentMonthlyReports => Set<StudentMonthlyReport>();
     public DbSet<SessionReport> SessionReports => Set<SessionReport>();
 

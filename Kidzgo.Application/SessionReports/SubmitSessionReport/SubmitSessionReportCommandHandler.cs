@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.ReportRequests.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -18,6 +19,7 @@ public sealed class SubmitSessionReportCommandHandler(
         CancellationToken cancellationToken)
     {
         var sessionReport = await context.SessionReports
+            .Include(sr => sr.Session)
             .Include(sr => sr.StudentProfile)
             .Include(sr => sr.TeacherUser)
             .Include(sr => sr.SubmittedByUser)
@@ -42,6 +44,12 @@ public sealed class SubmitSessionReportCommandHandler(
         sessionReport.Status = ReportStatus.Review;
         sessionReport.SubmittedByUserId = userContext.UserId;
         sessionReport.UpdatedAt = DateTime.UtcNow;
+
+        await ReportRequestWorkflow.MarkMatchingSessionRequestSubmittedAsync(
+            context,
+            sessionReport,
+            sessionReport.Session.ClassId,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 
