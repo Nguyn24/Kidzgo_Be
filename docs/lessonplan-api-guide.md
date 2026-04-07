@@ -375,6 +375,11 @@ Lỗi có thể trả:
 
 `POST /api/lesson-plan-templates/import?programId=&level=&overwriteExisting=true`
 
+Update:
+- `programId` is required for all import file types.
+- The backend no longer maps worksheet names to existing programs.
+- All parsed syllabus data is imported into the requested `programId`.
+
 Role:
 - `ManagementStaff`
 - `Admin`
@@ -463,6 +468,10 @@ Lỗi có thể trả:
 - `404 Not Found`
   - `LessonPlanTemplate.ProgramMappingNotFound`
   - Message: `Could not map syllabus sheet '...' to an active program`
+
+Update:
+- `LessonPlanTemplate.ProgramMappingNotFound` is no longer expected from the import endpoint.
+- Import now uses the request `programId` instead of resolving program names from worksheet names.
 
 ## 8. Chi tiết API LessonPlan
 
@@ -788,6 +797,10 @@ Frontend nên đọc:
 - `status`
 - `title`
 - `detail`
+
+Updated import note:
+- Missing `programId` should be handled as a validation error before upload or from the API response.
+- `LessonPlanTemplate.ProgramNotFound` should be shown as an invalid or inactive selected program.
 
 Ví dụ:
 - `title = LessonPlanTemplate.ProgramMappingNotFound`

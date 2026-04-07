@@ -70,6 +70,7 @@ public sealed class SubmitHomeworkCommandHandler(
         {
             case SubmissionType.File:
             case SubmissionType.Image:
+            case SubmissionType.Video:
                 hasValidSubmission = command.AttachmentUrls != null && command.AttachmentUrls.Count > 0;
                 break;
             case SubmissionType.Text:
@@ -108,6 +109,7 @@ public sealed class SubmitHomeworkCommandHandler(
         {
             case SubmissionType.File:
             case SubmissionType.Image:
+            case SubmissionType.Video:
                 if (command.AttachmentUrls != null && command.AttachmentUrls.Count > 0)
                 {
                     homeworkStudent.AttachmentUrl = command.AttachmentUrls[0];
@@ -221,7 +223,7 @@ public sealed class SubmitHomeworkCommandHandler(
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt!.Value,
             AttachmentUrls = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
-                             submissionType is SubmissionType.File or SubmissionType.Image or SubmissionType.Quiz
+                             submissionType is SubmissionType.File or SubmissionType.Image or SubmissionType.Video or SubmissionType.Quiz
                 ? new List<string> { homeworkStudent.AttachmentUrl }
                 : new List<string>(),
             Links = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&

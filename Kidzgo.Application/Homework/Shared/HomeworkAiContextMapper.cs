@@ -39,6 +39,7 @@ internal static class HomeworkAiContextMapper
             SubmissionType.Link => HomeworkQuestionType.TextInput,
             SubmissionType.File => HomeworkQuestionType.TextInput,
             SubmissionType.Image => HomeworkQuestionType.TextInput,
+            SubmissionType.Video => HomeworkQuestionType.TextInput,
             _ => null
         };
 
@@ -62,6 +63,7 @@ internal static class HomeworkAiContextMapper
             SubmissionType.Link => "writing",
             SubmissionType.File => "writing",
             SubmissionType.Image => "writing",
+            SubmissionType.Video => "writing",
             _ => "mixed"
         };
     }
