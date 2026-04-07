@@ -86,6 +86,19 @@ public sealed class AiGradeHomeworkCommandHandler(
                     });
                 homeworkStudent.GradedAt = DateTime.UtcNow;
 
+                var latestAttempt = await context.HomeworkSubmissionAttempts
+                    .Where(a => a.HomeworkStudentId == homeworkStudent.Id)
+                    .OrderByDescending(a => a.AttemptNumber)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (latestAttempt != null)
+                {
+                    latestAttempt.Status = homeworkStudent.Status;
+                    latestAttempt.Score = homeworkStudent.Score;
+                    latestAttempt.AiFeedback = homeworkStudent.AiFeedback;
+                    latestAttempt.GradedAt = homeworkStudent.GradedAt;
+                }
+
                 await context.SaveChangesAsync(cancellationToken);
             }
 
@@ -153,6 +166,19 @@ public sealed class AiGradeHomeworkCommandHandler(
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
             homeworkStudent.GradedAt = DateTime.UtcNow;
+
+            var latestAttempt = await context.HomeworkSubmissionAttempts
+                .Where(a => a.HomeworkStudentId == homeworkStudent.Id)
+                .OrderByDescending(a => a.AttemptNumber)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (latestAttempt != null)
+            {
+                latestAttempt.Status = homeworkStudent.Status;
+                latestAttempt.Score = homeworkStudent.Score;
+                latestAttempt.AiFeedback = homeworkStudent.AiFeedback;
+                latestAttempt.GradedAt = homeworkStudent.GradedAt;
+            }
 
             await context.SaveChangesAsync(cancellationToken);
         }

@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Notifications.Shared;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
@@ -61,6 +62,10 @@ public sealed class ZaloNotificationDomainEventHandler(
             }
 
             string message = notificationRecord.Content ?? notificationRecord.Title;
+            var resolvedPlaceholders = NotificationPlaceholderResolver.ContainsPlaceholders(message) ||
+                                       NotificationPlaceholderResolver.ContainsPlaceholders(notificationRecord.Title)
+                ? await NotificationPlaceholderResolver.ResolveAsync(context, notificationRecord, cancellationToken)
+                : new Dictionary<string, string>();
 
             var templateId = notificationRecord.NotificationTemplateId;
             if (!templateId.HasValue &&
@@ -70,8 +75,8 @@ public sealed class ZaloNotificationDomainEventHandler(
                 templateId = parsedTemplateId;
             }
 
-            // If template ID is provided, use template
-            if (templateId.HasValue)
+            // If content was pre-rendered on the notification record, keep it.
+            if (string.IsNullOrWhiteSpace(notificationRecord.Content) && templateId.HasValue)
             {
                 var template = await context.NotificationTemplates
                     .FirstOrDefaultAsync(t => t.Id == templateId.Value && t.IsActive && !t.IsDeleted, cancellationToken);
@@ -96,8 +101,20 @@ public sealed class ZaloNotificationDomainEventHandler(
                         }
                     }
 
+                    if (resolvedPlaceholders.Count > 0)
+                    {
+                        foreach (var placeholder in resolvedPlaceholders)
+                        {
+                            placeholders[placeholder.Key] = placeholder.Value;
+                        }
+                    }
+
                     message = templateRenderer.Render(template.Content ?? template.Title, placeholders);
                 }
+            }
+            else if (resolvedPlaceholders.Count > 0)
+            {
+                message = templateRenderer.Render(message, resolvedPlaceholders);
             }
 
             // Send Zalo message

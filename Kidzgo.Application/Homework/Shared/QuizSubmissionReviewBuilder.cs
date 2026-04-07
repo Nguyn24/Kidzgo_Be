@@ -51,15 +51,12 @@ internal static class QuizSubmissionReviewBuilder
                 continue;
             }
 
-            var correctOptionId = (Guid?)null;
-            var correctOptionText = (string?)null;
-            if (int.TryParse(question.CorrectAnswer, out var correctIdx) &&
-                correctIdx >= 0 &&
-                correctIdx < optionTexts.Count)
-            {
-                correctOptionId = QuizOptionUtils.BuildOptionId(question.Id, correctIdx);
-                correctOptionText = optionTexts[correctIdx];
-            }
+            QuizOptionUtils.TryBuildCorrectOption(
+                question.Id,
+                optionTexts,
+                question.CorrectAnswer,
+                out var correctOptionId,
+                out var correctOptionText);
 
             var selectedOptionId = selectedOptionByQuestionId.TryGetValue(question.Id, out var selected)
                 ? selected

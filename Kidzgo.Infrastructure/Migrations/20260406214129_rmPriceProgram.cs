@@ -11,15 +11,15 @@ namespace Kidzgo.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "DefaultTuitionAmount",
-                schema: "public",
-                table: "Programs");
+            migrationBuilder.Sql("""
+                ALTER TABLE public."Programs"
+                DROP COLUMN IF EXISTS "DefaultTuitionAmount";
+                """);
 
-            migrationBuilder.DropColumn(
-                name: "UnitPriceSession",
-                schema: "public",
-                table: "Programs");
+            migrationBuilder.Sql("""
+                ALTER TABLE public."Programs"
+                DROP COLUMN IF EXISTS "UnitPriceSession";
+                """);
 
             migrationBuilder.UpdateData(
                 schema: "public",
@@ -65,21 +65,15 @@ namespace Kidzgo.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "DefaultTuitionAmount",
-                schema: "public",
-                table: "Programs",
-                type: "numeric",
-                nullable: false,
-                defaultValue: 0m);
+            migrationBuilder.Sql("""
+                ALTER TABLE public."Programs"
+                ADD COLUMN IF NOT EXISTS "DefaultTuitionAmount" numeric NOT NULL DEFAULT 0;
+                """);
 
-            migrationBuilder.AddColumn<decimal>(
-                name: "UnitPriceSession",
-                schema: "public",
-                table: "Programs",
-                type: "numeric",
-                nullable: false,
-                defaultValue: 0m);
+            migrationBuilder.Sql("""
+                ALTER TABLE public."Programs"
+                ADD COLUMN IF NOT EXISTS "UnitPriceSession" numeric NOT NULL DEFAULT 0;
+                """);
 
             migrationBuilder.UpdateData(
                 schema: "public",

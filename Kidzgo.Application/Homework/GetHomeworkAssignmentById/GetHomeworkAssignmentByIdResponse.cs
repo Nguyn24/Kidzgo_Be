@@ -22,6 +22,7 @@ public sealed class GetHomeworkAssignmentByIdResponse
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
     public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? Instructions { get; init; }
@@ -45,5 +46,6 @@ public sealed class HomeworkStudentDto
     public DateTime? GradedAt { get; init; }
     public decimal? Score { get; init; }
     public string? TeacherFeedback { get; init; }
+    public int AttemptCount { get; init; }
 }
 

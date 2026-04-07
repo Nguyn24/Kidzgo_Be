@@ -26,6 +26,7 @@ public sealed class HomeworkAssignmentDto
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
     public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? SpeakingMode { get; init; }
