@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.ReportRequests.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -42,6 +43,12 @@ public sealed class ApproveSessionReportCommandHandler(
         sessionReport.ReviewedByUserId = userContext.UserId;
         sessionReport.ReviewedAt = DateTime.UtcNow;
         sessionReport.UpdatedAt = DateTime.UtcNow;
+
+        await ReportRequestWorkflow.MarkSessionRequestReviewedAsync(
+            context,
+            sessionReport.Id,
+            ReportRequestStatus.Approved,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 
