@@ -43,7 +43,9 @@ public sealed class AnalyzeSpeakingPracticeQueryHandler(
             Skill = NormalizeMode(query.Mode) ?? "speaking",
             SubmissionType = "file",
             SpeakingMode = NormalizeMode(query.Mode) ?? "speaking",
+            Topic = NormalizeText(query.Topic),
             TargetWords = StringListJson.ParseTags(query.TargetWords),
+            ConversationHistory = NormalizeText(query.ConversationHistory),
             Instructions = NormalizeText(query.Instructions)
         };
 
@@ -86,6 +88,18 @@ public sealed class AnalyzeSpeakingPracticeQueryHandler(
             if (requestedTargetWords.Count > 0)
             {
                 aiContext.TargetWords = requestedTargetWords;
+            }
+
+            var requestedTopic = NormalizeText(query.Topic);
+            if (!string.IsNullOrWhiteSpace(requestedTopic))
+            {
+                aiContext.Topic = requestedTopic;
+            }
+
+            var requestedConversationHistory = NormalizeText(query.ConversationHistory);
+            if (!string.IsNullOrWhiteSpace(requestedConversationHistory))
+            {
+                aiContext.ConversationHistory = requestedConversationHistory;
             }
 
             var requestedInstructions = NormalizeText(query.Instructions);
