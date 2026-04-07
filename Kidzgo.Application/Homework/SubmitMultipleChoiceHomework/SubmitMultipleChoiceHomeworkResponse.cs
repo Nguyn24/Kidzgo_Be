@@ -9,6 +9,9 @@ public sealed class SubmitMultipleChoiceHomeworkResponse
     public string Status { get; init; } = null!;
     public DateTime SubmittedAt { get; init; }
     public DateTime GradedAt { get; init; }
+    public Guid? AttemptId { get; init; }
+    public int? AttemptNumber { get; init; }
+    public int AttemptCount { get; init; }
     public decimal? MaxScore { get; init; }
     public decimal? Score { get; init; }
     public int? RewardStars { get; init; }

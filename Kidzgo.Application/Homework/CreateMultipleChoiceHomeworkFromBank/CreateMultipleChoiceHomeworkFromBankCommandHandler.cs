@@ -10,7 +10,7 @@ using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
 using Microsoft.EntityFrameworkCore;
-
+using QuizOptionUtils = Kidzgo.Application.Homework.Shared.QuizOptionUtils;
 namespace Kidzgo.Application.Homework.CreateMultipleChoiceHomeworkFromBank;
 
 public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
@@ -89,6 +89,12 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
                 HomeworkErrors.InvalidTimeLimitMinutes);
         }
 
+        if (command.MaxAttempts <= 0)
+        {
+            return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.InvalidMaxAttempts);
+        }
+
         var distribution = command.Distribution
             .GroupBy(d => d.Level)
             .Select(g => new { Level = g.Key, Count = g.Sum(x => x.Count) })
@@ -154,7 +160,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             MaxScore = maxScore,
             RewardStars = command.RewardStars,
             TimeLimitMinutes = command.TimeLimitMinutes,
-            AllowResubmit = command.AllowResubmit ?? false,
+            MaxAttempts = command.MaxAttempts,
             AiHintEnabled = command.AiHintEnabled ?? false,
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
@@ -181,14 +187,16 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
                 QuestionText = bank.QuestionText,
                 QuestionType = bank.QuestionType,
                 Options = bank.Options,
-                CorrectAnswer = bank.CorrectAnswer,
+                CorrectAnswer = bank.QuestionType == HomeworkQuestionType.MultipleChoice
+                    ? QuizOptionUtils.NormalizeCorrectAnswerForStorage(options, bank.CorrectAnswer) ?? bank.CorrectAnswer
+                    : bank.CorrectAnswer?.Trim(),
                 Points = bank.Points,
                 Explanation = bank.Explanation
             };
 
             context.HomeworkQuestions.Add(question);
 
-            questionDtos.Add(new HomeworkQuestionDto
+            questionDtos.Add(new Kidzgo.Application.Homework.CreateMultipleChoiceHomework.HomeworkQuestionDto
             {
                 Id = question.Id,
                 OrderIndex = i,
@@ -235,7 +243,8 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
-            AllowResubmit = homework.AllowResubmit,
+            AllowResubmit = homework.MaxAttempts > 1,
+            MaxAttempts = homework.MaxAttempts,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,

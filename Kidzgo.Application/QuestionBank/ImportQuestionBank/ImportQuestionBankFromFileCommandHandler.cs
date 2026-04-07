@@ -6,6 +6,7 @@ using ExcelDataReader;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
@@ -149,13 +150,14 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
                         HomeworkErrors.InvalidQuestionBankRow(rowNumber, "CorrectAnswer is required"));
                 }
 
-                if (!TryResolveCorrectAnswer(correctAnswerRaw, options, out var resolvedIndex))
+                var normalizedCorrectAnswer = QuizOptionUtils.NormalizeCorrectAnswerForStorage(options, correctAnswerRaw);
+                if (string.IsNullOrWhiteSpace(normalizedCorrectAnswer))
                 {
                     return Result.Failure<ImportQuestionBankFromFileResponse>(
                         HomeworkErrors.InvalidQuestionBankRow(rowNumber, "Invalid CorrectAnswer"));
                 }
 
-                correctAnswer = resolvedIndex.ToString();
+                correctAnswer = normalizedCorrectAnswer;
             }
             else
             {
@@ -413,46 +415,6 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
             return null;
         }
         return fields[index]?.Trim();
-    }
-
-    private static bool TryResolveCorrectAnswer(string raw, List<string> options, out int index)
-    {
-        index = -1;
-        var trimmed = raw.Trim();
-
-        if (int.TryParse(trimmed, out var numeric))
-        {
-            if (numeric >= 0 && numeric < options.Count)
-            {
-                index = numeric;
-                return true;
-            }
-
-            if (numeric >= 1 && numeric <= options.Count)
-            {
-                index = numeric - 1;
-                return true;
-            }
-        }
-
-        if (trimmed.Length == 1)
-        {
-            var ch = char.ToUpperInvariant(trimmed[0]);
-            if (ch >= 'A' && ch < 'A' + options.Count)
-            {
-                index = ch - 'A';
-                return true;
-            }
-        }
-
-        var matchIndex = options.FindIndex(o => string.Equals(o, trimmed, StringComparison.OrdinalIgnoreCase));
-        if (matchIndex >= 0)
-        {
-            index = matchIndex;
-            return true;
-        }
-
-        return false;
     }
 
     private sealed record RowData(int RowNumber, string[] Fields);

@@ -6,7 +6,9 @@ Tai lieu nay mo ta chi tiet flow bao luu (pause enrollment) de FE tich hop.
 - Bao luu la yeu cau tam dung hoc theo khoang ngay `pause_from` -> `pause_to`.
 - Khi tao request, he thong tu quet cac lop/buoi hoc cua hoc sinh trong khoang bao luu.
 - Khi duoc APPROVED, he thong tu dong tam dung cac ghi danh ACTIVE co buoi hoc nam trong khoang bao luu.
-- Ket qua sau bao luu (outcome) chi la ghi nhan, khong tu dong chuyen lop/thu hoc phi.
+- Ket qua sau bao luu:
+  - `ContinueSameClass`: he thong tu dong re-activate lai enrollment cu va restore assignment tu sau `pauseTo`.
+  - `ReassignEquivalentClass` / `ContinueWithTutoring`: chi ghi nhan outcome, khong tu dong chuyen lop/thu hoc phi.
 
 ## Dinh dang ngay
 - `PauseFrom`/`PauseTo` dung `DateOnly` theo format `YYYY-MM-DD`.
@@ -200,6 +202,10 @@ Response:
 
 Rules:
 - Chi cho phep khi `status = Approved`
+- Neu `outcome = ContinueSameClass`:
+  - He thong doi cac enrollment bi pause boi request nay tu `Paused` -> `Active`
+  - Ghi them lich su `Paused -> Active` vao `pause_enrollment_request_histories`
+  - Restore `student_session_assignments` tu ngay lon hon giua `pauseTo + 1 ngay` va `UTC today`
 
 ## Error codes thuong gap
 - `PauseEnrollmentRequest.NotFound`

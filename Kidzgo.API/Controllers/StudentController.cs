@@ -202,6 +202,22 @@ public class StudentController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpGet("homework/{homeworkStudentId:guid}/attempts/{attemptNumber:int}")]
+    public async Task<IResult> GetHomeworkSubmissionAttempt(
+        Guid homeworkStudentId,
+        int attemptNumber,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetStudentHomeworkSubmissionQuery
+        {
+            HomeworkStudentId = homeworkStudentId,
+            AttemptNumber = attemptNumber
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
     [HttpPost("homework/{homeworkStudentId:guid}/hint")]
     public async Task<IResult> GetHomeworkHint(
         Guid homeworkStudentId,
