@@ -2,6 +2,7 @@ using System.Text.Json;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
@@ -36,6 +37,8 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.NoQuestionsProvided);
         }
 
+        var normalizedCorrectAnswers = new List<string>(command.Questions.Count);
+
         // Validate each question
         for (int i = 0; i < command.Questions.Count; i++)
         {
@@ -55,13 +58,21 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                         HomeworkErrors.InsufficientOptions(i + 1));
                 }
 
-                // Validate correct answer is within range
-                if (!int.TryParse(question.CorrectAnswer, out int correctIndex) ||
-                    correctIndex < 0 || correctIndex >= question.Options.Count)
+                var normalizedCorrectAnswer = QuizOptionUtils.NormalizeCorrectAnswerForStorage(
+                    question.Options,
+                    question.CorrectAnswer);
+
+                if (string.IsNullOrWhiteSpace(normalizedCorrectAnswer))
                 {
                     return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
                         HomeworkErrors.InvalidCorrectAnswer(i + 1));
                 }
+
+                normalizedCorrectAnswers.Add(normalizedCorrectAnswer);
+            }
+            else
+            {
+                normalizedCorrectAnswers.Add(question.CorrectAnswer.Trim());
             }
 
             if (question.Points <= 0)
@@ -120,6 +131,12 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.InvalidTimeLimitMinutes);
         }
 
+        if (command.MaxAttempts <= 0)
+        {
+            return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.InvalidMaxAttempts);
+        }
+
         // Convert DueAt to UTC if provided
         var dueAtUtc = command.DueAt.HasValue
             ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
@@ -148,7 +165,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             MaxScore = maxScore,
             RewardStars = command.RewardStars,
             TimeLimitMinutes = command.TimeLimitMinutes,
-            AllowResubmit = command.AllowResubmit ?? false,
+            MaxAttempts = command.MaxAttempts,
             AiHintEnabled = command.AiHintEnabled ?? false,
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
@@ -172,7 +189,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                 QuestionText = q.QuestionText,
                 QuestionType = q.QuestionType,
                 Options = JsonSerializer.Serialize(q.Options),
-                CorrectAnswer = q.CorrectAnswer,
+                CorrectAnswer = normalizedCorrectAnswers[i],
                 Points = q.Points,
                 Explanation = q.Explanation
             };
@@ -227,7 +244,8 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
-            AllowResubmit = homework.AllowResubmit,
+            AllowResubmit = homework.MaxAttempts > 1,
+            MaxAttempts = homework.MaxAttempts,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,

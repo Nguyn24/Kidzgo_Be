@@ -17,7 +17,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommand : ICommand<Creat
     public List<string>? VocabularyTags { get; init; }
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
-    public bool? AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; } = 1;
     public bool? AiHintEnabled { get; init; }
     public bool? AiRecommendEnabled { get; init; }
     public Guid? MissionId { get; init; }

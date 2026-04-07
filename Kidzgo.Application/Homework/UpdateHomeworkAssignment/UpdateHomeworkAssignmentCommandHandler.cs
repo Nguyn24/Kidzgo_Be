@@ -90,6 +90,12 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidTimeLimitMinutes);
         }
 
+        if (command.MaxAttempts.HasValue && command.MaxAttempts.Value <= 0)
+        {
+            return Result.Failure<UpdateHomeworkAssignmentResponse>(
+                HomeworkErrors.InvalidMaxAttempts);
+        }
+
         // Update fields
         if (!string.IsNullOrWhiteSpace(command.Title))
         {
@@ -156,9 +162,9 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
             homework.TimeLimitMinutes = command.TimeLimitMinutes;
         }
 
-        if (command.AllowResubmit.HasValue)
+        if (command.MaxAttempts.HasValue)
         {
-            homework.AllowResubmit = command.AllowResubmit.Value;
+            homework.MaxAttempts = command.MaxAttempts.Value;
         }
 
         if (command.AiHintEnabled.HasValue)

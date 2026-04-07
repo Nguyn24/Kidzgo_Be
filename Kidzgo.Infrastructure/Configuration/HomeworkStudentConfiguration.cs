@@ -59,5 +59,10 @@ public class HomeworkStudentConfiguration : IEntityTypeConfiguration<HomeworkStu
             .WithMany(x => x.HomeworkStudents)
             .HasForeignKey(x => x.StudentProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.SubmissionAttempts)
+            .WithOne(x => x.HomeworkStudent)
+            .HasForeignKey(x => x.HomeworkStudentId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

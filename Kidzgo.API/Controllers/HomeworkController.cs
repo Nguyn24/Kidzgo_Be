@@ -14,6 +14,7 @@ using Kidzgo.Application.Homework.GradeHomework;
 using Kidzgo.Application.Homework.MarkHomeworkLateOrMissing;
 using Kidzgo.Application.Homework.SetHomeworkRewardStars;
 using Kidzgo.Application.Homework.UpdateHomeworkAssignment;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
 using Kidzgo.Domain.LessonPlans;
@@ -67,7 +68,7 @@ public class HomeworkController : ControllerBase
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
-            AllowResubmit = request.AllowResubmit,
+            MaxAttempts = ResolveMaxAttempts(request.MaxAttempts, request.AllowResubmit),
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
@@ -125,7 +126,7 @@ public class HomeworkController : ControllerBase
             VocabularyTags = request.VocabularyTags,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
-            AllowResubmit = request.AllowResubmit,
+            MaxAttempts = ResolveMaxAttempts(request.MaxAttempts, request.AllowResubmit),
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
@@ -175,7 +176,7 @@ public class HomeworkController : ControllerBase
             VocabularyTags = request.VocabularyTags,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
-            AllowResubmit = request.AllowResubmit,
+            MaxAttempts = ResolveMaxAttempts(request.MaxAttempts, request.AllowResubmit),
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
@@ -272,7 +273,7 @@ public class HomeworkController : ControllerBase
             MaxScore = request.MaxScore,
             RewardStars = request.RewardStars,
             TimeLimitMinutes = request.TimeLimitMinutes,
-            AllowResubmit = request.AllowResubmit,
+            MaxAttempts = ResolveOptionalMaxAttempts(request.MaxAttempts, request.AllowResubmit),
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
@@ -482,6 +483,28 @@ public class HomeworkController : ControllerBase
         }
 
         return Enum.TryParse(input, ignoreCase: true, out submissionType);
+    }
+
+    private static int ResolveMaxAttempts(int? maxAttempts, bool? legacyAllowResubmit)
+    {
+        if (maxAttempts.HasValue)
+        {
+            return maxAttempts.Value;
+        }
+
+        return legacyAllowResubmit == true ? 2 : 1;
+    }
+
+    private static int? ResolveOptionalMaxAttempts(int? maxAttempts, bool? legacyAllowResubmit)
+    {
+        if (maxAttempts.HasValue)
+        {
+            return maxAttempts.Value;
+        }
+
+        return legacyAllowResubmit.HasValue
+            ? legacyAllowResubmit.Value ? 2 : 1
+            : null;
     }
 }
 

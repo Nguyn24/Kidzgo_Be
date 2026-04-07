@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Homework;
@@ -54,37 +55,44 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionAlreadyAutoGraded);
         }
 
-        if (homeworkStudent.Status == HomeworkStatus.Submitted || homeworkStudent.Status == HomeworkStatus.Graded)
+        var persistedAttemptCount = await context.HomeworkSubmissionAttempts
+            .CountAsync(a => a.HomeworkStudentId == homeworkStudent.Id, cancellationToken);
+
+        if (persistedAttemptCount == 0 &&
+            HomeworkSubmissionAttemptMapper.HasLegacyAttempt(homeworkStudent))
+        {
+            context.HomeworkSubmissionAttempts.Add(
+                HomeworkSubmissionAttemptMapper.BuildLegacyAttempt(
+                    homeworkStudent,
+                    attemptNumber: 1,
+                    id: Guid.NewGuid()));
+            persistedAttemptCount = 1;
+        }
+
+        var currentAttemptCount = persistedAttemptCount;
+        var maxAttempts = homeworkStudent.Assignment.MaxAttempts;
+        if (currentAttemptCount >= maxAttempts)
         {
             return Result.Failure<SubmitHomeworkResponse>(
-                HomeworkErrors.SubmissionAlreadySubmitted);
+                HomeworkErrors.SubmissionAttemptLimitReached(maxAttempts));
         }
 
         var submissionType = homeworkStudent.Assignment.SubmissionType;
         var effectiveLink = !string.IsNullOrWhiteSpace(command.LinkUrl)
             ? command.LinkUrl
             : command.Links?.FirstOrDefault();
-        bool hasValidSubmission = false;
-
-        switch (submissionType)
+        var hasValidSubmission = submissionType switch
         {
-            case SubmissionType.File:
-            case SubmissionType.Image:
-            case SubmissionType.Video:
-                hasValidSubmission = command.AttachmentUrls != null && command.AttachmentUrls.Count > 0;
-                break;
-            case SubmissionType.Text:
-                hasValidSubmission = !string.IsNullOrWhiteSpace(command.TextAnswer);
-                break;
-            case SubmissionType.Link:
-                hasValidSubmission = !string.IsNullOrWhiteSpace(effectiveLink);
-                break;
-            case SubmissionType.Quiz:
-                hasValidSubmission = command.AttachmentUrls != null && command.AttachmentUrls.Count > 0 ||
-                                    !string.IsNullOrWhiteSpace(command.TextAnswer) ||
-                                    !string.IsNullOrWhiteSpace(effectiveLink);
-                break;
-        }
+            SubmissionType.File or SubmissionType.Image or SubmissionType.Video =>
+                command.AttachmentUrls != null && command.AttachmentUrls.Count > 0,
+            SubmissionType.Text => !string.IsNullOrWhiteSpace(command.TextAnswer),
+            SubmissionType.Link => !string.IsNullOrWhiteSpace(effectiveLink),
+            SubmissionType.Quiz =>
+                command.AttachmentUrls != null && command.AttachmentUrls.Count > 0 ||
+                !string.IsNullOrWhiteSpace(command.TextAnswer) ||
+                !string.IsNullOrWhiteSpace(effectiveLink),
+            _ => false
+        };
 
         if (!hasValidSubmission)
         {
@@ -92,19 +100,23 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionInvalidData(submissionType.ToString()));
         }
 
-        if (homeworkStudent.Status == HomeworkStatus.Missing ||
-            (homeworkStudent.Assignment.DueAt.HasValue && DateTime.UtcNow > homeworkStudent.Assignment.DueAt.Value))
-        {
-            homeworkStudent.Status = HomeworkStatus.Late;
-        }
-        else
-        {
-            homeworkStudent.Status = HomeworkStatus.Submitted;
-        }
+        var now = DateTime.UtcNow;
+        var isFirstSubmission = currentAttemptCount == 0;
 
-        homeworkStudent.SubmittedAt = DateTime.UtcNow;
+        homeworkStudent.Status = homeworkStudent.Status == HomeworkStatus.Missing ||
+                                 (homeworkStudent.Assignment.DueAt.HasValue &&
+                                  now > homeworkStudent.Assignment.DueAt.Value)
+            ? HomeworkStatus.Late
+            : HomeworkStatus.Submitted;
 
-        // Store submission data based on type
+        homeworkStudent.SubmittedAt = now;
+        homeworkStudent.GradedAt = null;
+        homeworkStudent.Score = null;
+        homeworkStudent.TeacherFeedback = null;
+        homeworkStudent.AiFeedback = null;
+        homeworkStudent.TextAnswer = null;
+        homeworkStudent.AttachmentUrl = null;
+
         switch (submissionType)
         {
             case SubmissionType.File:
@@ -129,6 +141,7 @@ public sealed class SubmitHomeworkCommandHandler(
                 {
                     homeworkStudent.TextAnswer = command.TextAnswer;
                 }
+
                 if (!string.IsNullOrWhiteSpace(effectiveLink))
                 {
                     homeworkStudent.AttachmentUrl = effectiveLink;
@@ -136,16 +149,26 @@ public sealed class SubmitHomeworkCommandHandler(
                 break;
         }
 
-        // ============================================================
-        // GIAI DOAN 2: Track HomeworkStreak Mission progress
-        // Chỉ increment progress khi nộp đúng hạn (Submitted)
-        // ============================================================
-        if (homeworkStudent.Status == HomeworkStatus.Submitted)
+        var attempt = new HomeworkSubmissionAttempt
         {
-            var now = DateTime.UtcNow;
+            Id = Guid.NewGuid(),
+            HomeworkStudentId = homeworkStudent.Id,
+            AttemptNumber = currentAttemptCount + 1,
+            Status = homeworkStudent.Status,
+            StartedAt = homeworkStudent.StartedAt,
+            SubmittedAt = homeworkStudent.SubmittedAt,
+            GradedAt = homeworkStudent.GradedAt,
+            Score = homeworkStudent.Score,
+            TeacherFeedback = homeworkStudent.TeacherFeedback,
+            AiFeedback = homeworkStudent.AiFeedback,
+            TextAnswer = homeworkStudent.TextAnswer,
+            AttachmentUrl = homeworkStudent.AttachmentUrl,
+            CreatedAt = now
+        };
+        context.HomeworkSubmissionAttempts.Add(attempt);
 
-            // Tim tat ca HomeworkStreak missions đang active của student
-            // (đã có MissionProgress record, trong khoảng thời gian, chưa hoàn thành)
+        if (isFirstSubmission && homeworkStudent.Status == HomeworkStatus.Submitted)
+        {
             var activeHomeworkStreakMissions = await context.MissionProgresses
                 .Include(mp => mp.Mission)
                 .Where(mp => mp.StudentProfileId == studentId.Value)
@@ -158,23 +181,19 @@ public sealed class SubmitHomeworkCommandHandler(
 
             foreach (var missionProgress in activeHomeworkStreakMissions)
             {
-                // Update status to InProgress if currently Assigned
                 if (missionProgress.Status == MissionProgressStatus.Assigned)
                 {
                     missionProgress.Status = MissionProgressStatus.InProgress;
                 }
 
-                // Increment progress value
                 missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
 
-                // Check if mission is completed (reached TotalRequired)
                 var totalRequired = missionProgress.Mission.TotalRequired;
                 if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
                 {
                     missionProgress.Status = MissionProgressStatus.Completed;
                     missionProgress.CompletedAt = now;
 
-                    // Cộng Mission Reward Stars
                     if (missionProgress.Mission.RewardStars.HasValue &&
                         missionProgress.Mission.RewardStars.Value > 0)
                     {
@@ -186,7 +205,6 @@ public sealed class SubmitHomeworkCommandHandler(
                             cancellationToken);
                     }
 
-                    // Cộng Mission Reward XP
                     if (missionProgress.Mission.RewardExp.HasValue &&
                         missionProgress.Mission.RewardExp.Value > 0)
                     {
@@ -203,8 +221,8 @@ public sealed class SubmitHomeworkCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        // UC-208: Cộng Homework Reward Stars (đúng hạn)
-        if (homeworkStudent.Status == HomeworkStatus.Submitted &&
+        if (isFirstSubmission &&
+            homeworkStudent.Status == HomeworkStatus.Submitted &&
             homeworkStudent.Assignment.RewardStars.HasValue &&
             homeworkStudent.Assignment.RewardStars.Value > 0)
         {
@@ -222,6 +240,9 @@ public sealed class SubmitHomeworkCommandHandler(
             AssignmentId = homeworkStudent.AssignmentId,
             Status = homeworkStudent.Status.ToString(),
             SubmittedAt = homeworkStudent.SubmittedAt!.Value,
+            AttemptId = attempt.Id,
+            AttemptNumber = attempt.AttemptNumber,
+            AttemptCount = attempt.AttemptNumber,
             AttachmentUrls = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
                              submissionType is SubmissionType.File or SubmissionType.Image or SubmissionType.Video or SubmissionType.Quiz
                 ? new List<string> { homeworkStudent.AttachmentUrl }
