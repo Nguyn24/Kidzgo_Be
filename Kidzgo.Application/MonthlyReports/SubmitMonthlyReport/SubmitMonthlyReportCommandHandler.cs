@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.ReportRequests.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -42,6 +43,12 @@ public sealed class SubmitMonthlyReportCommandHandler(
         report.Status = ReportStatus.Review;
         report.SubmittedBy = submittedBy;
         report.UpdatedAt = now;
+
+        await ReportRequestWorkflow.MarkMatchingMonthlyRequestSubmittedAsync(
+            context,
+            report,
+            submittedBy,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

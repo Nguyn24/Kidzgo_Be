@@ -115,6 +115,7 @@ public interface IDbContext
     DbSet<MonthlyReportJob> MonthlyReportJobs { get; }
     DbSet<MonthlyReportData> MonthlyReportData { get; }
     DbSet<ReportComment> ReportComments { get; }
+    DbSet<ReportRequest> ReportRequests { get; }
     DbSet<SessionReport> SessionReports { get; }
     DbSet<StudentMonthlyReport> StudentMonthlyReports { get; }
 

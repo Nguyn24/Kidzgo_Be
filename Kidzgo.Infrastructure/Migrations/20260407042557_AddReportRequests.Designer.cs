@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407042557_AddReportRequests")]
+    partial class AddReportRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3083,98 +3086,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Kidzgo.Domain.Reports.ReportRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssignedTeacherUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DueAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("LinkedMonthlyReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("LinkedSessionReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Message")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<int?>("Month")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("ReportType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("RequestedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("TargetClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TargetSessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TargetStudentProfileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("Year")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedTeacherUserId");
-
-                    b.HasIndex("LinkedMonthlyReportId");
-
-                    b.HasIndex("LinkedSessionReportId");
-
-                    b.HasIndex("RequestedByUserId");
-
-                    b.HasIndex("TargetClassId");
-
-                    b.HasIndex("TargetSessionId");
-
-                    b.HasIndex("TargetStudentProfileId");
-
-                    b.HasIndex("AssignedTeacherUserId", "Status", "Priority", "DueAt")
-                        .HasDatabaseName("report_request_teacher_queue_idx");
-
-                    b.HasIndex("ReportType", "TargetClassId", "Month", "Year")
-                        .HasDatabaseName("report_request_type_class_month_idx");
-
-                    b.HasIndex("ReportType", "TargetStudentProfileId", "Month", "Year")
-                        .HasDatabaseName("report_request_type_student_month_idx");
-
-                    b.ToTable("ReportRequests", "public");
-                });
-
             modelBuilder.Entity("Kidzgo.Domain.Reports.SessionReport", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5354,60 +5265,6 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Report");
 
                     b.Navigation("SessionReport");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Reports.ReportRequest", b =>
-                {
-                    b.HasOne("Kidzgo.Domain.Users.User", "AssignedTeacher")
-                        .WithMany()
-                        .HasForeignKey("AssignedTeacherUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Reports.StudentMonthlyReport", "LinkedMonthlyReport")
-                        .WithMany()
-                        .HasForeignKey("LinkedMonthlyReportId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Kidzgo.Domain.Reports.SessionReport", "LinkedSessionReport")
-                        .WithMany()
-                        .HasForeignKey("LinkedSessionReportId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Kidzgo.Domain.Users.User", "RequestedByUser")
-                        .WithMany()
-                        .HasForeignKey("RequestedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kidzgo.Domain.Classes.Class", "TargetClass")
-                        .WithMany()
-                        .HasForeignKey("TargetClassId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Kidzgo.Domain.Sessions.Session", "TargetSession")
-                        .WithMany()
-                        .HasForeignKey("TargetSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Kidzgo.Domain.Users.Profile", "TargetStudentProfile")
-                        .WithMany()
-                        .HasForeignKey("TargetStudentProfileId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AssignedTeacher");
-
-                    b.Navigation("LinkedMonthlyReport");
-
-                    b.Navigation("LinkedSessionReport");
-
-                    b.Navigation("RequestedByUser");
-
-                    b.Navigation("TargetClass");
-
-                    b.Navigation("TargetSession");
-
-                    b.Navigation("TargetStudentProfile");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Reports.SessionReport", b =>
