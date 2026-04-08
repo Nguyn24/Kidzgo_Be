@@ -19,7 +19,7 @@ public class LoginWithRefreshToken (IDbContext context,
             .Include(r => r.User)
             .FirstOrDefaultAsync(t => t.Token == request.RefreshToken, cancellationToken);
 
-        if (refreshToken == null || refreshToken.Expires < DateTime.UtcNow)
+        if (refreshToken == null || refreshToken.Expires < VietnamTime.UtcNow())
         {
             return Result.Failure<TokenResponse>(UserErrors.InvalidRefreshToken);
 
@@ -32,9 +32,9 @@ public class LoginWithRefreshToken (IDbContext context,
 
         string accessToken = tokenProvider.Create(refreshToken.User);
         refreshToken.Token = tokenProvider.GenerateRefreshToken();
-        refreshToken.Expires = DateTime.UtcNow.AddDays(1);
-        refreshToken.User.LastSeenAt = DateTime.UtcNow;
-        refreshToken.User.UpdatedAt = DateTime.UtcNow;
+        refreshToken.Expires = VietnamTime.UtcNow().AddDays(1);
+        refreshToken.User.LastSeenAt = VietnamTime.UtcNow();
+        refreshToken.User.UpdatedAt = VietnamTime.UtcNow();
         
         await context.SaveChangesAsync(cancellationToken);
         return new TokenResponse()

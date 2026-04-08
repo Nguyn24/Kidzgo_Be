@@ -16,7 +16,7 @@ public sealed class UpgradeTuitionPlanCommandHandler(
         UpgradeTuitionPlanCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // 1. Get current registration
         var registration = await context.Registrations

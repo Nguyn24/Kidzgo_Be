@@ -30,7 +30,8 @@ public static class SwaggerExtensions
             {
                 Type = "string",
                 Format = "date-time",
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00"),
+                Description = "Timezone-aware ISO 8601 string. If offset is omitted, backend assumes Asia/Ho_Chi_Minh."
             });
             
             o.MapType<DateTime?>(() => new OpenApiSchema
@@ -38,7 +39,8 @@ public static class SwaggerExtensions
                 Type = "string",
                 Format = "date-time",
                 Nullable = true,
-                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00")
+                Example = new Microsoft.OpenApi.Any.OpenApiString("2026-03-24T22:22:24+07:00"),
+                Description = "Timezone-aware ISO 8601 string. If offset is omitted, backend assumes Asia/Ho_Chi_Minh."
             });
             
             // Map DateOnly to string with format

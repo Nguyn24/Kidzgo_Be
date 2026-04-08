@@ -16,7 +16,7 @@ public sealed class GetProfilesQueryHandler(
     public async Task<Result<List<GetProfilesResponse>>> Handle(GetProfilesQuery request, CancellationToken cancellationToken)
     {
         Guid userId = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var query = context.Profiles
             .Include(p => p.User)

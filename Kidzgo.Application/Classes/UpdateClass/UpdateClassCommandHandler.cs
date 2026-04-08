@@ -102,7 +102,7 @@ public sealed class UpdateClassCommandHandler(
         classEntity.Capacity = command.Capacity;
         classEntity.SchedulePattern = command.SchedulePattern;
         classEntity.Description = command.Description;
-        classEntity.UpdatedAt = DateTime.UtcNow;
+        classEntity.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

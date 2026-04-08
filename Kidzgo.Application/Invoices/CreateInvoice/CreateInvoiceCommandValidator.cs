@@ -23,7 +23,7 @@ public sealed class CreateInvoiceCommandValidator : AbstractValidator<CreateInvo
             .MaximumLength(10).WithMessage("Currency must not exceed 10 characters.");
 
         RuleFor(x => x.DueDate)
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Due date should not be in the past")
             .When(x => x.DueDate.HasValue);
 

@@ -21,7 +21,7 @@ public sealed class ToggleBranchStatusCommandHandler(IDbContext context)
         }
 
         branch.IsActive = command.IsActive;
-        branch.UpdatedAt = DateTime.UtcNow;
+        branch.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

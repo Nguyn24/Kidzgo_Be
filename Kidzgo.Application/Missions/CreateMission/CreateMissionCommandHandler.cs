@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Missions.Shared;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
@@ -89,7 +90,7 @@ public sealed class CreateMissionCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var userId = userContext.UserId;
 
         var teacherScopeValidation = await TeacherMissionTargetGuard.EnsureActorCanManageTargetsAsync(
@@ -106,18 +107,8 @@ public sealed class CreateMissionCommandHandler(
             return Result.Failure<CreateMissionResponse>(teacherScopeValidation.Error);
         }
 
-        // Convert DateTime to UTC if provided
-        DateTime? startAtUtc = command.StartAt.HasValue
-            ? command.StartAt.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(command.StartAt.Value, DateTimeKind.Utc)
-                : command.StartAt.Value.ToUniversalTime()
-            : null;
-
-        DateTime? endAtUtc = command.EndAt.HasValue
-            ? command.EndAt.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(command.EndAt.Value, DateTimeKind.Utc)
-                : command.EndAt.Value.ToUniversalTime()
-            : null;
+        var startAtUtc = VietnamTime.NormalizeToUtc(command.StartAt);
+        var endAtUtc = VietnamTime.NormalizeToUtc(command.EndAt);
 
         var mission = new Mission
         {

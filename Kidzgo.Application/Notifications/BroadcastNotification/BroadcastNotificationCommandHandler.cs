@@ -180,7 +180,7 @@ public sealed class BroadcastNotificationCommandHandler(
         }
 
         // Create notifications for each recipient
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var notifications = new List<Notification>();
         var createdIds = new List<Guid>();
 

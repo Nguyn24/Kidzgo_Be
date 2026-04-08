@@ -46,7 +46,7 @@ public sealed class AddXpCommandHandler(
                 StudentProfileId = command.StudentProfileId,
                 CurrentLevel = newLevel,
                 CurrentXp = newXp,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = VietnamTime.UtcNow()
             };
             context.StudentLevels.Add(studentLevel);
         }
@@ -54,7 +54,7 @@ public sealed class AddXpCommandHandler(
         {
             studentLevel.CurrentLevel = newLevel;
             studentLevel.CurrentXp = newXp;
-            studentLevel.UpdatedAt = DateTime.UtcNow;
+            studentLevel.UpdatedAt = VietnamTime.UtcNow();
         }
 
         await context.SaveChangesAsync(cancellationToken);

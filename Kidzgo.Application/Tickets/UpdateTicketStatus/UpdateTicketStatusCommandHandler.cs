@@ -37,7 +37,7 @@ public sealed class UpdateTicketStatusCommandHandler(
         }
 
         ticket.Status = command.Status;
-        ticket.UpdatedAt = DateTime.UtcNow;
+        ticket.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpdateTicketStatusResponse

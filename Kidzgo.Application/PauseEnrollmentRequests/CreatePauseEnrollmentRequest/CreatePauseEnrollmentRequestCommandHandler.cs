@@ -39,11 +39,13 @@ public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext contex
             .Select(e => e.ClassId)
             .Distinct()
             .ToList();
+        var pauseFromUtc = VietnamTime.TreatAsVietnamLocal(command.PauseFrom.ToDateTime(TimeOnly.MinValue));
+        var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(command.PauseTo.ToDateTime(TimeOnly.MinValue)));
 
         var classIdsInRange = await context.Sessions
             .Where(s => activeClassIds.Contains(s.ClassId)
-                        && DateOnly.FromDateTime(s.PlannedDatetime) >= command.PauseFrom
-                        && DateOnly.FromDateTime(s.PlannedDatetime) <= command.PauseTo)
+                        && s.PlannedDatetime >= pauseFromUtc
+                        && s.PlannedDatetime <= pauseToUtc)
             .Select(s => s.ClassId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -93,7 +95,7 @@ public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext contex
             PauseTo = command.PauseTo,
             Reason = command.Reason,
             Status = PauseEnrollmentRequestStatus.Pending,
-            RequestedAt = DateTime.UtcNow
+            RequestedAt = VietnamTime.UtcNow()
         };
 
         context.PauseEnrollmentRequests.Add(request);

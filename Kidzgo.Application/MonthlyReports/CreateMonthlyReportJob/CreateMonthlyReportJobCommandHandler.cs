@@ -44,7 +44,7 @@ public sealed class CreateMonthlyReportJobCommandHandler(
                 BranchErrors.NotFound(command.BranchId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var createdBy = userContext.UserId;
 
         var job = new MonthlyReportJob

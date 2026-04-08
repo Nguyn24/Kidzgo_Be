@@ -20,7 +20,7 @@ public sealed class AssignClassCommandHandler(
         AssignClassCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var track = RegistrationTrackHelper.NormalizeTrack(command.Track);
         var isSecondaryTrack = track == RegistrationTrackHelper.SecondaryTrack;
         var entryType = RegistrationTrackHelper.ParseEntryType(command.EntryType);
@@ -163,7 +163,7 @@ public sealed class AssignClassCommandHandler(
                 Id = Guid.NewGuid(),
                 ClassId = classEntity!.Id,
                 StudentProfileId = registration.StudentProfileId,
-                EnrollDate = DateOnly.FromDateTime(now),
+                EnrollDate = VietnamTime.ToVietnamDateOnly(now),
                 Status = EnrollmentStatus.Active,
                 TuitionPlanId = registration.TuitionPlanId,
                 RegistrationId = registration.Id,

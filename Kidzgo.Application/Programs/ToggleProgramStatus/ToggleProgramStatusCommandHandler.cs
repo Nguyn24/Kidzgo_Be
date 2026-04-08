@@ -21,7 +21,7 @@ public sealed class ToggleProgramStatusCommandHandler(
         }
 
         program.IsActive = !program.IsActive;
-        program.UpdatedAt = DateTime.UtcNow;
+        program.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new ToggleProgramStatusResponse

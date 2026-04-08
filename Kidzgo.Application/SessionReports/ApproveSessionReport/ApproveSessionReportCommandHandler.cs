@@ -41,8 +41,8 @@ public sealed class ApproveSessionReportCommandHandler(
         // Update status to Approved
         sessionReport.Status = ReportStatus.Approved;
         sessionReport.ReviewedByUserId = userContext.UserId;
-        sessionReport.ReviewedAt = DateTime.UtcNow;
-        sessionReport.UpdatedAt = DateTime.UtcNow;
+        sessionReport.ReviewedAt = VietnamTime.UtcNow();
+        sessionReport.UpdatedAt = VietnamTime.UtcNow();
 
         await ReportRequestWorkflow.MarkSessionRequestReviewedAsync(
             context,

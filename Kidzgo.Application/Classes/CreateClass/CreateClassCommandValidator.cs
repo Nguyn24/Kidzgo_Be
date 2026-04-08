@@ -22,7 +22,7 @@ public sealed class CreateClassCommandValidator : AbstractValidator<CreateClassC
 
         RuleFor(command => command.StartDate)
             .NotEmpty().WithMessage("Start date is required")
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Start date cannot be in the past");
 
         RuleFor(command => command.EndDate)
@@ -31,7 +31,7 @@ public sealed class CreateClassCommandValidator : AbstractValidator<CreateClassC
             .GreaterThanOrEqualTo(command => command.StartDate)
             .WithMessage("End date must be greater than or equal to start date")
             .When(command => command.EndDate.HasValue)
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("End date cannot be in the past")
             .When(command => command.EndDate.HasValue);
 

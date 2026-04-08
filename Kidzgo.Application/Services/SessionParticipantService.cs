@@ -102,18 +102,29 @@ public sealed class SessionParticipantService(
             })
             .ToListAsync(cancellationToken);
 
+        var activeEnrollDatesByClass = await context.ClassEnrollments
+            .AsNoTracking()
+            .Where(ce => ce.StudentProfileId == studentProfileId
+                && ce.Status == Domain.Classes.EnrollmentStatus.Active)
+            .GroupBy(ce => ce.ClassId)
+            .Select(g => new
+            {
+                ClassId = g.Key,
+                EnrollDates = g.Select(ce => ce.EnrollDate).ToList()
+            })
+            .ToListAsync(cancellationToken);
+
+        var enrollDateLookup = activeEnrollDatesByClass.ToDictionary(x => x.ClassId, x => x.EnrollDates);
+
         var legacySessions = await context.Sessions
             .AsNoTracking()
             .Where(s => s.Status == SessionStatus.Scheduled
                 && s.PlannedDatetime >= fromUtc
                 && s.PlannedDatetime <= toUtc
-                && !context.StudentSessionAssignments.Any(a => a.SessionId == s.Id)
-                && s.Class.ClassEnrollments.Any(ce =>
-                    ce.StudentProfileId == studentProfileId &&
-                    ce.Status == Domain.Classes.EnrollmentStatus.Active &&
-                    ce.EnrollDate <= DateOnly.FromDateTime(s.PlannedDatetime)))
+                && !context.StudentSessionAssignments.Any(a => a.SessionId == s.Id))
             .Select(s => new
             {
+                s.ClassId,
                 Start = s.PlannedDatetime,
                 End = s.PlannedDatetime.AddMinutes(s.DurationMinutes)
             })
@@ -133,8 +144,18 @@ public sealed class SessionParticipantService(
             })
             .ToListAsync(cancellationToken);
 
+        var filteredLegacySessions = legacySessions
+            .Where(s =>
+                enrollDateLookup.TryGetValue(s.ClassId, out var enrollDates) &&
+                enrollDates.Any(enrollDate => enrollDate <= VietnamTime.ToVietnamDateOnly(s.Start)))
+            .Select(s => new
+            {
+                s.Start,
+                s.End
+            });
+
         return regularAssignments
-            .Concat(legacySessions)
+            .Concat(filteredLegacySessions)
             .Concat(makeupSlots)
             .Select(x => (x.Start, x.End))
             .Distinct()

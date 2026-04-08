@@ -70,19 +70,59 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
 
         var requestIds = items.Select(r => r.Id).ToList();
 
-        var classRows = await (
-            from r in context.PauseEnrollmentRequests
-            join e in context.ClassEnrollments on r.StudentProfileId equals e.StudentProfileId
-            join s in context.Sessions on e.ClassId equals s.ClassId
-            join c in context.Classes on e.ClassId equals c.Id
-            where requestIds.Contains(r.Id)
-                  && e.Status != EnrollmentStatus.Dropped
-                  && DateOnly.FromDateTime(s.PlannedDatetime) >= r.PauseFrom
-                  && DateOnly.FromDateTime(s.PlannedDatetime) <= r.PauseTo
-            select new
+        var requestById = items.ToDictionary(r => r.Id);
+        var studentProfileIds = items.Select(r => r.StudentProfileId).Distinct().ToList();
+        var activeEnrollments = await context.ClassEnrollments
+            .AsNoTracking()
+            .Where(e => studentProfileIds.Contains(e.StudentProfileId) && e.Status != EnrollmentStatus.Dropped)
+            .Select(e => new
             {
-                RequestId = r.Id,
-                ClassId = c.Id,
+                e.StudentProfileId,
+                e.ClassId
+            })
+            .ToListAsync(cancellationToken);
+
+        var relevantClassIds = activeEnrollments.Select(e => e.ClassId).Distinct().ToList();
+        var minPauseFrom = items.Min(r => r.PauseFrom);
+        var maxPauseTo = items.Max(r => r.PauseTo);
+        var minPauseFromUtc = VietnamTime.TreatAsVietnamLocal(minPauseFrom.ToDateTime(TimeOnly.MinValue));
+        var maxPauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(maxPauseTo.ToDateTime(TimeOnly.MinValue)));
+
+        var sessionsByClass = await context.Sessions
+            .AsNoTracking()
+            .Where(s => relevantClassIds.Contains(s.ClassId)
+                && s.PlannedDatetime >= minPauseFromUtc
+                && s.PlannedDatetime <= maxPauseToUtc)
+            .Select(s => new
+            {
+                s.ClassId,
+                s.PlannedDatetime
+            })
+            .ToListAsync(cancellationToken);
+
+        var matchingClassIdsByRequest = items.ToDictionary(
+            item => item.Id,
+            item => activeEnrollments
+                .Where(e => e.StudentProfileId == item.StudentProfileId)
+                .Select(e => e.ClassId)
+                .Where(classId => sessionsByClass.Any(s =>
+                    s.ClassId == classId &&
+                    VietnamTime.ToVietnamDateOnly(s.PlannedDatetime) >= item.PauseFrom &&
+                    VietnamTime.ToVietnamDateOnly(s.PlannedDatetime) <= item.PauseTo))
+                .Distinct()
+                .ToList());
+
+        var allMatchingClassIds = matchingClassIdsByRequest
+            .SelectMany(kvp => kvp.Value)
+            .Distinct()
+            .ToList();
+
+        var classDetails = await context.Classes
+            .AsNoTracking()
+            .Where(c => allMatchingClassIds.Contains(c.Id))
+            .Select(c => new
+            {
+                c.Id,
                 c.Code,
                 c.Title,
                 c.ProgramId,
@@ -93,26 +133,31 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
                 c.EndDate,
                 Status = c.Status.ToString()
             })
-            .Distinct()
             .ToListAsync(cancellationToken);
 
-        var classLookup = classRows
-            .GroupBy(r => r.RequestId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(c => new PauseEnrollmentClassDto
+        var classDetailLookup = classDetails.ToDictionary(c => c.Id);
+        var classLookup = matchingClassIdsByRequest.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value
+                .Where(classDetailLookup.ContainsKey)
+                .Select(classId =>
                 {
-                    Id = c.ClassId,
-                    Code = c.Code,
-                    Title = c.Title,
-                    ProgramId = c.ProgramId,
-                    ProgramName = c.ProgramName,
-                    BranchId = c.BranchId,
-                    BranchName = c.BranchName,
-                    StartDate = c.StartDate,
-                    EndDate = c.EndDate,
-                    Status = c.Status
-                }).ToList());
+                    var c = classDetailLookup[classId];
+                    return new PauseEnrollmentClassDto
+                    {
+                        Id = c.Id,
+                        Code = c.Code,
+                        Title = c.Title,
+                        ProgramId = c.ProgramId,
+                        ProgramName = c.ProgramName,
+                        BranchId = c.BranchId,
+                        BranchName = c.BranchName,
+                        StartDate = c.StartDate,
+                        EndDate = c.EndDate,
+                        Status = c.Status
+                    };
+                })
+                .ToList());
 
         var responses = items
             .Select(r => new PauseEnrollmentRequestResponse

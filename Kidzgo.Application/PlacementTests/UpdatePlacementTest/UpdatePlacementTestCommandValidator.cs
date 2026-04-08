@@ -11,7 +11,7 @@ public sealed class UpdatePlacementTestCommandValidator : AbstractValidator<Upda
             .WithMessage("Placement Test ID is required");
 
         RuleFor(command => command.ScheduledAt)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("ScheduledAt cannot be in the past")
             .When(command => command.ScheduledAt.HasValue);
     }

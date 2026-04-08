@@ -80,15 +80,15 @@ public sealed class GenerateMonthlyReportDraftCommandHandler(
                 StudentProfileId = report.StudentProfileId,
                 Month = report.Month,
                 Year = report.Year,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = VietnamTime.UtcNow(),
+                UpdatedAt = VietnamTime.UtcNow()
             };
 
             context.MonthlyReportData.Add(reportData);
         }
         else
         {
-            reportData.UpdatedAt = DateTime.UtcNow;
+            reportData.UpdatedAt = VietnamTime.UtcNow();
         }
 
         using var doc = JsonDocument.Parse(aggregatedDataJson);
@@ -141,7 +141,7 @@ public sealed class GenerateMonthlyReportDraftCommandHandler(
             // Update report
             report.DraftContent = draftContent;
             report.Status = ReportStatus.Draft; // Ensure status is Draft
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = VietnamTime.UtcNow();
 
             await context.SaveChangesAsync(cancellationToken);
 

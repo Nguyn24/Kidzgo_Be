@@ -33,7 +33,7 @@ public sealed class SubmitExamSubmissionCommandHandler(
                 ExamSubmissionErrors.AlreadySubmitted);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Calculate time spent
         if (submission.ActualStartTime.HasValue)

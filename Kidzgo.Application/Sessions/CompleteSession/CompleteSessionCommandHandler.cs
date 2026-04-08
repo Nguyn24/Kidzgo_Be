@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -28,14 +29,13 @@ public sealed class CompleteSessionCommandHandler(
 
         var actualUtc = command.ActualDatetime switch
         {
-            null => DateTime.UtcNow,
-            { Kind: DateTimeKind.Unspecified } dt => DateTime.SpecifyKind(dt, DateTimeKind.Utc),
-            var dt => dt.Value.ToUniversalTime()
+            null => VietnamTime.UtcNow(),
+            var dt => VietnamTime.NormalizeToUtc(dt)
         };
 
         session.Status = SessionStatus.Completed;
         session.ActualDatetime = actualUtc;
-        session.UpdatedAt = DateTime.UtcNow;
+        session.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

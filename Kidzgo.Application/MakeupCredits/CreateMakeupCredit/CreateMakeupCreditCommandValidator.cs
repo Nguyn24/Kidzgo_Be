@@ -15,7 +15,7 @@ public sealed class CreateMakeupCreditCommandValidator : AbstractValidator<Creat
             .WithMessage("Source Session ID is required");
 
         RuleFor(command => command.ExpiresAt)
-            .GreaterThan(DateTime.UtcNow)
+            .GreaterThan(VietnamTime.UtcNow())
             .WithMessage("ExpiresAt should be in the future")
             .When(command => command.ExpiresAt.HasValue);
     }

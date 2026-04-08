@@ -1,4 +1,4 @@
-﻿using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
@@ -17,7 +17,7 @@ public sealed class RetakePlacementTestCommandHandler(
         RetakePlacementTestCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var originalPlacementTest = await context.PlacementTests
             .Include(pt => pt.Lead)

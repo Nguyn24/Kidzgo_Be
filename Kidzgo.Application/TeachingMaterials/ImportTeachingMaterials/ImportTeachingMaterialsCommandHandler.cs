@@ -41,7 +41,7 @@ public sealed class ImportTeachingMaterialsCommandHandler(
         var program = programResult.Value;
         var importedItems = new List<ImportedTeachingMaterialItem>();
         var skippedItems = new List<SkippedTeachingMaterialItem>();
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var file in files)
         {

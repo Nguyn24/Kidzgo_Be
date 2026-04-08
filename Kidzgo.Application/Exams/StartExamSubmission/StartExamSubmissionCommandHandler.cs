@@ -37,7 +37,7 @@ public sealed class StartExamSubmissionCommandHandler(
                 ExamSubmissionErrors.AlreadyStarted(command.ExamId, command.StudentProfileId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Check scheduled start time
         if (exam.ScheduledStartTime.HasValue)

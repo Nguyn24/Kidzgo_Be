@@ -4,6 +4,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -119,7 +120,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
         }
 
         // Validate due date
-        if (command.DueAt.HasValue && command.DueAt.Value <= DateTime.UtcNow)
+        if (command.DueAt.HasValue && VietnamTime.NormalizeToUtc(command.DueAt.Value) <= VietnamTime.UtcNow())
         {
             return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
                 HomeworkErrors.InvalidDueDate);
@@ -137,15 +138,12 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.InvalidMaxAttempts);
         }
 
-        // Convert DueAt to UTC if provided
-        var dueAtUtc = command.DueAt.HasValue
-            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
+        var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
         // Get current user ID from context
         var currentUserId = userContext.UserId;
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Calculate max score from questions
         var maxScore = command.Questions.Sum(q => q.Points);

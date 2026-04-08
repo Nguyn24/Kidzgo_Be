@@ -38,7 +38,7 @@ public sealed class SubmitMonthlyReportCommandHandler(
         }
 
         var submittedBy = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         report.Status = ReportStatus.Review;
         report.SubmittedBy = submittedBy;

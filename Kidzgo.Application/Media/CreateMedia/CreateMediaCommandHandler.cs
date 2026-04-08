@@ -54,7 +54,7 @@ public sealed class CreateMediaCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var media = new MediaAsset
         {
             Id = Guid.NewGuid(),

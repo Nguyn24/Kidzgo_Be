@@ -97,7 +97,7 @@ internal static class PauseEnrollmentRequestNotificationHelper
             return;
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var notifications = new List<Notification>();
 
         var emailTemplate = await GetTemplateAsync(context, emailCode, NotificationChannel.Email, cancellationToken);

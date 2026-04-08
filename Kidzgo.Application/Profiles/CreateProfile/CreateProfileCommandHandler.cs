@@ -28,7 +28,7 @@ public sealed class CreateProfileCommandHandler(
             return Result.Failure<CreateProfileResponse>(ProfileErrors.UserNotFound);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var trimmedDisplayName = command.DisplayName.Trim();
         var trimmedFullName = string.IsNullOrWhiteSpace(command.FullName)
             ? null

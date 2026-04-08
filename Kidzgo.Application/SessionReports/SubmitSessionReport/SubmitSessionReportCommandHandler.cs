@@ -43,7 +43,7 @@ public sealed class SubmitSessionReportCommandHandler(
         // Update status to Review
         sessionReport.Status = ReportStatus.Review;
         sessionReport.SubmittedByUserId = userContext.UserId;
-        sessionReport.UpdatedAt = DateTime.UtcNow;
+        sessionReport.UpdatedAt = VietnamTime.UtcNow();
 
         await ReportRequestWorkflow.MarkMatchingSessionRequestSubmittedAsync(
             context,

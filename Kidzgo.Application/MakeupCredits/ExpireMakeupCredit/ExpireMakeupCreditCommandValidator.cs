@@ -11,7 +11,7 @@ public sealed class ExpireMakeupCreditCommandValidator : AbstractValidator<Expir
             .WithMessage("Makeup Credit ID is required");
 
         RuleFor(command => command.ExpiresAt)
-            .LessThanOrEqualTo(DateTime.UtcNow)
+            .LessThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("ExpiresAt should be in the past or present when expiring")
             .When(command => command.ExpiresAt.HasValue);
     }

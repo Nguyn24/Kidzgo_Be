@@ -36,7 +36,7 @@ public sealed class UpdateNotificationTemplateCommandHandler(
         template.Placeholders = command.Placeholders;
         template.Category = command.Category ?? NotificationTemplateContractMapper.InferCategory(template.Code, command.Channel);
         template.IsActive = command.IsActive;
-        template.UpdatedAt = DateTime.UtcNow;
+        template.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -21,7 +21,7 @@ public class UpdateEmailTemplateCommandHandler(IDbContext context) : ICommandHan
 
         template.Subject = command.Header;
         template.Body = command.Content;
-        template.UpdatedAt = DateTime.UtcNow;
+        template.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

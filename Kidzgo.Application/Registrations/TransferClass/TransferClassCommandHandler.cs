@@ -20,7 +20,7 @@ public sealed class TransferClassCommandHandler(
         TransferClassCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var track = RegistrationTrackHelper.NormalizeTrack(command.Track);
         var isSecondaryTrack = track == RegistrationTrackHelper.SecondaryTrack;
 

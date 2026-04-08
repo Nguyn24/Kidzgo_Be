@@ -75,11 +75,11 @@ public sealed class BatchDeliverRewardRedemptionsCommandHandler(IDbContext conte
             {
                 DeliveredCount = 0,
                 DeliveredRedemptionIds = new List<Guid>(),
-                DeliveredAt = DateTime.UtcNow
+                DeliveredAt = VietnamTime.UtcNow()
             });
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var deliveredIds = new List<Guid>();
 
         // Update tất cả redemption thành Delivered

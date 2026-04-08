@@ -82,7 +82,7 @@ public sealed class UpdateMonthlyReportDraftCommandHandler(
         }
 
         report.DraftContent = validJsonContent;
-        report.UpdatedAt = DateTime.UtcNow;
+        report.UpdatedAt = VietnamTime.UtcNow();
 
         // If report was Rejected, change status back to Draft so teacher can resubmit
         if (report.Status == ReportStatus.Rejected)

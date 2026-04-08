@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Services;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Sessions.Errors;
@@ -29,9 +30,7 @@ public sealed class UpdateSessionCommandHandler(
             return Result.Failure<UpdateSessionResponse>(SessionErrors.InvalidStatus);
         }
 
-        var plannedUtc = command.PlannedDatetime.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(command.PlannedDatetime, DateTimeKind.Utc)
-            : command.PlannedDatetime.ToUniversalTime();
+        var plannedUtc = VietnamTime.NormalizeToUtc(command.PlannedDatetime);
 
         // Check for conflicts (warning only, không block)
         var conflictResult = await conflictChecker.CheckConflictsAsync(
@@ -51,7 +50,7 @@ public sealed class UpdateSessionCommandHandler(
         session.PlannedTeacherId = command.PlannedTeacherId;
         session.PlannedAssistantId = command.PlannedAssistantId;
         session.ParticipationType = command.ParticipationType;
-        session.UpdatedAt = DateTime.UtcNow;
+        session.UpdatedAt = VietnamTime.UtcNow();
 
         await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);

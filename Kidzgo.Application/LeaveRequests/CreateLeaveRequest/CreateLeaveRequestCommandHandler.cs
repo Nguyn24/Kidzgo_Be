@@ -87,8 +87,11 @@ public sealed class CreateLeaveRequestCommandHandler(
                 LeaveRequestErrors.SessionNotFound(command.ClassId, command.SessionDate));
         }
 
-        var sessionMonth = sessionsToLeave.Min(s => s.PlannedDatetime).Month;
-        var sessionYear = sessionsToLeave.Min(s => s.PlannedDatetime).Year;
+        var firstSessionDate = sessionsToLeave
+            .Select(s => VietnamTime.ToVietnamDateOnly(s.PlannedDatetime))
+            .Min();
+        var sessionMonth = firstSessionDate.Month;
+        var sessionYear = firstSessionDate.Year;
 
         // Get existing leave requests (Pending + Approved) for this student, class, and month
         var existingLeavesInMonth = await context.LeaveRequests
@@ -129,13 +132,13 @@ public sealed class CreateLeaveRequestCommandHandler(
         }
 
         var createdLeaves = new List<LeaveRequest>();
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Create one LeaveRequest per session date (not per session)
         // sessionDate và endDate cách nhau bao nhiêu ngày thì tạo bấy nhiêu LeaveRequest
         foreach (var session in sessionsToLeave.OrderBy(s => s.PlannedDatetime))
         {
-            var sessionDate = DateOnly.FromDateTime(session.PlannedDatetime);
+            var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
             var noticeHours = (int)Math.Floor((session.PlannedDatetime - now).TotalHours);
             var status = noticeHours >= 24 ? LeaveRequestStatus.Approved : LeaveRequestStatus.Pending;
 
@@ -213,14 +216,17 @@ public sealed class CreateLeaveRequestCommandHandler(
         DateOnly toDate,
         CancellationToken cancellationToken)
     {
+        var fromUtc = VietnamTime.TreatAsVietnamLocal(fromDate.ToDateTime(TimeOnly.MinValue));
+        var toUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(toDate.ToDateTime(TimeOnly.MinValue)));
+
         var assignedSessions = await context.StudentSessionAssignments
             .AsNoTracking()
             .Where(a => a.StudentProfileId == studentProfileId
                 && a.Status == StudentSessionAssignmentStatus.Assigned
                 && a.Session.ClassId == classId
                 && a.Session.Status != SessionStatus.Cancelled
-                && DateOnly.FromDateTime(a.Session.PlannedDatetime) >= fromDate
-                && DateOnly.FromDateTime(a.Session.PlannedDatetime) <= toDate)
+                && a.Session.PlannedDatetime >= fromUtc
+                && a.Session.PlannedDatetime <= toUtc)
             .Select(a => a.Session)
             .ToListAsync(cancellationToken);
 
@@ -229,18 +235,30 @@ public sealed class CreateLeaveRequestCommandHandler(
             return assignedSessions;
         }
 
-        return await context.Sessions
+        var activeEnrollDates = await context.ClassEnrollments
+            .AsNoTracking()
+            .Where(ce => ce.ClassId == classId
+                && ce.StudentProfileId == studentProfileId
+                && ce.Status == EnrollmentStatus.Active)
+            .Select(ce => ce.EnrollDate)
+            .ToListAsync(cancellationToken);
+
+        var candidateSessions = await context.Sessions
             .AsNoTracking()
             .Where(s => s.ClassId == classId
                 && s.Status != SessionStatus.Cancelled
                 && !context.StudentSessionAssignments.Any(a => a.SessionId == s.Id)
-                && DateOnly.FromDateTime(s.PlannedDatetime) >= fromDate
-                && DateOnly.FromDateTime(s.PlannedDatetime) <= toDate
-                && s.Class.ClassEnrollments.Any(ce =>
-                    ce.StudentProfileId == studentProfileId
-                    && ce.Status == EnrollmentStatus.Active
-                    && ce.EnrollDate <= DateOnly.FromDateTime(s.PlannedDatetime)))
+                && s.PlannedDatetime >= fromUtc
+                && s.PlannedDatetime <= toUtc)
             .ToListAsync(cancellationToken);
+
+        return candidateSessions
+            .Where(s =>
+            {
+                var sessionDate = VietnamTime.ToVietnamDateOnly(s.PlannedDatetime);
+                return activeEnrollDates.Any(enrollDate => enrollDate <= sessionDate);
+            })
+            .ToList();
     }
 
     private static string GetLeaveKey(LeaveRequest leave)
@@ -265,14 +283,17 @@ public sealed class CreateLeaveRequestCommandHandler(
             ? await context.StudentSessionAssignments
                 .CountAsync(a => a.SessionId == session.Id && a.Status == StudentSessionAssignmentStatus.Assigned, cancellationToken)
             : await context.ClassEnrollments
-                .CountAsync(e => e.ClassId == session.ClassId
-                    && e.Status == EnrollmentStatus.Active
-                    && e.EnrollDate <= DateOnly.FromDateTime(session.PlannedDatetime), cancellationToken);
+                .Where(e => e.ClassId == session.ClassId
+                    && e.Status == EnrollmentStatus.Active)
+                .CountAsync(e => e.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.PlannedDatetime), cancellationToken);
 
         var makeupCount = await context.MakeupAllocations
             .CountAsync(a => a.TargetSessionId == session.Id && a.Status != MakeupAllocationStatus.Cancelled, cancellationToken);
 
-        return regularCount + makeupCount;
+        var pendingTrackedMakeupCount = context.MakeupAllocations.Local
+            .Count(a => a.TargetSessionId == session.Id && a.Status != MakeupAllocationStatus.Cancelled);
+
+        return regularCount + makeupCount + pendingTrackedMakeupCount;
     }
 
     private async Task ScheduleMakeupSessionAsync(
@@ -283,25 +304,21 @@ public sealed class CreateLeaveRequestCommandHandler(
         Guid? defaultMakeupClassId,
         CancellationToken cancellationToken)
     {
-        // Find Saturday and Sunday of the week when the student took leave
-        var sessionDate = DateOnly.FromDateTime(originalSession.PlannedDatetime);
-        var dayOfWeek = (int)sessionDate.DayOfWeek;
-        
-        // Calculate Saturday (day 6) and Sunday (day 0) of that week
-        var saturday = sessionDate.AddDays(6 - dayOfWeek);
-        var sunday = sessionDate.AddDays(-dayOfWeek);
+        var sessionDate = VietnamTime.ToVietnamDateOnly(originalSession.PlannedDatetime);
+        var eligibleFromDate = MakeupSessionRuleHelper.GetFirstEligibleMakeupDate(sessionDate);
+        var eligibleFromUtc = VietnamTime.TreatAsVietnamLocal(eligibleFromDate.ToDateTime(TimeOnly.MinValue));
 
-        // Find T7/CN sessions in the same week, same level, same branch, different class
         var makeupSessionsQuery = context.Sessions
             .Include(s => s.Class)
             .ThenInclude(c => c.Program)
             .Include(s => s.Attendances)
             .Where(s => s.BranchId == originalClass.BranchId
                         && s.ClassId != originalClass.Id
+                        && s.Status == SessionStatus.Scheduled
                         && s.Class.Status == ClassStatus.Active
                         && s.Class.Program.IsMakeup == true
-                        && (DateOnly.FromDateTime(s.PlannedDatetime) == saturday 
-                            || DateOnly.FromDateTime(s.PlannedDatetime) == sunday))
+                        && s.PlannedDatetime >= eligibleFromUtc)
+            .OrderBy(s => s.PlannedDatetime)
             .AsQueryable();
 
         if (defaultMakeupClassId.HasValue)
@@ -309,11 +326,22 @@ public sealed class CreateLeaveRequestCommandHandler(
             makeupSessionsQuery = makeupSessionsQuery.Where(s => s.ClassId == defaultMakeupClassId.Value);
         }
 
-        var makeupSessions = await makeupSessionsQuery.ToListAsync(cancellationToken);
+        var makeupSessions = (await makeupSessionsQuery.ToListAsync(cancellationToken))
+            .Where(s =>
+            {
+                var plannedDate = VietnamTime.ToVietnamDateOnly(s.PlannedDatetime);
+                return MakeupSessionRuleHelper.IsEligibleMakeupDate(sessionDate, plannedDate);
+            })
+            .ToList();
 
         var availableSessions = new List<Session>();
         foreach (var makeupSession in makeupSessions)
         {
+            if (await HasActiveAllocationForSessionAsync(context, credit.StudentProfileId, makeupSession.Id, cancellationToken))
+            {
+                continue;
+            }
+
             var participantCount = await GetScheduledParticipantCountAsync(context, makeupSession, cancellationToken);
             if (participantCount < makeupSession.Class.Capacity)
             {
@@ -326,9 +354,8 @@ public sealed class CreateLeaveRequestCommandHandler(
             return; // No available makeup session
         }
 
-        // Random select one session
-        var random = new Random();
-        var selectedSession = availableSessions[random.Next(availableSessions.Count)];
+        var now = VietnamTime.UtcNow();
+        var selectedSession = availableSessions[0];
 
         // Create makeup allocation
         var allocation = new MakeupAllocation
@@ -337,9 +364,42 @@ public sealed class CreateLeaveRequestCommandHandler(
             MakeupCreditId = credit.Id,
             TargetSessionId = selectedSession.Id,
             Status = MakeupAllocationStatus.Pending,
-            CreatedAt = DateTime.UtcNow
+            AssignedAt = now,
+            CreatedAt = now
         };
         context.MakeupAllocations.Add(allocation);
+
+        credit.Status = MakeupCreditStatus.Used;
+        credit.UsedSessionId = selectedSession.Id;
+    }
+
+    private static async Task<bool> HasActiveAllocationForSessionAsync(
+        IDbContext context,
+        Guid studentProfileId,
+        Guid targetSessionId,
+        CancellationToken cancellationToken)
+    {
+        var existsInDatabase = await context.MakeupAllocations
+            .AnyAsync(
+                a => a.TargetSessionId == targetSessionId &&
+                     a.Status != MakeupAllocationStatus.Cancelled &&
+                     a.MakeupCredit.StudentProfileId == studentProfileId,
+                cancellationToken);
+
+        if (existsInDatabase)
+        {
+            return true;
+        }
+
+        var pendingCreditIds = context.MakeupCredits.Local
+            .Where(c => c.StudentProfileId == studentProfileId)
+            .Select(c => c.Id)
+            .ToHashSet();
+
+        return context.MakeupAllocations.Local.Any(
+            a => a.TargetSessionId == targetSessionId &&
+                 a.Status != MakeupAllocationStatus.Cancelled &&
+                 pendingCreditIds.Contains(a.MakeupCreditId));
     }
 
     private static async Task<Guid?> GetDefaultMakeupClassIdAsync(

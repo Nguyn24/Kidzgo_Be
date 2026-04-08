@@ -8,7 +8,7 @@ public class PasswordResetToken
     public DateTime ExpiresAt { get; set; }
     public DateTime? UsedAt { get; set; }
 
-    public bool IsUsed => UsedAt is not null || DateTime.UtcNow > ExpiresAt;
+    public bool IsUsed => UsedAt is not null || VietnamTime.UtcNow() > ExpiresAt;
 
     public User User { get; set; } = null!;
 }
