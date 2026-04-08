@@ -52,7 +52,7 @@ public sealed class CancelRewardRedemptionCommandHandler(
         var now = DateTime.UtcNow;
 
         // Calculate total cost based on quantity
-        var totalCostStars = item.CostStars * redemption.Quantity;
+        var totalCostStars = redemption.StarsDeducted ?? (item.CostStars * redemption.Quantity);
 
         // Restore item quantity
         item.Quantity += redemption.Quantity;
@@ -74,6 +74,9 @@ public sealed class CancelRewardRedemptionCommandHandler(
 
         // Update redemption status
         redemption.Status = RedemptionStatus.Cancelled;
+        redemption.CancelReason = string.IsNullOrWhiteSpace(command.Reason)
+            ? null
+            : command.Reason.Trim();
         redemption.HandledBy = userContext.UserId;
         redemption.HandledAt = now;
 
@@ -83,6 +86,7 @@ public sealed class CancelRewardRedemptionCommandHandler(
         {
             Id = redemption.Id,
             Status = redemption.Status.ToString(),
+            CancelReason = redemption.CancelReason,
             HandledBy = redemption.HandledBy!.Value,
             HandledAt = redemption.HandledAt!.Value
         });

@@ -4,6 +4,7 @@ public sealed class CancelRewardRedemptionResponse
 {
     public Guid Id { get; init; }
     public string Status { get; init; } = null!;
+    public string? CancelReason { get; init; }
     public Guid HandledBy { get; init; }
     public DateTime HandledAt { get; init; }
 }

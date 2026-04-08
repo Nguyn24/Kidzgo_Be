@@ -1204,6 +1204,10 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime?>("DeliveredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1225,6 +1229,9 @@ namespace Kidzgo.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
+
+                    b.Property<int?>("StarsDeducted")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("ReceivedAt")
                         .HasColumnType("timestamp with time zone");

@@ -24,6 +24,8 @@ public class RewardRedemptionConfiguration : IEntityTypeConfiguration<RewardRede
             .IsRequired()
             .HasDefaultValue(1);
 
+        builder.Property(x => x.StarsDeducted);
+
         builder.Property(x => x.StudentProfileId)
             .IsRequired();
 
@@ -31,6 +33,9 @@ public class RewardRedemptionConfiguration : IEntityTypeConfiguration<RewardRede
             .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
+
+        builder.Property(x => x.CancelReason)
+            .HasMaxLength(1000);
 
         builder.Property(x => x.HandledBy);
 

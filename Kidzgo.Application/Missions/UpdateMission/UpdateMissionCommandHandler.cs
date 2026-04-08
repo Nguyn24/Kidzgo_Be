@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
@@ -9,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Missions.UpdateMission;
 
 public sealed class UpdateMissionCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : ICommandHandler<UpdateMissionCommand, UpdateMissionResponse>
 {
     public async Task<Result<UpdateMissionResponse>> Handle(
@@ -74,8 +77,37 @@ public sealed class UpdateMissionCommandHandler(
             if (!studentExists)
             {
                 return Result.Failure<UpdateMissionResponse>(
-                    MissionErrors.StudentNotFound);
+                MissionErrors.StudentNotFound);
             }
+        }
+
+        if (command.Scope == MissionScope.Group && command.TargetGroup != null && command.TargetGroup.Count > 0)
+        {
+            var existingStudentIds = await context.Profiles
+                .Where(p => command.TargetGroup.Contains(p.Id))
+                .Select(p => p.Id)
+                .ToListAsync(cancellationToken);
+
+            var missingIds = command.TargetGroup.Except(existingStudentIds).ToList();
+            if (missingIds.Count > 0)
+            {
+                return Result.Failure<UpdateMissionResponse>(
+                    MissionErrors.SomeStudentsNotFound(missingIds.Count));
+            }
+        }
+
+        var teacherScopeValidation = await TeacherMissionTargetGuard.EnsureActorCanManageTargetsAsync(
+            context,
+            userContext.UserId,
+            command.Scope,
+            command.TargetClassId,
+            command.TargetStudentId,
+            command.TargetGroup,
+            cancellationToken);
+
+        if (teacherScopeValidation.IsFailure)
+        {
+            return Result.Failure<UpdateMissionResponse>(teacherScopeValidation.Error);
         }
 
         // Convert DateTime to UTC if provided
