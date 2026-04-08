@@ -1,18 +1,33 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Users.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
+using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Profiles.Admin.GetAllProfiles;
 
-public sealed class GetAllProfilesQueryHandler(IDbContext context)
+public sealed class GetAllProfilesQueryHandler(
+    IDbContext context,
+    IUserContext userContext)
     : IQueryHandler<GetAllProfilesQuery, Page<GetAllProfilesResponse>>
 {
     public async Task<Result<Page<GetAllProfilesResponse>>> Handle(GetAllProfilesQuery request, CancellationToken cancellationToken)
     {
+        var actorRole = await context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userContext.UserId)
+            .Select(u => (UserRole?)u.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (actorRole == UserRole.Teacher)
+        {
+            return Result.Failure<Page<GetAllProfilesResponse>>(ProfileErrors.TeacherMustUseScopedStudentApis);
+        }
+
         var now = DateTime.UtcNow;
         var query = context.Profiles
             .Include(p => p.User)

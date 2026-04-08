@@ -67,5 +67,9 @@ public static class ProfileErrors
     public static readonly Error ProfileAlreadyApproved = Error.Conflict(
         "Profile.ProfileAlreadyApproved",
         "Profile is already approved");
+
+    public static readonly Error TeacherMustUseScopedStudentApis = Error.Validation(
+        "Profile.TeacherMustUseScopedStudentApis",
+        "Teacher cannot use this profile listing endpoint. Use teacher-scoped student APIs instead.");
 }
 

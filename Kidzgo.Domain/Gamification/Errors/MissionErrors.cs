@@ -28,6 +28,18 @@ public static class MissionErrors
         "Mission.InvalidDateRange",
         "EndAt must be after StartAt");
 
+    public static readonly Error TeacherCannotTargetClass = Error.Validation(
+        "Mission.TeacherCannotTargetClass",
+        "Teacher can only target classes they are assigned to.");
+
+    public static readonly Error TeacherCannotTargetStudent = Error.Validation(
+        "Mission.TeacherCannotTargetStudent",
+        "Teacher can only target students in classes they teach.");
+
+    public static Error TeacherCannotTargetSomeStudents(int count) => Error.Validation(
+        "Mission.TeacherCannotTargetSomeStudents",
+        $"Teacher cannot target {count} student(s) outside classes they teach.");
+
     public static readonly Error MissionInUse = Error.Conflict(
         "Mission.MissionInUse",
         "Cannot delete mission that has progress records");

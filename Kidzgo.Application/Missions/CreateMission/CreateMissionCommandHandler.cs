@@ -1,10 +1,12 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
+using Kidzgo.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Missions.CreateMission;
@@ -90,6 +92,20 @@ public sealed class CreateMissionCommandHandler(
         var now = DateTime.UtcNow;
         var userId = userContext.UserId;
 
+        var teacherScopeValidation = await TeacherMissionTargetGuard.EnsureActorCanManageTargetsAsync(
+            context,
+            userId,
+            command.Scope,
+            command.TargetClassId,
+            command.TargetStudentId,
+            command.TargetGroup,
+            cancellationToken);
+
+        if (teacherScopeValidation.IsFailure)
+        {
+            return Result.Failure<CreateMissionResponse>(teacherScopeValidation.Error);
+        }
+
         // Convert DateTime to UTC if provided
         DateTime? startAtUtc = command.StartAt.HasValue
             ? command.StartAt.Value.Kind == DateTimeKind.Unspecified
@@ -165,6 +181,58 @@ public sealed class CreateMissionCommandHandler(
             context.MissionProgresses.Add(missionProgress);
         }
 
+        // Tao in-app notifications de hoc sinh nhan duoc thong bao web ngay khi mission duoc tao.
+        if (targetStudentIds.Count > 0)
+        {
+            var distinctStudentIds = targetStudentIds.Distinct().ToList();
+
+            string? classTitle = null;
+            if (mission.TargetClassId.HasValue)
+            {
+                classTitle = await context.Classes
+                    .Where(c => c.Id == mission.TargetClassId.Value)
+                    .Select(c => c.Title)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
+            var recipients = await context.Profiles
+                .Where(p => distinctStudentIds.Contains(p.Id) && p.IsActive && !p.IsDeleted)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.UserId
+                })
+                .ToListAsync(cancellationToken);
+
+            var notifications = recipients
+                .Select(p => new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    RecipientUserId = p.UserId,
+                    RecipientProfileId = p.Id,
+                    Channel = NotificationChannel.InApp,
+                    Title = $"Nhiệm vụ mới: {mission.Title}",
+                    Content = BuildMissionNotificationContent(mission, classTitle),
+                    Deeplink = "/missions",
+                    Status = NotificationStatus.Pending,
+                    CreatedAt = now,
+                    TemplateId = mission.Id.ToString(),
+                    TargetRole = "Student",
+                    Kind = "system",
+                    Priority = "normal",
+                    SenderRole = "System",
+                    SenderName = "KidzGo Centre",
+                    ScopeClassId = mission.TargetClassId,
+                    ScopeStudentProfileId = p.Id
+                })
+                .ToList();
+
+            if (notifications.Count > 0)
+            {
+                context.Notifications.AddRange(notifications);
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
         return new CreateMissionResponse
@@ -185,5 +253,41 @@ public sealed class CreateMissionCommandHandler(
             CreatedBy = mission.CreatedBy,
             CreatedAt = mission.CreatedAt
         };
+    }
+
+    private static string BuildMissionNotificationContent(Mission mission, string? classTitle)
+    {
+        var details = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(mission.Description))
+        {
+            details.Add(mission.Description.Trim());
+        }
+
+        details.Add($"Loại nhiệm vụ: {mission.MissionType}.");
+
+        if (!string.IsNullOrWhiteSpace(classTitle))
+        {
+            details.Add($"Lớp áp dụng: {classTitle}.");
+        }
+
+        if (mission.TotalRequired.HasValue)
+        {
+            details.Add($"Mục tiêu: {mission.TotalRequired.Value}.");
+        }
+
+        if (mission.RewardStars.HasValue || mission.RewardExp.HasValue)
+        {
+            details.Add($"Thưởng: {mission.RewardStars ?? 0} sao, {mission.RewardExp ?? 0} XP.");
+        }
+
+        if (mission.EndAt.HasValue)
+        {
+            details.Add($"Kết thúc: {mission.EndAt.Value:dd/MM/yyyy HH:mm} UTC.");
+        }
+
+        details.Add("Hãy vào mục Nhiệm vụ để xem chi tiết và bắt đầu thực hiện.");
+
+        return string.Join(" ", details);
     }
 }
