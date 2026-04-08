@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Sessions.GetTeacherTimetable;
@@ -14,7 +15,15 @@ public sealed class GetTeacherTimetableQueryHandler(
 {
     public async Task<Result<GetTeacherTimetableResponse>> Handle(GetTeacherTimetableQuery query, CancellationToken cancellationToken)
     {
-        var userId = query.TeacherUserId ?? userContext.UserId;
+        var currentUserRole = await context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userContext.UserId)
+            .Select(u => (UserRole?)u.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var userId = currentUserRole == UserRole.Teacher
+            ? userContext.UserId
+            : query.TeacherUserId ?? userContext.UserId;
 
         // Get sessions where teacher is PlannedTeacher or ActualTeacher
         // Note: When using Select projection, Include is not needed as EF Core will only load what's referenced

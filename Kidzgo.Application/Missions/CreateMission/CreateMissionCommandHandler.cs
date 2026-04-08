@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
@@ -90,6 +91,20 @@ public sealed class CreateMissionCommandHandler(
 
         var now = DateTime.UtcNow;
         var userId = userContext.UserId;
+
+        var teacherScopeValidation = await TeacherMissionTargetGuard.EnsureActorCanManageTargetsAsync(
+            context,
+            userId,
+            command.Scope,
+            command.TargetClassId,
+            command.TargetStudentId,
+            command.TargetGroup,
+            cancellationToken);
+
+        if (teacherScopeValidation.IsFailure)
+        {
+            return Result.Failure<CreateMissionResponse>(teacherScopeValidation.Error);
+        }
 
         // Convert DateTime to UTC if provided
         DateTime? startAtUtc = command.StartAt.HasValue

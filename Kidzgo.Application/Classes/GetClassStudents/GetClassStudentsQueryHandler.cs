@@ -1,22 +1,38 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Classes.GetClassStudents;
 
 public sealed class GetClassStudentsQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetClassStudentsQuery, GetClassStudentsResponse>
 {
     public async Task<Result<GetClassStudentsResponse>> Handle(GetClassStudentsQuery query, CancellationToken cancellationToken)
     {
-        var classExists = await context.Classes
+        var currentUserRole = await context.Users
             .AsNoTracking()
-            .AnyAsync(c => c.Id == query.ClassId, cancellationToken);
+            .Where(u => u.Id == userContext.UserId)
+            .Select(u => (UserRole?)u.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var classExists = currentUserRole == UserRole.Teacher
+            ? await context.Classes
+                .AsNoTracking()
+                .AnyAsync(c =>
+                    c.Id == query.ClassId &&
+                    (c.MainTeacherId == userContext.UserId || c.AssistantTeacherId == userContext.UserId),
+                    cancellationToken)
+            : await context.Classes
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == query.ClassId, cancellationToken);
 
         if (!classExists)
         {

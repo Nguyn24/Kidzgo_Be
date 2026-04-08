@@ -115,6 +115,7 @@ public sealed class RequestRewardRedemptionCommandHandler(
             ItemId = item.Id,
             ItemName = item.Title, // UC-236: Store item name at redemption time
             Quantity = command.Quantity,
+            StarsDeducted = totalCostStars,
             StudentProfileId = studentProfileId,
             Status = RedemptionStatus.Requested,
             HandledBy = null,
@@ -135,7 +136,7 @@ public sealed class RequestRewardRedemptionCommandHandler(
             Quantity = redemption.Quantity,
             StudentProfileId = redemption.StudentProfileId,
             Status = redemption.Status.ToString(),
-            StarsDeducted = totalCostStars,
+            StarsDeducted = redemption.StarsDeducted ?? totalCostStars,
             RemainingStars = deductResult.Value.NewBalance,
             CreatedAt = redemption.CreatedAt
         });

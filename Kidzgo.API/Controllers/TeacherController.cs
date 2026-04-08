@@ -5,6 +5,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Classes.GetTeacherClasses;
 using Kidzgo.Application.Classes.GetTeacherClassStudents;
+using Kidzgo.Application.Classes.GetTeacherStudents;
 using Kidzgo.Application.Sessions.GetTeacherTimetable;
 using Kidzgo.Application.Users.GetCurrentUser;
 using Kidzgo.Application.Users.GetTeacherOverview;
@@ -59,6 +60,27 @@ public class TeacherController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var query = new GetTeacherClassStudentsQuery
+        {
+            ClassId = classId,
+            SearchTerm = searchTerm,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpGet("students")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<IResult> GetStudents(
+        [FromQuery] Guid? classId,
+        [FromQuery] string? searchTerm,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetTeacherStudentsQuery
         {
             ClassId = classId,
             SearchTerm = searchTerm,
@@ -183,7 +205,9 @@ public class TeacherController : ControllerBase
         [FromQuery] int? year,
         CancellationToken cancellationToken)
     {
-        var targetTeacherId = teacherUserId ?? _userContext.UserId;
+        var targetTeacherId = User.IsInRole("Teacher")
+            ? _userContext.UserId
+            : teacherUserId ?? _userContext.UserId;
 
         var workHoursQuery = _context.MonthlyWorkHours
             .AsNoTracking()

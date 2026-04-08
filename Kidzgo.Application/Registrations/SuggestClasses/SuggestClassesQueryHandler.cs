@@ -1,10 +1,12 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Registrations.Errors;
-using Kidzgo.Domain.Classes;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Kidzgo.Application.Registrations.SuggestClasses.Handler;
@@ -74,9 +76,8 @@ public sealed class SuggestClassesQueryHandler(
             .OrderBy(c => c.StartDate)
             .ToListAsync(cancellationToken);
 
-        var normalizedPreferredSchedule = preferredSchedule?.ToLowerInvariant() ?? string.Empty;
         var filteredClasses = matchingClasses
-            .Where(c => IsScheduleMatching(normalizedPreferredSchedule, c.SchedulePattern))
+            .Where(c => IsScheduleMatching(preferredSchedule ?? string.Empty, c.SchedulePattern))
             .ToList();
 
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -116,76 +117,264 @@ public sealed class SuggestClassesQueryHandler(
         };
     }
 
-    private bool IsScheduleMatching(string preferredSchedule, string? schedulePattern)
+    private static bool IsScheduleMatching(string preferredSchedule, string? schedulePattern)
     {
-        if (string.IsNullOrEmpty(preferredSchedule) || string.IsNullOrEmpty(schedulePattern))
+        if (string.IsNullOrWhiteSpace(preferredSchedule) || string.IsNullOrWhiteSpace(schedulePattern))
         {
-            return true; // No filter if no preference
+            return true;
         }
 
-        // Parse RRULE to extract time information
-        var hourMatch = Regex.Match(schedulePattern, @"BYHOUR=(\d+)", RegexOptions.IgnoreCase);
-        var minuteMatch = Regex.Match(schedulePattern, @"BYMINUTE=(\d+)", RegexOptions.IgnoreCase);
+        var criteria = ParsePreferredSchedule(preferredSchedule);
+        if (!criteria.HasConstraints)
+        {
+            return true;
+        }
+
+        var classSchedule = ParseSchedulePattern(schedulePattern);
+
+        if (criteria.IsWeekendPreference.HasValue)
+        {
+            var isWeekendClass = classSchedule.Days.Contains("SA") || classSchedule.Days.Contains("SU");
+            if (isWeekendClass != criteria.IsWeekendPreference.Value)
+            {
+                return false;
+            }
+        }
+
+        if (criteria.RequiredDays.Count > 0 &&
+            !criteria.RequiredDays.All(requiredDay => classSchedule.Days.Contains(requiredDay)))
+        {
+            return false;
+        }
+
+        if (criteria.TimeBucket.HasValue && !IsHourInBucket(classSchedule.Hour, criteria.TimeBucket.Value))
+        {
+            return false;
+        }
+
+        if (criteria.ExactHour.HasValue && classSchedule.Hour != criteria.ExactHour.Value)
+        {
+            return false;
+        }
+
+        if (criteria.ExactMinute.HasValue && classSchedule.Minute != criteria.ExactMinute.Value)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static PreferredScheduleCriteria ParsePreferredSchedule(string preferredSchedule)
+    {
+        var normalized = NormalizePreferredSchedule(preferredSchedule);
+        var requiredDays = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*2\b|\bt\s*2\b|\bmon(?:day)?\b)", "MO");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*3\b|\bt\s*3\b|\btue(?:sday)?\b)", "TU");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*4\b|\bt\s*4\b|\bwed(?:nesday)?\b)", "WE");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*5\b|\bt\s*5\b|\bthursday\b)", "TH");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*6\b|\bt\s*6\b|\bfri(?:day)?\b)", "FR");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bthu\s*7\b|\bt\s*7\b|\bsat(?:urday)?\b)", "SA");
+        AddDayIfMatched(requiredDays, normalized, @"(?:\bchu\s*nhat\b|\bcn\b|\bsun(?:day)?\b)", "SU");
+
+        bool? isWeekendPreference = null;
+        if (Regex.IsMatch(normalized, @"(?:\bcuoi\s*tuan\b|\bweekend\b)", RegexOptions.IgnoreCase))
+        {
+            isWeekendPreference = true;
+        }
+        else if (Regex.IsMatch(normalized, @"(?:\btrong\s*tuan\b|\bweekdays?\b)", RegexOptions.IgnoreCase))
+        {
+            isWeekendPreference = false;
+        }
+
+        TimeBucket? timeBucket = null;
+        if (Regex.IsMatch(normalized, @"(?:\bsang\b|\bmorning\b)", RegexOptions.IgnoreCase))
+        {
+            timeBucket = TimeBucket.Morning;
+        }
+        else if (Regex.IsMatch(normalized, @"(?:\bchieu\b|\bafternoon\b)", RegexOptions.IgnoreCase))
+        {
+            timeBucket = TimeBucket.Afternoon;
+        }
+        else if (Regex.IsMatch(normalized, @"(?:\btoi\b|\btui\b|\bevening\b|\bnight\b)", RegexOptions.IgnoreCase))
+        {
+            timeBucket = TimeBucket.Evening;
+        }
+
+        var explicitTime = ParseExplicitTime(normalized);
+        if (explicitTime.Hour.HasValue && !timeBucket.HasValue)
+        {
+            timeBucket = MapHourToBucket(explicitTime.Hour.Value);
+        }
+
+        return new PreferredScheduleCriteria(
+            requiredDays,
+            isWeekendPreference,
+            timeBucket,
+            explicitTime.Hour,
+            explicitTime.Minute);
+    }
+
+    private static SchedulePatternInfo ParseSchedulePattern(string schedulePattern)
+    {
+        var hourMatch = Regex.Match(schedulePattern, @"BYHOUR=(\d{1,2})", RegexOptions.IgnoreCase);
+        var minuteMatch = Regex.Match(schedulePattern, @"BYMINUTE=(\d{1,2})", RegexOptions.IgnoreCase);
         var dayMatch = Regex.Match(schedulePattern, @"BYDAY=([A-Z,]+)", RegexOptions.IgnoreCase);
 
-        int hour = hourMatch.Success ? int.Parse(hourMatch.Groups[1].Value) : -1;
-        int minute = minuteMatch.Success ? int.Parse(minuteMatch.Groups[1].Value) : 0;
-        string days = dayMatch.Success ? dayMatch.Groups[1].Value.ToUpperInvariant() : "";
+        var days = dayMatch.Success
+            ? dayMatch.Groups[1].Value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Check morning (sáng): 6-12
-        if (preferredSchedule.Contains("sáng") || preferredSchedule.Contains("morning"))
-        {
-            if (hour >= 6 && hour < 12) return true;
-        }
+        var hour = hourMatch.Success ? int.Parse(hourMatch.Groups[1].Value) : -1;
+        var minute = minuteMatch.Success ? int.Parse(minuteMatch.Groups[1].Value) : 0;
 
-        // Check afternoon (chiều): 12-18
-        if (preferredSchedule.Contains("chiều") || preferredSchedule.Contains("afternoon"))
-        {
-            if (hour >= 12 && hour < 18) return true;
-        }
+        return new SchedulePatternInfo(days, hour, minute);
+    }
 
-        // Check evening (tối): 18-22
-        if (preferredSchedule.Contains("tối") || preferredSchedule.Contains("tui") || preferredSchedule.Contains("evening"))
-        {
-            if (hour >= 18 && hour < 22) return true;
-        }
+    private static (int? Hour, int? Minute) ParseExplicitTime(string normalizedPreferredSchedule)
+    {
+        var hourMinuteMatch = Regex.Match(
+            normalizedPreferredSchedule,
+            @"(?<!\d)(?<hour>[01]?\d|2[0-3])\s*(?:[:h])\s*(?<minute>[0-5]\d)?\s*(?<ampm>am|pm)?\b",
+            RegexOptions.IgnoreCase);
 
-        // Check weekend (cuối tuần)
-        if (preferredSchedule.Contains("cuối tuần") || preferredSchedule.Contains("cuoi tuan") || 
-            preferredSchedule.Contains("weekend") || preferredSchedule.Contains("thứ 7") || preferredSchedule.Contains("cn"))
+        if (hourMinuteMatch.Success)
         {
-            if (days.Contains("SA") || days.Contains("SU")) return true;
+            return ParseMatchedTime(hourMinuteMatch);
         }
 
-        // Check weekday (trong tuần)
-        if (preferredSchedule.Contains("trong tuần") || preferredSchedule.Contains("trong tuan") || 
-            preferredSchedule.Contains("weekday"))
+        var hourWordMatch = Regex.Match(
+            normalizedPreferredSchedule,
+            @"(?<!\d)(?<hour>[01]?\d|2[0-3])\s*(?:gio|g)\b(?:\s*(?<minute>[0-5]\d)\s*phut?)?\s*(?<ampm>am|pm)?",
+            RegexOptions.IgnoreCase);
+
+        if (hourWordMatch.Success)
         {
-            if (!days.Contains("SA") && !days.Contains("SU")) return true;
+            return ParseMatchedTime(hourWordMatch);
         }
 
-        // Check specific days
-        if (preferredSchedule.Contains("thứ 2") || preferredSchedule.Contains("mon"))
+        var amPmMatch = Regex.Match(
+            normalizedPreferredSchedule,
+            @"(?<!\d)(?<hour>1[0-2]|0?\d)\s*(?<ampm>am|pm)\b",
+            RegexOptions.IgnoreCase);
+
+        return amPmMatch.Success
+            ? ParseMatchedTime(amPmMatch)
+            : (null, null);
+    }
+
+    private static (int? Hour, int? Minute) ParseMatchedTime(Match match)
+    {
+        if (!int.TryParse(match.Groups["hour"].Value, out var hour))
         {
-            if (days.Contains("MO")) return true;
-        }
-        if (preferredSchedule.Contains("thứ 3") || preferredSchedule.Contains("tue"))
-        {
-            if (days.Contains("TU")) return true;
-        }
-        if (preferredSchedule.Contains("thứ 4") || preferredSchedule.Contains("wed"))
-        {
-            if (days.Contains("WE")) return true;
-        }
-        if (preferredSchedule.Contains("thứ 5") || preferredSchedule.Contains("thu"))
-        {
-            if (days.Contains("TH")) return true;
-        }
-        if (preferredSchedule.Contains("thứ 6") || preferredSchedule.Contains("fri"))
-        {
-            if (days.Contains("FR")) return true;
+            return (null, null);
         }
 
-        return false;
+        var minute = 0;
+        if (match.Groups["minute"].Success && !int.TryParse(match.Groups["minute"].Value, out minute))
+        {
+            minute = 0;
+        }
+
+        if (match.Groups["ampm"].Success)
+        {
+            var ampm = match.Groups["ampm"].Value.ToLowerInvariant();
+            if (ampm == "pm" && hour < 12)
+            {
+                hour += 12;
+            }
+            else if (ampm == "am" && hour == 12)
+            {
+                hour = 0;
+            }
+        }
+
+        return (hour, minute);
+    }
+
+    private static string NormalizePreferredSchedule(string preferredSchedule)
+    {
+        var normalized = preferredSchedule
+            .ToLowerInvariant()
+            .Normalize(NormalizationForm.FormD);
+
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return Regex.Replace(builder.ToString(), @"\s+", " ").Trim();
+    }
+
+    private static void AddDayIfMatched(HashSet<string> requiredDays, string normalized, string pattern, string rruleDay)
+    {
+        if (Regex.IsMatch(normalized, pattern, RegexOptions.IgnoreCase))
+        {
+            requiredDays.Add(rruleDay);
+        }
+    }
+
+    private static bool IsHourInBucket(int hour, TimeBucket timeBucket)
+    {
+        return timeBucket switch
+        {
+            TimeBucket.Morning => hour >= 6 && hour < 12,
+            TimeBucket.Afternoon => hour >= 12 && hour < 18,
+            TimeBucket.Evening => hour >= 18 && hour < 22,
+            _ => false
+        };
+    }
+
+    private static TimeBucket? MapHourToBucket(int hour)
+    {
+        if (hour >= 6 && hour < 12)
+        {
+            return TimeBucket.Morning;
+        }
+
+        if (hour >= 12 && hour < 18)
+        {
+            return TimeBucket.Afternoon;
+        }
+
+        if (hour >= 18 && hour < 22)
+        {
+            return TimeBucket.Evening;
+        }
+
+        return null;
+    }
+
+    private sealed record PreferredScheduleCriteria(
+        HashSet<string> RequiredDays,
+        bool? IsWeekendPreference,
+        TimeBucket? TimeBucket,
+        int? ExactHour,
+        int? ExactMinute)
+    {
+        public bool HasConstraints =>
+            RequiredDays.Count > 0 ||
+            IsWeekendPreference.HasValue ||
+            TimeBucket.HasValue ||
+            ExactHour.HasValue;
+    }
+
+    private sealed record SchedulePatternInfo(
+        HashSet<string> Days,
+        int Hour,
+        int Minute);
+
+    private enum TimeBucket
+    {
+        Morning,
+        Afternoon,
+        Evening
     }
 }
