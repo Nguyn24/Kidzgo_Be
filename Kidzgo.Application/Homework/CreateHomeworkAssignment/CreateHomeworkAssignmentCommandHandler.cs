@@ -50,6 +50,12 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
                 HomeworkErrors.InvalidTimeLimitMinutes);
         }
 
+        if (command.MaxAttempts <= 0)
+        {
+            return Result.Failure<CreateHomeworkAssignmentResponse>(
+                HomeworkErrors.InvalidMaxAttempts);
+        }
+
         // Validate class exists
         var classEntity = await context.Classes
             .FirstOrDefaultAsync(c => c.Id == command.ClassId, cancellationToken);
@@ -127,7 +133,7 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             MaxScore = command.MaxScore ?? 10,
             RewardStars = command.RewardStars,
             TimeLimitMinutes = command.TimeLimitMinutes,
-            AllowResubmit = command.AllowResubmit ?? false,
+            MaxAttempts = command.MaxAttempts,
             AiHintEnabled = command.AiHintEnabled ?? false,
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
@@ -190,7 +196,8 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
             MaxScore = homework.MaxScore,
             RewardStars = homework.RewardStars,
             TimeLimitMinutes = homework.TimeLimitMinutes,
-            AllowResubmit = homework.AllowResubmit,
+            AllowResubmit = homework.MaxAttempts > 1,
+            MaxAttempts = homework.MaxAttempts,
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,

@@ -34,7 +34,7 @@ public static class LessonPlanTemplateErrors
 
     public static readonly Error ImportFileRequiresProgramId = Error.Validation(
         "LessonPlanTemplate.ImportFileRequiresProgramId",
-        "ProgramId is required when importing a CSV syllabus file");
+        "ProgramId is required when importing a syllabus file");
 
     public static Error InvalidImportFile(string message) => Error.Validation(
         "LessonPlanTemplate.InvalidImportFile",

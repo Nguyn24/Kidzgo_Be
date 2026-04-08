@@ -35,26 +35,23 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
                 LessonPlanTemplateErrors.UnsupportedImportFileType(extension));
         }
 
-        if (extension == ".csv" && !command.ProgramId.HasValue)
+        if (!command.ProgramId.HasValue)
         {
             return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(
                 LessonPlanTemplateErrors.ImportFileRequiresProgramId);
         }
 
-        if (command.ProgramId.HasValue)
-        {
-            var requestedProgramExists = await context.Programs
-                .AnyAsync(
-                    p => p.Id == command.ProgramId.Value &&
-                         p.IsActive &&
-                         !p.IsDeleted,
-                    cancellationToken);
+        var requestedProgram = await context.Programs
+            .Where(p => p.Id == command.ProgramId.Value &&
+                        p.IsActive &&
+                        !p.IsDeleted)
+            .Select(p => new ProgramLookup(p.Id, p.Name, p.Code))
+            .FirstOrDefaultAsync(cancellationToken);
 
-            if (!requestedProgramExists)
-            {
-                return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(
-                    LessonPlanTemplateErrors.ProgramNotFound(command.ProgramId));
-            }
+        if (requestedProgram is null)
+        {
+            return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(
+                LessonPlanTemplateErrors.ProgramNotFound(command.ProgramId));
         }
 
         var rawSheets = ReadSheets(command.FileStream, command.FileName);
@@ -62,11 +59,6 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
         {
             return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(rawSheets.Error);
         }
-
-        var programs = await context.Programs
-            .Where(p => p.IsActive && !p.IsDeleted)
-            .Select(p => new ProgramLookup(p.Id, p.Name, p.Code))
-            .ToListAsync(cancellationToken);
 
         var parsedSheets = new List<ResolvedSyllabusSheet>();
         foreach (var rawSheet in rawSheets.Sheets!)
@@ -82,20 +74,7 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
                 return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(parsedSheet.Error);
             }
 
-            var resolvedProgram = ResolveProgram(
-                programs,
-                command.ProgramId,
-                extension,
-                rawSheet,
-                parsedSheet.Value!,
-                rawSheets.Sheets.Count);
-            if (resolvedProgram is null)
-            {
-                return Result.Failure<ImportLessonPlanTemplatesFromFileResponse>(
-                    LessonPlanTemplateErrors.ProgramMappingNotFound(rawSheet.Name));
-            }
-
-            parsedSheets.Add(new ResolvedSyllabusSheet(resolvedProgram, parsedSheet.Value!));
+            parsedSheets.Add(new ResolvedSyllabusSheet(requestedProgram, parsedSheet.Value!));
         }
 
         if (parsedSheets.Count == 0)
@@ -105,7 +84,7 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
         }
 
         var currentUserId = userContext.UserId;
-        var importedPrograms = new List<ImportedLessonPlanTemplateProgramDto>();
+        var importedPrograms = new Dictionary<Guid, ImportedLessonPlanTemplateProgramDto>();
         var importedCount = 0;
 
         foreach (var programSheet in parsedSheets)
@@ -165,12 +144,22 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
                 importedCount++;
             }
 
-            importedPrograms.Add(new ImportedLessonPlanTemplateProgramDto
+            if (importedPrograms.TryGetValue(programSheet.Program.Id, out var importedProgram))
             {
-                ProgramId = programSheet.Program.Id,
-                ProgramName = programSheet.Program.Name,
-                ImportedSessions = importedForProgram
-            });
+                importedPrograms[programSheet.Program.Id] = importedProgram with
+                {
+                    ImportedSessions = importedProgram.ImportedSessions + importedForProgram
+                };
+            }
+            else
+            {
+                importedPrograms[programSheet.Program.Id] = new ImportedLessonPlanTemplateProgramDto
+                {
+                    ProgramId = programSheet.Program.Id,
+                    ProgramName = programSheet.Program.Name,
+                    ImportedSessions = importedForProgram
+                };
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -178,7 +167,7 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
         return new ImportLessonPlanTemplatesFromFileResponse
         {
             ImportedCount = importedCount,
-            Programs = importedPrograms
+            Programs = importedPrograms.Values.ToList()
         };
     }
 
@@ -187,46 +176,6 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
         return !string.IsNullOrWhiteSpace(session.Title)
             ? session.Title!
             : $"{programName} - Session {session.SessionIndex}";
-    }
-
-    private static ProgramLookup? ResolveProgram(
-        IReadOnlyList<ProgramLookup> programs,
-        Guid? requestedProgramId,
-        string extension,
-        RawSyllabusSheet rawSheet,
-        ParsedSyllabusSheet parsedSheet,
-        int sheetCount)
-    {
-        if (extension == ".csv" && requestedProgramId.HasValue)
-        {
-            return programs.FirstOrDefault(p => p.Id == requestedProgramId.Value);
-        }
-
-        if (requestedProgramId.HasValue && sheetCount == 1)
-        {
-            return programs.FirstOrDefault(p => p.Id == requestedProgramId.Value);
-        }
-
-        var normalizedCandidates = new[]
-        {
-            NormalizeKey(rawSheet.Name),
-            NormalizeKey(parsedSheet.Metadata.Title),
-            NormalizeKey(Path.GetFileNameWithoutExtension(rawSheet.Name))
-        }.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-
-        return programs.FirstOrDefault(program =>
-        {
-            var normalizedProgramName = NormalizeKey(program.Name);
-            var normalizedProgramCode = NormalizeKey(program.Code);
-
-            return normalizedCandidates.Any(candidate =>
-                candidate == normalizedProgramName ||
-                candidate == normalizedProgramCode ||
-                candidate.Contains(normalizedProgramName) ||
-                normalizedProgramName.Contains(candidate) ||
-                candidate.Contains(normalizedProgramCode) ||
-                normalizedProgramCode.Contains(candidate));
-        });
     }
 
     private static SheetReadResult ReadSheets(Stream stream, string fileName)

@@ -47,28 +47,65 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             return Result.Failure<GetStudentHomeworkSubmissionResponse>(
                 HomeworkErrors.SubmissionUnauthorized);
         }
-        
+
+        var persistedAttempts = await context.HomeworkSubmissionAttempts
+            .Where(a => a.HomeworkStudentId == homeworkStudent.Id)
+            .OrderByDescending(a => a.AttemptNumber)
+            .ToListAsync(cancellationToken);
+
+        var attemptSnapshots = HomeworkSubmissionAttemptMapper.BuildSnapshots(homeworkStudent, persistedAttempts);
+        var attemptDtos = HomeworkSubmissionAttemptMapper.BuildDtos(homeworkStudent, persistedAttempts);
+
+        HomeworkSubmissionAttempt? selectedAttempt = null;
+        if (query.AttemptNumber.HasValue)
+        {
+            selectedAttempt = attemptSnapshots.FirstOrDefault(a => a.AttemptNumber == query.AttemptNumber.Value);
+            if (selectedAttempt is null)
+            {
+                return Result.Failure<GetStudentHomeworkSubmissionResponse>(
+                    HomeworkErrors.SubmissionAttemptNotFound(query.HomeworkStudentId, query.AttemptNumber.Value));
+            }
+        }
+        else
+        {
+            selectedAttempt = attemptSnapshots.FirstOrDefault();
+        }
+
+        var effectiveStatus = selectedAttempt?.Status ?? homeworkStudent.Status;
+        var effectiveStartedAt = selectedAttempt?.StartedAt ?? homeworkStudent.StartedAt;
+        var effectiveSubmittedAt = selectedAttempt?.SubmittedAt ?? homeworkStudent.SubmittedAt;
+        var effectiveGradedAt = selectedAttempt?.GradedAt ?? homeworkStudent.GradedAt;
+        var effectiveScore = selectedAttempt?.Score ?? homeworkStudent.Score;
+        var effectiveTeacherFeedback = selectedAttempt?.TeacherFeedback ?? homeworkStudent.TeacherFeedback;
+        var effectiveAiFeedback = selectedAttempt?.AiFeedback ?? homeworkStudent.AiFeedback;
+        var effectiveTextAnswer = selectedAttempt?.TextAnswer ?? homeworkStudent.TextAnswer;
+        var effectiveAttachmentUrl = selectedAttempt?.AttachmentUrl ?? homeworkStudent.AttachmentUrl;
+
         var now = DateTime.UtcNow;
-        var isOverdue = homeworkStudent.Assignment.DueAt.HasValue && 
-                       now > homeworkStudent.Assignment.DueAt.Value && 
-                       (homeworkStudent.Status == HomeworkStatus.Assigned || homeworkStudent.Status == HomeworkStatus.Missing);
+        var isOverdue = homeworkStudent.Assignment.DueAt.HasValue &&
+                        now > homeworkStudent.Assignment.DueAt.Value &&
+                        (effectiveStatus == HomeworkStatus.Assigned || effectiveStatus == HomeworkStatus.Missing);
 
         List<HomeworkQuestionDto> questions = new();
         var reviewResults = new List<QuizAnswerResultDto>();
-        var showReview = homeworkStudent.Status == HomeworkStatus.Graded &&
+        var showReview = effectiveStatus == HomeworkStatus.Graded &&
                          homeworkStudent.Assignment.SubmissionType == SubmissionType.Quiz;
+
         if (homeworkStudent.Assignment.SubmissionType == SubmissionType.Quiz)
         {
-            if (!homeworkStudent.StartedAt.HasValue && homeworkStudent.Status == HomeworkStatus.Assigned)
+            if (!query.AttemptNumber.HasValue &&
+                !homeworkStudent.StartedAt.HasValue &&
+                homeworkStudent.Status == HomeworkStatus.Assigned)
             {
                 homeworkStudent.StartedAt = now;
+                effectiveStartedAt = now;
                 await context.SaveChangesAsync(cancellationToken);
             }
 
             var reviewData = await QuizSubmissionReviewBuilder.BuildAsync(
                 context,
                 homeworkStudent.AssignmentId,
-                homeworkStudent.TextAnswer,
+                effectiveTextAnswer,
                 showReview,
                 cancellationToken);
 
@@ -99,31 +136,36 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
             MaxScore = homeworkStudent.Assignment.MaxScore,
             RewardStars = homeworkStudent.Assignment.RewardStars,
             TimeLimitMinutes = homeworkStudent.Assignment.TimeLimitMinutes,
-            AllowResubmit = homeworkStudent.Assignment.AllowResubmit,
+            AllowResubmit = homeworkStudent.Assignment.MaxAttempts > 1,
+            MaxAttempts = homeworkStudent.Assignment.MaxAttempts,
             AiHintEnabled = homeworkStudent.Assignment.AiHintEnabled,
             AiRecommendEnabled = homeworkStudent.Assignment.AiRecommendEnabled,
             SpeakingMode = homeworkStudent.Assignment.SpeakingMode,
             TargetWords = StringListJson.Deserialize(homeworkStudent.Assignment.TargetWords),
             SpeakingExpectedText = homeworkStudent.Assignment.SpeakingExpectedText,
-            Status = homeworkStudent.Status.ToString(),
-            StartedAt = homeworkStudent.StartedAt,
-            SubmittedAt = homeworkStudent.SubmittedAt,
-            GradedAt = homeworkStudent.GradedAt,
-            Score = homeworkStudent.Score,
-            TeacherFeedback = homeworkStudent.TeacherFeedback,
-            AiFeedback = homeworkStudent.AiFeedback,
-            AttachmentUrls = homeworkStudent.AttachmentUrl,
-            TextAnswer = homeworkStudent.TextAnswer,
+            Status = effectiveStatus.ToString(),
+            StartedAt = effectiveStartedAt,
+            SubmittedAt = effectiveSubmittedAt,
+            GradedAt = effectiveGradedAt,
+            Score = effectiveScore,
+            TeacherFeedback = effectiveTeacherFeedback,
+            AiFeedback = effectiveAiFeedback,
+            AttachmentUrls = effectiveAttachmentUrl,
+            TextAnswer = effectiveTextAnswer,
             LinkUrl = homeworkStudent.Assignment.SubmissionType == SubmissionType.Link
-                ? homeworkStudent.AttachmentUrl
+                ? effectiveAttachmentUrl
                 : null,
-            IsLate = homeworkStudent.Status == HomeworkStatus.Late,
+            IsLate = effectiveStatus == HomeworkStatus.Late,
             IsOverdue = isOverdue,
             Questions = questions,
             Review = showReview ? new HomeworkReviewDto { AnswerResults = reviewResults } : null,
             ShowReview = showReview,
             ShowCorrectAnswer = showReview,
             ShowExplanation = showReview,
+            AttemptId = selectedAttempt?.Id == Guid.Empty ? null : selectedAttempt?.Id,
+            AttemptNumber = selectedAttempt?.AttemptNumber,
+            AttemptCount = attemptDtos.Count,
+            Attempts = attemptDtos,
             TeacherName = homeworkStudent.Assignment.CreatedByUser != null
                 ? homeworkStudent.Assignment.CreatedByUser.Name
                 : null,
@@ -132,19 +174,19 @@ public sealed class GetStudentHomeworkSubmissionQueryHandler(
                 : new List<string> { homeworkStudent.Assignment.AttachmentUrl },
             Submission = new HomeworkSubmissionPayloadDto
             {
-                TextAnswer = homeworkStudent.TextAnswer,
+                TextAnswer = effectiveTextAnswer,
                 AttachmentUrls = homeworkStudent.Assignment.SubmissionType == SubmissionType.Link ||
-                                 string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl)
+                                 string.IsNullOrWhiteSpace(effectiveAttachmentUrl)
                     ? new List<string>()
-                    : new List<string> { homeworkStudent.AttachmentUrl },
-                Links = !string.IsNullOrWhiteSpace(homeworkStudent.AttachmentUrl) &&
+                    : new List<string> { effectiveAttachmentUrl },
+                Links = !string.IsNullOrWhiteSpace(effectiveAttachmentUrl) &&
                         homeworkStudent.Assignment.SubmissionType == SubmissionType.Link
-                    ? new List<string> { homeworkStudent.AttachmentUrl }
+                    ? new List<string> { effectiveAttachmentUrl }
                     : new List<string>(),
-                SubmittedAt = homeworkStudent.SubmittedAt,
-                GradedAt = homeworkStudent.GradedAt,
-                Score = homeworkStudent.Score,
-                TeacherFeedback = homeworkStudent.TeacherFeedback
+                SubmittedAt = effectiveSubmittedAt,
+                GradedAt = effectiveGradedAt,
+                Score = effectiveScore,
+                TeacherFeedback = effectiveTeacherFeedback
             }
         };
     }

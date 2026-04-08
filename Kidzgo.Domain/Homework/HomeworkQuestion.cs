@@ -11,7 +11,7 @@ public class HomeworkQuestion : Entity
     public string QuestionText { get; set; } = null!;
     public HomeworkQuestionType QuestionType { get; set; }
     public string? Options { get; set; } // JSON array for multiple choice options
-    public string? CorrectAnswer { get; set; } // Correct answer (for multiple choice: option index, for text: answer text)
+    public string? CorrectAnswer { get; set; } // Correct answer (for multiple choice: option text, legacy data may store option index)
     public int Points { get; set; }
     public string? Explanation { get; set; }
 

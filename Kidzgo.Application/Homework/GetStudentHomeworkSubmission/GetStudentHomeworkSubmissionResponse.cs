@@ -28,6 +28,7 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
     public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? SpeakingMode { get; init; }
@@ -50,6 +51,10 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public bool ShowReview { get; init; }
     public bool ShowCorrectAnswer { get; init; }
     public bool ShowExplanation { get; init; }
+    public Guid? AttemptId { get; init; }
+    public int? AttemptNumber { get; init; }
+    public int AttemptCount { get; init; }
+    public List<HomeworkSubmissionAttemptDto> Attempts { get; init; } = new();
     public Guid HomeworkId => AssignmentId;
     public string Title => AssignmentTitle;
     public string? Description => AssignmentDescription;

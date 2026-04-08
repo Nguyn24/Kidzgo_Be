@@ -27,7 +27,6 @@ public sealed class GenerateSessionsFromPatternCommandHandler(
 
         var generateResult = await sessionGenerationService.GenerateSessionsFromPatternAsync(
             classEntity,
-            command.RoomId,
             command.OnlyFutureSessions,
             cancellationToken);
 

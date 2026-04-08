@@ -13,6 +13,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankRequest
     public List<string>? VocabularyTags { get; init; }
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
+    public int? MaxAttempts { get; init; }
     public bool? AllowResubmit { get; init; }
     public bool? AiHintEnabled { get; init; }
     public bool? AiRecommendEnabled { get; init; }

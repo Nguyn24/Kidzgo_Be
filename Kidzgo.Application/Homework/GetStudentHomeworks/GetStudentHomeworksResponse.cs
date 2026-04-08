@@ -1,4 +1,5 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Application.Homework.Shared;
 
 namespace Kidzgo.Application.Homework.GetStudentHomeworks;
 
@@ -28,6 +29,10 @@ public sealed class StudentHomeworkDto
     public DateTime? SubmittedAt { get; init; }
     public DateTime? GradedAt { get; init; }
     public decimal? Score { get; init; }
+    public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
+    public int AttemptCount { get; init; }
+    public List<HomeworkSubmissionAttemptDto> Attempts { get; init; } = new();
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
 }

@@ -1,14 +1,12 @@
 using Kidzgo.Domain.Common;
-using Kidzgo.Domain.LessonPlans;
-using Kidzgo.Domain.Users;
 
 namespace Kidzgo.Domain.Homework;
 
-public class HomeworkStudent : Entity
+public class HomeworkSubmissionAttempt : Entity
 {
     public Guid Id { get; set; }
-    public Guid AssignmentId { get; set; }
-    public Guid StudentProfileId { get; set; }
+    public Guid HomeworkStudentId { get; set; }
+    public int AttemptNumber { get; set; }
     public HomeworkStatus Status { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? SubmittedAt { get; set; }
@@ -16,13 +14,9 @@ public class HomeworkStudent : Entity
     public decimal? Score { get; set; }
     public string? TeacherFeedback { get; set; }
     public string? AiFeedback { get; set; }
-    
-    // Student submission fields
     public string? TextAnswer { get; set; }
     public string? AttachmentUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    // Navigation properties
-    public HomeworkAssignment Assignment { get; set; } = null!;
-    public Profile StudentProfile { get; set; } = null!;
-    public ICollection<HomeworkSubmissionAttempt> SubmissionAttempts { get; set; } = new List<HomeworkSubmissionAttempt>();
+    public HomeworkStudent HomeworkStudent { get; set; } = null!;
 }

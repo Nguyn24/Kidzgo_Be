@@ -1,4 +1,5 @@
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 
 namespace Kidzgo.Application.Homework.CreateHomeworkAssignment;
@@ -20,7 +21,7 @@ public sealed class CreateHomeworkAssignmentCommand : ICommand<CreateHomeworkAss
     public decimal? MaxScore { get; init; }
     public int? RewardStars { get; init; }
     public int? TimeLimitMinutes { get; init; }
-    public bool? AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; } = 1;
     public bool? AiHintEnabled { get; init; }
     public bool? AiRecommendEnabled { get; init; }
     public Guid? MissionId { get; init; }
