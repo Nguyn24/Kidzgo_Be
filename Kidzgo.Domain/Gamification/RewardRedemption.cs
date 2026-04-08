@@ -9,8 +9,10 @@ public class RewardRedemption : Entity
     public Guid ItemId { get; set; }
     public string ItemName { get; set; } = null!; // Store item name at redemption time
     public int Quantity { get; set; } = 1; // Số lượng sản phẩm đã mua
+    public int? StarsDeducted { get; set; }
     public Guid StudentProfileId { get; set; }
     public RedemptionStatus Status { get; set; }
+    public string? CancelReason { get; set; }
     public Guid? HandledBy { get; set; }
     public DateTime? HandledAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
