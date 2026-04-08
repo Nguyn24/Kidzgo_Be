@@ -23,7 +23,7 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
             return Result.Failure<GetUserByIdResponse>(UserErrors.NotFound(query.Id));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         return Result.Success(new GetUserByIdResponse
         {

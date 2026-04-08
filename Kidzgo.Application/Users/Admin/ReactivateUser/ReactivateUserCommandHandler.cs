@@ -23,7 +23,7 @@ public sealed class ReactivateUserCommandHandler(IDbContext context)
         if (!user.IsActive)
         {
             user.IsActive = true;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = VietnamTime.UtcNow();
 
             // Reactivate all profiles of this user (both Parent and Student)
             var allProfiles = await context.Profiles
@@ -35,7 +35,7 @@ public sealed class ReactivateUserCommandHandler(IDbContext context)
             {
                 profile.IsActive = true;
                 profile.IsDeleted = false;
-                profile.UpdatedAt = DateTime.UtcNow;
+                profile.UpdatedAt = VietnamTime.UtcNow();
             }
 
             await context.SaveChangesAsync(cancellationToken);

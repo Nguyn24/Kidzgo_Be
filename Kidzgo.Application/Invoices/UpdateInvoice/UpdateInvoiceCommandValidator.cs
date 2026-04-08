@@ -18,7 +18,7 @@ public sealed class UpdateInvoiceCommandValidator : AbstractValidator<UpdateInvo
             .When(x => x.Amount.HasValue);
 
         RuleFor(x => x.DueDate)
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Due date should not be in the past")
             .When(x => x.DueDate.HasValue);
     }

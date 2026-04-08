@@ -67,7 +67,7 @@ public sealed class UpdateRewardStoreItemCommandHandler(IDbContext context)
             item.IsActive = command.IsActive.Value;
         }
 
-        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateRewardStoreItemResponse

@@ -11,12 +11,12 @@ public sealed class CreateMissionCommandValidator : AbstractValidator<CreateMiss
             .WithMessage("Title is required");
 
         RuleFor(command => command.StartAt)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("StartAt cannot be in the past")
             .When(command => command.StartAt.HasValue);
 
         RuleFor(command => command.EndAt)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("EndAt cannot be in the past")
             .When(command => command.EndAt.HasValue)
             .GreaterThanOrEqualTo(command => command.StartAt)

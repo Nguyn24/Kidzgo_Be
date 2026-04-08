@@ -39,7 +39,7 @@ public sealed class GradeExamSubmissionCommandHandler(
                 ExamSubmissionErrors.AlreadyGraded);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var currentUserId = userContext.UserId;
 
         // Update individual answer grades if provided

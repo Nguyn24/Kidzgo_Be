@@ -18,7 +18,7 @@ public sealed class GetAccountantStaffOverviewQueryHandler(
         CancellationToken cancellationToken)
     {
         var userId = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var fromDate = query.FromDate ?? now.AddMonths(-1);
         var toDate = query.ToDate ?? now.AddMonths(1);
 
@@ -86,7 +86,7 @@ public sealed class GetAccountantStaffOverviewQueryHandler(
             PendingPayrolls = await payrollRunsQuery
                 .CountAsync(pr => pr.Status == PayrollRunStatus.Draft || pr.Status == PayrollRunStatus.Approved, cancellationToken),
             CashBalance = await cashbookQuery
-                .Where(cb => cb.EntryDate <= DateOnly.FromDateTime(now))
+                .Where(cb => cb.EntryDate <= VietnamTime.ToVietnamDateOnly(now))
                 .SumAsync(cb => cb.Type == CashbookEntryType.CashIn ? (decimal?)cb.Amount : -(decimal?)cb.Amount, cancellationToken) ?? 0
         };
 
@@ -136,7 +136,7 @@ public sealed class GetAccountantStaffOverviewQueryHandler(
                 StudentName = p.Invoice.StudentProfile.DisplayName,
                 Amount = p.Amount,
                 PaymentMethod = p.Method.ToString(),
-                PaidAt = p.PaidAt ?? DateTime.UtcNow
+                PaidAt = p.PaidAt ?? VietnamTime.UtcNow()
             })
             .ToListAsync(cancellationToken);
 
@@ -175,8 +175,8 @@ public sealed class GetAccountantStaffOverviewQueryHandler(
 
         // Recent Cashbook Entries
         var recentCashbookEntries = await cashbookQuery
-            .Where(cb => cb.EntryDate >= DateOnly.FromDateTime(fromDate) && 
-                        cb.EntryDate <= DateOnly.FromDateTime(toDate))
+            .Where(cb => cb.EntryDate >= VietnamTime.ToVietnamDateOnly(fromDate) && 
+                        cb.EntryDate <= VietnamTime.ToVietnamDateOnly(toDate))
             .OrderByDescending(cb => cb.EntryDate)
             .ThenByDescending(cb => cb.CreatedAt)
             .Take(20)

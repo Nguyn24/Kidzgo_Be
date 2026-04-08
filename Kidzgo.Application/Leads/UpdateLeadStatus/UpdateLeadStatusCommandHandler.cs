@@ -31,7 +31,7 @@ public sealed class UpdateLeadStatusCommandHandler(
                 LeadErrors.InvalidStatusTransition);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var oldStatus = lead.Status;
         lead.Status = command.Status;
         lead.UpdatedAt = now;

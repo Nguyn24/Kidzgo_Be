@@ -28,7 +28,7 @@ public sealed class CancelLeaveRequestCommandHandler(IDbContext context)
         }
 
         // Check if session date has passed - cannot cancel past sessions
-        if (leaveRequest.SessionDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (leaveRequest.SessionDate < VietnamTime.TodayDateOnly())
         {
             return Result.Failure(LeaveRequestErrors.CannotCancelPastSession(leaveRequest.SessionDate));
         }
@@ -38,17 +38,20 @@ public sealed class CancelLeaveRequestCommandHandler(IDbContext context)
 
         // Update status to Cancelled
         leaveRequest.Status = LeaveRequestStatus.Cancelled;
-        leaveRequest.CancelledAt = DateTime.UtcNow;
+        leaveRequest.CancelledAt = VietnamTime.UtcNow();
 
         // If was approved, also delete the makeup credits and allocations
         if (wasApproved)
         {
+            var sessionDayStartUtc = VietnamTime.TreatAsVietnamLocal(leaveRequest.SessionDate.ToDateTime(TimeOnly.MinValue));
+            var sessionDayEndUtc = VietnamTime.EndOfVietnamDayUtc(sessionDayStartUtc);
             var sourceSession = leaveRequest.SessionId.HasValue
                 ? await context.Sessions
                     .FirstOrDefaultAsync(s => s.Id == leaveRequest.SessionId.Value, cancellationToken)
                 : await context.Sessions
                     .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId
-                        && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
+                        && s.PlannedDatetime >= sessionDayStartUtc
+                        && s.PlannedDatetime <= sessionDayEndUtc, cancellationToken);
 
             if (sourceSession != null)
             {
@@ -74,12 +77,15 @@ public sealed class CancelLeaveRequestCommandHandler(IDbContext context)
 
     private async Task<bool> WasOriginallyApproved(LeaveRequest leaveRequest, CancellationToken cancellationToken)
     {
+        var sessionDayStartUtc = VietnamTime.TreatAsVietnamLocal(leaveRequest.SessionDate.ToDateTime(TimeOnly.MinValue));
+        var sessionDayEndUtc = VietnamTime.EndOfVietnamDayUtc(sessionDayStartUtc);
         var sourceSession = leaveRequest.SessionId.HasValue
             ? await context.Sessions
                 .FirstOrDefaultAsync(s => s.Id == leaveRequest.SessionId.Value, cancellationToken)
             : await context.Sessions
                 .FirstOrDefaultAsync(s => s.ClassId == leaveRequest.ClassId
-                    && DateOnly.FromDateTime(s.PlannedDatetime) == leaveRequest.SessionDate, cancellationToken);
+                    && s.PlannedDatetime >= sessionDayStartUtc
+                    && s.PlannedDatetime <= sessionDayEndUtc, cancellationToken);
 
         if (sourceSession == null) return false;
 

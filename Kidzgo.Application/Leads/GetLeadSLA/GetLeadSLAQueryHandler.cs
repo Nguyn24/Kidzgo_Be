@@ -34,7 +34,7 @@ public sealed class GetLeadSLAQueryHandler(
             : (bool?)null;
 
         var isSLAOverdue = !lead.FirstResponseAt.HasValue &&
-            (DateTime.UtcNow - lead.CreatedAt).TotalHours > slaTargetHours;
+            (VietnamTime.UtcNow() - lead.CreatedAt).TotalHours > slaTargetHours;
 
         return Result.Success(new GetLeadSLAResponse
         {

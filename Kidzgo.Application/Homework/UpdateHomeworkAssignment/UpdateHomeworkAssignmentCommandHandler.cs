@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Shared;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -52,16 +53,13 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
         }
 
         // Validate due date
-        if (command.DueAt.HasValue && command.DueAt.Value <= DateTime.UtcNow)
+        if (command.DueAt.HasValue && VietnamTime.NormalizeToUtc(command.DueAt.Value) <= VietnamTime.UtcNow())
         {
             return Result.Failure<UpdateHomeworkAssignmentResponse>(
                 HomeworkErrors.InvalidDueDate);
         }
 
-        // Convert DueAt to UTC if provided (PostgreSQL requires UTC for timestamp with time zone)
-        var dueAtUtc = command.DueAt.HasValue
-            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
+        var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
         // Validate Title if provided
         if (command.Title != null && string.IsNullOrWhiteSpace(command.Title))
@@ -220,7 +218,7 @@ public sealed class UpdateHomeworkAssignmentCommandHandler(
         // Update LATE status for submissions if due date changed
         if (command.DueAt.HasValue && command.DueAt.Value < homework.DueAt)
         {
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
             var lateSubmissions = homework.HomeworkStudents
                 .Where(hs => hs.Status == HomeworkStatus.Assigned && 
                             homework.DueAt.HasValue && 

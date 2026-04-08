@@ -59,7 +59,7 @@ public sealed class MonthlyReportPublishedEventHandler(
         }
 
         // Create notifications for all recipients
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var notifications = recipientUserIds.Select(userId => new Notification
         {
             Id = Guid.NewGuid(),

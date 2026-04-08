@@ -29,7 +29,7 @@ public sealed class ResetPasswordCommandHandler(
         // Update password
         user.PasswordHash = passwordHasher.Hash(command.NewPassword);
 
-        token.UsedAt = DateTime.UtcNow;
+        token.UsedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -34,10 +34,12 @@ public sealed class GetPauseEnrollmentRequestByIdQueryHandler(IDbContext context
         List<PauseEnrollmentClassDto> classes = new();
         if (enrollmentClassIds.Count > 0)
         {
+            var pauseFromUtc = VietnamTime.TreatAsVietnamLocal(item.PauseFrom.ToDateTime(TimeOnly.MinValue));
+            var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(item.PauseTo.ToDateTime(TimeOnly.MinValue)));
             var classIdsInRange = await context.Sessions
                 .Where(s => enrollmentClassIds.Contains(s.ClassId)
-                            && DateOnly.FromDateTime(s.PlannedDatetime) >= item.PauseFrom
-                            && DateOnly.FromDateTime(s.PlannedDatetime) <= item.PauseTo)
+                            && s.PlannedDatetime >= pauseFromUtc
+                            && s.PlannedDatetime <= pauseToUtc)
                 .Select(s => s.ClassId)
                 .Distinct()
                 .ToListAsync(cancellationToken);

@@ -26,7 +26,7 @@ public sealed class CreateNotificationTemplateCommandHandler(
                 NotificationTemplateErrors.CodeAlreadyExists(command.Code));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var template = new NotificationTemplate
         {
             Id = Guid.NewGuid(),

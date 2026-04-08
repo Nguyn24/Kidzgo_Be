@@ -64,7 +64,7 @@ internal static class HomeworkSubmissionAttemptMapper
             AiFeedback = homeworkStudent.AiFeedback,
             TextAnswer = homeworkStudent.TextAnswer,
             AttachmentUrl = homeworkStudent.AttachmentUrl,
-            CreatedAt = homeworkStudent.SubmittedAt ?? homeworkStudent.GradedAt ?? homeworkStudent.StartedAt ?? DateTime.UtcNow
+            CreatedAt = homeworkStudent.SubmittedAt ?? homeworkStudent.GradedAt ?? homeworkStudent.StartedAt ?? VietnamTime.UtcNow()
         };
     }
 

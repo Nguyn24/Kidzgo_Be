@@ -49,7 +49,7 @@ public sealed class AssignTicketCommandHandler(
             ticket.Status = Domain.Tickets.TicketStatus.InProgress;
         }
 
-        ticket.UpdatedAt = DateTime.UtcNow;
+        ticket.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         // Query ticket with navigation properties for response

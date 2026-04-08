@@ -30,8 +30,8 @@ public sealed class UpdateAttendanceCommandHandler(
                 AttendanceErrors.NotFoundForSessionStudent(request.SessionId, request.StudentProfileId));
         }
 
-        var sessionDate = DateOnly.FromDateTime(attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var sessionDate = VietnamTime.ToVietnamDateOnly(attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime);
+        var today = VietnamTime.TodayDateOnly();
         if (!request.IsAdmin && sessionDate > today)
         {
             return Result.Failure<UpdateAttendanceResponse>(
@@ -40,7 +40,7 @@ public sealed class UpdateAttendanceCommandHandler(
 
         var sessionEndUtc = (attendance.Session.ActualDatetime ?? attendance.Session.PlannedDatetime)
             .AddMinutes(attendance.Session.DurationMinutes);
-        if (!request.IsAdmin && DateTime.UtcNow - sessionEndUtc > TimeSpan.FromHours(24))
+        if (!request.IsAdmin && VietnamTime.UtcNow() - sessionEndUtc > TimeSpan.FromHours(24))
         {
             return Result.Failure<UpdateAttendanceResponse>(
                 AttendanceErrors.UpdateWindowClosed(attendance.SessionId));
@@ -72,7 +72,7 @@ public sealed class UpdateAttendanceCommandHandler(
             DataBefore = JsonSerializer.Serialize(new { oldStatus = oldStatus.ToString(), oldNote }),
             DataAfter = JsonSerializer.Serialize(new { newStatus = request.AttendanceStatus.ToString(), newNote = request.Note }),
             IpAddress = userContext.IpAddress,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
         context.AuditLogs.Add(auditLog);
 

@@ -17,7 +17,7 @@ public sealed class TrackUserPresenceMiddleware(RequestDelegate next, ILogger<Tr
                 var userIdRaw = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (Guid.TryParse(userIdRaw, out var userId))
                 {
-                    var now = DateTime.UtcNow;
+                    var now = VietnamTime.UtcNow();
                     var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, context.RequestAborted);
                     var hasChanges = false;
 

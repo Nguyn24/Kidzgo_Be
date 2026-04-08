@@ -34,7 +34,7 @@ public sealed class GetWaitingListQueryHandler(
                 .ToList();
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var items = new List<WaitingListItemDto>();
 
         foreach (var registration in registrations)

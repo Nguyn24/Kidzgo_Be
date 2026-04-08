@@ -61,7 +61,7 @@ public sealed class UpdateBranchCommandHandler(IDbContext context)
             branch.ContactEmail = string.IsNullOrWhiteSpace(command.ContactEmail) ? null : command.ContactEmail.Trim();
         }
 
-        branch.UpdatedAt = DateTime.UtcNow;
+        branch.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

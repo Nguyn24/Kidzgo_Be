@@ -41,7 +41,7 @@ public sealed class CreateExamQuestionCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var question = new ExamQuestion
         {
             Id = Guid.NewGuid(),

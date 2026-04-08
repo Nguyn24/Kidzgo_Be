@@ -62,7 +62,7 @@ public sealed class GenerateMonthlyReportPdfCommandHandler(
                 report.Year,
                 cancellationToken);
 
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
 
             // Store original URL without fl_attachment in database
             // fl_attachment will be added when returning in response

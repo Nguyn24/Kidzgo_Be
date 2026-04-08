@@ -42,7 +42,7 @@ public sealed class SaveExamSubmissionAnswerCommandHandler(
                 ExamSubmissionErrors.QuestionNotFound(command.QuestionId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Check if answer already exists
         var existingAnswer = await context.ExamSubmissionAnswers

@@ -94,7 +94,7 @@ public sealed class CreateReportRequestCommandHandler(
             linkedMonthlyReportId = validation.Value.LinkedMonthlyReportId;
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var request = new ReportRequest
         {
             Id = Guid.NewGuid(),
@@ -277,7 +277,7 @@ public sealed class CreateReportRequestCommandHandler(
 
             if (report is null)
             {
-                var now = DateTime.UtcNow;
+                var now = VietnamTime.UtcNow();
                 report = new StudentMonthlyReport
                 {
                     Id = Guid.NewGuid(),
@@ -299,7 +299,7 @@ public sealed class CreateReportRequestCommandHandler(
         {
             var startDate = new DateTime(command.Year.Value, command.Month.Value, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = DateOnly.FromDateTime(startDate.AddMonths(1).AddDays(-1));
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
 
             var studentIds = await context.ClassEnrollments
                 .Where(e => e.ClassId == targetClassId.Value &&

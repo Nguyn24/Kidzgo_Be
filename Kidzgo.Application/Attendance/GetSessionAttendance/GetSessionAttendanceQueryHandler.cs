@@ -94,9 +94,9 @@ public sealed class GetSessionAttendanceQueryHandler(
         {
             SessionId = session.Id,
             SessionName = session.Class?.Title,
-            Date = DateOnly.FromDateTime(session.PlannedDatetime),
-            StartTime = TimeOnly.FromDateTime(session.PlannedDatetime),
-            EndTime = TimeOnly.FromDateTime(session.PlannedDatetime.AddMinutes(session.DurationMinutes)),
+            Date = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime),
+            StartTime = VietnamTime.ToVietnamTimeOnly(session.PlannedDatetime),
+            EndTime = VietnamTime.ToVietnamTimeOnly(session.PlannedDatetime.AddMinutes(session.DurationMinutes)),
             Summary = summary,
             Attendances = data
         };

@@ -1,4 +1,4 @@
-﻿using Kidzgo.Application.Abstraction.Authentication;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Users.Shared;
@@ -14,7 +14,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
         public async Task<Result<GetCurrentUserResponse>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
         {
             var currentUserId = userContext.UserId;
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
 
             var user = await context.Users
                 .Include(u => u.Branch)

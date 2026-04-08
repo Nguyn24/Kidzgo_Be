@@ -32,7 +32,7 @@ public sealed class UpdateBlogCommandHandler(
         blog.FeaturedImageUrl = command.FeaturedImageUrl;
         blog.AttachmentImageUrl = command.AttachmentImageUrl;
         blog.AttachmentFileUrl = command.AttachmentFileUrl;
-        blog.UpdatedAt = DateTime.UtcNow;
+        blog.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -63,7 +63,7 @@ public sealed class CreateExamResultCommandHandler(
         }
 
         // Create exam result
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var examResult = new ExamResult
         {
             Id = Guid.NewGuid(),

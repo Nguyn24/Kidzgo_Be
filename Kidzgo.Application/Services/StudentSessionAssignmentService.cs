@@ -94,13 +94,14 @@ public sealed class StudentSessionAssignmentService(
             .ToListAsync(cancellationToken);
 
         var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var session in sessions)
         {
+            var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
-                DateOnly.FromDateTime(session.PlannedDatetime) >= sessionDateFrom &&
+                sessionDate >= sessionDateFrom &&
                 MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
 
             assignmentsBySessionId.TryGetValue(session.Id, out var assignment);
@@ -147,10 +148,11 @@ public sealed class StudentSessionAssignmentService(
         var sessionDateFrom = effectiveFrom > enrollment.EnrollDate
             ? effectiveFrom
             : enrollment.EnrollDate;
+        var sessionDateFromUtc = VietnamTime.TreatAsVietnamLocal(sessionDateFrom.ToDateTime(TimeOnly.MinValue));
 
         var sessions = await context.Sessions
             .Where(s => s.ClassId == enrollment.ClassId &&
-                        DateOnly.FromDateTime(s.PlannedDatetime) >= sessionDateFrom)
+                        s.PlannedDatetime >= sessionDateFromUtc)
             .ToListAsync(cancellationToken);
 
         if (sessions.Count == 0)
@@ -164,7 +166,7 @@ public sealed class StudentSessionAssignmentService(
             .ToListAsync(cancellationToken);
 
         var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var session in sessions)
         {
@@ -222,13 +224,14 @@ public sealed class StudentSessionAssignmentService(
 
         var assignmentsByEnrollmentId = existingAssignments.ToDictionary(a => a.ClassEnrollmentId);
         var activeEnrollmentIds = activeEnrollments.Select(e => e.Id).ToHashSet();
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var enrollment in activeEnrollments)
         {
+            var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
-                DateOnly.FromDateTime(session.PlannedDatetime) >= enrollment.EnrollDate &&
+                sessionDate >= enrollment.EnrollDate &&
                 MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
 
             assignmentsByEnrollmentId.TryGetValue(enrollment.Id, out var assignment);
@@ -288,7 +291,7 @@ public sealed class StudentSessionAssignmentService(
                 && a.Session.PlannedDatetime >= effectiveFromUtc)
             .ToListAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         foreach (var assignment in assignments)
         {
             assignment.Status = StudentSessionAssignmentStatus.Cancelled;
@@ -310,7 +313,7 @@ public sealed class StudentSessionAssignmentService(
                 && a.Session.PlannedDatetime <= toUtc)
             .ToListAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         foreach (var assignment in assignments)
         {
             assignment.Status = StudentSessionAssignmentStatus.Cancelled;
@@ -331,7 +334,7 @@ public sealed class StudentSessionAssignmentService(
                 && a.Session.PlannedDatetime >= effectiveFromUtc)
             .ToListAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         foreach (var assignment in assignments)
         {
             assignment.RegistrationId = newRegistrationId;
@@ -385,7 +388,7 @@ public sealed class StudentSessionAssignmentService(
             .Select(s => new
             {
                 s.ClassId,
-                SessionDate = DateOnly.FromDateTime(s.PlannedDatetime)
+                s.PlannedDatetime
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -394,11 +397,13 @@ public sealed class StudentSessionAssignmentService(
             return new List<RegularSessionParticipant>();
         }
 
+        var sessionDate = VietnamTime.ToVietnamDateOnly(sessionInfo.PlannedDatetime);
+
         return await context.ClassEnrollments
             .AsNoTracking()
             .Where(e => e.ClassId == sessionInfo.ClassId
                 && e.Status == EnrollmentStatus.Active
-                && e.EnrollDate <= sessionInfo.SessionDate)
+                && e.EnrollDate <= sessionDate)
             .Select(e => new RegularSessionParticipant(
                 e.StudentProfileId,
                 e.Id,
@@ -414,7 +419,8 @@ public sealed class StudentSessionAssignmentService(
             return true;
         }
 
-        var sessionDate = DateOnly.FromDateTime(session.PlannedDatetime);
+        var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
+        var sessionLocalDateTime = VietnamTime.ToVietnamDateTime(session.PlannedDatetime);
         var parseResult = patternParser.ParseAndGenerateOccurrences(
             sessionSelectionPattern,
             sessionDate,
@@ -426,7 +432,7 @@ public sealed class StudentSessionAssignmentService(
         }
 
         return parseResult.Value.Any(occurrence =>
-            Math.Abs((occurrence - session.PlannedDatetime).TotalMinutes) < 1);
+            Math.Abs((occurrence - sessionLocalDateTime).TotalMinutes) < 1);
     }
 
     private static long ToMinuteKey(DateTime value)

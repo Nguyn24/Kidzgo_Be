@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Services;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -32,11 +33,8 @@ public sealed class CreateSessionCommandHandler(
             return Result.Failure<CreateSessionResponse>(SessionErrors.InvalidClassStatus);
         }
 
-        var now = DateTime.UtcNow;
-
-        var plannedUtc = command.PlannedDatetime.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(command.PlannedDatetime, DateTimeKind.Utc)
-            : command.PlannedDatetime.ToUniversalTime();
+        var now = VietnamTime.UtcNow();
+        var plannedUtc = VietnamTime.NormalizeToUtc(command.PlannedDatetime);
 
         // Check for conflicts (warning only, không block)
         var conflictResult = await conflictChecker.CheckConflictsAsync(

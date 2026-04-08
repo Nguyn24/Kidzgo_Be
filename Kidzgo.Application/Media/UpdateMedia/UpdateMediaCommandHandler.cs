@@ -52,7 +52,7 @@ public sealed class UpdateMediaCommandHandler(
             media.Visibility = command.Visibility.Value;
         }
 
-        media.UpdatedAt = DateTime.UtcNow;
+        media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpdateMediaResponse

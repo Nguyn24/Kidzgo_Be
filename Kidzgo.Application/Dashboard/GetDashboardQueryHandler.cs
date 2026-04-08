@@ -20,8 +20,8 @@ public sealed class GetDashboardQueryHandler(
 {
     public async Task<Result<DashboardResponse>> Handle(GetDashboardQuery query, CancellationToken cancellationToken)
     {
-        var startDate = query.StartDate ?? DateTime.UtcNow.AddMonths(-1);
-        var endDate = query.EndDate ?? DateTime.UtcNow;
+        var startDate = query.StartDate ?? VietnamTime.UtcNow().AddMonths(-1);
+        var endDate = query.EndDate ?? VietnamTime.UtcNow();
         var branchId = query.BranchId;
 
         var response = new DashboardResponse
@@ -110,7 +110,7 @@ public sealed class GetDashboardQueryHandler(
         }
 
         var homeworkStudents = await query.ToListAsync(cancellationToken);
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var total = homeworkStudents.Count;
         var assigned = homeworkStudents.Count(h => h.Status == HomeworkStatus.Assigned);
         var submitted = homeworkStudents.Count(h => h.Status == HomeworkStatus.Submitted);
@@ -293,7 +293,7 @@ public sealed class GetDashboardQueryHandler(
         }
 
         var students = await query.ToListAsync(cancellationToken);
-        var thisMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var thisMonth = new DateTime(VietnamTime.NowInVietnam().Year, VietnamTime.NowInVietnam().Month, 1);
         var total = students.Count;
         var active = students.Count(p => p.IsActive);
         var inactive = students.Count(p => !p.IsActive);
@@ -326,7 +326,7 @@ public sealed class GetDashboardQueryHandler(
         }
 
         var enrollments = await query.ToListAsync(cancellationToken);
-        var thisMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var thisMonth = new DateTime(VietnamTime.NowInVietnam().Year, VietnamTime.NowInVietnam().Month, 1);
         var total = enrollments.Count;
         var active = enrollments.Count(e => e.Status == EnrollmentStatus.Active);
         var paused = enrollments.Count(e => e.Status == EnrollmentStatus.Paused);

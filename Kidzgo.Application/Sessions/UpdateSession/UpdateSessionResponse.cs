@@ -6,9 +6,9 @@ public sealed class UpdateSessionResponse
     public DateTime PlannedDatetime { get; init; }
     public int DurationMinutes { get; init; }
     public Guid SessionId => Id;
-    public DateOnly PlannedDate => DateOnly.FromDateTime(PlannedDatetime);
-    public TimeOnly StartTime => TimeOnly.FromDateTime(PlannedDatetime);
-    public TimeOnly EndTime => TimeOnly.FromDateTime(PlannedDatetime.AddMinutes(DurationMinutes));
+    public DateOnly PlannedDate => VietnamTime.ToVietnamDateOnly(PlannedDatetime);
+    public TimeOnly StartTime => VietnamTime.ToVietnamTimeOnly(PlannedDatetime);
+    public TimeOnly EndTime => VietnamTime.ToVietnamTimeOnly(PlannedDatetime.AddMinutes(DurationMinutes));
 }
 
 
