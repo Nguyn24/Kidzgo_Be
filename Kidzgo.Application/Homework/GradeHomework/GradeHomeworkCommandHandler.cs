@@ -53,6 +53,19 @@ public sealed class GradeHomeworkCommandHandler(
         homeworkStudent.TeacherFeedback = command.TeacherFeedback;
         homeworkStudent.GradedAt = DateTime.UtcNow;
 
+        var latestAttempt = await context.HomeworkSubmissionAttempts
+            .Where(a => a.HomeworkStudentId == homeworkStudent.Id)
+            .OrderByDescending(a => a.AttemptNumber)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latestAttempt != null)
+        {
+            latestAttempt.Status = homeworkStudent.Status;
+            latestAttempt.Score = homeworkStudent.Score;
+            latestAttempt.TeacherFeedback = homeworkStudent.TeacherFeedback;
+            latestAttempt.GradedAt = homeworkStudent.GradedAt;
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
         return new GradeHomeworkResponse

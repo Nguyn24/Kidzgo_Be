@@ -65,6 +65,10 @@ public static class HomeworkErrors
         "HomeworkSubmission.AlreadySubmitted",
         "This homework has already been submitted");
 
+    public static Error SubmissionAttemptLimitReached(int maxAttempts) => Error.Validation(
+        "HomeworkSubmission.AttemptLimitReached",
+        $"This homework can only be submitted {maxAttempts} time(s)");
+
     public static readonly Error SubmissionAlreadyAutoGraded = Error.Validation(
         "HomeworkSubmission.AlreadyAutoGraded",
         "This homework was automatically graded 0 because it was not submitted before the deadline");
@@ -88,6 +92,10 @@ public static class HomeworkErrors
     public static readonly Error InvalidTimeLimitMinutes = Error.Validation(
         "Homework.InvalidTimeLimitMinutes",
         "TimeLimitMinutes must be greater than 0");
+
+    public static readonly Error InvalidMaxAttempts = Error.Validation(
+        "Homework.InvalidMaxAttempts",
+        "MaxAttempts must be greater than 0");
 
     public static readonly Error SubmissionCannotSubmitMissing = Error.Validation(
         "HomeworkSubmission.CannotSubmitMissing",
@@ -194,6 +202,10 @@ public static class HomeworkErrors
     public static Error QuestionNotFound(Guid questionNumber) => Error.NotFound(
         "HomeworkSubmission.QuestionNotFound",
         $"Question {questionNumber}was not found");
+
+    public static Error SubmissionAttemptNotFound(Guid homeworkStudentId, int attemptNumber) => Error.NotFound(
+        "HomeworkSubmission.AttemptNotFound",
+        $"Attempt {attemptNumber} for homework submission '{homeworkStudentId}' was not found");
 }
 
 

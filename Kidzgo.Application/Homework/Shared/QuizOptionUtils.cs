@@ -23,6 +23,97 @@ internal static class QuizOptionUtils
         }
     }
 
+    public static bool TryResolveCorrectAnswer(
+        IReadOnlyList<string> options,
+        string? rawCorrectAnswer,
+        out int index,
+        out string? optionText)
+    {
+        index = -1;
+        optionText = null;
+
+        if (options.Count == 0 || string.IsNullOrWhiteSpace(rawCorrectAnswer))
+        {
+            return false;
+        }
+
+        var trimmed = rawCorrectAnswer.Trim();
+
+        if (int.TryParse(trimmed, out var numeric))
+        {
+            if (numeric >= 0 && numeric < options.Count)
+            {
+                index = numeric;
+                optionText = options[index];
+                return true;
+            }
+
+            if (numeric >= 1 && numeric <= options.Count)
+            {
+                index = numeric - 1;
+                optionText = options[index];
+                return true;
+            }
+        }
+
+        if (trimmed.Length == 1)
+        {
+            var ch = char.ToUpperInvariant(trimmed[0]);
+            if (ch >= 'A' && ch < 'A' + options.Count)
+            {
+                index = ch - 'A';
+                optionText = options[index];
+                return true;
+            }
+        }
+
+        var exactMatchIndex = FindOptionIndex(options, trimmed, StringComparison.Ordinal);
+        if (exactMatchIndex >= 0)
+        {
+            index = exactMatchIndex;
+            optionText = options[index];
+            return true;
+        }
+
+        var ignoreCaseMatchIndex = FindOptionIndex(options, trimmed, StringComparison.OrdinalIgnoreCase);
+        if (ignoreCaseMatchIndex >= 0)
+        {
+            index = ignoreCaseMatchIndex;
+            optionText = options[index];
+            return true;
+        }
+
+        return false;
+    }
+
+    public static string? NormalizeCorrectAnswerForStorage(
+        IReadOnlyList<string> options,
+        string? rawCorrectAnswer)
+    {
+        return TryResolveCorrectAnswer(options, rawCorrectAnswer, out _, out var optionText)
+            ? optionText
+            : null;
+    }
+
+    public static bool TryBuildCorrectOption(
+        Guid questionId,
+        IReadOnlyList<string> options,
+        string? rawCorrectAnswer,
+        out Guid? optionId,
+        out string? optionText)
+    {
+        optionId = null;
+        optionText = null;
+
+        if (!TryResolveCorrectAnswer(options, rawCorrectAnswer, out var index, out optionText))
+        {
+            return false;
+        }
+
+        optionId = BuildOptionId(questionId, index);
+        return true;
+    }
+
     public static Guid BuildOptionId(Guid questionId, int orderIndex)
     {
         var input = $"{questionId:N}:{orderIndex}";
@@ -82,5 +173,31 @@ internal static class QuizOptionUtils
         }
 
         return result;
+    }
+
+    private static int FindOptionIndex(
+        IReadOnlyList<string> options,
+        string candidate,
+        StringComparison comparison)
+    {
+        var matchIndex = -1;
+
+        for (int i = 0; i < options.Count; i++)
+        {
+            var option = options[i]?.Trim() ?? string.Empty;
+            if (!string.Equals(option, candidate, comparison))
+            {
+                continue;
+            }
+
+            if (matchIndex >= 0)
+            {
+                return -1;
+            }
+
+            matchIndex = i;
+        }
+
+        return matchIndex;
     }
 }

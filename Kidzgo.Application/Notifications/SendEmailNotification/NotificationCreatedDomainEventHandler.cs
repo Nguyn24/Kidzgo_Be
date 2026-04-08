@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Notifications.Shared;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
 using MediatR;
@@ -48,8 +49,29 @@ public sealed class NotificationCreatedDomainEventHandler(
                 templateId = parsedTemplateId;
             }
 
-            // If template ID is provided, use template
-            if (templateId.HasValue)
+            var subject = notificationRecord.Title;
+            var body = notificationRecord.Content ?? string.Empty;
+            var resolvedPlaceholders = NotificationPlaceholderResolver.ContainsPlaceholders(subject) ||
+                                       NotificationPlaceholderResolver.ContainsPlaceholders(body)
+                ? await NotificationPlaceholderResolver.ResolveAsync(context, notificationRecord, cancellationToken)
+                : new Dictionary<string, string>();
+
+            // If content was pre-rendered on the notification record, send it directly.
+            if (!string.IsNullOrWhiteSpace(subject) &&
+                (!string.IsNullOrWhiteSpace(notificationRecord.Content) || !templateId.HasValue))
+            {
+                if (resolvedPlaceholders.Count > 0)
+                {
+                    subject = templateRenderer.Render(subject, resolvedPlaceholders);
+                    body = templateRenderer.Render(body, resolvedPlaceholders);
+                }
+
+                await mailService.SendEmailAsync(notificationRecord.RecipientUser.Email, subject, body, cancellationToken);
+
+                notificationRecord.Status = NotificationStatus.Sent;
+                notificationRecord.SentAt = DateTime.UtcNow;
+            }
+            else if (templateId.HasValue)
             {
                 var template = await context.NotificationTemplates
                     .FirstOrDefaultAsync(t => t.Id == templateId.Value && t.IsActive && !t.IsDeleted, cancellationToken);
@@ -74,8 +96,16 @@ public sealed class NotificationCreatedDomainEventHandler(
                         }
                     }
 
-                    string subject = templateRenderer.Render(template.Title, placeholders);
-                    string body = templateRenderer.Render(template.Content ?? string.Empty, placeholders);
+                    if (resolvedPlaceholders.Count > 0)
+                    {
+                        foreach (var placeholder in resolvedPlaceholders)
+                        {
+                            placeholders[placeholder.Key] = placeholder.Value;
+                        }
+                    }
+
+                    subject = templateRenderer.Render(template.Title, placeholders);
+                    body = templateRenderer.Render(template.Content ?? string.Empty, placeholders);
 
                     await mailService.SendEmailAsync(notificationRecord.RecipientUser.Email, subject, body, cancellationToken);
 

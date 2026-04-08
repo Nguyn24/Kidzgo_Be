@@ -2,6 +2,7 @@ using System.Text.Json;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
@@ -38,6 +39,7 @@ public sealed class CreateQuestionBankItemsCommandHandler(
 
         var items = new List<QuestionBankItem>();
         var dtoItems = new List<QuestionBankItemDto>();
+        var normalizedCorrectAnswers = new List<string>(command.Items.Count);
 
         for (int i = 0; i < command.Items.Count; i++)
         {
@@ -57,12 +59,21 @@ public sealed class CreateQuestionBankItemsCommandHandler(
                         HomeworkErrors.InsufficientOptions(i + 1));
                 }
 
-                if (!int.TryParse(item.CorrectAnswer, out int correctIndex) ||
-                    correctIndex < 0 || correctIndex >= item.Options.Count)
+                var normalizedCorrectAnswer = QuizOptionUtils.NormalizeCorrectAnswerForStorage(
+                    item.Options,
+                    item.CorrectAnswer);
+
+                if (string.IsNullOrWhiteSpace(normalizedCorrectAnswer))
                 {
                     return Result.Failure<CreateQuestionBankItemsResponse>(
                         HomeworkErrors.InvalidCorrectAnswer(i + 1));
                 }
+
+                normalizedCorrectAnswers.Add(normalizedCorrectAnswer);
+            }
+            else
+            {
+                normalizedCorrectAnswers.Add(item.CorrectAnswer.Trim());
             }
 
             if (item.Points <= 0)
@@ -80,7 +91,7 @@ public sealed class CreateQuestionBankItemsCommandHandler(
                 Options = item.QuestionType == HomeworkQuestionType.MultipleChoice
                     ? JsonSerializer.Serialize(item.Options)
                     : null,
-                CorrectAnswer = item.CorrectAnswer,
+                CorrectAnswer = normalizedCorrectAnswers[i],
                 Points = item.Points,
                 Explanation = item.Explanation,
                 Topic = item.Topic,

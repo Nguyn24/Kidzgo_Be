@@ -18,7 +18,7 @@ public sealed class ImportLessonPlanTemplatesFromFileResponse
         Array.Empty<ImportedLessonPlanTemplateProgramDto>();
 }
 
-public sealed class ImportedLessonPlanTemplateProgramDto
+public sealed record ImportedLessonPlanTemplateProgramDto
 {
     public Guid ProgramId { get; init; }
     public string ProgramName { get; init; } = null!;

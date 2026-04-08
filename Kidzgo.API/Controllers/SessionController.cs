@@ -41,7 +41,6 @@ public class SessionController : ControllerBase
         var command = new GenerateSessionsFromPatternCommand
         {
             ClassId = request.ClassId,
-            RoomId = request.RoomId,
             OnlyFutureSessions = request.OnlyFutureSessions
         };
 

@@ -25,7 +25,7 @@ public class HomeworkAssignment : Entity
     public decimal? MaxScore { get; set; }
     public int? RewardStars { get; set; }
     public int? TimeLimitMinutes { get; set; }
-    public bool AllowResubmit { get; set; }
+    public int MaxAttempts { get; set; } = 1;
     public bool AiHintEnabled { get; set; }
     public bool AiRecommendEnabled { get; set; }
     public Guid? MissionId { get; set; }

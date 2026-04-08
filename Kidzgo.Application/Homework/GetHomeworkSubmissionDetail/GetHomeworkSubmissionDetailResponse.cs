@@ -23,6 +23,8 @@ public sealed class GetHomeworkSubmissionDetailResponse
     public List<string> VocabularyTags { get; init; } = new();
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
+    public bool AllowResubmit { get; init; }
+    public int MaxAttempts { get; init; }
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? SpeakingMode { get; init; }
@@ -41,6 +43,8 @@ public sealed class GetHomeworkSubmissionDetailResponse
     public bool IsOverdue { get; init; }
     public List<HomeworkQuestionDto> Questions { get; init; } = new();
     public HomeworkReviewDto? Review { get; init; }
+    public int AttemptCount { get; init; }
+    public List<HomeworkSubmissionAttemptDto> Attempts { get; init; } = new();
 
     // Student info
     public Guid StudentProfileId { get; init; }

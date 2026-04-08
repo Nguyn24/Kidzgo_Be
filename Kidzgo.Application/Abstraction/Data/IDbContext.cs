@@ -78,6 +78,7 @@ public interface IDbContext
     DbSet<QuestionBankItem> QuestionBankItems { get; }
 
     DbSet<HomeworkStudent> HomeworkStudents { get; }
+    DbSet<HomeworkSubmissionAttempt> HomeworkSubmissionAttempts { get; }
     DbSet<LessonPlan> LessonPlans { get; }
     DbSet<LessonPlanTemplate> LessonPlanTemplates { get; }
 
