@@ -22,7 +22,7 @@ public sealed class GetParentOverviewQueryHandler(
         CancellationToken cancellationToken)
     {
         var userId = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var fromDate = query.FromDate ?? now.AddMonths(-1);
         var toDate = query.ToDate ?? now.AddMonths(1);
 

@@ -17,7 +17,7 @@ public sealed class CreateSessionReportCommandValidator : AbstractValidator<Crea
         RuleFor(command => command.ReportDate)
             .NotEmpty()
             .WithMessage("Report date is required")
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .LessThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Report date cannot be in the future");
 
         RuleFor(command => command.Feedback)

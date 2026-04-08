@@ -30,7 +30,7 @@ public sealed class UpdateProfileCommandHandler(IDbContext context)
             profile.IsActive = command.IsActive.Value;
         }
 
-        profile.UpdatedAt = DateTime.UtcNow;
+        profile.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

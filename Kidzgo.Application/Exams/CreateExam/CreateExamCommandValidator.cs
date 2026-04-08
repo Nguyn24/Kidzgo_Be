@@ -13,11 +13,11 @@ public sealed class CreateExamCommandValidator : AbstractValidator<CreateExamCom
         RuleFor(command => command.Date)
             .NotEmpty()
             .WithMessage("Date is required")
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Exam date cannot be in the past");
 
         RuleFor(command => command.ScheduledStartTime)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("Scheduled start time cannot be in the past")
             .When(command => command.ScheduledStartTime.HasValue);
     }

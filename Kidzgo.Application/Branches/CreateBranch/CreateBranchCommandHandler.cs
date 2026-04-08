@@ -31,7 +31,7 @@ public sealed class CreateBranchCommandHandler(
             return Result.Failure<CreateBranchResponse>(BranchErrors.NameNotUnique);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var branch = new Branch
         {
             Id = Guid.NewGuid(),

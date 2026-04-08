@@ -51,7 +51,7 @@ public sealed class LinkParentStudentCommandHandler(IDbContext context)
             Id = Guid.NewGuid(),
             ParentProfileId = command.ParentProfileId,
             StudentProfileId = command.StudentProfileId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.ParentStudentLinks.Add(link);

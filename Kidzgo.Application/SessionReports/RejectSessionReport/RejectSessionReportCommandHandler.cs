@@ -42,8 +42,8 @@ public sealed class RejectSessionReportCommandHandler(
         // Update status to Rejected
         sessionReport.Status = ReportStatus.Rejected;
         sessionReport.ReviewedByUserId = userContext.UserId;
-        sessionReport.ReviewedAt = DateTime.UtcNow;
-        sessionReport.UpdatedAt = DateTime.UtcNow;
+        sessionReport.ReviewedAt = VietnamTime.UtcNow();
+        sessionReport.UpdatedAt = VietnamTime.UtcNow();
 
         await ReportRequestWorkflow.MarkSessionRequestReviewedAsync(
             context,

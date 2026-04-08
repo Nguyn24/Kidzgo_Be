@@ -54,7 +54,7 @@ public sealed class DeleteLeadChildCommandHandler(
         context.LeadChildren.Remove(leadChild);
 
         // Create activity for Lead
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var activity = new LeadActivity
         {
             Id = Guid.NewGuid(),

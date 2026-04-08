@@ -30,7 +30,7 @@ public sealed class ReactivateProfileCommandHandler(IDbContext context)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(p => p.IsDeleted, false)
                     .SetProperty(p => p.IsActive, true)
-                    .SetProperty(p => p.UpdatedAt, DateTime.UtcNow),
+                    .SetProperty(p => p.UpdatedAt, VietnamTime.UtcNow()),
                 cancellationToken);
 
         return Result.Success();

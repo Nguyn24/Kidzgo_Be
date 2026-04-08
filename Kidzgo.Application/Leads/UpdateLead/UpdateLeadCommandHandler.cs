@@ -84,7 +84,7 @@ public sealed class UpdateLeadCommandHandler(
             lead.Notes = string.IsNullOrWhiteSpace(command.Notes) ? null : command.Notes.Trim();
         }
 
-        lead.UpdatedAt = DateTime.UtcNow;
+        lead.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -67,7 +67,7 @@ public sealed class ImportQuestionBankFromFileCommandHandler(
 
         var items = new List<QuestionBankItem>();
         var createdBy = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var row in rows)
         {

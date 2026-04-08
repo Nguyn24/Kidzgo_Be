@@ -76,10 +76,10 @@ public sealed class TuitionReminderDomainEventHandler(
             Title = subject,
             Content = body,
             Status = NotificationStatus.Sent,
-            SentAt = DateTime.UtcNow,
+            SentAt = VietnamTime.UtcNow(),
             NotificationTemplateId = template.Id,
             TemplateId = notification.InvoiceId.ToString(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.Notifications.Add(notificationRecord);

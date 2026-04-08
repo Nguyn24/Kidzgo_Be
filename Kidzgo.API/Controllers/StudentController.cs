@@ -337,8 +337,10 @@ public class StudentController : ControllerBase
             return NotFoundProblem("StudentProfile", "Student profile not found");
         }
 
-        var now = DateTime.UtcNow;
-        var today = DateOnly.FromDateTime(now);
+        var now = VietnamTime.UtcNow();
+        var today = VietnamTime.ToVietnamDateOnly(now);
+        var todayFromUtc = VietnamTime.TodayStartUtc();
+        var todayToUtc = VietnamTime.EndOfVietnamDayUtc(todayFromUtc);
         var classIds = await GetActiveClassIdsForStudentAsync(student.Id, cancellationToken);
 
         var notices = await _context.Notifications
@@ -360,25 +362,40 @@ public class StudentController : ControllerBase
             })
             .ToListAsync(cancellationToken);
 
-        var todayClass = await _context.Sessions
+        var todaySession = await _context.Sessions
             .AsNoTracking()
             .Where(s =>
                 classIds.Contains(s.ClassId) &&
-                DateOnly.FromDateTime(s.PlannedDatetime) == today)
+                s.PlannedDatetime >= todayFromUtc &&
+                s.PlannedDatetime <= todayToUtc)
             .OrderBy(s => s.PlannedDatetime)
             .Select(s => new
             {
                 sessionId = s.Id,
                 classId = s.ClassId,
                 className = s.Class.Title,
-                plannedDate = s.PlannedDatetime.Date,
-                startTime = s.PlannedDatetime,
-                endTime = s.PlannedDatetime.AddMinutes(s.DurationMinutes),
+                s.PlannedDatetime,
+                s.DurationMinutes,
                 teacherName = s.PlannedTeacher != null ? s.PlannedTeacher.Name : null,
                 roomName = s.PlannedRoom != null ? s.PlannedRoom.Name : null,
                 status = s.Status.ToString()
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        var todayClass = todaySession is null
+            ? null
+            : new
+            {
+                todaySession.sessionId,
+                todaySession.classId,
+                todaySession.className,
+                plannedDate = VietnamTime.ToVietnamDateOnly(todaySession.PlannedDatetime),
+                startTime = VietnamTime.ToVietnamDateTime(todaySession.PlannedDatetime),
+                endTime = VietnamTime.ToVietnamDateTime(todaySession.PlannedDatetime.AddMinutes(todaySession.DurationMinutes)),
+                todaySession.teacherName,
+                todaySession.roomName,
+                todaySession.status
+            };
 
         var pendingTasks = await _context.HomeworkStudents
             .AsNoTracking()

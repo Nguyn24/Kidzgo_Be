@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Exams;
 using Kidzgo.Domain.Exams.Errors;
@@ -27,27 +28,8 @@ public sealed class CreateExamCommandHandler(
 
         // Get current user
         var createdBy = userContext.UserId;
-        var now = DateTime.UtcNow;
-
-        // Convert ScheduledStartTime to UTC if provided
-        DateTime? scheduledStartTimeUtc = null;
-        if (command.ScheduledStartTime.HasValue)
-        {
-            var scheduledTime = command.ScheduledStartTime.Value;
-            if (scheduledTime.Kind == DateTimeKind.Local)
-            {
-                scheduledStartTimeUtc = scheduledTime.ToUniversalTime();
-            }
-            else if (scheduledTime.Kind == DateTimeKind.Unspecified)
-            {
-                // Assume it's already in UTC if unspecified
-                scheduledStartTimeUtc = DateTime.SpecifyKind(scheduledTime, DateTimeKind.Utc);
-            }
-            else
-            {
-                scheduledStartTimeUtc = scheduledTime;
-            }
-        }
+        var now = VietnamTime.UtcNow();
+        var scheduledStartTimeUtc = VietnamTime.NormalizeToUtc(command.ScheduledStartTime);
 
         // Create exam
         var exam = new Exam

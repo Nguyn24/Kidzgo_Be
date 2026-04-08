@@ -38,7 +38,7 @@ public sealed class CreateLeadFromZaloCommandHandler(
         {
             // Update existing lead instead of creating new one
             existingLead.TouchCount++;
-            existingLead.UpdatedAt = DateTime.UtcNow;
+            existingLead.UpdatedAt = VietnamTime.UtcNow();
             
             // Update contact info if provided
             if (!string.IsNullOrWhiteSpace(command.ContactName))
@@ -82,7 +82,7 @@ public sealed class CreateLeadFromZaloCommandHandler(
         }
 
         // Create new lead
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var lead = new Lead
         {
             Id = Guid.NewGuid(),

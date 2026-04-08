@@ -66,7 +66,7 @@ public sealed class CreateTeachingMaterialCommandHandler(
             storageFolder,
             cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var material = new TeachingMaterial
         {
             Id = Guid.NewGuid(),

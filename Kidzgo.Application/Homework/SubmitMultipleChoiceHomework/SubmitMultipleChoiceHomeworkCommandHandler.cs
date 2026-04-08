@@ -82,7 +82,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.CannotSubmitMultipleChoice);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var isFirstSubmission = currentAttemptCount == 0;
 
         if (homeworkStudent.Assignment.TimeLimitMinutes.HasValue)

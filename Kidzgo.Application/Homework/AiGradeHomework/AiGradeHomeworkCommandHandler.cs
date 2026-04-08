@@ -84,7 +84,7 @@ public sealed class AiGradeHomeworkCommandHandler(
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                homeworkStudent.GradedAt = DateTime.UtcNow;
+                homeworkStudent.GradedAt = VietnamTime.UtcNow();
 
                 var latestAttempt = await context.HomeworkSubmissionAttempts
                     .Where(a => a.HomeworkStudentId == homeworkStudent.Id)
@@ -165,7 +165,7 @@ public sealed class AiGradeHomeworkCommandHandler(
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
-            homeworkStudent.GradedAt = DateTime.UtcNow;
+            homeworkStudent.GradedAt = VietnamTime.UtcNow();
 
             var latestAttempt = await context.HomeworkSubmissionAttempts
                 .Where(a => a.HomeworkStudentId == homeworkStudent.Id)

@@ -62,8 +62,8 @@ public sealed class GetClassroomsQueryHandler(
                     : Math.Round(
                         (decimal)context.Sessions.Count(s =>
                             (s.PlannedRoomId == c.Id || s.ActualRoomId == c.Id) &&
-                            s.PlannedDatetime >= DateTime.UtcNow.Date &&
-                            s.PlannedDatetime < DateTime.UtcNow.Date.AddDays(30)) * 100 / c.Capacity,
+                            s.PlannedDatetime >= VietnamTime.TodayStartUtc() &&
+                            s.PlannedDatetime < VietnamTime.TodayStartUtc().AddDays(30)) * 100 / c.Capacity,
                         2)
             })
             .ToListAsync(cancellationToken);

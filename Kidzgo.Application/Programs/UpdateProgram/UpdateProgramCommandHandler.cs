@@ -34,7 +34,7 @@ public sealed class UpdateProgramCommandHandler(
         program.Code = command.Code;
         program.IsMakeup = command.IsMakeup;
         program.IsSupplementary = command.IsSupplementary;
-        program.UpdatedAt = DateTime.UtcNow;
+        program.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

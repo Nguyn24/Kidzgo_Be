@@ -60,7 +60,7 @@ public sealed class UpdateExamQuestionCommandHandler(
             question.Explanation = command.Explanation;
         }
 
-        question.UpdatedAt = DateTime.UtcNow;
+        question.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpdateExamQuestionResponse

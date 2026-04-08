@@ -1,4 +1,4 @@
-﻿using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
@@ -76,7 +76,7 @@ public sealed class ConvertLeadToEnrolledCommandHandler(
             placementTest.StudentProfileId = command.StudentProfileId.Value;
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Update LeadChild if LeadChildId exists
         if (isChildBasedFlow)

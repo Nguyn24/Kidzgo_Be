@@ -48,7 +48,7 @@ public sealed class CreateMakeupCreditCommandHandler(IDbContext context)
             Status = MakeupCreditStatus.Available,
             CreatedReason = command.CreatedReason,
             ExpiresAt = command.ExpiresAt,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.MakeupCredits.Add(credit);

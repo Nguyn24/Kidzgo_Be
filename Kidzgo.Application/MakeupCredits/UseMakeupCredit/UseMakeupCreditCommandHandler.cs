@@ -19,8 +19,8 @@ public sealed class UseMakeupCreditCommandHandler(
 {
     public async Task<Result> Handle(UseMakeupCreditCommand command, CancellationToken cancellationToken)
     {
-        var nowUtc = DateTime.UtcNow;
-        var today = DateOnly.FromDateTime(nowUtc);
+        var nowUtc = VietnamTime.UtcNow();
+        var today = VietnamTime.ToVietnamDateOnly(nowUtc);
 
         var studentProfileId = await ResolveStudentProfileIdAsync(command, cancellationToken);
         if (studentProfileId.IsFailure)
@@ -59,7 +59,7 @@ public sealed class UseMakeupCreditCommandHandler(
 
             if (currentAllocatedSession != null)
             {
-                var allocatedDate = DateOnly.FromDateTime(currentAllocatedSession.PlannedDatetime);
+                var allocatedDate = VietnamTime.ToVietnamDateOnly(currentAllocatedSession.PlannedDatetime);
                 if (allocatedDate <= today)
                 {
                     return Result.Failure(MakeupCreditErrors.CannotChangeAllocatedPastSession);
@@ -102,8 +102,8 @@ public sealed class UseMakeupCreditCommandHandler(
             return Result.Failure(MakeupCreditErrors.NotFound(command.TargetSessionId));
         }
 
-        var sourceDate = DateOnly.FromDateTime(sourceSession.PlannedDatetime);
-        var targetDate = DateOnly.FromDateTime(targetSession.PlannedDatetime);
+        var sourceDate = VietnamTime.ToVietnamDateOnly(sourceSession.PlannedDatetime);
+        var targetDate = VietnamTime.ToVietnamDateOnly(targetSession.PlannedDatetime);
 
         if (targetDate < today)
         {
@@ -116,10 +116,7 @@ public sealed class UseMakeupCreditCommandHandler(
             return Result.Failure(MakeupCreditErrors.MustBeWeekend);
         }
 
-        var sourceSaturday = GetSaturdayOfWeek(sourceDate);
-        var targetSaturday = GetSaturdayOfWeek(targetDate);
-
-        if (targetSaturday <= sourceSaturday)
+        if (!MakeupSessionRuleHelper.IsEligibleMakeupDate(sourceDate, targetDate))
         {
             return Result.Failure(MakeupCreditErrors.MustBeFutureWeek);
         }
@@ -158,10 +155,14 @@ public sealed class UseMakeupCreditCommandHandler(
             return Result.Failure(MakeupCreditErrors.TargetSessionFull);
         }
 
+        var targetWindowStartUtc = VietnamTime.TreatAsVietnamLocal(targetDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
+        var targetWindowEndUtc = VietnamTime.EndOfVietnamDayUtc(
+            VietnamTime.TreatAsVietnamLocal(targetDate.AddDays(1).ToDateTime(TimeOnly.MinValue)));
+
         var bookedSlots = await sessionParticipantService.GetStudentBookedSlotsAsync(
             studentProfileId.Value,
-            targetSession.PlannedDatetime.Date.AddDays(-1),
-            targetSession.PlannedDatetime.Date.AddDays(2).AddTicks(-1),
+            targetWindowStartUtc,
+            targetWindowEndUtc,
             cancellationToken);
 
         var currentAllocatedSlot = currentAllocatedSession is null
@@ -251,11 +252,5 @@ public sealed class UseMakeupCreditCommandHandler(
         }
 
         return Result.Failure<Guid>(ProfileErrors.UserMustBeParentOrStudent);
-    }
-
-    private static DateOnly GetSaturdayOfWeek(DateOnly date)
-    {
-        var dayOfWeek = (int)date.DayOfWeek;
-        return date.AddDays(DayOfWeek.Saturday - (DayOfWeek)dayOfWeek);
     }
 }

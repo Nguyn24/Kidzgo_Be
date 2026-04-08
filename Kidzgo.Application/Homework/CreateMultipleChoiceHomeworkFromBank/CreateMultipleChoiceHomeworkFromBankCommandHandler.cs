@@ -4,6 +4,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
 using Kidzgo.Application.Shared;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
@@ -77,7 +78,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             }
         }
 
-        if (command.DueAt.HasValue && command.DueAt.Value <= DateTime.UtcNow)
+        if (command.DueAt.HasValue && VietnamTime.NormalizeToUtc(command.DueAt.Value) <= VietnamTime.UtcNow())
         {
             return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
                 HomeworkErrors.InvalidDueDate);
@@ -137,11 +138,9 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
 
         Shuffle(selected, random);
 
-        var dueAtUtc = command.DueAt.HasValue
-            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
+        var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var maxScore = selected.Sum(q => q.Points);
 

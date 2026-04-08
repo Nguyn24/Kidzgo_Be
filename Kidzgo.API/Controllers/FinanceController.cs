@@ -102,9 +102,9 @@ public class FinanceController : ControllerBase
             Currency = string.IsNullOrWhiteSpace(request.Currency) ? "VND" : request.Currency,
             Description = request.Title ?? request.Note,
             RelatedType = request.Category,
-            EntryDate = request.Date ?? DateOnly.FromDateTime(DateTime.UtcNow),
+            EntryDate = request.Date ?? VietnamTime.TodayDateOnly(),
             CreatedBy = _userContext.UserId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         _context.CashbookEntries.Add(entry);
@@ -233,7 +233,7 @@ public class FinanceController : ControllerBase
     [HttpGet("dues")]
     public async Task<IResult> GetFinanceDues(CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = VietnamTime.TodayDateOnly();
 
         var rawDebts = await _context.Invoices
             .AsNoTracking()
@@ -357,9 +357,9 @@ public class FinanceController : ControllerBase
             Currency = string.IsNullOrWhiteSpace(request.Currency) ? "VND" : request.Currency,
             Description = request.Note,
             RelatedType = RelatedType.Adjustment,
-            EntryDate = DateOnly.FromDateTime((request.Timestamp ?? DateTime.UtcNow).Date),
+            EntryDate = VietnamTime.ToVietnamDateOnly(request.Timestamp ?? VietnamTime.UtcNow()),
             CreatedBy = _userContext.UserId,
-            CreatedAt = request.Timestamp ?? DateTime.UtcNow
+            CreatedAt = request.Timestamp ?? VietnamTime.UtcNow()
         };
 
         _context.CashbookEntries.Add(entry);

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Services;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,9 +16,7 @@ public sealed class CheckSessionConflictsQueryHandler(
         CheckSessionConflictsQuery query,
         CancellationToken cancellationToken)
     {
-        var plannedUtc = query.PlannedDatetime.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(query.PlannedDatetime, DateTimeKind.Utc)
-            : query.PlannedDatetime.ToUniversalTime();
+        var plannedUtc = VietnamTime.NormalizeToUtc(query.PlannedDatetime);
 
         var sessionId = query.SessionId ?? Guid.Empty;
 

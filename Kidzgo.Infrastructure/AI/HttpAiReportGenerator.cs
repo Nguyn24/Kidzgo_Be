@@ -113,7 +113,7 @@ public sealed class HttpAiReportGenerator : IAiReportGenerator
 
                         sessionFeedbacks.Add(new A6SessionFeedback
                         {
-                            Date = reportDate ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
+                            Date = reportDate ?? VietnamTime.TodayDateOnly().ToString("yyyy-MM-dd"),
                             Text = feedback
                         });
                     }

@@ -163,7 +163,7 @@ public sealed class PushNotificationDomainEventHandler(
             if (successCount > 0)
             {
                 notificationRecord.Status = NotificationStatus.Sent;
-                notificationRecord.SentAt = DateTime.UtcNow;
+                notificationRecord.SentAt = VietnamTime.UtcNow();
             }
             else
             {

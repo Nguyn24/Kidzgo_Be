@@ -9,7 +9,7 @@ public sealed class SchedulePlacementTestCommandValidator : AbstractValidator<Sc
         RuleFor(command => command.ScheduledAt)
             .NotEmpty()
             .WithMessage("ScheduledAt is required")
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("ScheduledAt cannot be in the past");
     }
 }

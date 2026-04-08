@@ -40,7 +40,7 @@ public sealed class CancelPlacementTestCommandHandler(
                 : $"{placementTest.Notes}\nCancelled: {command.Reason.Trim()}";
         }
 
-        placementTest.UpdatedAt = DateTime.UtcNow;
+        placementTest.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new CancelPlacementTestResponse

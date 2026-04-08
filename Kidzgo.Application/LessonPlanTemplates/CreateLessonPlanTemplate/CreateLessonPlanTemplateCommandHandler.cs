@@ -49,7 +49,7 @@ public sealed class CreateLessonPlanTemplateCommandHandler(
         }
 
         var currentUserId = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var template = new LessonPlanTemplate
         {

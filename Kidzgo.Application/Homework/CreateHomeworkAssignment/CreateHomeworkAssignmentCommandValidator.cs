@@ -15,7 +15,7 @@ public sealed class CreateHomeworkAssignmentCommandValidator : AbstractValidator
             .WithMessage("Title is required");
 
         RuleFor(command => command.DueAt)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("Due date should not be in the past")
             .When(command => command.DueAt.HasValue);
     }

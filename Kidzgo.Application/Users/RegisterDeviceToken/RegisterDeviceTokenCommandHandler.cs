@@ -18,7 +18,7 @@ public sealed class RegisterDeviceTokenCommandHandler(
     {
         var userId = userContext.UserId;
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Check if device token already exists for this user and device
         var existingToken = await context.DeviceTokens

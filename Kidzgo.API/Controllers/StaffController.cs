@@ -150,7 +150,7 @@ public class StaffController : ControllerBase
         }
 
         registration.Status = registration.ClassId.HasValue ? RegistrationStatus.ClassAssigned : RegistrationStatus.WaitingForClass;
-        registration.UpdatedAt = DateTime.UtcNow;
+        registration.UpdatedAt = VietnamTime.UtcNow();
         await _context.SaveChangesAsync(cancellationToken);
 
         return OkData(new { registration.Id, status = registration.Status.ToString() });
@@ -166,7 +166,7 @@ public class StaffController : ControllerBase
         }
 
         registration.Status = RegistrationStatus.Cancelled;
-        registration.UpdatedAt = DateTime.UtcNow;
+        registration.UpdatedAt = VietnamTime.UtcNow();
         await _context.SaveChangesAsync(cancellationToken);
 
         return OkData(new { registration.Id, status = registration.Status.ToString() });

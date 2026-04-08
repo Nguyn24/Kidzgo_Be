@@ -49,7 +49,7 @@ public sealed class CreateInvoiceCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var userId = userContext.UserId;
 
         var invoice = new Invoice

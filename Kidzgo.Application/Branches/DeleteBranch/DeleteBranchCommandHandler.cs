@@ -23,7 +23,7 @@ public sealed class DeleteBranchCommandHandler(IDbContext context)
         // Check if branch has active users, classes, etc. (soft delete only)
         // For now, just mark as inactive instead of deleting
         branch.IsActive = false;
-        branch.UpdatedAt = DateTime.UtcNow;
+        branch.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

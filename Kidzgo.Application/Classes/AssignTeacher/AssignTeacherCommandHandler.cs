@@ -75,7 +75,7 @@ public sealed class AssignTeacherCommandHandler(
             classEntity.AssistantTeacherId = null;
         }
 
-        classEntity.UpdatedAt = DateTime.UtcNow;
+        classEntity.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         // Re-query to get teacher names

@@ -46,7 +46,7 @@ public sealed class GetTicketSLAQueryHandler(
             : (bool?)null;
 
         var isSLAOverdue = !firstResponseAt.HasValue && 
-            (DateTime.UtcNow - ticket.CreatedAt).TotalHours > slaTargetHours;
+            (VietnamTime.UtcNow() - ticket.CreatedAt).TotalHours > slaTargetHours;
 
         var staffCommentCount = ticket.TicketComments
             .Count(c => c.CommenterUser.Role == Domain.Users.UserRole.ManagementStaff || 

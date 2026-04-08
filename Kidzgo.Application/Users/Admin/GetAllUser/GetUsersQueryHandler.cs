@@ -1,4 +1,4 @@
-﻿using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.Users.Shared;
@@ -13,7 +13,7 @@ public sealed class GetUsersQueryHandler(IDbContext context)
 {
     public async Task<Result<Page<GetUsersResponse>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         IQueryable<User> query = context.Users
             .Include(u => u.Branch)

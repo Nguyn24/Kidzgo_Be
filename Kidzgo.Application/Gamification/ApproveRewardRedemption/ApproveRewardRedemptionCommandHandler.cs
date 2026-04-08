@@ -36,7 +36,7 @@ public sealed class ApproveRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.InvalidStatusTransition(redemption.Status, RedemptionStatus.Approved));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         redemption.Status = RedemptionStatus.Approved;
         redemption.HandledBy = userContext.UserId;
         redemption.HandledAt = now;

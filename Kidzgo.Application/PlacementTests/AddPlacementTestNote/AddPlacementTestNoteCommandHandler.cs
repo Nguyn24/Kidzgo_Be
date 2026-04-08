@@ -30,7 +30,7 @@ public sealed class AddPlacementTestNoteCommandHandler(
             ? noteText
             : $"{placementTest.Notes}\n{noteText}";
 
-        placementTest.UpdatedAt = DateTime.UtcNow;
+        placementTest.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new AddPlacementTestNoteResponse

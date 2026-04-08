@@ -130,7 +130,7 @@ public sealed class CreateClassCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var classEntity = new Class
         {
             Id = Guid.NewGuid(),
