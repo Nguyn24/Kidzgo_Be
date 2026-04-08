@@ -45,7 +45,7 @@ public sealed class GamificationService : IGamificationService
             SourceId = missionId,
             BalanceAfter = newBalance,
             CreatedBy = null, // System generated
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         _context.StarTransactions.Add(transaction);
@@ -74,7 +74,7 @@ public sealed class GamificationService : IGamificationService
             SourceId = homeworkId,
             BalanceAfter = newBalance,
             CreatedBy = null, // System generated
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         _context.StarTransactions.Add(transaction);
@@ -103,7 +103,7 @@ public sealed class GamificationService : IGamificationService
             SourceId = attendanceId,
             BalanceAfter = newBalance,
             CreatedBy = null, // System generated
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         _context.StarTransactions.Add(transaction);

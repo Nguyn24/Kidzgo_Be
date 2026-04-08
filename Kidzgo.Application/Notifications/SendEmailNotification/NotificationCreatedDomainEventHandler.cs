@@ -69,7 +69,7 @@ public sealed class NotificationCreatedDomainEventHandler(
                 await mailService.SendEmailAsync(notificationRecord.RecipientUser.Email, subject, body, cancellationToken);
 
                 notificationRecord.Status = NotificationStatus.Sent;
-                notificationRecord.SentAt = DateTime.UtcNow;
+                notificationRecord.SentAt = VietnamTime.UtcNow();
             }
             else if (templateId.HasValue)
             {
@@ -110,7 +110,7 @@ public sealed class NotificationCreatedDomainEventHandler(
                     await mailService.SendEmailAsync(notificationRecord.RecipientUser.Email, subject, body, cancellationToken);
 
                     notificationRecord.Status = NotificationStatus.Sent;
-                    notificationRecord.SentAt = DateTime.UtcNow;
+                    notificationRecord.SentAt = VietnamTime.UtcNow();
                 }
                 else
                 {
@@ -122,7 +122,7 @@ public sealed class NotificationCreatedDomainEventHandler(
                         cancellationToken);
 
                     notificationRecord.Status = NotificationStatus.Sent;
-                    notificationRecord.SentAt = DateTime.UtcNow;
+                    notificationRecord.SentAt = VietnamTime.UtcNow();
                 }
             }
             else
@@ -135,7 +135,7 @@ public sealed class NotificationCreatedDomainEventHandler(
                     cancellationToken);
 
                 notificationRecord.Status = NotificationStatus.Sent;
-                notificationRecord.SentAt = DateTime.UtcNow;
+                notificationRecord.SentAt = VietnamTime.UtcNow();
             }
 
             await context.SaveChangesAsync(cancellationToken);

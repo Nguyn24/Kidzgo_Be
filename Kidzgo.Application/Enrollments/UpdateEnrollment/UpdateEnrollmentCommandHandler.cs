@@ -83,7 +83,7 @@ public sealed class UpdateEnrollmentCommandHandler(
             enrollment.TuitionPlanId = command.TuitionPlanId.Value;
         }
 
-        enrollment.UpdatedAt = DateTime.UtcNow;
+        enrollment.UpdatedAt = VietnamTime.UtcNow();
         await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 

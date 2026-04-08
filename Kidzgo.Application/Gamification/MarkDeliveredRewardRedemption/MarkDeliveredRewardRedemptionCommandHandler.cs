@@ -36,7 +36,7 @@ public sealed class MarkDeliveredRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.InvalidStatusTransition(redemption.Status, RedemptionStatus.Delivered));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         redemption.Status = RedemptionStatus.Delivered;
         redemption.DeliveredAt = now;
 

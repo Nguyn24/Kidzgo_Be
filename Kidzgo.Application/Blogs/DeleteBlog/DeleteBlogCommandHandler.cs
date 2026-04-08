@@ -28,7 +28,7 @@ public sealed class DeleteBlogCommandHandler(
 
         // Soft delete
         blog.IsDeleted = true;
-        blog.UpdatedAt = DateTime.UtcNow;
+        blog.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -15,7 +15,7 @@ public sealed class AddLeadNoteCommandValidator : AbstractValidator<AddLeadNoteC
             .WithMessage("Content is required");
 
         RuleFor(command => command.NextActionAt)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("NextActionAt should not be in the past")
             .When(command => command.NextActionAt.HasValue);
     }

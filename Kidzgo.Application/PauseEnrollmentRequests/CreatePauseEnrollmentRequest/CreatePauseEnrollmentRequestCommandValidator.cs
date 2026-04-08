@@ -9,7 +9,7 @@ public sealed class CreatePauseEnrollmentRequestCommandValidator : AbstractValid
         RuleFor(c => c.StudentProfileId).NotEmpty();
         RuleFor(c => c.PauseFrom)
             .NotEmpty()
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Pause from date cannot be in the past");
 
         RuleFor(c => c.PauseTo)

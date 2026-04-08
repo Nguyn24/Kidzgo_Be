@@ -22,7 +22,7 @@ public sealed class DeleteProfileCommandHandler(IDbContext context)
         
         profile.IsDeleted = true;
         profile.IsActive = false;
-        profile.UpdatedAt = DateTime.UtcNow;
+        profile.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -62,7 +62,7 @@ public sealed class ApproveProfileCommandHandler(IDbContext context, IPublisher 
             return Result.Success(result);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var updatedCount = await context.Profiles
             .Where(p => idsToApprove.Contains(p.Id))

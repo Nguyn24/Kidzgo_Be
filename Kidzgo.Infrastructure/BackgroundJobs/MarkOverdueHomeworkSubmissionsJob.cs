@@ -24,7 +24,7 @@ public sealed class MarkOverdueHomeworkSubmissionsJob(
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IDbContext>();

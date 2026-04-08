@@ -33,7 +33,7 @@ public sealed class MarkPlacementTestNoShowCommandHandler(
         }
 
         placementTest.Status = PlacementTestStatus.NoShow;
-        placementTest.UpdatedAt = DateTime.UtcNow;
+        placementTest.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new MarkPlacementTestNoShowResponse

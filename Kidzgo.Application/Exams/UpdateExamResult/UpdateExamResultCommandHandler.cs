@@ -42,7 +42,7 @@ public sealed class UpdateExamResultCommandHandler(
                 : null;
         }
 
-        examResult.UpdatedAt = DateTime.UtcNow;
+        examResult.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

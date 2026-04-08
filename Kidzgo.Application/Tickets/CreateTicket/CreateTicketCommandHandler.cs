@@ -108,7 +108,7 @@ public sealed class CreateTicketCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var ticket = new Ticket
         {
             Id = Guid.NewGuid(),

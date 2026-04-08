@@ -47,7 +47,7 @@ public sealed class CheckInAttendanceStreakCommandHandler(
         var rewardExp = settings?.CheckInRewardExp ?? 5;
 
         // UC-213: Get today's date (UTC)
-        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        var today = VietnamTime.TodayDateOnly();
 
         // UC-214: Check if already checked in today
         var existingStreak = await context.AttendanceStreaks
@@ -117,7 +117,7 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             CurrentStreak = currentStreak,
             RewardStars = rewardStars,
             RewardExp = rewardExp,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.AttendanceStreaks.Add(streak);
@@ -142,7 +142,7 @@ public sealed class CheckInAttendanceStreakCommandHandler(
         // ============================================================
         // GIAI DOAN 3: Track NoUnexcusedAbsence Mission progress
         // ============================================================
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var activeAttendanceMissions = await context.MissionProgresses
             .Include(mp => mp.Mission)

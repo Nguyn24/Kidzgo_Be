@@ -22,7 +22,7 @@ public sealed class CreateProgramCommandHandler(
             return Result.Failure<CreateProgramResponse>(ProgramErrors.BranchNotFound);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var program = new Program
         {
             Id = Guid.NewGuid(),

@@ -39,7 +39,7 @@ public sealed class UpdateSessionReportCommandHandler(
 
         // Update feedback
         sessionReport.Feedback = command.Feedback;
-        sessionReport.UpdatedAt = DateTime.UtcNow;
+        sessionReport.UpdatedAt = VietnamTime.UtcNow();
 
         // If report was Rejected, change status back to Draft so teacher can resubmit
         if (sessionReport.Status == ReportStatus.Rejected)

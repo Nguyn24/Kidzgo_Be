@@ -80,7 +80,7 @@ public sealed class SuggestClassesQueryHandler(
             .Where(c => IsScheduleMatching(preferredSchedule ?? string.Empty, c.SchedulePattern))
             .ToList();
 
-        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = VietnamTime.TodayDateOnly();
 
         return (
             filteredClasses

@@ -36,8 +36,8 @@ public sealed class PublishSessionReportCommandHandler(
 
         // Update status to Published
         sessionReport.Status = ReportStatus.Published;
-        sessionReport.PublishedAt = DateTime.UtcNow;
-        sessionReport.UpdatedAt = DateTime.UtcNow;
+        sessionReport.PublishedAt = VietnamTime.UtcNow();
+        sessionReport.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

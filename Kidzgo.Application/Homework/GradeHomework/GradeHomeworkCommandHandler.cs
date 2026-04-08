@@ -51,7 +51,7 @@ public sealed class GradeHomeworkCommandHandler(
         homeworkStudent.Status = HomeworkStatus.Graded;
         homeworkStudent.Score = command.Score;
         homeworkStudent.TeacherFeedback = command.TeacherFeedback;
-        homeworkStudent.GradedAt = DateTime.UtcNow;
+        homeworkStudent.GradedAt = VietnamTime.UtcNow();
 
         var latestAttempt = await context.HomeworkSubmissionAttempts
             .Where(a => a.HomeworkStudentId == homeworkStudent.Id)

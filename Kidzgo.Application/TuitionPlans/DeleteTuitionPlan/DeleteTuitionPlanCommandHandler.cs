@@ -35,7 +35,7 @@ public sealed class DeleteTuitionPlanCommandHandler(
         // Soft delete
         tuitionPlan.IsDeleted = true;
         tuitionPlan.IsActive = false; // Deactivate when soft deleting
-        tuitionPlan.UpdatedAt = DateTime.UtcNow;
+        tuitionPlan.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

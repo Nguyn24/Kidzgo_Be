@@ -98,7 +98,7 @@ public sealed class CreateEnrollmentCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var enrollment = new ClassEnrollment
         {
             Id = Guid.NewGuid(),

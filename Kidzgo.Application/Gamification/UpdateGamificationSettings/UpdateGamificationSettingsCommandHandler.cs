@@ -23,7 +23,7 @@ public sealed class UpdateGamificationSettingsCommandHandler(
                 Id = 1,
                 CheckInRewardStars = command.CheckInRewardStars,
                 CheckInRewardExp = command.CheckInRewardExp,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = VietnamTime.UtcNow()
             };
             context.GamificationSettings.Add(settings);
         }
@@ -31,7 +31,7 @@ public sealed class UpdateGamificationSettingsCommandHandler(
         {
             settings.CheckInRewardStars = command.CheckInRewardStars;
             settings.CheckInRewardExp = command.CheckInRewardExp;
-            settings.UpdatedAt = DateTime.UtcNow;
+            settings.UpdatedAt = VietnamTime.UtcNow();
         }
 
         await context.SaveChangesAsync(cancellationToken);

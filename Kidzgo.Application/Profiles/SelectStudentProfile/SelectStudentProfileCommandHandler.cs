@@ -27,7 +27,7 @@ public sealed class SelectStudentProfileCommandHandler(
             return Result.Failure<SelectStudentProfileResponse>(ProfileErrors.Invalid);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         profile.LastLoginAt = now;
         profile.LastSeenAt = now;
         profile.UpdatedAt = now;

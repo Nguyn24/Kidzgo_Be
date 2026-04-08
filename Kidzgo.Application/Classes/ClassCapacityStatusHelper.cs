@@ -26,7 +26,7 @@ internal static class ClassCapacityStatusHelper
 
         if (classEntity.Status == ClassStatus.Full)
         {
-            classEntity.Status = classEntity.StartDate <= DateOnly.FromDateTime(now)
+            classEntity.Status = classEntity.StartDate <= VietnamTime.ToVietnamDateOnly(now)
                 ? ClassStatus.Active
                 : ClassStatus.Recruiting;
             classEntity.UpdatedAt = now;

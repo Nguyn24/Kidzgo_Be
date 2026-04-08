@@ -24,7 +24,7 @@ public sealed class ToggleRewardStoreItemStatusCommandHandler(
         }
 
         item.IsActive = !item.IsActive;
-        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new ToggleRewardStoreItemStatusResponse

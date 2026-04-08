@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.LessonPlans;
 using Kidzgo.Domain.LessonPlans.Errors;
@@ -100,21 +101,18 @@ public sealed class CreateHomeworkAssignmentCommandHandler(
         }
 
         // Validate due date
-        if (command.DueAt.HasValue && command.DueAt.Value <= DateTime.UtcNow)
+        if (command.DueAt.HasValue && VietnamTime.NormalizeToUtc(command.DueAt.Value) <= VietnamTime.UtcNow())
         {
             return Result.Failure<CreateHomeworkAssignmentResponse>(
                 HomeworkErrors.InvalidDueDate);
         }
 
-        // Convert DueAt to UTC if provided (PostgreSQL requires UTC for timestamp with time zone)
-        var dueAtUtc = command.DueAt.HasValue
-            ? DateTime.SpecifyKind(command.DueAt.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
+        var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
         // Get current user ID from context
         var currentUserId = userContext.UserId;
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var homework = new HomeworkAssignment
         {
             Id = Guid.NewGuid(),

@@ -51,8 +51,8 @@ public sealed class CreateTuitionPlanCommandHandler(
             Currency = command.Currency,
             IsActive = true,
             IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow(),
+            UpdatedAt = VietnamTime.UtcNow()
         };
 
         context.TuitionPlans.Add(tuitionPlan);

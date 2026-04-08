@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Microsoft.EntityFrameworkCore;
@@ -35,17 +36,13 @@ public sealed class GetPlacementTestsQueryHandler(
 
         if (query.FromDate.HasValue)
         {
-            var fromDateUtc = query.FromDate.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.FromDate.Value, DateTimeKind.Utc)
-                : query.FromDate.Value.ToUniversalTime();
+            var fromDateUtc = VietnamTime.NormalizeToUtc(query.FromDate.Value);
             placementTestsQuery = placementTestsQuery.Where(pt => pt.ScheduledAt >= fromDateUtc);
         }
 
         if (query.ToDate.HasValue)
         {
-            var toDateUtc = query.ToDate.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.ToDate.Value, DateTimeKind.Utc)
-                : query.ToDate.Value.ToUniversalTime();
+            var toDateUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.NormalizeToUtc(query.ToDate.Value));
             placementTestsQuery = placementTestsQuery.Where(pt => pt.ScheduledAt <= toDateUtc);
         }
 

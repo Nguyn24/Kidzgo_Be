@@ -13,7 +13,7 @@ public sealed class GetProfileByIdQueryHandler(IDbContext context)
 {
     public async Task<Result<GetProfileByIdResponse>> Handle(GetProfileByIdQuery query, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var profile = await context.Profiles
             .Include(p => p.User)
             .Where(p => p.Id == query.Id)

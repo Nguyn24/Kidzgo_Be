@@ -48,7 +48,7 @@ public sealed class RetryNotificationCommandHandler(
         {
             NotificationId = notification.Id,
             Status = notification.Status.ToString(),
-            RetriedAt = DateTime.UtcNow
+            RetriedAt = VietnamTime.UtcNow()
         };
     }
 }

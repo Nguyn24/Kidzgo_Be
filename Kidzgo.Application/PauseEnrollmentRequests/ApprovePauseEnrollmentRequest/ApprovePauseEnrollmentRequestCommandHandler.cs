@@ -66,18 +66,20 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
         }
 
         pauseRequest.Status = PauseEnrollmentRequestStatus.Approved;
-        pauseRequest.ApprovedAt = DateTime.UtcNow;
+        pauseRequest.ApprovedAt = VietnamTime.UtcNow();
         pauseRequest.ApprovedBy = userContext.UserId;
 
         var activeClassIds = activeEnrollments
             .Select(e => e.ClassId)
             .Distinct()
             .ToList();
+        var pauseFromUtc = VietnamTime.TreatAsVietnamLocal(pauseRequest.PauseFrom.ToDateTime(TimeOnly.MinValue));
+        var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(pauseRequest.PauseTo.ToDateTime(TimeOnly.MinValue)));
 
         var classIdsInRange = await context.Sessions
             .Where(s => activeClassIds.Contains(s.ClassId)
-                        && DateOnly.FromDateTime(s.PlannedDatetime) >= pauseRequest.PauseFrom
-                        && DateOnly.FromDateTime(s.PlannedDatetime) <= pauseRequest.PauseTo)
+                        && s.PlannedDatetime >= pauseFromUtc
+                        && s.PlannedDatetime <= pauseToUtc)
             .Select(s => s.ClassId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -100,11 +102,11 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
         {
             var previousStatus = enrollment.Status;
             enrollment.Status = EnrollmentStatus.Paused;
-            enrollment.UpdatedAt = DateTime.UtcNow;
+            enrollment.UpdatedAt = VietnamTime.UtcNow();
             await studentSessionAssignmentService.CancelAssignmentsForEnrollmentInRangeAsync(
                 enrollment.Id,
-                pauseRequest.PauseFrom.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
-                pauseRequest.PauseTo.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc),
+                pauseFromUtc,
+                pauseToUtc,
                 cancellationToken);
 
             var history = new PauseEnrollmentRequestHistory
@@ -118,7 +120,7 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
                 NewStatus = EnrollmentStatus.Paused,
                 PauseFrom = pauseRequest.PauseFrom,
                 PauseTo = pauseRequest.PauseTo,
-                ChangedAt = DateTime.UtcNow,
+                ChangedAt = VietnamTime.UtcNow(),
                 ChangedBy = userContext.UserId
             };
 

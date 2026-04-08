@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -61,7 +62,7 @@ public sealed class SchedulePlacementTestCommandHandler(
             if (leadChild is null)
             {
                 // Create default LeadChild for backward compatibility
-                var defaultNow = DateTime.UtcNow;
+                var defaultNow = VietnamTime.UtcNow();
                 leadChild = new LeadChild
                 {
                     Id = Guid.NewGuid(),
@@ -95,12 +96,8 @@ public sealed class SchedulePlacementTestCommandHandler(
             }
         }
 
-        // Convert ScheduledAt to UTC
-        DateTime scheduledAtUtc = command.ScheduledAt.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(command.ScheduledAt, DateTimeKind.Utc)
-            : command.ScheduledAt.ToUniversalTime();
-
-        var now = DateTime.UtcNow;
+        DateTime scheduledAtUtc = VietnamTime.NormalizeToUtc(command.ScheduledAt);
+        var now = VietnamTime.UtcNow();
         var placementTest = new PlacementTest
         {
             Id = Guid.NewGuid(),

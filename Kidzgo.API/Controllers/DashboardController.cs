@@ -49,8 +49,8 @@ public class DashboardController : ControllerBase
             return result.MatchOk();
         }
 
-        var from = startDate ?? DateTime.UtcNow.AddMonths(-5);
-        var to = endDate ?? DateTime.UtcNow;
+        var from = startDate ?? VietnamTime.UtcNow().AddMonths(-5);
+        var to = endDate ?? VietnamTime.UtcNow();
 
         var branchQuery = _context.Branches.AsNoTracking();
         if (branchId.HasValue)

@@ -18,7 +18,7 @@ public sealed class CancelRegistrationCommandHandler(
         CancelRegistrationCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var registration = await context.Registrations
             .FirstOrDefaultAsync(r => r.Id == command.Id, cancellationToken);

@@ -43,7 +43,7 @@ public sealed class ForgetPasswordDomainEventHandler(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Token = token,
-            ExpiresAt = DateTime.UtcNow.AddHours(1)
+            ExpiresAt = VietnamTime.UtcNow().AddHours(1)
         };
 
         context.PasswordResetTokens.Add(resetToken);

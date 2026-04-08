@@ -67,7 +67,7 @@ public sealed class ProcessPayOSWebhookCommandHandler(
             Amount = webhook.Data.Amount / 1000m, // Convert from VND (đồng) back to thousands
             PaidAt = DateTime.TryParse(webhook.Data.TransactionDateTime, out var paidAt)
                 ? paidAt.ToUniversalTime()
-                : DateTime.UtcNow,
+                : VietnamTime.UtcNow(),
             ReferenceCode = webhook.Data.Reference
         };
 

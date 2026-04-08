@@ -30,7 +30,7 @@ public sealed class CreateRewardStoreItemCommandHandler(
                 RewardStoreErrors.InvalidQuantity);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var item = new RewardStoreItem
         {
             Id = Guid.NewGuid(),

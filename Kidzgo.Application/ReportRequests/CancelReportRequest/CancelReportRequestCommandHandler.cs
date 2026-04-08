@@ -47,7 +47,7 @@ public sealed class CancelReportRequestCommandHandler(
         }
 
         request.Status = ReportRequestStatus.Cancelled;
-        request.UpdatedAt = DateTime.UtcNow;
+        request.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

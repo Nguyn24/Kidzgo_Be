@@ -41,10 +41,10 @@ public sealed class LoginCommandHandler(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Token = tokenProvider.GenerateRefreshToken(),
-            Expires = DateTime.UtcNow.AddDays(1)
+            Expires = VietnamTime.UtcNow().AddDays(1)
         };
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         user.LastLoginAt = now;
         user.LastSeenAt = now;
         user.UpdatedAt = now;

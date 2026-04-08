@@ -40,7 +40,7 @@ public sealed class PublishMonthlyReportCommandHandler(
                 MonthlyReportErrors.InvalidStatus(report.Status, "publish"));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         report.Status = ReportStatus.Published;
         report.PublishedAt = now;

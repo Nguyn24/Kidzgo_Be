@@ -21,7 +21,7 @@ public sealed class ToggleTuitionPlanStatusCommandHandler(
         }
 
         tuitionPlan.IsActive = !tuitionPlan.IsActive;
-        tuitionPlan.UpdatedAt = DateTime.UtcNow;
+        tuitionPlan.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new ToggleTuitionPlanStatusResponse
