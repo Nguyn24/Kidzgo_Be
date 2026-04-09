@@ -5,6 +5,7 @@ using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Application.PauseEnrollmentRequests;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PauseEnrollmentRequests.GetPauseEnrollmentRequests;
@@ -18,7 +19,29 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
         GetPauseEnrollmentRequestsQuery request,
         CancellationToken cancellationToken)
     {
-        var studentProfileId = request.StudentProfileId ?? userContext.StudentId;
+        Guid? studentProfileId = request.StudentProfileId;
+        if (!request.StudentProfileId.HasValue)
+        {
+            var currentUserRole = await context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userContext.UserId)
+                .Select(u => u.Role)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (currentUserRole is UserRole.Parent or UserRole.Student)
+            {
+                if (!userContext.StudentId.HasValue)
+                {
+                    return new Page<PauseEnrollmentRequestResponse>(
+                        new List<PauseEnrollmentRequestResponse>(),
+                        0,
+                        request.PageNumber,
+                        request.PageSize);
+                }
+
+                studentProfileId = userContext.StudentId.Value;
+            }
+        }
 
         var query = context.PauseEnrollmentRequests.AsQueryable();
 
