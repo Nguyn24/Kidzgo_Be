@@ -30,6 +30,8 @@ public sealed class TeachingMaterialBundleItem
     public string FileType { get; init; } = null!;
     public string Category { get; init; } = null!;
     public string PreviewUrl { get; init; } = null!;
+    public string PreviewPdfUrl { get; init; } = null!;
     public string DownloadUrl { get; init; } = null!;
+    public bool HasPdfPreview { get; init; }
     public DateTime CreatedAt { get; init; }
 }

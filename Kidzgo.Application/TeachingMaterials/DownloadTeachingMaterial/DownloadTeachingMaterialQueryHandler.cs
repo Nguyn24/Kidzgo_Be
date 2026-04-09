@@ -1,6 +1,8 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Storage;
+using Kidzgo.Application.TeachingMaterials.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.TeachingMaterials.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +11,8 @@ namespace Kidzgo.Application.TeachingMaterials.DownloadTeachingMaterial;
 
 public sealed class DownloadTeachingMaterialQueryHandler(
     IDbContext context,
-    ITeachingMaterialStorageService storageService
+    ITeachingMaterialStorageService storageService,
+    IUserContext userContext
 ) : IQueryHandler<DownloadTeachingMaterialQuery, DownloadTeachingMaterialResponse>
 {
     public async Task<Result<DownloadTeachingMaterialResponse>> Handle(
@@ -23,6 +26,12 @@ public sealed class DownloadTeachingMaterialQueryHandler(
         {
             return Result.Failure<DownloadTeachingMaterialResponse>(
                 TeachingMaterialErrors.NotFound(query.TeachingMaterialId));
+        }
+
+        if (!await TeachingMaterialAccessHelper.CanReadAsync(context, userContext, material, cancellationToken))
+        {
+            return Result.Failure<DownloadTeachingMaterialResponse>(
+                TeachingMaterialErrors.AccessDenied(query.TeachingMaterialId));
         }
 
         var file = await storageService.ReadDecryptedAsync(

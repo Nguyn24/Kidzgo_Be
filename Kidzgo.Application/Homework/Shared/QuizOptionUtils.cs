@@ -140,14 +140,14 @@ internal static class QuizOptionUtils
 
             foreach (var item in doc.RootElement.EnumerateArray())
             {
-                if (!item.TryGetProperty("questionId", out var questionIdProp) ||
+                if (!TryGetPropertyIgnoreCase(item, "questionId", out var questionIdProp) ||
                     questionIdProp.ValueKind != JsonValueKind.String ||
                     !Guid.TryParse(questionIdProp.GetString(), out var questionId))
                 {
                     continue;
                 }
 
-                if (item.TryGetProperty("selectedOptionId", out var selectedProp))
+                if (TryGetPropertyIgnoreCase(item, "selectedOptionId", out var selectedProp))
                 {
                     if (selectedProp.ValueKind == JsonValueKind.String &&
                         Guid.TryParse(selectedProp.GetString(), out var selectedId))
@@ -159,7 +159,7 @@ internal static class QuizOptionUtils
                         result[questionId] = null;
                     }
                 }
-                else if (item.TryGetProperty("answer", out var answerProp) &&
+                else if (TryGetPropertyIgnoreCase(item, "answer", out var answerProp) &&
                          answerProp.ValueKind == JsonValueKind.String &&
                          Guid.TryParse(answerProp.GetString(), out var legacySelectedId))
                 {
@@ -173,6 +173,26 @@ internal static class QuizOptionUtils
         }
 
         return result;
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out value))
+        {
+            return true;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 
     private static int FindOptionIndex(

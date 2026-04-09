@@ -115,6 +115,10 @@ public sealed class ApplicationDbContext(
 
     // Teaching materials
     public DbSet<TeachingMaterial> TeachingMaterials => Set<TeachingMaterial>();
+    public DbSet<TeachingMaterialSlide> TeachingMaterialSlides => Set<TeachingMaterialSlide>();
+    public DbSet<TeachingMaterialViewProgress> TeachingMaterialViewProgresses => Set<TeachingMaterialViewProgress>();
+    public DbSet<TeachingMaterialBookmark> TeachingMaterialBookmarks => Set<TeachingMaterialBookmark>();
+    public DbSet<TeachingMaterialAnnotation> TeachingMaterialAnnotations => Set<TeachingMaterialAnnotation>();
 
     // Registrations
     public DbSet<Registration> Registrations => Set<Registration>();
