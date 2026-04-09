@@ -23,7 +23,9 @@ public sealed class GetTeachingMaterialByIdResponse
     public Guid UploadedByUserId { get; init; }
     public string UploadedByName { get; init; } = null!;
     public string PreviewUrl { get; init; } = null!;
+    public string PreviewPdfUrl { get; init; } = null!;
     public string DownloadUrl { get; init; } = null!;
+    public bool HasPdfPreview { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

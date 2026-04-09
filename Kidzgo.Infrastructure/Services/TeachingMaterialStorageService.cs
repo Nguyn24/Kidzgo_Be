@@ -106,6 +106,28 @@ public sealed class TeachingMaterialStorageService(
         };
     }
 
+    public async Task<TeachingMaterialCacheResult?> ReadCacheFileAsync(
+        string cachePath,
+        string mimeType,
+        string fileName,
+        CancellationToken cancellationToken = default)
+    {
+        var absolutePath = ResolveSafePath(_storageRoot, cachePath);
+        if (!File.Exists(absolutePath))
+        {
+            return null;
+        }
+
+        var content = await File.ReadAllBytesAsync(absolutePath, cancellationToken);
+
+        return new TeachingMaterialCacheResult
+        {
+            Content = content,
+            FileName = fileName,
+            MimeType = mimeType
+        };
+    }
+
     private static byte[] DeriveKey(IConfiguration configuration)
     {
         var secret = configuration["TeachingMaterials:EncryptionSecret"]
@@ -148,5 +170,17 @@ public sealed class TeachingMaterialStorageService(
             .Trim(Path.DirectorySeparatorChar);
 
         return string.IsNullOrWhiteSpace(normalized) ? "general" : normalized;
+    }
+
+    private static string ResolveSafePath(string root, string relativePath)
+    {
+        var fullRoot = Path.GetFullPath(root);
+        var fullPath = Path.GetFullPath(Path.Combine(fullRoot, relativePath));
+        if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Teaching material cache path is outside storage root");
+        }
+
+        return fullPath;
     }
 }
