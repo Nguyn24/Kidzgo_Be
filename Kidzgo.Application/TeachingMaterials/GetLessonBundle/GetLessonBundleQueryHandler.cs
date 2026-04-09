@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.TeachingMaterials.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.TeachingMaterials;
 using Kidzgo.Domain.TeachingMaterials.Errors;
@@ -8,19 +10,28 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.TeachingMaterials.GetLessonBundle;
 
 public sealed class GetLessonBundleQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetLessonBundleQuery, GetLessonBundleResponse>
 {
     public async Task<Result<GetLessonBundleResponse>> Handle(
         GetLessonBundleQuery query,
         CancellationToken cancellationToken)
     {
-        var materials = await context.TeachingMaterials
+        var materialsQuery = context.TeachingMaterials
             .AsNoTracking()
             .Include(tm => tm.Program)
             .Where(tm => tm.ProgramId == query.ProgramId &&
                          tm.UnitNumber == query.UnitNumber &&
-                         tm.LessonNumber == query.LessonNumber)
+                         tm.LessonNumber == query.LessonNumber);
+
+        materialsQuery = await TeachingMaterialAccessHelper.ApplyReadAccessFilterAsync(
+            materialsQuery,
+            context,
+            userContext,
+            cancellationToken);
+
+        var materials = await materialsQuery
             .OrderBy(tm => tm.RelativePath)
             .ThenBy(tm => tm.DisplayName)
             .ToListAsync(cancellationToken);
@@ -110,7 +121,9 @@ public sealed class GetLessonBundleQueryHandler(
             FileType = material.FileType.ToString(),
             Category = material.Category.ToString(),
             PreviewUrl = $"/api/teaching-materials/{material.Id}/preview",
+            PreviewPdfUrl = $"/api/teaching-materials/{material.Id}/preview-pdf",
             DownloadUrl = $"/api/teaching-materials/{material.Id}/download",
+            HasPdfPreview = material.PdfPreviewPath != null,
             CreatedAt = material.CreatedAt
         };
     }

@@ -68,9 +68,15 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
             })
             .ToListAsync(cancellationToken);
 
-        var requestIds = items.Select(r => r.Id).ToList();
+        if (items.Count == 0)
+        {
+            return new Page<PauseEnrollmentRequestResponse>(
+                new List<PauseEnrollmentRequestResponse>(),
+                total,
+                request.PageNumber,
+                request.PageSize);
+        }
 
-        var requestById = items.ToDictionary(r => r.Id);
         var studentProfileIds = items.Select(r => r.StudentProfileId).Distinct().ToList();
         var activeEnrollments = await context.ClassEnrollments
             .AsNoTracking()
