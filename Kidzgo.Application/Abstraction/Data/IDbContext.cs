@@ -108,6 +108,10 @@ public interface IDbContext
 
     // Teaching materials
     DbSet<TeachingMaterial> TeachingMaterials { get; }
+    DbSet<TeachingMaterialSlide> TeachingMaterialSlides { get; }
+    DbSet<TeachingMaterialViewProgress> TeachingMaterialViewProgresses { get; }
+    DbSet<TeachingMaterialBookmark> TeachingMaterialBookmarks { get; }
+    DbSet<TeachingMaterialAnnotation> TeachingMaterialAnnotations { get; }
 
     // Registrations
     DbSet<Registration> Registrations { get; }

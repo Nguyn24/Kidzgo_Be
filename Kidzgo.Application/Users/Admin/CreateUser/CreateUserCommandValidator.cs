@@ -15,7 +15,7 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
             .NotNull()
             .NotEmpty()
             .Must(role => Enum.TryParse<UserRole>(role, true, out _))
-            .WithMessage("Role must be a valid value: Admin, ManagementStaff, AccountantStaff, Teacher, or Parent");
+            .WithMessage("Role must be a valid value: Admin, ManagementStaff, AccountantStaff, Teacher, Student, or Parent");
 
         When(command => Enum.TryParse<UserRole>(command.Role, true, out var role)
                         && (role == UserRole.ManagementStaff || role == UserRole.AccountantStaff || role == UserRole.Teacher || role == UserRole.Parent), () =>

@@ -1201,12 +1201,12 @@ namespace Kidzgo.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("CancelReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeliveredAt")
                         .HasColumnType("timestamp with time zone");
@@ -1230,11 +1230,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
-                    b.Property<int?>("StarsDeducted")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("ReceivedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("StarsDeducted")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -3838,6 +3838,16 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<long?>("PdfPreviewFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("PdfPreviewGeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PdfPreviewPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid>("ProgramId")
                         .HasColumnType("uuid");
 
@@ -3868,6 +3878,209 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ProgramId", "UnitNumber", "LessonNumber");
 
                     b.ToTable("TeachingMaterials", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialAnnotation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("#FFD700");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("PositionX")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("PositionY")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("SlideNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TeachingMaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Note");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Private");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeachingMaterialId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TeachingMaterialId", "SlideNumber");
+
+                    b.ToTable("TeachingMaterialAnnotations", "public", t =>
+                        {
+                            t.HasCheckConstraint("CK_Annotation_Type", "\"Type\" IN ('Note', 'Highlight', 'Pin')");
+
+                            t.HasCheckConstraint("CK_Annotation_Visibility", "\"Visibility\" IN ('Private', 'Class', 'Public')");
+                        });
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialBookmark", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TeachingMaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TeachingMaterialId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("TeachingMaterialBookmarks", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialSlide", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Height")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1080);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PreviewImagePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("SlideNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TeachingMaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ThumbnailImagePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Width")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1920);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeachingMaterialId");
+
+                    b.HasIndex("TeachingMaterialId", "SlideNumber")
+                        .IsUnique();
+
+                    b.ToTable("TeachingMaterialSlides", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialViewProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Completed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("FirstViewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("LastSlideViewed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("LastViewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ProgressPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("TeachingMaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalTimeSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Completed");
+
+                    b.HasIndex("TeachingMaterialId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TeachingMaterialId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("TeachingMaterialViewProgresses", "public", t =>
+                        {
+                            t.HasCheckConstraint("CK_ViewProgress_Percent", "\"ProgressPercent\" >= 0 AND \"ProgressPercent\" <= 100");
+                        });
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Tickets.Ticket", b =>
@@ -5787,6 +6000,74 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("UploadedByUser");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialAnnotation", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", "TeachingMaterial")
+                        .WithMany("Annotations")
+                        .HasForeignKey("TeachingMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeachingMaterial");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialBookmark", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", "TeachingMaterial")
+                        .WithMany("Bookmarks")
+                        .HasForeignKey("TeachingMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeachingMaterial");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialSlide", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", "TeachingMaterial")
+                        .WithMany("Slides")
+                        .HasForeignKey("TeachingMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeachingMaterial");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterialViewProgress", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", "TeachingMaterial")
+                        .WithMany("ViewProgresses")
+                        .HasForeignKey("TeachingMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kidzgo.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeachingMaterial");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Tickets.Ticket", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Users.User", "AssignedToUser")
@@ -6139,6 +6420,17 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("TargetMakeupAllocations");
 
                     b.Navigation("UsedMakeupCredits");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.TeachingMaterials.TeachingMaterial", b =>
+                {
+                    b.Navigation("Annotations");
+
+                    b.Navigation("Bookmarks");
+
+                    b.Navigation("Slides");
+
+                    b.Navigation("ViewProgresses");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Tickets.Ticket", b =>

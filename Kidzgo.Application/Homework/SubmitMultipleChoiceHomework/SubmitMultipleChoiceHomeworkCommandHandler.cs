@@ -202,11 +202,16 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         homeworkStudent.TeacherFeedback = null;
         homeworkStudent.AiFeedback = null;
 
-        var answersJson = JsonSerializer.Serialize(command.Answers.Select(a => new
-        {
-            a.QuestionId,
-            a.SelectedOptionId
-        }).ToList());
+        var answersJson = JsonSerializer.Serialize(
+            command.Answers.Select(a => new
+            {
+                a.QuestionId,
+                a.SelectedOptionId
+            }).ToList(),
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
         homeworkStudent.TextAnswer = answersJson;
 
         var maxScore = homeworkStudent.Assignment.MaxScore ?? totalPoints;
