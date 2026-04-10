@@ -6,7 +6,10 @@ public sealed class AddLeadNoteResponse
     public Guid LeadId { get; init; }
     public string ActivityType { get; init; } = null!;
     public string Content { get; init; } = null!;
+    public string LeadStatus { get; init; } = null!;
+    public DateTime? FirstResponseAt { get; init; }
     public DateTime? NextActionAt { get; init; }
+    public DateTime? LeadNextActionAt { get; init; }
     public DateTime CreatedAt { get; init; }
 }
 
