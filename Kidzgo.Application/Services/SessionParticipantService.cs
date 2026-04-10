@@ -14,6 +14,15 @@ public readonly record struct SessionParticipant(
     bool IsMakeup,
     Guid? MakeupCreditId);
 
+public readonly record struct StudentBookedSlot(
+    DateTime Start,
+    DateTime End,
+    Guid? ClassEnrollmentId,
+    Guid? ClassId,
+    string? ClassCode,
+    string? ClassTitle,
+    bool IsMakeup);
+
 public sealed class SessionParticipantService(
     IDbContext context,
     StudentSessionAssignmentService studentSessionAssignmentService)
@@ -88,6 +97,24 @@ public sealed class SessionParticipantService(
         DateTime toUtc,
         CancellationToken cancellationToken)
     {
+        var detailedSlots = await GetStudentBookedSlotsDetailedAsync(
+            studentProfileId,
+            fromUtc,
+            toUtc,
+            cancellationToken);
+
+        return detailedSlots
+            .Select(x => (x.Start, x.End))
+            .Distinct()
+            .ToList();
+    }
+
+    public async Task<List<StudentBookedSlot>> GetStudentBookedSlotsDetailedAsync(
+        Guid studentProfileId,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken)
+    {
         var regularAssignments = await context.StudentSessionAssignments
             .AsNoTracking()
             .Where(a => a.StudentProfileId == studentProfileId
@@ -95,11 +122,14 @@ public sealed class SessionParticipantService(
                 && a.Session.Status != SessionStatus.Cancelled
                 && a.Session.PlannedDatetime >= fromUtc
                 && a.Session.PlannedDatetime <= toUtc)
-            .Select(a => new
-            {
-                Start = a.Session.PlannedDatetime,
-                End = a.Session.PlannedDatetime.AddMinutes(a.Session.DurationMinutes)
-            })
+            .Select(a => new StudentBookedSlot(
+                a.Session.PlannedDatetime,
+                a.Session.PlannedDatetime.AddMinutes(a.Session.DurationMinutes),
+                a.ClassEnrollmentId,
+                a.Session.ClassId,
+                a.Session.Class.Code,
+                a.Session.Class.Title,
+                false))
             .ToListAsync(cancellationToken);
 
         var activeEnrollDatesByClass = await context.ClassEnrollments
@@ -125,6 +155,8 @@ public sealed class SessionParticipantService(
             .Select(s => new
             {
                 s.ClassId,
+                s.Class.Code,
+                s.Class.Title,
                 Start = s.PlannedDatetime,
                 End = s.PlannedDatetime.AddMinutes(s.DurationMinutes)
             })
@@ -137,27 +169,32 @@ public sealed class SessionParticipantService(
                 && a.TargetSession.Status == SessionStatus.Scheduled
                 && a.TargetSession.PlannedDatetime >= fromUtc
                 && a.TargetSession.PlannedDatetime <= toUtc)
-            .Select(a => new
-            {
-                Start = a.TargetSession.PlannedDatetime,
-                End = a.TargetSession.PlannedDatetime.AddMinutes(a.TargetSession.DurationMinutes)
-            })
+            .Select(a => new StudentBookedSlot(
+                a.TargetSession.PlannedDatetime,
+                a.TargetSession.PlannedDatetime.AddMinutes(a.TargetSession.DurationMinutes),
+                null,
+                a.TargetSession.ClassId,
+                a.TargetSession.Class.Code,
+                a.TargetSession.Class.Title,
+                true))
             .ToListAsync(cancellationToken);
 
         var filteredLegacySessions = legacySessions
             .Where(s =>
                 enrollDateLookup.TryGetValue(s.ClassId, out var enrollDates) &&
                 enrollDates.Any(enrollDate => enrollDate <= VietnamTime.ToVietnamDateOnly(s.Start)))
-            .Select(s => new
-            {
+            .Select(s => new StudentBookedSlot(
                 s.Start,
-                s.End
-            });
+                s.End,
+                null,
+                s.ClassId,
+                s.Code,
+                s.Title,
+                false));
 
         return regularAssignments
             .Concat(filteredLegacySessions)
             .Concat(makeupSlots)
-            .Select(x => (x.Start, x.End))
             .Distinct()
             .ToList();
     }

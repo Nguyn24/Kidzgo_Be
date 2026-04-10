@@ -28,6 +28,14 @@ public static class EnrollmentErrors
         "Enrollment.ClassFull",
         "Class has reached its capacity");
 
+    public static Error StudentScheduleConflict(
+        string? classCode,
+        string? classTitle,
+        DateTime conflictDatetime,
+        int minimumGapMinutes) => Error.Conflict(
+        "Enrollment.StudentScheduleConflict",
+        BuildStudentScheduleConflictMessage(classCode, classTitle, conflictDatetime, minimumGapMinutes));
+
     public static readonly Error TuitionPlanNotFound = Error.NotFound(
         "Enrollment.TuitionPlanNotFound",
         "Tuition plan not found");
@@ -55,5 +63,22 @@ public static class EnrollmentErrors
     public static readonly Error AlreadyDropped = Error.Conflict(
         "Enrollment.AlreadyDropped",
         "Enrollment is already dropped");
+
+    private static string BuildStudentScheduleConflictMessage(
+        string? classCode,
+        string? classTitle,
+        DateTime conflictDatetime,
+        int minimumGapMinutes)
+    {
+        var classLabel = !string.IsNullOrWhiteSpace(classCode) && !string.IsNullOrWhiteSpace(classTitle)
+            ? $"class '{classCode} - {classTitle}'"
+            : !string.IsNullOrWhiteSpace(classCode)
+                ? $"class '{classCode}'"
+                : !string.IsNullOrWhiteSpace(classTitle)
+                    ? $"class '{classTitle}'"
+                    : "another assigned session";
+
+        return $"Student already has a scheduled session in {classLabel} at {conflictDatetime:dd/MM/yyyy HH:mm}. Sessions must be at least {minimumGapMinutes} minutes apart.";
+    }
 }
 

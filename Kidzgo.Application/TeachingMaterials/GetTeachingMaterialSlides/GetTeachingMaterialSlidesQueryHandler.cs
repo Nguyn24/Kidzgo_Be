@@ -41,84 +41,19 @@ public sealed class GetTeachingMaterialSlidesQueryHandler(
             return Result.Failure<GetTeachingMaterialSlidesResponse>(TeachingMaterialErrors.NotAPresentation());
         }
 
-        List<TeachingMaterialSlide> slides;
-        try
-        {
-            slides = await EnsureSlidesAsync(material, cancellationToken);
-        }
-        catch (TeachingMaterialStoredFileMissingException)
-        {
-            return Result.Failure<GetTeachingMaterialSlidesResponse>(
-                TeachingMaterialErrors.StoredFileMissing(query.TeachingMaterialId));
-        }
-        catch (TeachingMaterialSlideGenerationException)
-        {
-            return Result.Failure<GetTeachingMaterialSlidesResponse>(
-                TeachingMaterialErrors.SlideGenerationFailed(query.TeachingMaterialId));
-        }
-
-        return MapResponse(material, slides);
-    }
-
-    private async Task<List<TeachingMaterialSlide>> EnsureSlidesAsync(
-        TeachingMaterial material,
-        CancellationToken cancellationToken)
-    {
-        var slides = await context.TeachingMaterialSlides
-            .Where(slide => slide.TeachingMaterialId == material.Id)
-            .OrderBy(slide => slide.SlideNumber)
-            .ToListAsync(cancellationToken);
-
-        if (slides.Count > 0)
-        {
-            return slides;
-        }
-
-        var file = await storageService.ReadDecryptedAsync(
-            material.StoragePath,
-            material.OriginalFileName,
-            material.MimeType,
+        var slidesResult = await TeachingMaterialSlideHelper.EnsureSlidesAsync(
+            context,
+            storageService,
+            previewService,
+            material,
             cancellationToken);
 
-        if (file is null)
+        if (slidesResult.IsFailure)
         {
-            throw new TeachingMaterialStoredFileMissingException();
+            return Result.Failure<GetTeachingMaterialSlidesResponse>(slidesResult.Error);
         }
 
-        IReadOnlyList<TeachingMaterialSlidePreviewFile> generated;
-        try
-        {
-            generated = await previewService.GenerateSlidePreviewsAsync(
-                material.Id,
-                material.OriginalFileName,
-                file.Content,
-                cancellationToken);
-        }
-        catch
-        {
-            throw new TeachingMaterialSlideGenerationException();
-        }
-
-        var generatedAt = DateTime.UtcNow;
-        slides = generated
-            .Select(item => new TeachingMaterialSlide
-            {
-                Id = Guid.NewGuid(),
-                TeachingMaterialId = material.Id,
-                SlideNumber = item.SlideNumber,
-                PreviewImagePath = item.PreviewImagePath,
-                ThumbnailImagePath = item.ThumbnailImagePath,
-                Width = item.Width,
-                Height = item.Height,
-                Notes = item.Notes,
-                GeneratedAt = generatedAt
-            })
-            .ToList();
-
-        context.TeachingMaterialSlides.AddRange(slides);
-        await context.SaveChangesAsync(cancellationToken);
-
-        return slides;
+        return MapResponse(material, slidesResult.Value);
     }
 
     private static GetTeachingMaterialSlidesResponse MapResponse(
@@ -144,7 +79,4 @@ public sealed class GetTeachingMaterialSlidesQueryHandler(
                 .ToList()
         };
     }
-
-    private sealed class TeachingMaterialSlideGenerationException : Exception;
-    private sealed class TeachingMaterialStoredFileMissingException : Exception;
 }

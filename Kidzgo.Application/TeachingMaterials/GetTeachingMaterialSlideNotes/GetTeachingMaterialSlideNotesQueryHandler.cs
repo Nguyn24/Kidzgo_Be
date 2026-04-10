@@ -8,17 +8,17 @@ using Kidzgo.Domain.TeachingMaterials;
 using Kidzgo.Domain.TeachingMaterials.Errors;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kidzgo.Application.TeachingMaterials.GetTeachingMaterialSlideImage;
+namespace Kidzgo.Application.TeachingMaterials.GetTeachingMaterialSlideNotes;
 
-public sealed class GetTeachingMaterialSlideImageQueryHandler(
+public sealed class GetTeachingMaterialSlideNotesQueryHandler(
     IDbContext context,
     ITeachingMaterialStorageService storageService,
     ITeachingMaterialPreviewService previewService,
     IUserContext userContext
-) : IQueryHandler<GetTeachingMaterialSlideImageQuery, GetTeachingMaterialSlideImageResponse>
+) : IQueryHandler<GetTeachingMaterialSlideNotesQuery, GetTeachingMaterialSlideNotesResponse>
 {
-    public async Task<Result<GetTeachingMaterialSlideImageResponse>> Handle(
-        GetTeachingMaterialSlideImageQuery query,
+    public async Task<Result<GetTeachingMaterialSlideNotesResponse>> Handle(
+        GetTeachingMaterialSlideNotesQuery query,
         CancellationToken cancellationToken)
     {
         var material = await context.TeachingMaterials
@@ -26,19 +26,19 @@ public sealed class GetTeachingMaterialSlideImageQueryHandler(
 
         if (material is null)
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(
+            return Result.Failure<GetTeachingMaterialSlideNotesResponse>(
                 TeachingMaterialErrors.NotFound(query.TeachingMaterialId));
         }
 
         if (!await TeachingMaterialAccessHelper.CanReadAsync(context, userContext, material, cancellationToken))
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(
+            return Result.Failure<GetTeachingMaterialSlideNotesResponse>(
                 TeachingMaterialErrors.AccessDenied(query.TeachingMaterialId));
         }
 
         if (material.FileType != TeachingMaterialFileType.Presentation)
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(TeachingMaterialErrors.NotAPresentation());
+            return Result.Failure<GetTeachingMaterialSlideNotesResponse>(TeachingMaterialErrors.NotAPresentation());
         }
 
         var slidesResult = await TeachingMaterialSlideHelper.EnsureSlidesAsync(
@@ -50,7 +50,7 @@ public sealed class GetTeachingMaterialSlideImageQueryHandler(
 
         if (slidesResult.IsFailure)
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(slidesResult.Error);
+            return Result.Failure<GetTeachingMaterialSlideNotesResponse>(slidesResult.Error);
         }
 
         var slides = slidesResult.Value;
@@ -58,35 +58,16 @@ public sealed class GetTeachingMaterialSlideImageQueryHandler(
 
         if (slide is null)
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(
+            return Result.Failure<GetTeachingMaterialSlideNotesResponse>(
                 TeachingMaterialErrors.SlideNotFound(query.SlideNumber, slides.Count));
         }
 
-        var cachePath = query.ImageKind == TeachingMaterialSlideImageKind.Preview
-            ? slide.PreviewImagePath
-            : slide.ThumbnailImagePath;
-
-        var fileName = query.ImageKind == TeachingMaterialSlideImageKind.Preview
-            ? $"{material.Id:N}_slide_{query.SlideNumber}.png"
-            : $"{material.Id:N}_thumb_{query.SlideNumber}.png";
-
-        var cached = await storageService.ReadCacheFileAsync(
-            cachePath,
-            "image/png",
-            fileName,
-            cancellationToken);
-
-        if (cached is null)
+        return new GetTeachingMaterialSlideNotesResponse
         {
-            return Result.Failure<GetTeachingMaterialSlideImageResponse>(
-                TeachingMaterialErrors.SlideGenerationFailed(material.Id));
-        }
-
-        return new GetTeachingMaterialSlideImageResponse
-        {
-            FileName = cached.FileName,
-            MimeType = cached.MimeType,
-            Content = cached.Content
+            MaterialId = material.Id,
+            SlideNumber = slide.SlideNumber,
+            HasNotes = !string.IsNullOrWhiteSpace(slide.Notes),
+            Notes = string.IsNullOrWhiteSpace(slide.Notes) ? null : slide.Notes
         };
     }
 }
