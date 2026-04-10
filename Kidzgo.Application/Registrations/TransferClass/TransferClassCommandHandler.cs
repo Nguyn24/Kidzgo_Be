@@ -13,7 +13,8 @@ namespace Kidzgo.Application.Registrations.TransferClass.Handler;
 
 public sealed class TransferClassCommandHandler(
     IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService
 ) : ICommandHandler<TransferClassCommand, TransferClassResponse>
 {
     public async Task<Result<TransferClassResponse>> Handle(
@@ -107,13 +108,28 @@ public sealed class TransferClassCommandHandler(
             return Result.Failure<TransferClassResponse>(RegistrationErrors.CannotTransferToSameClass());
         }
 
-        // 9. Update old enrollment to dropped
         var oldEnrollment = await context.ClassEnrollments
             .FirstOrDefaultAsync(ce => ce.ClassId == oldClassId 
                 && ce.StudentProfileId == registration.StudentProfileId 
                 && (!ce.RegistrationId.HasValue || ce.RegistrationId == registration.Id)
                 && ce.Status == EnrollmentStatus.Active, 
                 cancellationToken);
+
+        var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+            registration.StudentProfileId,
+            newClass.Id,
+            DateOnly.FromDateTime(command.EffectiveDate),
+            command.SessionSelectionPattern,
+            cancellationToken,
+            excludeEnrollmentId: oldEnrollment?.Id,
+            excludeLegacyClassId: oldClassId,
+            excludeSlotsFromUtc: command.EffectiveDate);
+        if (conflictResult.IsFailure)
+        {
+            return Result.Failure<TransferClassResponse>(conflictResult.Error);
+        }
+
+        // 9. Update old enrollment to dropped
 
         if (oldEnrollment != null)
         {
