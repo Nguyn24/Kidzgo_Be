@@ -18,6 +18,10 @@ public sealed class AddLeadNoteCommandValidator : AbstractValidator<AddLeadNoteC
             .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("NextActionAt should not be in the past")
             .When(command => command.NextActionAt.HasValue);
+
+        RuleFor(command => command)
+            .Must(command => command.ClearNextAction != true || !command.NextActionAt.HasValue)
+            .WithMessage("Cannot set NextActionAt and ClearNextAction at the same time");
     }
 }
 

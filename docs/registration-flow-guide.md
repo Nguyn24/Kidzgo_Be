@@ -130,6 +130,11 @@ Admin chon lop phu hop.
 
 - **entryType = "wait"** -> Khong tao Enrollment, Status = `WaitingForClass`
 
+- Sau khi xep lop, `GET /api/registrations/{id}` se tra ve `actualStudySchedules`
+  de mo ta lich hoc thuc te cua hoc vien theo tung track (`primary` / `secondary`).
+  Field nay uu tien `sessionSelectionPattern` neu hoc vien chi hoc mot phan lich lop;
+  neu khong co thi dung `class.schedulePattern`.
+
 ### Buoc 5: Van hanh hoc vu
 
 Trong qua trinh hoc co the phat sinh:
@@ -321,27 +326,30 @@ POST /api/enrollments/{id}/pause
 **Response (200 OK):**
 ```json
 {
-    "items": [
-        {
-            "id": "550e8400-e29b-41d4-a716-446655440010",
-            "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
-            "studentName": "Nguyen Van A",
-            "branchId": "550e8400-e29b-41d4-a716-446655440002",
-            "branchName": "Chi nhanh 1",
-            "programId": "550e8400-e29b-41d4-a716-446655440003",
-            "programName": "Starter",
-            "classId": "550e8400-e29b-41d4-a716-446655440005",
-            "className": "Starter A",
-            "status": "Studying",
-            "totalSessions": 12,
-            "usedSessions": 5,
-            "remainingSessions": 7,
-            "registrationDate": "2024-01-10T10:30:00Z"
-        }
-    ],
-    "totalCount": 1,
-    "pageNumber": 1,
-    "pageSize": 10
+    "page": {
+        "items": [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440010",
+                "studentProfileId": "550e8400-e29b-41d4-a716-446655440001",
+                "studentName": "Nguyen Van A",
+                "branchId": "550e8400-e29b-41d4-a716-446655440002",
+                "branchName": "Chi nhanh 1",
+                "programId": "550e8400-e29b-41d4-a716-446655440003",
+                "programName": "Starter",
+                "classId": "550e8400-e29b-41d4-a716-446655440005",
+                "className": "Starter A",
+                "status": "Studying",
+                "totalSessions": 12,
+                "usedSessions": 5,
+                "remainingSessions": 7,
+                "registrationDate": "2024-01-10T10:30:00Z",
+                "createdAt": "2024-01-10T10:30:00Z"
+            }
+        ],
+        "pageNumber": 1,
+        "totalPages": 1,
+        "totalCount": 1
+    }
 }
 ```
 
@@ -363,10 +371,15 @@ POST /api/enrollments/{id}/pause
     "branchName": "Chi nhanh 1",
     "programId": "550e8400-e29b-41d4-a716-446655440003",
     "programName": "Starter",
+    "secondaryProgramId": "550e8400-e29b-41d4-a716-446655440099",
+    "secondaryProgramName": "Math",
+    "secondaryProgramSkillFocus": "Problem Solving",
     "tuitionPlanId": "550e8400-e29b-41d4-a716-446655440004",
     "tuitionPlanName": "Starter 3 thang",
     "classId": "550e8400-e29b-41d4-a716-446655440005",
     "className": "Starter A",
+    "secondaryClassId": "550e8400-e29b-41d4-a716-446655440098",
+    "secondaryClassName": "Math M1",
     "registrationDate": "2024-01-10T10:30:00Z",
     "expectedStartDate": "2024-01-15T00:00:00Z",
     "actualStartDate": "2024-01-15T08:00:00Z",
@@ -374,14 +387,51 @@ POST /api/enrollments/{id}/pause
     "note": "Hoc vao thu 7 buoi chieu",
     "status": "Studying",
     "entryType": "Immediate",
+    "secondaryEntryType": "Immediate",
     "totalSessions": 12,
     "usedSessions": 5,
     "remainingSessions": 7,
-    "expiryDate": "2024-04-15T00:00:00Z",
+    "actualStudySchedules": [
+        {
+            "track": "primary",
+            "classId": "550e8400-e29b-41d4-a716-446655440005",
+            "className": "Starter A",
+            "programId": "550e8400-e29b-41d4-a716-446655440003",
+            "programName": "Starter",
+            "usesClassDefaultSchedule": false,
+            "classSchedulePattern": "FREQ=WEEKLY;BYDAY=MO,WE",
+            "sessionSelectionPattern": "FREQ=WEEKLY;BYDAY=MO",
+            "effectiveSchedulePattern": "FREQ=WEEKLY;BYDAY=MO",
+            "studyDayCodes": ["MO"],
+            "studyDays": ["Thu 2"],
+            "studyDaySummary": "Thu 2"
+        },
+        {
+            "track": "secondary",
+            "classId": "550e8400-e29b-41d4-a716-446655440098",
+            "className": "Math M1",
+            "programId": "550e8400-e29b-41d4-a716-446655440099",
+            "programName": "Math",
+            "usesClassDefaultSchedule": true,
+            "classSchedulePattern": "FREQ=WEEKLY;BYDAY=TU,TH",
+            "sessionSelectionPattern": null,
+            "effectiveSchedulePattern": "FREQ=WEEKLY;BYDAY=TU,TH",
+            "studyDayCodes": ["TU", "TH"],
+            "studyDays": ["Thu 3", "Thu 5"],
+            "studyDaySummary": "Thu 3, Thu 5"
+        }
+    ],
     "createdAt": "2024-01-10T10:30:00Z",
     "updatedAt": "2024-02-01T10:00:00Z"
 }
 ```
+
+**Giai thich field `actualStudySchedules`:**
+- Moi item tuong ung mot track dang hoc (`primary` hoac `secondary`).
+- `sessionSelectionPattern` cho biet hoc vien hoc mot phan lich lop, vi du lop hoc `Thu 2,4`
+  nhung hoc vien chi hoc `Thu 2`.
+- `effectiveSchedulePattern`, `studyDays`, `studyDaySummary` la du lieu FE nen dung de hien thi
+  "thu hoc thuc te" sau khi registration da duoc xep lop.
 
 **Errors:**
 
