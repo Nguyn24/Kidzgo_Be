@@ -73,7 +73,7 @@ public sealed class CreateLeadCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var lead = new Lead
         {
             Id = Guid.NewGuid(),

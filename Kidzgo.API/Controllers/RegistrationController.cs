@@ -205,7 +205,7 @@ public class RegistrationController : ControllerBase
         {
             RegistrationId = id,
             NewClassId = newClassId,
-            EffectiveDate = effectiveDate ?? DateTime.UtcNow,
+            EffectiveDate = effectiveDate ?? VietnamTime.UtcNow(),
             Track = track,
             SessionSelectionPattern = sessionSelectionPattern
         };

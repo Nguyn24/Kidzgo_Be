@@ -38,7 +38,10 @@ public sealed class SuggestMakeupSessionsQueryHandler(
             return Result.Failure<IEnumerable<SuggestedSessionResponse>>(MakeupCreditErrors.NotFound(credit.SourceSessionId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
+        var today = VietnamTime.TodayDateOnly();
+        var sourceDate = VietnamTime.ToVietnamDateOnly(sourceSession.PlannedDatetime);
+        var firstEligibleDate = MakeupSessionRuleHelper.GetFirstEligibleMakeupDate(sourceDate);
 
         Session? currentAllocatedSession = null;
         Guid? restrictedProgramId = null;
@@ -51,20 +54,24 @@ public sealed class SuggestMakeupSessionsQueryHandler(
                 .FirstOrDefaultAsync(s => s.Id == credit.UsedSessionId.Value, cancellationToken);
 
             if (currentAllocatedSession != null &&
-                DateOnly.FromDateTime(currentAllocatedSession.PlannedDatetime) > DateOnly.FromDateTime(now))
+                VietnamTime.ToVietnamDateOnly(currentAllocatedSession.PlannedDatetime) > today)
             {
                 restrictedProgramId = currentAllocatedSession.Class.ProgramId;
             }
         }
 
-        var fromDate = query.FromDate ?? DateOnly.FromDateTime(now);
-        var toDate = query.ToDate ?? fromDate.AddDays(7);
+        var requestedFromDate = query.FromDate ?? today;
+        var fromDate = requestedFromDate < firstEligibleDate ? firstEligibleDate : requestedFromDate;
+        var requestedToDate = query.ToDate ?? fromDate.AddDays(7);
+        var toDate = requestedToDate < fromDate ? fromDate : requestedToDate;
         string? timeOfDay = query.TimeOfDay?.ToLower().Trim();
+        var fromUtc = VietnamTime.TreatAsVietnamLocal(fromDate.ToDateTime(TimeOnly.MinValue));
+        var toUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(toDate.ToDateTime(TimeOnly.MinValue)));
 
         var studentSessionTimes = await sessionParticipantService.GetStudentBookedSlotsAsync(
             credit.StudentProfileId,
-            fromDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
-            toDate.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc),
+            fromUtc,
+            toUtc,
             cancellationToken);
 
         var rawSuggestionsQuery = context.Sessions
@@ -74,30 +81,13 @@ public sealed class SuggestMakeupSessionsQueryHandler(
             .Where(s => s.Id != sourceSession.Id)
             .Where(s => !credit.UsedSessionId.HasValue || s.Id != credit.UsedSessionId.Value)
             .Where(s => s.Status == SessionStatus.Scheduled && s.PlannedDatetime >= now)
-            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) >= fromDate)
-            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime) <= toDate)
-            .Where(s => DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Saturday ||
-                        DateOnly.FromDateTime(s.PlannedDatetime).DayOfWeek == DayOfWeek.Sunday)
+            .Where(s => s.PlannedDatetime >= fromUtc && s.PlannedDatetime <= toUtc)
             .Where(s => s.BranchId == sourceSession.BranchId)
             .Where(s => s.ClassId != sourceSession.ClassId);
 
         if (restrictedProgramId.HasValue)
         {
             rawSuggestionsQuery = rawSuggestionsQuery.Where(s => s.Class.ProgramId == restrictedProgramId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(timeOfDay))
-        {
-            rawSuggestionsQuery = timeOfDay switch
-            {
-                "morning" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(6, 0, 0) &&
-                                                            s.PlannedDatetime.TimeOfDay < new TimeSpan(12, 0, 0)),
-                "afternoon" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(12, 0, 0) &&
-                                                              s.PlannedDatetime.TimeOfDay < new TimeSpan(18, 0, 0)),
-                "evening" => rawSuggestionsQuery.Where(s => s.PlannedDatetime.TimeOfDay >= new TimeSpan(18, 0, 0) &&
-                                                            s.PlannedDatetime.TimeOfDay < new TimeSpan(23, 0, 0)),
-                _ => rawSuggestionsQuery
-            };
         }
 
         var rawSuggestions = await rawSuggestionsQuery
@@ -114,6 +104,34 @@ public sealed class SuggestMakeupSessionsQueryHandler(
         var filtered = new List<SuggestedSessionResponse>();
         foreach (var suggestion in rawSuggestions)
         {
+            var plannedDate = VietnamTime.ToVietnamDateOnly(suggestion.PlannedDatetime);
+            if (plannedDate < fromDate || plannedDate > toDate)
+            {
+                continue;
+            }
+
+            if (!MakeupSessionRuleHelper.IsEligibleMakeupDate(sourceDate, plannedDate))
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(timeOfDay))
+            {
+                var plannedTime = VietnamTime.ToVietnamTimeOnly(suggestion.PlannedDatetime).ToTimeSpan();
+                var matchesTimeOfDay = timeOfDay switch
+                {
+                    "morning" => plannedTime >= new TimeSpan(6, 0, 0) && plannedTime < new TimeSpan(12, 0, 0),
+                    "afternoon" => plannedTime >= new TimeSpan(12, 0, 0) && plannedTime < new TimeSpan(18, 0, 0),
+                    "evening" => plannedTime >= new TimeSpan(18, 0, 0) && plannedTime < new TimeSpan(23, 0, 0),
+                    _ => true
+                };
+
+                if (!matchesTimeOfDay)
+                {
+                    continue;
+                }
+            }
+
             var participantCount = (await sessionParticipantService
                 .GetParticipantsAsync(suggestion.Id, cancellationToken))
                 .Count;

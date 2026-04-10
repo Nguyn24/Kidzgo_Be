@@ -40,7 +40,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
 
         // Update job status to Generating
         job.Status = MonthlyReportJobStatus.Generating;
-        job.UpdatedAt = DateTime.UtcNow;
+        job.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         // Get all enrollments in the branch (Active or Paused) for the month
@@ -65,7 +65,7 @@ public sealed class AggregateMonthlyReportDataCommandHandler(
         var reportIds = new List<Guid>();
         int totalCreated = 0;
         int totalUpdated = 0;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Load ALL existing reports and report data ONCE at the beginning
         var studentProfileIds = latestEnrollments.Select(e => e.StudentProfileId).Distinct().ToList();

@@ -33,7 +33,7 @@ public sealed class DeleteProgramCommandHandler(
         // Soft delete
         program.IsDeleted = true;
         program.IsActive = false; // Deactivate when soft deleting
-        program.UpdatedAt = DateTime.UtcNow;
+        program.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

@@ -27,7 +27,7 @@ public sealed class CreateBlogCommandHandler(
             return Result.Failure<CreateBlogResponse>(BlogErrors.UserNotFound);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var blog = new Blog
         {
             Id = Guid.NewGuid(),

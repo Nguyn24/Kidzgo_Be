@@ -102,7 +102,7 @@ public sealed class CreateRegistrationCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var registration = new Registration
         {
             Id = Guid.NewGuid(),

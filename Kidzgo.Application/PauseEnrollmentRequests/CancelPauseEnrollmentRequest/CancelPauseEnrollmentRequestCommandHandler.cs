@@ -38,14 +38,14 @@ public sealed class CancelPauseEnrollmentRequestCommandHandler(
             return Result.Failure(PauseEnrollmentRequestErrors.AlreadyRejected);
         }
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = VietnamTime.TodayDateOnly();
         if (today >= pauseRequest.PauseFrom)
         {
             return Result.Failure(PauseEnrollmentRequestErrors.CancelWindowExpired(pauseRequest.PauseFrom));
         }
 
         pauseRequest.Status = PauseEnrollmentRequestStatus.Cancelled;
-        pauseRequest.CancelledAt = DateTime.UtcNow;
+        pauseRequest.CancelledAt = VietnamTime.UtcNow();
         pauseRequest.CancelledBy = userContext.UserId;
 
         await context.SaveChangesAsync(cancellationToken);

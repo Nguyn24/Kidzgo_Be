@@ -93,13 +93,13 @@ public sealed class UpdateCurrentUserCommandHandler(
                     if (!string.IsNullOrWhiteSpace(profileUpdate.DisplayName))
                     {
                         profile.DisplayName = profileUpdate.DisplayName;
-                        profile.UpdatedAt = DateTime.UtcNow;
+                        profile.UpdatedAt = VietnamTime.UtcNow();
                     }
                 }
             }
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         // Reload user with profiles to return updated data
@@ -135,10 +135,10 @@ public sealed class UpdateCurrentUserCommandHandler(
                 LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
                 IsOnline = UserPresenceHelper.IsOnline(
                     p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
-                    DateTime.UtcNow),
+                    VietnamTime.UtcNow()),
                 OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
                     p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
-                    DateTime.UtcNow)
+                    VietnamTime.UtcNow())
             }).ToList()
         };
 

@@ -46,7 +46,7 @@ public sealed class ParentPinResetRequestDomainEventHandler(
             Id = Guid.NewGuid(),
             ProfileId = profile.Id,
             Token = token,
-            ExpiresAt = DateTime.UtcNow.AddHours(1)
+            ExpiresAt = VietnamTime.UtcNow().AddHours(1)
         };
 
         // Xóa các token cũ chưa dùng của profile này

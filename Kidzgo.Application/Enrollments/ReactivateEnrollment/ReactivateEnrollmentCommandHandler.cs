@@ -40,7 +40,7 @@ public sealed class ReactivateEnrollmentCommandHandler(
                 EnrollmentErrors.CannotReactivateDropped);
         }
         
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Check class capacity
         int currentEnrollmentCount = await context.ClassEnrollments

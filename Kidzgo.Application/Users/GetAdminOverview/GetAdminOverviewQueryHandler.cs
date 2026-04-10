@@ -20,7 +20,7 @@ public sealed class GetAdminOverviewQueryHandler(
         GetAdminOverviewQuery query,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var fromDate = query.FromDate ?? now.AddMonths(-1);
         var toDate = query.ToDate ?? now.AddMonths(1);
 

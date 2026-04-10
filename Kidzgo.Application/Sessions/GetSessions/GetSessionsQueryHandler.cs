@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,18 +41,13 @@ public sealed class GetSessionsQueryHandler(
 
         if (query.From.HasValue)
         {
-            var fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.From.Value, DateTimeKind.Utc)
-                : query.From.Value.ToUniversalTime();
+            var fromUtc = VietnamTime.NormalizeToUtc(query.From.Value);
             sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime >= fromUtc);
         }
 
         if (query.To.HasValue)
         {
-            var toUtc = query.To.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.To.Value, DateTimeKind.Utc)
-                : query.To.Value.ToUniversalTime();
-            toUtc = toUtc.Date.AddDays(1).AddTicks(-1);
+            var toUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.NormalizeToUtc(query.To.Value));
             sessionsQuery = sessionsQuery.Where(s => s.PlannedDatetime <= toUtc);
         }
 

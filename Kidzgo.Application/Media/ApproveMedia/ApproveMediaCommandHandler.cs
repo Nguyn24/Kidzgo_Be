@@ -37,8 +37,8 @@ public sealed class ApproveMediaCommandHandler(
 
         media.ApprovalStatus = ApprovalStatus.Approved;
         media.ApprovedById = approverId;
-        media.ApprovedAt = DateTime.UtcNow;
-        media.UpdatedAt = DateTime.UtcNow;
+        media.ApprovedAt = VietnamTime.UtcNow();
+        media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new ApproveMediaResponse

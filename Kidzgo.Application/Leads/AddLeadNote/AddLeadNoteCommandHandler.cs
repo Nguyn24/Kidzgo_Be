@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -26,14 +27,8 @@ public sealed class AddLeadNoteCommandHandler(
                 LeadErrors.NotFound(command.LeadId));
         }
 
-        var now = DateTime.UtcNow;
-        
-        // Convert NextActionAt to UTC if provided
-        DateTime? nextActionAtUtc = command.NextActionAt.HasValue
-            ? command.NextActionAt.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(command.NextActionAt.Value, DateTimeKind.Utc)
-                : command.NextActionAt.Value.ToUniversalTime()
-            : null;
+        var now = VietnamTime.UtcNow();
+        var nextActionAtUtc = VietnamTime.NormalizeToUtc(command.NextActionAt);
         
         var activity = new LeadActivity
         {

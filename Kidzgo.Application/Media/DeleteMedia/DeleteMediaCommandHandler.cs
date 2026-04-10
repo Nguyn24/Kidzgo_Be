@@ -28,7 +28,7 @@ public sealed class DeleteMediaCommandHandler(
         }
 
         media.IsDeleted = true;
-        media.UpdatedAt = DateTime.UtcNow;
+        media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

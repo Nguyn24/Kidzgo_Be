@@ -34,7 +34,7 @@ public sealed class CreateQuestionBankItemsCommandHandler(
                 HomeworkErrors.ProgramNotFound(command.ProgramId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var createdBy = userContext.UserId;
 
         var items = new List<QuestionBankItem>();

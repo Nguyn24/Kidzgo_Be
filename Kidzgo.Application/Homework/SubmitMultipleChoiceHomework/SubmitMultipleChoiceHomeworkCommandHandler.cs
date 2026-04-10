@@ -82,7 +82,7 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
                 HomeworkErrors.CannotSubmitMultipleChoice);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var isFirstSubmission = currentAttemptCount == 0;
 
         if (homeworkStudent.Assignment.TimeLimitMinutes.HasValue)
@@ -202,11 +202,16 @@ public sealed class SubmitMultipleChoiceHomeworkCommandHandler(
         homeworkStudent.TeacherFeedback = null;
         homeworkStudent.AiFeedback = null;
 
-        var answersJson = JsonSerializer.Serialize(command.Answers.Select(a => new
-        {
-            a.QuestionId,
-            a.SelectedOptionId
-        }).ToList());
+        var answersJson = JsonSerializer.Serialize(
+            command.Answers.Select(a => new
+            {
+                a.QuestionId,
+                a.SelectedOptionId
+            }).ToList(),
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
         homeworkStudent.TextAnswer = answersJson;
 
         var maxScore = homeworkStudent.Assignment.MaxScore ?? totalPoints;

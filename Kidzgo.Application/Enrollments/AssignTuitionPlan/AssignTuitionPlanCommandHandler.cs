@@ -47,7 +47,7 @@ public sealed class AssignTuitionPlanCommandHandler(
         }
 
         enrollment.TuitionPlanId = command.TuitionPlanId;
-        enrollment.UpdatedAt = DateTime.UtcNow;
+        enrollment.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         // Query enrollment with navigation properties for response

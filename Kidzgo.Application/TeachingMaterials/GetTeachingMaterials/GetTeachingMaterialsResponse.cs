@@ -27,7 +27,9 @@ public sealed class TeachingMaterialDto
     public string UploadedByName { get; init; } = null!;
     public bool IsEncrypted { get; init; }
     public string PreviewUrl { get; init; } = null!;
+    public string PreviewPdfUrl { get; init; } = null!;
     public string DownloadUrl { get; init; } = null!;
+    public bool HasPdfPreview { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

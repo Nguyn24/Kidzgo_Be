@@ -31,7 +31,7 @@ public sealed class PublishBlogCommandHandler(
             return Result.Failure<PublishBlogResponse>(BlogErrors.AlreadyPublished);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         blog.IsPublished = true;
         blog.PublishedAt = now;
         blog.UpdatedAt = now;

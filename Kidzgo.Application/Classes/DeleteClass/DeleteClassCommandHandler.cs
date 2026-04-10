@@ -34,7 +34,7 @@ public sealed class DeleteClassCommandHandler(
 
         // Soft delete: Set status to Closed
         classEntity.Status = ClassStatus.Closed;
-        classEntity.UpdatedAt = DateTime.UtcNow;
+        classEntity.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

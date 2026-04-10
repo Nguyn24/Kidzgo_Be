@@ -31,9 +31,9 @@ public sealed class TimetableItemDto
     public string? LessonPlanLink { get; init; }
     public Guid SessionId => Id;
     public string ClassName => ClassTitle;
-    public DateOnly PlannedDate => DateOnly.FromDateTime(PlannedDatetime);
-    public TimeOnly StartTime => TimeOnly.FromDateTime(PlannedDatetime);
-    public TimeOnly EndTime => TimeOnly.FromDateTime(PlannedDatetime.AddMinutes(DurationMinutes));
+    public DateOnly PlannedDate => VietnamTime.ToVietnamDateOnly(PlannedDatetime);
+    public TimeOnly StartTime => VietnamTime.ToVietnamTimeOnly(PlannedDatetime);
+    public TimeOnly EndTime => VietnamTime.ToVietnamTimeOnly(PlannedDatetime.AddMinutes(DurationMinutes));
     public Guid? RoomId => ActualRoomId ?? PlannedRoomId;
     public string? RoomName => ActualRoomName ?? PlannedRoomName;
     public Guid? TeacherId => ActualTeacherId ?? PlannedTeacherId;

@@ -40,7 +40,7 @@ public sealed class ChangeClassStatusCommandHandler(
         }
 
         classEntity.Status = command.Status;
-        classEntity.UpdatedAt = DateTime.UtcNow;
+        classEntity.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new ChangeClassStatusResponse

@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
@@ -53,18 +54,14 @@ public sealed class GetStudentTimetableQueryHandler(
         DateTime? fromUtc = null;
         if (query.From.HasValue)
         {
-            fromUtc = query.From.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.From.Value, DateTimeKind.Utc)
-                : query.From.Value.ToUniversalTime();
+            fromUtc = VietnamTime.NormalizeToUtc(query.From.Value);
         }
 
         DateTime? toUtc = null;
         if (query.To.HasValue)
         {
-            var normalizedToUtc = query.To.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(query.To.Value, DateTimeKind.Utc)
-                : query.To.Value.ToUniversalTime();
-            toUtc = normalizedToUtc.Date.AddDays(1).AddTicks(-1);
+            var normalizedToUtc = VietnamTime.NormalizeToUtc(query.To.Value);
+            toUtc = VietnamTime.EndOfVietnamDayUtc(normalizedToUtc);
         }
 
         var regularAssignmentsQuery = context.StudentSessionAssignments
@@ -148,7 +145,7 @@ public sealed class GetStudentTimetableQueryHandler(
             .SelectMany(session => legacyEnrollments
                 .Where(enrollment =>
                     enrollment.ClassId == session.ClassId &&
-                    enrollment.EnrollDate <= DateOnly.FromDateTime(session.PlannedDatetime))
+                    enrollment.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.PlannedDatetime))
                 .Select(enrollment => new
                 {
                     SessionId = session.Id,

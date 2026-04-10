@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Services;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Sessions;
@@ -48,9 +49,7 @@ public sealed class UpdateSessionsByClassCommandHandler(
         // Filter theo FromDate nếu có
         if (command.FromDate.HasValue)
         {
-            var fromDateUtc = command.FromDate.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(command.FromDate.Value, DateTimeKind.Utc)
-                : command.FromDate.Value.ToUniversalTime();
+            var fromDateUtc = VietnamTime.NormalizeToUtc(command.FromDate.Value);
             query = query.Where(s => s.PlannedDatetime >= fromDateUtc);
         }
 
@@ -73,7 +72,7 @@ public sealed class UpdateSessionsByClassCommandHandler(
         var updatedSessionIds = new List<Guid>();
         var skippedSessionIds = new List<Guid>();
         var errors = new List<string>();
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         foreach (var session in sessions)
         {
@@ -84,9 +83,7 @@ public sealed class UpdateSessionsByClassCommandHandler(
 
                 // Xác định các giá trị sẽ được sử dụng sau khi update
                 var plannedUtc = command.PlannedDatetime.HasValue
-                    ? (command.PlannedDatetime.Value.Kind == DateTimeKind.Unspecified
-                        ? DateTime.SpecifyKind(command.PlannedDatetime.Value, DateTimeKind.Utc)
-                        : command.PlannedDatetime.Value.ToUniversalTime())
+                    ? VietnamTime.NormalizeToUtc(command.PlannedDatetime.Value)
                     : session.PlannedDatetime;
                 
                 var duration = command.DurationMinutes ?? session.DurationMinutes;

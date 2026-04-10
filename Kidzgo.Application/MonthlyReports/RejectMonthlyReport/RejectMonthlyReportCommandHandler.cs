@@ -38,7 +38,7 @@ public sealed class RejectMonthlyReportCommandHandler(
         }
 
         var reviewedBy = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         report.Status = ReportStatus.Rejected;
         report.ReviewedBy = reviewedBy;

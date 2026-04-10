@@ -18,23 +18,46 @@ public sealed class GetMakeupAllocationsQueryHandler(IDbContext context)
         GetMakeupAllocationsQuery query,
         CancellationToken cancellationToken)
     {
-        var allocations = await context.MakeupAllocations
+        var rawAllocations = await context.MakeupAllocations
             .AsNoTracking()
             .Where(a => a.MakeupCredit.StudentProfileId == query.StudentProfileId)
             .Where(a => query.IncludeCancelled || a.Status != Domain.Sessions.MakeupAllocationStatus.Cancelled)
-            .Select(a => new MakeupAllocationResponse
+            .Select(a => new
             {
                 Id = a.Id,
                 MakeupCreditId = a.MakeupCreditId,
                 TargetSessionId = a.TargetSessionId,
                 Status = a.Status.ToString(),
                 AssignedBy = a.AssignedBy,
-                AssignedAt = a.AssignedAt
+                AssignedAt = a.AssignedAt,
+                CreatedAt = a.CreatedAt
             })
-            .OrderByDescending(a => a.AssignedAt)
+            .OrderByDescending(a => a.AssignedAt ?? a.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return allocations;
+        var allocations = query.IncludeCancelled
+            ? rawAllocations
+            : rawAllocations
+                .GroupBy(a => a.TargetSessionId)
+                .Select(g => g
+                    .OrderByDescending(a => a.AssignedAt ?? a.CreatedAt)
+                    .First())
+                .OrderByDescending(a => a.AssignedAt ?? a.CreatedAt)
+                .ToList();
+
+        var response = allocations
+            .Select(a => new MakeupAllocationResponse
+            {
+                Id = a.Id,
+                MakeupCreditId = a.MakeupCreditId,
+                TargetSessionId = a.TargetSessionId,
+                Status = a.Status,
+                AssignedBy = a.AssignedBy,
+                AssignedAt = a.AssignedAt
+            })
+            .ToList();
+
+        return response;
     }
 }
 

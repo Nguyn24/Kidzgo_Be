@@ -63,8 +63,8 @@ public class ExtracurricularProgramsController : ControllerBase
             Location = request.Location,
             IsActive = request.IsActive,
             IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow(),
+            UpdatedAt = VietnamTime.UtcNow()
         };
 
         _context.ExtracurricularPrograms.Add(entity);
@@ -105,7 +105,7 @@ public class ExtracurricularProgramsController : ControllerBase
         entity.Fee = request.Fee;
         entity.Location = request.Location;
         entity.IsActive = request.IsActive;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = VietnamTime.UtcNow();
 
         await _context.SaveChangesAsync(cancellationToken);
 

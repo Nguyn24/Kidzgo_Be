@@ -29,7 +29,7 @@ public sealed class RejectMediaCommandHandler(
         }
 
         media.ApprovalStatus = ApprovalStatus.Rejected;
-        media.UpdatedAt = DateTime.UtcNow;
+        media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new RejectMediaResponse

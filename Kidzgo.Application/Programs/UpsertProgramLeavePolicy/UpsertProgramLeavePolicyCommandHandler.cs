@@ -32,7 +32,7 @@ public sealed class UpsertProgramLeavePolicyCommandHandler(
         var policy = await context.ProgramLeavePolicies
             .FirstOrDefaultAsync(x => x.ProgramId == command.ProgramId, cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         if (policy is null)
         {

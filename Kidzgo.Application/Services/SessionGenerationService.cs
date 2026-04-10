@@ -122,7 +122,7 @@ public sealed class SessionGenerationService
             .Where(s => s.ClassId == classEntity.Id)
             .ToListAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var sessionsToCreate = new List<Session>();
 
         foreach (var occurrence in occurrences)

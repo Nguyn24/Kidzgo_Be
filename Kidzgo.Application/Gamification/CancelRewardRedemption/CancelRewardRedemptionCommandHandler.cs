@@ -49,7 +49,7 @@ public sealed class CancelRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.ItemNotFound(redemption.ItemId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         // Calculate total cost based on quantity
         var totalCostStars = redemption.StarsDeducted ?? (item.CostStars * redemption.Quantity);

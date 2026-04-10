@@ -51,4 +51,40 @@ public static class TeachingMaterialErrors
     public static Error NoSupportedFilesFound() => Error.Validation(
         "TeachingMaterial.NoSupportedFilesFound",
         "No supported teaching material files were found in the upload");
+
+    public static Error PdfConversionFailed(Guid materialId) => Error.Problem(
+        "TeachingMaterial.PdfConversionFailed",
+        $"Failed to convert teaching material '{materialId}' to PDF format");
+
+    public static Error PdfConversionNotSupported(string fileType) => Error.Validation(
+        "TeachingMaterial.PdfConversionNotSupported",
+        $"PDF conversion is not supported for file type '{fileType}'");
+
+    public static Error NotAPresentation() => Error.Validation(
+        "TeachingMaterial.NotAPresentation",
+        "Slide preview is only available for Presentation file types");
+
+    public static Error SlideNotFound(int slideNumber, int totalSlides) => Error.NotFound(
+        "TeachingMaterial.SlideNotFound",
+        $"Slide number {slideNumber} not found. This presentation has {totalSlides} slides");
+
+    public static Error SlideGenerationFailed(Guid materialId) => Error.Problem(
+        "TeachingMaterial.SlideGenerationFailed",
+        $"Failed to generate slide images for teaching material '{materialId}'");
+
+    public static Error ProgressPercentInvalid() => Error.Validation(
+        "TeachingMaterial.ProgressPercentInvalid",
+        "Progress percent must be between 0 and 100");
+
+    public static Error AnnotationNotFound(Guid annotationId) => Error.NotFound(
+        "TeachingMaterial.AnnotationNotFound",
+        $"Teaching material annotation with Id = '{annotationId}' was not found");
+
+    public static Error AnnotationVisibilityNotAllowed(string visibility) => Error.Validation(
+        "TeachingMaterial.AnnotationVisibilityNotAllowed",
+        $"Current user is not allowed to create '{visibility}' annotations");
+
+    public static Error AccessDenied(Guid materialId) => Error.Validation(
+        "TeachingMaterial.AccessDenied",
+        $"Current user cannot access teaching material '{materialId}'");
 }

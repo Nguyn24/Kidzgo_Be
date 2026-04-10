@@ -84,7 +84,7 @@ public sealed class CompleteReportRequestCommandHandler(
             request.LinkedMonthlyReportId = command.LinkedMonthlyReportId.Value;
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         request.Status = ReportRequestStatus.Submitted;
         request.SubmittedAt = now;
         request.UpdatedAt = now;

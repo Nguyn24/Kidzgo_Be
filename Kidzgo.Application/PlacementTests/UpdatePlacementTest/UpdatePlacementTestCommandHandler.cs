@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -80,10 +81,7 @@ public sealed class UpdatePlacementTestCommandHandler(
         // Update ScheduledAt if provided
         if (command.ScheduledAt.HasValue)
         {
-            DateTime scheduledAtUtc = command.ScheduledAt.Value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(command.ScheduledAt.Value, DateTimeKind.Utc)
-                : command.ScheduledAt.Value.ToUniversalTime();
-            placementTest.ScheduledAt = scheduledAtUtc;
+            placementTest.ScheduledAt = VietnamTime.NormalizeToUtc(command.ScheduledAt.Value);
         }
 
         // Update Room if provided
@@ -92,7 +90,7 @@ public sealed class UpdatePlacementTestCommandHandler(
             placementTest.Room = string.IsNullOrWhiteSpace(command.Room) ? null : command.Room.Trim();
         }
 
-        placementTest.UpdatedAt = DateTime.UtcNow;
+        placementTest.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new UpdatePlacementTestResponse

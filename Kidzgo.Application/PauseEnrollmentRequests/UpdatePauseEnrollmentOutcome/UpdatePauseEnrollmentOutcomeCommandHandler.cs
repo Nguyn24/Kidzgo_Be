@@ -45,7 +45,7 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
         pauseRequest.Outcome = request.Outcome;
         pauseRequest.OutcomeNote = request.OutcomeNote;
         pauseRequest.OutcomeBy = userContext.UserId;
-        pauseRequest.OutcomeAt = DateTime.UtcNow;
+        pauseRequest.OutcomeAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -91,8 +91,8 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
             return Result.Failure(EnrollmentErrors.CannotReactivateDropped);
         }
 
-        var now = DateTime.UtcNow;
-        var today = DateOnly.FromDateTime(now);
+        var now = VietnamTime.UtcNow();
+        var today = VietnamTime.ToVietnamDateOnly(now);
         var effectiveFrom = pauseRequest.PauseTo.AddDays(1);
         if (today > effectiveFrom)
         {

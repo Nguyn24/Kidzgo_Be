@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Exams;
 using Kidzgo.Domain.Exams.Errors;
@@ -47,24 +48,7 @@ public sealed class UpdateExamCommandHandler(
         // Update time settings
         if (command.ScheduledStartTime.HasValue)
         {
-            var scheduledTime = command.ScheduledStartTime.Value;
-            DateTime scheduledTimeUtc;
-            
-            if (scheduledTime.Kind == DateTimeKind.Local)
-            {
-                scheduledTimeUtc = scheduledTime.ToUniversalTime();
-            }
-            else if (scheduledTime.Kind == DateTimeKind.Unspecified)
-            {
-                // Assume it's already in UTC if unspecified
-                scheduledTimeUtc = DateTime.SpecifyKind(scheduledTime, DateTimeKind.Utc);
-            }
-            else
-            {
-                scheduledTimeUtc = scheduledTime;
-            }
-            
-            exam.ScheduledStartTime = scheduledTimeUtc;
+            exam.ScheduledStartTime = VietnamTime.NormalizeToUtc(command.ScheduledStartTime.Value);
         }
 
         if (command.TimeLimitMinutes.HasValue)
@@ -103,7 +87,7 @@ public sealed class UpdateExamCommandHandler(
             exam.ShowResultsImmediately = command.ShowResultsImmediately.Value;
         }
 
-        exam.UpdatedAt = DateTime.UtcNow;
+        exam.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

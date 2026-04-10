@@ -31,7 +31,7 @@ public sealed class DeleteNotificationTemplateCommandHandler(
 
         // Soft delete
         template.IsDeleted = true;
-        template.UpdatedAt = DateTime.UtcNow;
+        template.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

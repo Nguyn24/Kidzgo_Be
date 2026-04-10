@@ -135,7 +135,7 @@ public sealed class UploadFileCommandHandler(
                 user.AvatarUrl = url;
                 user.AvatarMimeType = command.ContentType;
                 user.AvatarFileSize = command.FileSize;
-                user.UpdatedAt = DateTime.UtcNow;
+                user.UpdatedAt = VietnamTime.UtcNow();
                 hasChanges = true;
             }
         }
@@ -163,7 +163,7 @@ public sealed class UploadFileCommandHandler(
                 profile.AvatarUrl = url;
                 profile.AvatarMimeType = command.ContentType;
                 profile.AvatarFileSize = command.FileSize;
-                profile.UpdatedAt = DateTime.UtcNow;
+                profile.UpdatedAt = VietnamTime.UtcNow();
                 hasChanges = true;
             }
         }

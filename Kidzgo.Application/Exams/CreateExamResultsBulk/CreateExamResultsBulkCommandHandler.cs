@@ -77,7 +77,7 @@ public sealed class CreateExamResultsBulkCommandHandler(
                 attachmentUrlsJson = JsonSerializer.Serialize(resultItem.AttachmentUrls);
             }
 
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
             var examResult = new ExamResult
             {
                 Id = Guid.NewGuid(),

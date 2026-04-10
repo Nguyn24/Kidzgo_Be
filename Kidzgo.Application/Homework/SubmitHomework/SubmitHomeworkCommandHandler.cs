@@ -100,7 +100,7 @@ public sealed class SubmitHomeworkCommandHandler(
                 HomeworkErrors.SubmissionInvalidData(submissionType.ToString()));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var isFirstSubmission = currentAttemptCount == 0;
 
         homeworkStudent.Status = homeworkStudent.Status == HomeworkStatus.Missing ||

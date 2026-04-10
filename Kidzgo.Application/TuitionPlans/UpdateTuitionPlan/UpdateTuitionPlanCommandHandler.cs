@@ -53,7 +53,7 @@ public sealed class UpdateTuitionPlanCommandHandler(
         tuitionPlan.TuitionAmount = command.TuitionAmount;
         tuitionPlan.UnitPriceSession = unitPriceSession;
         tuitionPlan.Currency = command.Currency;
-        tuitionPlan.UpdatedAt = DateTime.UtcNow;
+        tuitionPlan.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

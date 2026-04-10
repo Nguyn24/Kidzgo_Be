@@ -83,7 +83,7 @@ public sealed class CreateSessionReportCommandHandler(
             return Result.Failure<CreateSessionReportResponse>(SessionReportErrors.AlreadyExists);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var sessionReport = new SessionReport
         {

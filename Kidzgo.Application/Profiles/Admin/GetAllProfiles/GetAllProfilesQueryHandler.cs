@@ -28,7 +28,7 @@ public sealed class GetAllProfilesQueryHandler(
             return Result.Failure<Page<GetAllProfilesResponse>>(ProfileErrors.TeacherMustUseScopedStudentApis);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var query = context.Profiles
             .Include(p => p.User)
             .AsQueryable();

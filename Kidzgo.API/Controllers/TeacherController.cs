@@ -129,7 +129,7 @@ public class TeacherController : ControllerBase
         {
             stats = result.Value.Statistics,
             todayClasses = result.Value.UpcomingSessions
-                .Where(s => s.PlannedDatetime.Date == DateTime.UtcNow.Date)
+                .Where(s => VietnamTime.ToVietnamDateOnly(s.PlannedDatetime) == VietnamTime.TodayDateOnly())
                 .ToList(),
             upcomingClasses = result.Value.UpcomingSessions,
             alerts = result.Value.OpenTickets.Take(5).ToList(),
