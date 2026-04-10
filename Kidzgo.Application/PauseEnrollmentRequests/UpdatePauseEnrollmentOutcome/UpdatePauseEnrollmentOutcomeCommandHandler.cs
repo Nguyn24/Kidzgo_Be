@@ -15,7 +15,8 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
     IDbContext context,
     IUserContext userContext,
     ITemplateRenderer templateRenderer,
-    StudentSessionAssignmentService studentSessionAssignmentService)
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService)
     : ICommandHandler<UpdatePauseEnrollmentOutcomeCommand>
 {
     public async Task<Result> Handle(UpdatePauseEnrollmentOutcomeCommand request, CancellationToken cancellationToken)
@@ -102,6 +103,7 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
         var pausedEnrollments = enrollments
             .Where(e => e.Status == EnrollmentStatus.Paused)
             .ToList();
+        var pendingReactivatedSlots = new List<StudentBookedSlot>();
 
         var reactivationCountsByClass = pausedEnrollments
             .GroupBy(e => e.ClassId)
@@ -133,6 +135,30 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
 
         foreach (var enrollment in pausedEnrollments)
         {
+            var assignmentStartDate = effectiveFrom > enrollment.EnrollDate
+                ? effectiveFrom
+                : enrollment.EnrollDate;
+
+            var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+                enrollment.StudentProfileId,
+                enrollment.ClassId,
+                assignmentStartDate,
+                enrollment.SessionSelectionPattern,
+                cancellationToken,
+                additionalBookedSlots: pendingReactivatedSlots,
+                excludeEnrollmentId: enrollment.Id);
+            if (conflictResult.IsFailure)
+            {
+                return conflictResult;
+            }
+
+            var candidateSlots = await studentEnrollmentScheduleConflictService.GetCandidateSlotsAsync(
+                enrollment.ClassId,
+                assignmentStartDate,
+                enrollment.SessionSelectionPattern,
+                cancellationToken);
+            pendingReactivatedSlots.AddRange(candidateSlots);
+
             enrollment.Status = EnrollmentStatus.Active;
             enrollment.UpdatedAt = now;
             await studentSessionAssignmentService.RestoreAssignmentsForEnrollmentAsync(

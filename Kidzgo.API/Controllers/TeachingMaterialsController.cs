@@ -12,6 +12,7 @@ using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialAnnotations;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialBookmarks;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialPreviewPdf;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialSlideImage;
+using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialSlideNotes;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialSlides;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialViewProgress;
 using Kidzgo.Application.TeachingMaterials.GetTeachingMaterialViewProgressSummary;
@@ -268,6 +269,22 @@ public class TeachingMaterialsController : ControllerBase
         return result.Match(
             success => Results.File(success.Content, success.MimeType, enableRangeProcessing: true),
             failure => CustomResults.Problem(failure));
+    }
+
+    [HttpGet("{id:guid}/slides/{slideNumber:int}/notes")]
+    [Authorize(Roles = ReadRoles)]
+    public async Task<IResult> GetSlideNotes(
+        Guid id,
+        int slideNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetTeachingMaterialSlideNotesQuery
+        {
+            TeachingMaterialId = id,
+            SlideNumber = slideNumber
+        }, cancellationToken);
+
+        return result.MatchOk();
     }
 
     [HttpPost("{id:guid}/view-progress")]
