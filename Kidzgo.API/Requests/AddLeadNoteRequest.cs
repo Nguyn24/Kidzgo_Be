@@ -7,5 +7,6 @@ public sealed class AddLeadNoteRequest
     public string Content { get; set; } = null!;
     public ActivityType ActivityType { get; set; } = ActivityType.Note;
     public DateTime? NextActionAt { get; set; }
+    public bool? ClearNextAction { get; set; }
 }
 

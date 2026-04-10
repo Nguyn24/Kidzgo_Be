@@ -4960,7 +4960,7 @@ Base URL: `/api/leads`
 
 **Endpoint:** `POST /api/leads/{id}/notes`
 
-**Mô tả:** Thêm ghi chú/hoạt động cho Lead (gọi điện, nhắn tin, note chăm sóc...) và cập nhật `touchCount`, `nextActionAt`, `firstResponseAt` (nếu là lần chạm đầu tiên).
+**Mô tả:** Thêm ghi chú/hoạt động cho Lead (gọi điện, nhắn tin, note chăm sóc...) và cập nhật `touchCount`, `nextActionAt`, `firstResponseAt` (nếu là lần contact đầu tiên). Nếu `activityType` là `Call`, `Zalo`, `Sms` hoặc `Email` và Lead đang ở trạng thái `New`, hệ thống sẽ tự động chuyển sang `Contacted`. Có thể truyền `clearNextAction = true` để xóa lịch follow-up hiện tại của Lead; không được truyền đồng thời `nextActionAt` và `clearNextAction = true`.
 
 **Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
 

@@ -33,6 +33,7 @@ public sealed class GetRegistrationByIdResponse
     public int RemainingSessions { get; init; }
     public Guid? OriginalRegistrationId { get; init; }
     public string? OperationType { get; init; }
+    public List<RegistrationActualStudyScheduleDto> ActualStudySchedules { get; init; } = new();
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

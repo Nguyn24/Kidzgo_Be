@@ -235,7 +235,7 @@ public class LeadController : ControllerBase
     }
 
     /// <summary>
-    /// UC-022: Ghi chú Lead
+    /// UC-022: Ghi chú / ghi nhận tương tác Lead
     /// </summary>
     [HttpPost("{id:guid}/notes")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
@@ -249,7 +249,8 @@ public class LeadController : ControllerBase
             LeadId = id,
             Content = request.Content,
             ActivityType = request.ActivityType,
-            NextActionAt = request.NextActionAt
+            NextActionAt = request.NextActionAt,
+            ClearNextAction = request.ClearNextAction
         };
 
         var result = await _mediator.Send(command, cancellationToken);

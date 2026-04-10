@@ -29,25 +29,44 @@ public sealed class AddLeadNoteCommandHandler(
 
         var now = VietnamTime.UtcNow();
         var nextActionAtUtc = VietnamTime.NormalizeToUtc(command.NextActionAt);
-        
+        var isContactActivity = IsContactActivity(command.ActivityType);
+        var shouldClearNextAction = command.ClearNextAction == true;
+        var activityNextActionAt = shouldClearNextAction ? null : nextActionAtUtc;
+
         var activity = new LeadActivity
         {
             Id = Guid.NewGuid(),
             LeadId = lead.Id,
             ActivityType = command.ActivityType,
             Content = command.Content.Trim(),
-            NextActionAt = nextActionAtUtc,
+            NextActionAt = activityNextActionAt,
             CreatedBy = userContext.UserId,
             CreatedAt = now
         };
 
         context.LeadActivities.Add(activity);
 
+        // First contact activities are the source of truth for SLA first response.
+        if (isContactActivity && !lead.FirstResponseAt.HasValue)
+        {
+            lead.FirstResponseAt = now;
+        }
+
+        // Keep status progression aligned with actual outreach instead of assignment/data entry.
+        if (isContactActivity && lead.Status == LeadStatus.New)
+        {
+            lead.Status = LeadStatus.Contacted;
+        }
+
         // UC-025: Track touch count
         lead.TouchCount++;
         
-        // UC-026: Set next action date if provided
-        if (nextActionAtUtc.HasValue)
+        // UC-026: Keep the lead-level follow-up in sync with the requested action.
+        if (shouldClearNextAction)
+        {
+            lead.NextActionAt = null;
+        }
+        else if (nextActionAtUtc.HasValue)
         {
             lead.NextActionAt = nextActionAtUtc.Value;
         }
@@ -61,9 +80,20 @@ public sealed class AddLeadNoteCommandHandler(
             LeadId = lead.Id,
             ActivityType = activity.ActivityType.ToString(),
             Content = activity.Content,
+            LeadStatus = lead.Status.ToString(),
+            FirstResponseAt = lead.FirstResponseAt,
             NextActionAt = activity.NextActionAt,
+            LeadNextActionAt = lead.NextActionAt,
             CreatedAt = activity.CreatedAt
         };
+    }
+
+    private static bool IsContactActivity(ActivityType activityType)
+    {
+        return activityType is ActivityType.Call
+            or ActivityType.Zalo
+            or ActivityType.Sms
+            or ActivityType.Email;
     }
 }
 
