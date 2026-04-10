@@ -9,5 +9,6 @@ public sealed class AddLeadNoteCommand : ICommand<AddLeadNoteResponse>
     public string Content { get; init; } = null!;
     public ActivityType ActivityType { get; init; } = ActivityType.Note;
     public DateTime? NextActionAt { get; init; }
+    public bool? ClearNextAction { get; init; }
 }
 

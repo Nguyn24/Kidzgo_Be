@@ -1,0 +1,118 @@
+using Kidzgo.Domain.Classes;
+
+namespace Kidzgo.Application.Registrations;
+
+public sealed class RegistrationActualStudyScheduleDto
+{
+    public string Track { get; init; } = null!;
+    public Guid ClassId { get; init; }
+    public string ClassName { get; init; } = null!;
+    public Guid ProgramId { get; init; }
+    public string ProgramName { get; init; } = null!;
+    public bool UsesClassDefaultSchedule { get; init; }
+    public string? ClassSchedulePattern { get; init; }
+    public string? SessionSelectionPattern { get; init; }
+    public string? EffectiveSchedulePattern { get; init; }
+    public List<string> StudyDayCodes { get; init; } = new();
+    public List<string> StudyDays { get; init; } = new();
+    public string? StudyDaySummary { get; init; }
+}
+
+internal static class RegistrationActualStudyScheduleMapper
+{
+    private static readonly string[] DayOrder = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
+
+    private static readonly IReadOnlyDictionary<string, string> LegacyDayLabels =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["MO"] = "Thứ 2",
+            ["TU"] = "Thứ 3",
+            ["WE"] = "Thứ 4",
+            ["TH"] = "Thứ 5",
+            ["FR"] = "Thứ 6",
+            ["SA"] = "Thứ 7",
+            ["SU"] = "Chủ nhật"
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> DayLabels =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["MO"] = "Thu 2",
+            ["TU"] = "Thu 3",
+            ["WE"] = "Thu 4",
+            ["TH"] = "Thu 5",
+            ["FR"] = "Thu 6",
+            ["SA"] = "Thu 7",
+            ["SU"] = "Chu nhat"
+        };
+
+    public static List<RegistrationActualStudyScheduleDto> Map(IEnumerable<ClassEnrollment> enrollments)
+    {
+        return enrollments
+            .Where(e => e.Class != null && e.Class.Program != null)
+            .GroupBy(e => e.Track)
+            .Select(group => group
+                .OrderByDescending(e => e.UpdatedAt)
+                .ThenByDescending(e => e.CreatedAt)
+                .First())
+            .OrderBy(e => e.Track)
+            .Select(MapSingle)
+            .ToList();
+    }
+
+    private static RegistrationActualStudyScheduleDto MapSingle(ClassEnrollment enrollment)
+    {
+        var classEntity = enrollment.Class;
+        var usesClassDefaultSchedule = string.IsNullOrWhiteSpace(enrollment.SessionSelectionPattern);
+        var effectiveSchedulePattern = usesClassDefaultSchedule
+            ? classEntity.SchedulePattern
+            : enrollment.SessionSelectionPattern;
+        var studyDayCodes = ExtractOrderedDayCodes(effectiveSchedulePattern);
+        var studyDays = studyDayCodes
+            .Select(code => DayLabels.TryGetValue(code, out var label) ? label : code)
+            .ToList();
+
+        return new RegistrationActualStudyScheduleDto
+        {
+            Track = RegistrationTrackHelper.ToTrackName(enrollment.Track),
+            ClassId = classEntity.Id,
+            ClassName = classEntity.Title,
+            ProgramId = classEntity.ProgramId,
+            ProgramName = classEntity.Program.Name,
+            UsesClassDefaultSchedule = usesClassDefaultSchedule,
+            ClassSchedulePattern = classEntity.SchedulePattern,
+            SessionSelectionPattern = enrollment.SessionSelectionPattern,
+            EffectiveSchedulePattern = effectiveSchedulePattern,
+            StudyDayCodes = studyDayCodes,
+            StudyDays = studyDays,
+            StudyDaySummary = studyDays.Count > 0 ? string.Join(", ", studyDays) : null
+        };
+    }
+
+    private static List<string> ExtractOrderedDayCodes(string? schedulePattern)
+    {
+        if (string.IsNullOrWhiteSpace(schedulePattern))
+        {
+            return new List<string>();
+        }
+
+        var dayMatch = System.Text.RegularExpressions.Regex.Match(
+            schedulePattern,
+            @"BYDAY=([A-Z,]+)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (!dayMatch.Success)
+        {
+            return new List<string>();
+        }
+
+        var daySet = dayMatch.Groups[1].Value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(day => day.ToUpperInvariant())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return DayOrder
+            .Where(daySet.Contains)
+            .ToList();
+    }
+}

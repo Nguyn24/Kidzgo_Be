@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,13 @@ public sealed class GetRegistrationByIdQueryHandler(
         {
             return Result.Failure<GetRegistrationByIdResponse>(RegistrationErrors.NotFound(query.Id));
         }
+
+        var actualStudyEnrollments = await context.ClassEnrollments
+            .AsNoTracking()
+            .Include(e => e.Class)
+                .ThenInclude(c => c.Program)
+            .Where(e => e.RegistrationId == registration.Id && e.Status == EnrollmentStatus.Active)
+            .ToListAsync(cancellationToken);
 
         return new GetRegistrationByIdResponse
         {
@@ -60,6 +68,7 @@ public sealed class GetRegistrationByIdQueryHandler(
             RemainingSessions = registration.RemainingSessions,
             OriginalRegistrationId = registration.OriginalRegistrationId,
             OperationType = registration.OperationType?.ToString(),
+            ActualStudySchedules = RegistrationActualStudyScheduleMapper.Map(actualStudyEnrollments),
             CreatedAt = registration.CreatedAt,
             UpdatedAt = registration.UpdatedAt
         };
