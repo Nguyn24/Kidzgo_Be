@@ -15,7 +15,7 @@ public sealed class UpdateRegistrationCommandHandler(
         UpdateRegistrationCommand command,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var registration = await context.Registrations
             .Include(r => r.TuitionPlan)

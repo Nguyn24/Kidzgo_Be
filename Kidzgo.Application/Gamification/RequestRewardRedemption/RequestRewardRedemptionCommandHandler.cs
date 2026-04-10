@@ -105,10 +105,10 @@ public sealed class RequestRewardRedemptionCommandHandler(
 
         // Decrease item quantity
         item.Quantity -= command.Quantity;
-        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedAt = VietnamTime.UtcNow();
 
         // UC-228 & UC-236: Create redemption with item name at redemption time
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var redemption = new RewardRedemption
         {
             Id = Guid.NewGuid(),

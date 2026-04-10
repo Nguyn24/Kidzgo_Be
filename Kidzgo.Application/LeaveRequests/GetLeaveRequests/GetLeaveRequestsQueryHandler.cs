@@ -4,6 +4,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.LeaveRequests.GetLeaveRequests;
@@ -15,8 +16,29 @@ public sealed class GetLeaveRequestsQueryHandler(
 {
     public async Task<Result<Page<GetLeaveRequestsResponse>>> Handle(GetLeaveRequestsQuery request, CancellationToken cancellationToken)
     {
-        // Use StudentProfileId from query if provided, otherwise use from context
-        var studentProfileId = request.StudentProfileId ?? userContext.StudentId;
+        Guid? studentProfileId = request.StudentProfileId;
+        if (!request.StudentProfileId.HasValue)
+        {
+            var currentUserRole = await context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userContext.UserId)
+                .Select(u => u.Role)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (currentUserRole is UserRole.Parent or UserRole.Student)
+            {
+                if (!userContext.StudentId.HasValue)
+                {
+                    return new Page<GetLeaveRequestsResponse>(
+                        new List<GetLeaveRequestsResponse>(),
+                        0,
+                        request.PageNumber,
+                        request.PageSize);
+                }
+
+                studentProfileId = userContext.StudentId.Value;
+            }
+        }
 
         var query = context.LeaveRequests
             .AsQueryable();
@@ -52,6 +74,7 @@ public sealed class GetLeaveRequestsQueryHandler(
                 Id = l.Id,
                 StudentProfileId = l.StudentProfileId,
                 ClassId = l.ClassId,
+                ClassName = l.Class.Title,
                 SessionId = l.SessionId,
                 SessionDate = l.SessionDate,
                 EndDate = l.EndDate,

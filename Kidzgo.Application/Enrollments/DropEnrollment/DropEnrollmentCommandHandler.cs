@@ -34,7 +34,7 @@ public sealed class DropEnrollmentCommandHandler(
                 EnrollmentErrors.AlreadyDropped);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         enrollment.Status = EnrollmentStatus.Dropped;
         enrollment.UpdatedAt = now;
         await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(

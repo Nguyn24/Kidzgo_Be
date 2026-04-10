@@ -18,6 +18,7 @@ public sealed class GetLeaveRequestByIdQueryHandler(IDbContext context)
                 Id = l.Id,
                 StudentProfileId = l.StudentProfileId,
                 ClassId = l.ClassId,
+                ClassName = l.Class.Title,
                 SessionId = l.SessionId,
                 SessionDate = l.SessionDate,
                 EndDate = l.EndDate,

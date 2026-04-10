@@ -11,12 +11,12 @@ public sealed class UpdateExamCommandValidator : AbstractValidator<UpdateExamCom
             .WithMessage("Exam ID is required");
 
         RuleFor(command => command.Date)
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            .GreaterThanOrEqualTo(VietnamTime.TodayDateOnly())
             .WithMessage("Exam date cannot be in the past")
             .When(command => command.Date.HasValue);
 
         RuleFor(command => command.ScheduledStartTime)
-            .GreaterThanOrEqualTo(DateTime.UtcNow)
+            .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("Scheduled start time cannot be in the past")
             .When(command => command.ScheduledStartTime.HasValue);
     }

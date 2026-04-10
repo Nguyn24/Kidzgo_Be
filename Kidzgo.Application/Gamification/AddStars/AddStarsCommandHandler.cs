@@ -47,7 +47,7 @@ public sealed class AddStarsCommandHandler(
             SourceId = null,
             BalanceAfter = newBalance,
             CreatedBy = userContext.UserId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.StarTransactions.Add(transaction);

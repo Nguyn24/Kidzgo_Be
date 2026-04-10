@@ -33,7 +33,7 @@ public sealed class PauseEnrollmentCommandHandler(
                 EnrollmentErrors.InvalidStatus);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         enrollment.Status = EnrollmentStatus.Paused;
         enrollment.UpdatedAt = now;
         await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(

@@ -22,7 +22,7 @@ public sealed class AutoConfirmRewardRedemptionJob(
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
-        logger.LogInformation("AutoConfirmRewardRedemptionJob started at {Time}", DateTime.UtcNow);
+        logger.LogInformation("AutoConfirmRewardRedemptionJob started at {Time}", VietnamTime.UtcNow());
 
         try
         {
@@ -33,7 +33,7 @@ public sealed class AutoConfirmRewardRedemptionJob(
             var daysToWait = configuration.GetValue<int>("Quartz:Schedules:AutoConfirmRewardRedemptionJob_Days", 3);
             
             // Tính toán ngày N ngày trước (UTC)
-            var daysAgo = DateTime.UtcNow.Date.AddDays(-daysToWait);
+            var daysAgo = VietnamTime.TodayStartUtc().AddDays(-daysToWait);
 
             // Tìm các Reward Redemption cần tự động xác nhận:
             // - Status = Delivered
@@ -54,7 +54,7 @@ public sealed class AutoConfirmRewardRedemptionJob(
                 return;
             }
 
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.UtcNow();
             var confirmedCount = 0;
 
             foreach (var redemption in redemptionsToAutoConfirm)

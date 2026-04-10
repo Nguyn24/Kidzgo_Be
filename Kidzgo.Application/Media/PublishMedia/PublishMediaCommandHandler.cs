@@ -35,7 +35,7 @@ public sealed class PublishMediaCommandHandler(
         }
 
         media.IsPublished = true;
-        media.UpdatedAt = DateTime.UtcNow;
+        media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new PublishMediaResponse

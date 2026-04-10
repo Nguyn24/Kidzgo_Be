@@ -30,7 +30,7 @@ public sealed class AddReportCommentCommandHandler(
         }
 
         var commenterId = userContext.UserId;
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var comment = new ReportComment
         {

@@ -29,7 +29,7 @@ public sealed class CancelSessionCommandHandler(
         }
 
         session.Status = SessionStatus.Cancelled;
-        session.UpdatedAt = DateTime.UtcNow;
+        session.UpdatedAt = VietnamTime.UtcNow();
 
         await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);

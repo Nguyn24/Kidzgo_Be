@@ -27,7 +27,7 @@ public sealed class AddSessionReportCommentCommandHandler(
                 SessionReportErrors.NotFound(command.SessionReportId));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var comment = new ReportComment
         {

@@ -11,7 +11,7 @@ public sealed class CompleteSessionCommandValidator : AbstractValidator<Complete
             .WithMessage("Session ID is required");
 
         RuleFor(command => command.ActualDatetime)
-            .LessThanOrEqualTo(DateTime.UtcNow)
+            .LessThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("ActualDatetime cannot be in the future")
             .When(command => command.ActualDatetime.HasValue);
     }

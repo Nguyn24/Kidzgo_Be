@@ -60,6 +60,9 @@ public class TeachingMaterialConfiguration : IEntityTypeConfiguration<TeachingMa
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(x => x.PdfPreviewPath)
+            .HasMaxLength(500);
+
         builder.Property(x => x.UploadedByUserId)
             .IsRequired();
 

@@ -12,7 +12,7 @@ public static class ReportRequestWorkflow
         Guid classId,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var request = await context.ReportRequests
             .Where(r => r.ReportType == ReportRequestType.Session &&
                         r.AssignedTeacherUserId == sessionReport.TeacherUserId &&
@@ -45,7 +45,7 @@ public static class ReportRequestWorkflow
         Guid submittedBy,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var request = await context.ReportRequests
             .Where(r => r.ReportType == ReportRequestType.Monthly &&
                         r.AssignedTeacherUserId == submittedBy &&
@@ -102,7 +102,7 @@ public static class ReportRequestWorkflow
         ReportRequestStatus status,
         CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var requests = await query
             .Where(r => r.Status == ReportRequestStatus.Requested ||
                         r.Status == ReportRequestStatus.InProgress ||

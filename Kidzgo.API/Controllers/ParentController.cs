@@ -437,7 +437,7 @@ public class ParentController : ControllerBase
                 description = i.Description,
                 type = "Invoice",
                 status = i.Status.ToString(),
-                createdAt = i.IssuedAt ?? DateTime.UtcNow,
+                createdAt = i.IssuedAt ?? VietnamTime.UtcNow(),
                 dueAt = i.DueDate.HasValue ? i.DueDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
                 actionUrl = i.PayosPaymentLink
             })

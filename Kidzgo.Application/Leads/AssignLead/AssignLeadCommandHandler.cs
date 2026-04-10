@@ -41,7 +41,7 @@ public sealed class AssignLeadCommandHandler(
         }
 
         lead.OwnerStaffId = command.OwnerStaffId;
-        lead.UpdatedAt = DateTime.UtcNow;
+        lead.UpdatedAt = VietnamTime.UtcNow();
 
         // Track touch count
         lead.TouchCount++;
@@ -53,7 +53,7 @@ public sealed class AssignLeadCommandHandler(
             LeadId = lead.Id,
             ActivityType = ActivityType.Note,
             Content = $"Lead assigned to {owner.Name ?? owner.Email}",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.LeadActivities.Add(activity);

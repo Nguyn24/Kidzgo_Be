@@ -40,7 +40,7 @@ public sealed class MarkNotificationAsReadCommandHandler(
         }
 
         // Mark as read
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         notification.ReadAt = now;
         
         await context.SaveChangesAsync(cancellationToken);

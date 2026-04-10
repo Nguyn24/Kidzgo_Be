@@ -52,7 +52,7 @@ public sealed class DeleteDeviceTokenCommandHandler(
         }
 
         // Deactivate all matching tokens
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         foreach (var token in deviceTokens)
         {
             token.IsActive = false;

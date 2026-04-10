@@ -125,7 +125,7 @@ public sealed class QuestPdfReportGenerator : IPdfReportGenerator
     </div>
     <div class=""footer"">
         <p>Rex English Center - KidzGo</p>
-        <p>Được tạo vào: {DateTime.UtcNow.AddHours(7):dd/MM/yyyy HH:mm}</p>
+        <p>Được tạo vào: {VietnamTime.NowInVietnam():dd/MM/yyyy HH:mm}</p>
     </div>
 </body>
 </html>";
@@ -199,7 +199,7 @@ public sealed class QuestPdfReportGenerator : IPdfReportGenerator
     </div>
     <div class=""footer"">
         <p>Rex English Center - KidzGo</p>
-        <p>Được tạo vào: {DateTime.UtcNow.AddHours(7):dd/MM/yyyy HH:mm}</p>
+        <p>Được tạo vào: {VietnamTime.NowInVietnam():dd/MM/yyyy HH:mm}</p>
     </div>
 </body>
 </html>";
@@ -234,7 +234,7 @@ public sealed class QuestPdfReportGenerator : IPdfReportGenerator
     </div>
     <div class=""footer"">
         <p>Rex English Center - KidzGo</p>
-        <p>Được tạo vào: {DateTime.UtcNow.AddHours(7):dd/MM/yyyy HH:mm}</p>
+        <p>Được tạo vào: {VietnamTime.NowInVietnam():dd/MM/yyyy HH:mm}</p>
     </div>
 </body>
 </html>";

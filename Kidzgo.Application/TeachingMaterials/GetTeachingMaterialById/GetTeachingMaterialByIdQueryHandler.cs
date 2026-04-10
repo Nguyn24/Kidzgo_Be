@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.TeachingMaterials.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.TeachingMaterials.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.TeachingMaterials.GetTeachingMaterialById;
 
 public sealed class GetTeachingMaterialByIdQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetTeachingMaterialByIdQuery, GetTeachingMaterialByIdResponse>
 {
     public async Task<Result<GetTeachingMaterialByIdResponse>> Handle(
@@ -23,6 +26,12 @@ public sealed class GetTeachingMaterialByIdQueryHandler(
         {
             return Result.Failure<GetTeachingMaterialByIdResponse>(
                 TeachingMaterialErrors.NotFound(query.TeachingMaterialId));
+        }
+
+        if (!await TeachingMaterialAccessHelper.CanReadAsync(context, userContext, material, cancellationToken))
+        {
+            return Result.Failure<GetTeachingMaterialByIdResponse>(
+                TeachingMaterialErrors.AccessDenied(query.TeachingMaterialId));
         }
 
         return new GetTeachingMaterialByIdResponse
@@ -48,7 +57,9 @@ public sealed class GetTeachingMaterialByIdQueryHandler(
             UploadedByUserId = material.UploadedByUserId,
             UploadedByName = material.UploadedByUser.Name,
             PreviewUrl = $"/api/teaching-materials/{material.Id}/preview",
+            PreviewPdfUrl = $"/api/teaching-materials/{material.Id}/preview-pdf",
             DownloadUrl = $"/api/teaching-materials/{material.Id}/download",
+            HasPdfPreview = material.PdfPreviewPath != null,
             CreatedAt = material.CreatedAt,
             UpdatedAt = material.UpdatedAt
         };

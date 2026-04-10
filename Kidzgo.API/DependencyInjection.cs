@@ -26,6 +26,7 @@ public static class DependencyInjection
         services
             .AddControllers(options =>
             {
+                options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
                 options.ModelBinderProviders.Insert(0, new DateOnlyModelBinderProvider());
             })
             .AddJsonOptions(options =>

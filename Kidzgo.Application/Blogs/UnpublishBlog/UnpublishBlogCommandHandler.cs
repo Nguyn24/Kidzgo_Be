@@ -32,7 +32,7 @@ public sealed class UnpublishBlogCommandHandler(
         }
 
         blog.IsPublished = false;
-        blog.UpdatedAt = DateTime.UtcNow;
+        blog.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

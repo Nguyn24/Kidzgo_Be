@@ -77,10 +77,10 @@ public sealed class MissionReminderDomainEventHandler(
             Title = subject,
             Content = body,
             Status = NotificationStatus.Sent,
-            SentAt = DateTime.UtcNow,
+            SentAt = VietnamTime.UtcNow(),
             NotificationTemplateId = template.Id,
             TemplateId = notification.MissionId.ToString(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.Notifications.Add(notificationRecord);

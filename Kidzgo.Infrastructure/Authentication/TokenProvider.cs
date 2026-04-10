@@ -38,7 +38,7 @@ internal sealed class TokenProvider(IConfiguration configuration) : ITokenProvid
             issuer: configuration["Jwt:Issuer"],
             audience: configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(configuration.GetValue<int>("Jwt:ExpirationInMinutes")),
+            expires: VietnamTime.UtcNow().AddMinutes(configuration.GetValue<int>("Jwt:ExpirationInMinutes")),
             signingCredentials: credentials
         );
 
@@ -69,7 +69,7 @@ internal sealed class TokenProvider(IConfiguration configuration) : ITokenProvid
             issuer: configuration["Jwt:Issuer"],
             audience: configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.Add(lifetime ?? TimeSpan.FromHours(6)),
+            expires: VietnamTime.UtcNow().Add(lifetime ?? TimeSpan.FromHours(6)),
             signingCredentials: creds
         );
 

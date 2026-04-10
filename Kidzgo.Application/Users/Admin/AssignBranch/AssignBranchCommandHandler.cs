@@ -48,7 +48,7 @@ public sealed class AssignBranchCommandHandler(IDbContext context)
             user.BranchId = null;
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
         return new AssignBranchResponse

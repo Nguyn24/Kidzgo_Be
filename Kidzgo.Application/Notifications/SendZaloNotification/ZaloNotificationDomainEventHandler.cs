@@ -127,7 +127,7 @@ public sealed class ZaloNotificationDomainEventHandler(
             if (success)
             {
                 notificationRecord.Status = NotificationStatus.Sent;
-                notificationRecord.SentAt = DateTime.UtcNow;
+                notificationRecord.SentAt = VietnamTime.UtcNow();
                 logger.LogInformation(
                     "Zalo notification sent successfully to user {UserId} (ZaloId: {ZaloUserId})",
                     notificationRecord.RecipientUserId, zaloUserId);

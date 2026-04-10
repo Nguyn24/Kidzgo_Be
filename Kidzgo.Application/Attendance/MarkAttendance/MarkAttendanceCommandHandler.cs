@@ -25,8 +25,8 @@ public sealed class MarkAttendanceCommandHandler(
             return Result.Failure<MarkAttendanceResponse>(AttendanceErrors.NotFound(command.SessionId));
         }
 
-        var sessionDate = DateOnly.FromDateTime(session.ActualDatetime ?? session.PlannedDatetime);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var sessionDate = VietnamTime.ToVietnamDateOnly(session.ActualDatetime ?? session.PlannedDatetime);
+        var today = VietnamTime.TodayDateOnly();
         if (!command.IsAdmin && sessionDate > today)
         {
             return Result.Failure<MarkAttendanceResponse>(
@@ -94,7 +94,7 @@ public sealed class MarkAttendanceCommandHandler(
                             Status = MakeupCreditStatus.Available,
                             CreatedReason = CreatedReason.ApprovedLeave24H,
                             ExpiresAt = null,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = VietnamTime.UtcNow()
                         };
                         context.MakeupCredits.Add(credit);
                     }
@@ -114,7 +114,7 @@ public sealed class MarkAttendanceCommandHandler(
             }
 
             attendance.MarkedBy = userContext.UserId;
-            attendance.MarkedAt = DateTime.UtcNow;
+            attendance.MarkedAt = VietnamTime.UtcNow();
 
             results.Add(new AttendanceResultItem
             {
@@ -150,13 +150,13 @@ public sealed class MarkAttendanceCommandHandler(
         {
             registration.UsedSessions++;
             registration.RemainingSessions--;
-            registration.UpdatedAt = DateTime.UtcNow;
+            registration.UpdatedAt = VietnamTime.UtcNow();
 
             // Auto complete registration when all sessions are used
             if (registration.RemainingSessions == 0)
             {
                 registration.Status = RegistrationStatus.Completed;
-                registration.UpdatedAt = DateTime.UtcNow;
+                registration.UpdatedAt = VietnamTime.UtcNow();
             }
 
             // Check if all students in class have completed their sessions
@@ -196,18 +196,19 @@ public sealed class MarkAttendanceCommandHandler(
             if (activeEnrollments == 0 && classEntity.Status == ClassStatus.Active)
             {
                 classEntity.Status = ClassStatus.Completed;
-                classEntity.UpdatedAt = DateTime.UtcNow;
+                classEntity.UpdatedAt = VietnamTime.UtcNow();
             }
         }
     }
 
     private async Task<AbsenceType> ResolveAbsenceType(Guid studentProfileId, Session session, CancellationToken cancellationToken)
     {
+        var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
         var leave = await context.LeaveRequests
             .Where(l => l.StudentProfileId == studentProfileId
                         && (l.SessionId == session.Id ||
-                            (l.SessionDate <= DateOnly.FromDateTime(session.PlannedDatetime)
-                             && (l.EndDate == null || l.EndDate >= DateOnly.FromDateTime(session.PlannedDatetime))))
+                            (l.SessionDate <= sessionDate
+                             && (l.EndDate == null || l.EndDate >= sessionDate)))
                         && l.Status == LeaveRequestStatus.Approved)
             .OrderByDescending(l => l.RequestedAt)
             .FirstOrDefaultAsync(cancellationToken);

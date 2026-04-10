@@ -65,7 +65,7 @@ public sealed class GetHomeworkSubmissionDetailQueryHandler(
         var effectiveTextAnswer = latestAttempt?.TextAnswer ?? homeworkStudent.TextAnswer;
         var effectiveAttachmentUrl = latestAttempt?.AttachmentUrl ?? homeworkStudent.AttachmentUrl;
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var isOverdue = homeworkStudent.Assignment.DueAt.HasValue &&
                         now > homeworkStudent.Assignment.DueAt.Value &&
                         (effectiveStatus == HomeworkStatus.Assigned || effectiveStatus == HomeworkStatus.Missing);

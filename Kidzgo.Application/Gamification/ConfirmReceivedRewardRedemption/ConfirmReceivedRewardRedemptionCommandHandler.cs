@@ -52,7 +52,7 @@ public sealed class ConfirmReceivedRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.InvalidStatusTransition(redemption.Status, RedemptionStatus.Received));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         redemption.Status = RedemptionStatus.Received;
         redemption.ReceivedAt = now;
 

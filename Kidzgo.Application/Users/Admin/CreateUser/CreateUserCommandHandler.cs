@@ -97,8 +97,8 @@ public class CreateUserCommandHandler(
             BranchId = command.BranchId,
             IsActive = true,
             IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow(),
+            UpdatedAt = VietnamTime.UtcNow()
         };
 
         

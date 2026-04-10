@@ -1,4 +1,5 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Schools;
@@ -114,6 +115,10 @@ public sealed class ApplicationDbContext(
 
     // Teaching materials
     public DbSet<TeachingMaterial> TeachingMaterials => Set<TeachingMaterial>();
+    public DbSet<TeachingMaterialSlide> TeachingMaterialSlides => Set<TeachingMaterialSlide>();
+    public DbSet<TeachingMaterialViewProgress> TeachingMaterialViewProgresses => Set<TeachingMaterialViewProgress>();
+    public DbSet<TeachingMaterialBookmark> TeachingMaterialBookmarks => Set<TeachingMaterialBookmark>();
+    public DbSet<TeachingMaterialAnnotation> TeachingMaterialAnnotations => Set<TeachingMaterialAnnotation>();
 
     // Registrations
     public DbSet<Registration> Registrations => Set<Registration>();
@@ -146,10 +151,10 @@ public sealed class ApplicationDbContext(
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         modelBuilder.HasDefaultSchema(Schemas.Default);
 
-        // Configure DateTime to always use UTC for PostgreSQL timestamp with time zone
+        // Keep DateTime columns canonicalized as UTC before they hit PostgreSQL.
         var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
-            v => v.ToUniversalTime(),
-            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            v => VietnamTime.EnsureUtcKind(v),
+            v => VietnamTime.EnsureUtcKind(v));
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

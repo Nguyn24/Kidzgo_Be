@@ -118,7 +118,7 @@ public sealed class ImportLessonPlanTemplatesFromFileCommandHandler(
                         IsActive = true,
                         IsDeleted = false,
                         CreatedBy = currentUserId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = VietnamTime.UtcNow()
                     };
 
                     context.LessonPlanTemplates.Add(template);

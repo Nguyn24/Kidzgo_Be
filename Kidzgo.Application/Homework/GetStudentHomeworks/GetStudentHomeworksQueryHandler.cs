@@ -52,7 +52,7 @@ public sealed class GetStudentHomeworksQueryHandler(
         }
 
         var totalCount = await homeworkQuery.CountAsync(cancellationToken);
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         var homeworkRows = await homeworkQuery
             .OrderByDescending(hs => hs.Assignment.DueAt)

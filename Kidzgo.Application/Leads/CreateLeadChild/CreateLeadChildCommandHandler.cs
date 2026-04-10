@@ -32,7 +32,7 @@ public sealed class CreateLeadChildCommandHandler(
                 Domain.Common.Error.Validation("ChildName", "Child name is required"));
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var leadChild = new LeadChild
         {
             Id = Guid.NewGuid(),

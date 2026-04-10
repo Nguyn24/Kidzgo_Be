@@ -13,6 +13,12 @@ public interface ITeachingMaterialStorageService
         string originalFileName,
         string mimeType,
         CancellationToken cancellationToken = default);
+
+    Task<TeachingMaterialCacheResult?> ReadCacheFileAsync(
+        string cachePath,
+        string mimeType,
+        string fileName,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class TeachingMaterialStorageResult
@@ -23,6 +29,13 @@ public sealed class TeachingMaterialStorageResult
 }
 
 public sealed class TeachingMaterialDownloadResult
+{
+    public byte[] Content { get; init; } = Array.Empty<byte>();
+    public string FileName { get; init; } = null!;
+    public string MimeType { get; init; } = null!;
+}
+
+public sealed class TeachingMaterialCacheResult
 {
     public byte[] Content { get; init; } = Array.Empty<byte>();
     public string FileName { get; init; } = null!;

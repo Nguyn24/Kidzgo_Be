@@ -112,7 +112,7 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                 ? null : command.AttachmentUrl.Trim();
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         Guid? newRegId = null;
 
         if (placementTest.ListeningScore.HasValue &&

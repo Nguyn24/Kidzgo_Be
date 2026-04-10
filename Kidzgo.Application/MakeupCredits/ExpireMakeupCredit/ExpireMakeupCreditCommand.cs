@@ -27,7 +27,7 @@ public sealed class ExpireMakeupCreditCommandHandler(IDbContext context)
         }
 
         credit.Status = MakeupCreditStatus.Expired;
-        credit.ExpiresAt = command.ExpiresAt ?? DateTime.UtcNow;
+        credit.ExpiresAt = command.ExpiresAt ?? VietnamTime.UtcNow();
         credit.UsedSessionId = null;
 
         await context.SaveChangesAsync(cancellationToken);

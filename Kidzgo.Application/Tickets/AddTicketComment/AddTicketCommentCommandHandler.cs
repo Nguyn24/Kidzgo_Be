@@ -53,7 +53,7 @@ public sealed class AddTicketCommentCommandHandler(
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var comment = new TicketComment
         {
             Id = Guid.NewGuid(),

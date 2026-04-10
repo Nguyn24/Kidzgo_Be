@@ -45,7 +45,7 @@ public sealed class SelfAssignLeadCommandHandler(
                 LeadErrors.OwnerNotStaff);
         }
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
 
         lead.OwnerStaffId = currentUserId;
         lead.UpdatedAt = now;

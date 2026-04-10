@@ -22,7 +22,7 @@ public sealed class SyncPlannedToActualSessionsJob(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IDbContext>();
 
-        var now = DateTime.UtcNow;
+        var now = VietnamTime.UtcNow();
         var from = now.Subtract(LookbackWindow);
 
         var sessions = await db.Sessions

@@ -77,10 +77,10 @@ public sealed class MediaReminderDomainEventHandler(
             Title = subject,
             Content = body,
             Status = NotificationStatus.Sent,
-            SentAt = DateTime.UtcNow,
+            SentAt = VietnamTime.UtcNow(),
             NotificationTemplateId = template.Id,
             TemplateId = notification.MediaId.ToString(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = VietnamTime.UtcNow()
         };
 
         context.Notifications.Add(notificationRecord);
