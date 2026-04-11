@@ -37,11 +37,13 @@ public sealed class GetSessionAttendanceQueryHandler(
 
         var students = await context.Profiles
             .AsNoTracking()
+            .Include(p => p.User)
             .Where(p => studentIds.Contains(p.Id))
             .Select(p => new
             {
                 p.Id,
-                p.DisplayName
+                p.DisplayName,
+                AvatarUrl = p.AvatarUrl ?? p.User.AvatarUrl
             })
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
@@ -67,6 +69,7 @@ public sealed class GetSessionAttendanceQueryHandler(
                     Id = attendance?.Id ?? Guid.Empty,
                     StudentProfileId = p.StudentProfileId,
                     StudentName = students[p.StudentProfileId].DisplayName,
+                    StudentAvatarUrl = students[p.StudentProfileId].AvatarUrl,
                     RegistrationId = p.RegistrationId,
                     Track = p.Track.HasValue ? RegistrationTrackHelper.ToTrackName(p.Track.Value) : null,
                     IsMakeup = p.IsMakeup,

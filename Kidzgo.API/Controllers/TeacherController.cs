@@ -38,12 +38,14 @@ public class TeacherController : ControllerBase
     public async Task<IResult> GetClasses(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] DateOnly? teachingDate = null,
         CancellationToken cancellationToken = default)
     {
         var query = new GetTeacherClassesQuery
         {
             PageNumber = pageNumber,
-            PageSize = pageSize
+            PageSize = pageSize,
+            TeachingDate = teachingDate
         };
 
         var result = await _mediator.Send(query, cancellationToken);

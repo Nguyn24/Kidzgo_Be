@@ -25,6 +25,21 @@ public sealed class GetTeacherClassesQueryHandler(
             .Include(c => c.AssistantTeacher)
             .Where(c => c.MainTeacherId == userId || c.AssistantTeacherId == userId);
 
+        if (query.TeachingDate.HasValue)
+        {
+            var dayStartUtc = VietnamTime.TreatAsVietnamLocal(query.TeachingDate.Value.ToDateTime(TimeOnly.MinValue));
+            var dayEndUtc = VietnamTime.EndOfVietnamDayUtc(dayStartUtc);
+
+            classesQuery = classesQuery.Where(c => context.Sessions.Any(s =>
+                s.ClassId == c.Id &&
+                s.PlannedDatetime >= dayStartUtc &&
+                s.PlannedDatetime <= dayEndUtc &&
+                (s.PlannedTeacherId == userId ||
+                 s.ActualTeacherId == userId ||
+                 s.PlannedAssistantId == userId ||
+                 s.ActualAssistantId == userId)));
+        }
+
         // Get total count
         int totalCount = await classesQuery.CountAsync(cancellationToken);
 
