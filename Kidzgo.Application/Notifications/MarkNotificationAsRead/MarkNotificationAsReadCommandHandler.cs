@@ -2,7 +2,6 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
-using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,39 +16,61 @@ public sealed class MarkNotificationAsReadCommandHandler(
         MarkNotificationAsReadCommand command,
         CancellationToken cancellationToken)
     {
+        var response = new MarkNotificationAsReadResponse();
         var currentUserId = userContext.UserId;
+        var notificationIds = command.NotificationIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
 
-        var notification = await context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == command.NotificationId, cancellationToken);
+        var notifications = await context.Notifications
+            .Where(n => notificationIds.Contains(n.Id))
+            .ToListAsync(cancellationToken);
 
-        if (notification is null)
-        {
-            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.NotFound(command.NotificationId));
-        }
-
-        // Check if notification belongs to current user
-        if (notification.RecipientUserId != currentUserId)
-        {
-            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.AccessDenied);
-        }
-
-        // Check if already read
-        if (notification.ReadAt.HasValue)
-        {
-            return Result.Failure<MarkNotificationAsReadResponse>(NotificationErrors.AlreadyRead);
-        }
-
-        // Mark as read
+        var notificationsById = notifications.ToDictionary(n => n.Id);
         var now = VietnamTime.UtcNow();
-        notification.ReadAt = now;
-        
-        await context.SaveChangesAsync(cancellationToken);
 
-        return new MarkNotificationAsReadResponse
+        foreach (var notificationId in notificationIds)
         {
-            Id = notification.Id,
-            ReadAt = now
-        };
+            if (!notificationsById.TryGetValue(notificationId, out var notification))
+            {
+                var error = NotificationErrors.NotFound(notificationId);
+                response.Errors.Add(new MarkNotificationAsReadError
+                {
+                    Id = notificationId,
+                    Code = error.Code,
+                    Message = error.Description
+                });
+                continue;
+            }
+
+            if (notification.RecipientUserId != currentUserId)
+            {
+                response.Errors.Add(new MarkNotificationAsReadError
+                {
+                    Id = notificationId,
+                    Code = NotificationErrors.AccessDenied.Code,
+                    Message = NotificationErrors.AccessDenied.Description
+                });
+                continue;
+            }
+
+            if (notification.ReadAt.HasValue)
+            {
+                response.AlreadyReadIds.Add(notificationId);
+                continue;
+            }
+
+            notification.ReadAt = now;
+            response.ReadIds.Add(notificationId);
+        }
+
+        if (response.ReadIds.Count > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return response;
     }
 }
 

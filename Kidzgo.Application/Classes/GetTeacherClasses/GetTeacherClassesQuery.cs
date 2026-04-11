@@ -7,5 +7,6 @@ public sealed class GetTeacherClassesQuery : IQuery<GetTeacherClassesResponse>, 
 {
     public int PageNumber { get; init; } = 1;
     public int PageSize { get; init; } = 10;
+    public DateOnly? TeachingDate { get; init; }
 }
 
