@@ -4,6 +4,6 @@ namespace Kidzgo.Application.Notifications.MarkNotificationAsRead;
 
 public sealed class MarkNotificationAsReadCommand : ICommand<MarkNotificationAsReadResponse>
 {
-    public Guid NotificationId { get; init; }
+    public IReadOnlyList<Guid> NotificationIds { get; init; } = Array.Empty<Guid>();
 }
 

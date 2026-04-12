@@ -11,7 +11,8 @@ namespace Kidzgo.Application.Enrollments.ReactivateEnrollment;
 
 public sealed class ReactivateEnrollmentCommandHandler(
     IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService
 ) : ICommandHandler<ReactivateEnrollmentCommand, ReactivateEnrollmentResponse>
 {
     public async Task<Result<ReactivateEnrollmentResponse>> Handle(ReactivateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -61,6 +62,18 @@ public sealed class ReactivateEnrollmentCommandHandler(
         {
             return Result.Failure<ReactivateEnrollmentResponse>(
                 EnrollmentErrors.ClassFull);
+        }
+
+        var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+            enrollment.StudentProfileId,
+            enrollment.ClassId,
+            enrollment.EnrollDate,
+            enrollment.SessionSelectionPattern,
+            cancellationToken,
+            excludeEnrollmentId: enrollment.Id);
+        if (conflictResult.IsFailure)
+        {
+            return Result.Failure<ReactivateEnrollmentResponse>(conflictResult.Error);
         }
 
         enrollment.Status = EnrollmentStatus.Active;

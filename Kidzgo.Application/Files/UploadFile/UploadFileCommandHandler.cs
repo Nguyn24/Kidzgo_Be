@@ -62,7 +62,7 @@ public sealed class UploadFileCommandHandler(
 
         if (command.UpdateUserAvatar || command.UpdateProfileAvatar)
         {
-            var avatarContextResult = await ValidateAvatarUpdateContextAsync(cancellationToken);
+            var avatarContextResult = await ValidateAvatarUpdateContextAsync(command, cancellationToken);
             if (avatarContextResult.IsFailure)
             {
                 return Result.Failure<UploadFileResponse>(avatarContextResult.Error);
@@ -101,7 +101,7 @@ public sealed class UploadFileCommandHandler(
         }
     }
 
-    private async Task<Result> ValidateAvatarUpdateContextAsync(CancellationToken cancellationToken)
+    private async Task<Result> ValidateAvatarUpdateContextAsync(UploadFileCommand command, CancellationToken cancellationToken)
     {
         var user = await context.Users
             .AsNoTracking()
@@ -114,9 +114,13 @@ public sealed class UploadFileCommandHandler(
             return Result.Failure(FileErrors.Unauthorized());
         }
 
-        if (user.Role == UserRole.Parent && !userContext.StudentId.HasValue)
+        if (command.UpdateProfileAvatar)
         {
-            return Result.Failure(FileErrors.ParentProfileSelectionRequired());
+            var profile = await ResolveAvatarProfileAsync(user.Id, command.TargetProfileId, cancellationToken);
+            if (profile is null && user.Role == UserRole.Parent)
+            {
+                return Result.Failure(FileErrors.ParentProfileSelectionRequired());
+            }
         }
 
         return Result.Success();
@@ -126,52 +130,76 @@ public sealed class UploadFileCommandHandler(
     {
         var userId = userContext.UserId;
         var hasChanges = false;
+        var now = VietnamTime.UtcNow();
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var profile = command.UpdateProfileAvatar
+            ? await ResolveAvatarProfileAsync(userId, command.TargetProfileId, cancellationToken)
+            : null;
 
-        if (command.UpdateUserAvatar)
+        if (command.UpdateUserAvatar &&
+            user is not null &&
+            ShouldUpdateUserAvatar(user, profile))
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-            if (user is not null)
-            {
-                user.AvatarUrl = url;
-                user.AvatarMimeType = command.ContentType;
-                user.AvatarFileSize = command.FileSize;
-                user.UpdatedAt = VietnamTime.UtcNow();
-                hasChanges = true;
-            }
+            user.AvatarUrl = url;
+            user.AvatarMimeType = command.ContentType;
+            user.AvatarFileSize = command.FileSize;
+            user.UpdatedAt = now;
+            hasChanges = true;
         }
 
-        if (command.UpdateProfileAvatar)
+        if (command.UpdateProfileAvatar && profile is not null)
         {
-            var targetProfileId = command.TargetProfileId ?? userContext.StudentId;
-
-            Profile? profile;
-            if (targetProfileId.HasValue)
-            {
-                profile = await context.Profiles
-                    .FirstOrDefaultAsync(p => p.Id == targetProfileId.Value && !p.IsDeleted, cancellationToken);
-            }
-            else
-            {
-                profile = await context.Profiles
-                    .Where(p => p.UserId == userId && p.IsActive && !p.IsDeleted)
-                    .OrderBy(p => p.ProfileType == ProfileType.Student ? 1 : 0)
-                    .FirstOrDefaultAsync(cancellationToken);
-            }
-
-            if (profile is not null)
-            {
-                profile.AvatarUrl = url;
-                profile.AvatarMimeType = command.ContentType;
-                profile.AvatarFileSize = command.FileSize;
-                profile.UpdatedAt = VietnamTime.UtcNow();
-                hasChanges = true;
-            }
+            profile.AvatarUrl = url;
+            profile.AvatarMimeType = command.ContentType;
+            profile.AvatarFileSize = command.FileSize;
+            profile.UpdatedAt = now;
+            hasChanges = true;
         }
 
         if (hasChanges)
         {
             await context.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task<Profile?> ResolveAvatarProfileAsync(
+        Guid userId,
+        Guid? explicitTargetProfileId,
+        CancellationToken cancellationToken)
+    {
+        var targetProfileId = explicitTargetProfileId ?? userContext.StudentId;
+
+        if (targetProfileId.HasValue)
+        {
+            return await context.Profiles
+                .FirstOrDefaultAsync(
+                    p => p.Id == targetProfileId.Value &&
+                         p.UserId == userId &&
+                         !p.IsDeleted,
+                    cancellationToken);
+        }
+
+        return await context.Profiles
+            .Where(p => p.UserId == userId && p.IsActive && !p.IsDeleted)
+            .OrderBy(p => p.ProfileType == ProfileType.Parent ? 0 : 1)
+            .ThenBy(p => p.ProfileType == ProfileType.Student ? 0 : 1)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static bool ShouldUpdateUserAvatar(User user, Profile? targetProfile)
+    {
+        if (user.Role != UserRole.Parent)
+        {
+            return true;
+        }
+
+        if (targetProfile is null)
+        {
+            return false;
+        }
+
+        return targetProfile.ProfileType != ProfileType.Parent &&
+               targetProfile.ProfileType != ProfileType.Student;
     }
 
     private static string DetectResourceType(string extension)
