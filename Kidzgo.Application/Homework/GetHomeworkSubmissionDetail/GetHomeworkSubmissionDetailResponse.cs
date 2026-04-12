@@ -49,5 +49,6 @@ public sealed class GetHomeworkSubmissionDetailResponse
     // Student info
     public Guid StudentProfileId { get; init; }
     public string StudentName { get; init; } = null!;
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AssignmentAttachmentUrl);
 }
 

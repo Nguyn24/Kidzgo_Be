@@ -1,3 +1,5 @@
+using Kidzgo.Application.Homework.Shared;
+
 namespace Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
 
 public sealed class CreateMultipleChoiceHomeworkResponse
@@ -8,6 +10,7 @@ public sealed class CreateMultipleChoiceHomeworkResponse
     public string Title { get; init; } = null!;
     public string? Description { get; init; }
     public DateTime? DueAt { get; init; }
+    public string? Skills { get; init; }
     public string? Topic { get; init; }
     public List<string> GrammarTags { get; init; } = new();
     public List<string> VocabularyTags { get; init; } = new();
@@ -18,9 +21,11 @@ public sealed class CreateMultipleChoiceHomeworkResponse
     public bool AiHintEnabled { get; init; }
     public bool AiRecommendEnabled { get; init; }
     public string? Instructions { get; init; }
+    public string? AttachmentUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public int AssignedStudentsCount { get; init; }
     public List<HomeworkQuestionDto> Questions { get; init; } = new();
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AttachmentUrl);
 }
 
 public class HomeworkQuestionDto
