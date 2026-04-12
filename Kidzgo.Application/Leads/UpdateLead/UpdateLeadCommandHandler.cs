@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM.Errors;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Leads.UpdateLead;
@@ -51,7 +52,9 @@ public sealed class UpdateLeadCommandHandler(
 
         if (command.Phone != null)
         {
-            lead.Phone = string.IsNullOrWhiteSpace(command.Phone) ? null : command.Phone.Trim();
+            lead.Phone = string.IsNullOrWhiteSpace(command.Phone)
+                ? null
+                : PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.Phone);
         }
 
         if (command.ZaloId != null)

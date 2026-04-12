@@ -16,9 +16,12 @@ public sealed class CreateLeadFromZaloCommandHandler(
         CreateLeadFromZaloCommand command,
         CancellationToken cancellationToken)
     {
+        var normalizedPhone = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.Phone);
+        var phoneLookupCandidates = PhoneNumberNormalizer.GetLookupCandidates(command.Phone);
+
         // Validate required fields
         if (string.IsNullOrWhiteSpace(command.ContactName) && 
-            string.IsNullOrWhiteSpace(command.Phone) && 
+            normalizedPhone is null && 
             string.IsNullOrWhiteSpace(command.Email) &&
             string.IsNullOrWhiteSpace(command.ZaloUserId))
         {
@@ -29,7 +32,9 @@ public sealed class CreateLeadFromZaloCommandHandler(
         // Check if lead already exists (by phone, email, or zalo_id)
         var existingLead = await context.Leads
             .FirstOrDefaultAsync(l =>
-                (!string.IsNullOrWhiteSpace(command.Phone) && l.Phone == command.Phone) ||
+                (phoneLookupCandidates.Length > 0 &&
+                 l.Phone != null &&
+                 phoneLookupCandidates.Contains(l.Phone)) ||
                 (!string.IsNullOrWhiteSpace(command.Email) && l.Email == command.Email) ||
                 (!string.IsNullOrWhiteSpace(command.ZaloUserId) && l.ZaloId == command.ZaloUserId),
                 cancellationToken);
@@ -43,8 +48,8 @@ public sealed class CreateLeadFromZaloCommandHandler(
             // Update contact info if provided
             if (!string.IsNullOrWhiteSpace(command.ContactName))
                 existingLead.ContactName = command.ContactName;
-            if (!string.IsNullOrWhiteSpace(command.Phone))
-                existingLead.Phone = command.Phone;
+            if (normalizedPhone is not null)
+                existingLead.Phone = normalizedPhone;
             if (!string.IsNullOrWhiteSpace(command.Email))
                 existingLead.Email = command.Email;
             if (!string.IsNullOrWhiteSpace(command.ZaloUserId))
@@ -88,7 +93,7 @@ public sealed class CreateLeadFromZaloCommandHandler(
             Id = Guid.NewGuid(),
             Source = LeadSource.Zalo,
             ContactName = command.ContactName,
-            Phone = command.Phone,
+            Phone = normalizedPhone,
             ZaloId = command.ZaloUserId,
             Email = command.Email,
             BranchPreference = command.BranchPreference,
