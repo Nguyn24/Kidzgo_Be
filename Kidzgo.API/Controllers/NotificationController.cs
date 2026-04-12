@@ -133,7 +133,7 @@ public class NotificationController : ControllerBase
     {
         var command = new MarkNotificationAsReadCommand
         {
-            NotificationId = id
+            NotificationIds = new[] { id }
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -273,6 +273,22 @@ public class NotificationController : ControllerBase
             Browser = request.Browser,
             Locale = request.Locale,
             BranchId = request.BranchId
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Mark multiple notifications as read
+    [HttpPatch("read")]
+    [Authorize]
+    public async Task<IResult> BulkMarkNotificationsAsRead(
+        [FromBody] BulkMarkNotificationsAsReadRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new MarkNotificationAsReadCommand
+        {
+            NotificationIds = request.NotificationIds
         };
 
         var result = await _mediator.Send(command, cancellationToken);

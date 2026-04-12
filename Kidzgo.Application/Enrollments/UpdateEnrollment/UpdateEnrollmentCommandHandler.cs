@@ -10,7 +10,8 @@ namespace Kidzgo.Application.Enrollments.UpdateEnrollment;
 
 public sealed class UpdateEnrollmentCommandHandler(
     IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService
 ) : ICommandHandler<UpdateEnrollmentCommand, UpdateEnrollmentResponse>
 {
     public async Task<Result<UpdateEnrollmentResponse>> Handle(UpdateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -81,6 +82,19 @@ public sealed class UpdateEnrollmentCommandHandler(
             }
 
             enrollment.TuitionPlanId = command.TuitionPlanId.Value;
+        }
+
+        var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+            enrollment.StudentProfileId,
+            enrollment.ClassId,
+            enrollment.EnrollDate,
+            enrollment.SessionSelectionPattern,
+            cancellationToken,
+            excludeEnrollmentId: enrollment.Id,
+            excludeLegacyClassId: enrollment.ClassId);
+        if (conflictResult.IsFailure)
+        {
+            return Result.Failure<UpdateEnrollmentResponse>(conflictResult.Error);
         }
 
         enrollment.UpdatedAt = VietnamTime.UtcNow();

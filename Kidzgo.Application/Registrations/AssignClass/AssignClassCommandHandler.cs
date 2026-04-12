@@ -13,7 +13,8 @@ namespace Kidzgo.Application.Registrations.AssignClass.Handler;
 
 public sealed class AssignClassCommandHandler(
     IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService
 ) : ICommandHandler<AssignClassCommand, AssignClassResponse>
 {
     public async Task<Result<AssignClassResponse>> Handle(
@@ -140,6 +141,17 @@ public sealed class AssignClassCommandHandler(
             {
                 return Result.Failure<AssignClassResponse>(
                     Error.Conflict("AlreadyEnrolled", "Student is already enrolled in this class"));
+            }
+
+            var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+                registration.StudentProfileId,
+                classEntity.Id,
+                VietnamTime.ToVietnamDateOnly(now),
+                command.SessionSelectionPattern,
+                cancellationToken);
+            if (conflictResult.IsFailure)
+            {
+                return Result.Failure<AssignClassResponse>(conflictResult.Error);
             }
         }
 

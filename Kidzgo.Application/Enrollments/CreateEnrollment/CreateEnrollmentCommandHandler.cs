@@ -11,7 +11,8 @@ namespace Kidzgo.Application.Enrollments.CreateEnrollment;
 
 public sealed class CreateEnrollmentCommandHandler(
     IDbContext context,
-    StudentSessionAssignmentService studentSessionAssignmentService
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService
 ) : ICommandHandler<CreateEnrollmentCommand, CreateEnrollmentResponse>
 {
     public async Task<Result<CreateEnrollmentResponse>> Handle(CreateEnrollmentCommand command, CancellationToken cancellationToken)
@@ -96,6 +97,17 @@ public sealed class CreateEnrollmentCommandHandler(
                 return Result.Failure<CreateEnrollmentResponse>(
                     EnrollmentErrors.TuitionPlanProgramMismatch);
             }
+        }
+
+        var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
+            command.StudentProfileId,
+            classEntity.Id,
+            command.EnrollDate,
+            command.SessionSelectionPattern,
+            cancellationToken);
+        if (conflictResult.IsFailure)
+        {
+            return Result.Failure<CreateEnrollmentResponse>(conflictResult.Error);
         }
 
         var now = VietnamTime.UtcNow();
