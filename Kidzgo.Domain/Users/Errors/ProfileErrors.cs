@@ -48,6 +48,14 @@ public static class ProfileErrors
         "Profile.EmailNotSet",
         "Email is required for PIN reset.");
 
+    public static readonly Error ZaloIdNotSet = Error.Validation(
+        "Profile.ZaloIdNotSet",
+        "Zalo ID is required for Zalo OTP PIN reset.");
+
+    public static readonly Error ZaloOtpSendFailed = Error.Problem(
+        "Profile.ZaloOtpSendFailed",
+        "Unable to send Zalo OTP for PIN reset.");
+
     public static readonly Error StudentIdNotSelected = Error.NotFound(
         "Profile.StudentIdNotSelected",
         "No student selected in token");

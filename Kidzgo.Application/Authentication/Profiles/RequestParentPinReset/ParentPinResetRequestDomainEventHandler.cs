@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Users.Events;
@@ -11,7 +12,8 @@ namespace Kidzgo.Application.Authentication.Profiles.RequestParentPinReset;
 public sealed class ParentPinResetRequestDomainEventHandler(
     IDbContext context,
     IMailService mailService,
-    ITemplateRenderer templateRenderer
+    ITemplateRenderer templateRenderer,
+    IClientUrlProvider clientUrlProvider
 ) : INotificationHandler<ParentPinResetRequestDomainEvent>
 {
     private const string TemplateCode = "PARENT_PIN_RESET";
@@ -67,7 +69,7 @@ public sealed class ParentPinResetRequestDomainEventHandler(
         {
             ["profile_name"] = profile.DisplayName,
             ["user_name"] = profile.User.Username ?? profile.User.Email,
-            ["reset_link"] = $"https://kidzgo.app/parent/pin/reset?token={token}&profileId={profile.Id}"
+            ["reset_link"] = $"{clientUrlProvider.GetFrontendUrl()}/auth/reset-pin?token={token}"
         };
 
         string subject = template.Subject;
