@@ -6,7 +6,9 @@ namespace Kidzgo.Application.Media.GetMedia;
 public sealed record GetMediaQuery(
     Guid? BranchId,
     Guid? ClassId,
+    Guid? StudentProfileId,
     string? MonthTag,
+    DateTime? Date,
     MediaType? Type,
     MediaContentType? ContentType,
     Visibility? Visibility,
