@@ -144,6 +144,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
         var currentUserId = userContext.UserId;
 
         var now = VietnamTime.UtcNow();
+        var normalizedSkills = HomeworkDeliveryMetadata.NormalizeSkills(command.Skills, command.AttachmentUrl);
 
         // Calculate max score from questions
         var maxScore = command.Questions.Sum(q => q.Points);
@@ -156,6 +157,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             Title = command.Title,
             Description = command.Description,
             DueAt = dueAtUtc,
+            Skills = normalizedSkills,
             Topic = command.Topic,
             GrammarTags = StringListJson.Serialize(command.GrammarTags),
             VocabularyTags = StringListJson.Serialize(command.VocabularyTags),
@@ -168,6 +170,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
+            AttachmentUrl = command.AttachmentUrl,
             CreatedBy = currentUserId,
             CreatedAt = now
         };
@@ -237,6 +240,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             Title = homework.Title,
             Description = homework.Description,
             DueAt = homework.DueAt,
+            Skills = homework.Skills,
             Topic = homework.Topic,
             GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
             VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
@@ -247,6 +251,7 @@ public sealed class CreateMultipleChoiceHomeworkCommandHandler(
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,
+            AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count,
             Questions = questionDtos

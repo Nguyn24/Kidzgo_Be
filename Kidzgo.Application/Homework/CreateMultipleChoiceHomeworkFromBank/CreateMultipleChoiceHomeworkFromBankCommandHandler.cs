@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
@@ -141,6 +142,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
         var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
         var now = VietnamTime.UtcNow();
+        var normalizedSkills = HomeworkDeliveryMetadata.NormalizeSkills(command.Skills, command.AttachmentUrl);
 
         var maxScore = selected.Sum(q => q.Points);
 
@@ -152,6 +154,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = command.Title,
             Description = command.Description,
             DueAt = dueAtUtc,
+            Skills = normalizedSkills,
             Topic = command.Topic,
             GrammarTags = StringListJson.Serialize(command.GrammarTags),
             VocabularyTags = StringListJson.Serialize(command.VocabularyTags),
@@ -164,13 +167,14 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
+            AttachmentUrl = command.AttachmentUrl,
             CreatedBy = userContext.UserId,
             CreatedAt = now
         };
 
         context.HomeworkAssignments.Add(homework);
 
-        var questionDtos = new List<HomeworkQuestionDto>();
+        var questionDtos = new List<Kidzgo.Application.Homework.CreateMultipleChoiceHomework.HomeworkQuestionDto>();
         for (int i = 0; i < selected.Count; i++)
         {
             var bank = selected[i];
@@ -237,6 +241,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = homework.Title,
             Description = homework.Description,
             DueAt = homework.DueAt,
+            Skills = homework.Skills,
             Topic = homework.Topic,
             GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
             VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
@@ -247,6 +252,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,
+            AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count,
             Questions = questionDtos

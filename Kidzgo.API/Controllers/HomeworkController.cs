@@ -121,6 +121,7 @@ public class HomeworkController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             DueAt = request.DueAt,
+            Skills = request.Skills,
             Topic = request.Topic,
             GrammarTags = request.GrammarTags,
             VocabularyTags = request.VocabularyTags,
@@ -130,6 +131,7 @@ public class HomeworkController : ControllerBase
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
+            AttachmentUrl = request.Attachment,
             Questions = questions
         };
 
@@ -171,6 +173,7 @@ public class HomeworkController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             DueAt = request.DueAt,
+            Skills = request.Skills,
             Topic = request.Topic,
             GrammarTags = request.GrammarTags,
             VocabularyTags = request.VocabularyTags,
@@ -180,6 +183,7 @@ public class HomeworkController : ControllerBase
             AiHintEnabled = request.AiHintEnabled,
             AiRecommendEnabled = request.AiRecommendEnabled,
             Instructions = request.Instructions,
+            AttachmentUrl = request.Attachment,
             Distribution = distribution
         };
 
