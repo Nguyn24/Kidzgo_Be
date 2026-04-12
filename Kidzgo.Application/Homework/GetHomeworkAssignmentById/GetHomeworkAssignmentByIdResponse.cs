@@ -1,3 +1,5 @@
+using Kidzgo.Application.Homework.Shared;
+
 namespace Kidzgo.Application.Homework.GetHomeworkAssignmentById;
 
 public sealed class GetHomeworkAssignmentByIdResponse
@@ -34,6 +36,7 @@ public sealed class GetHomeworkAssignmentByIdResponse
     public string? AttachmentUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public List<HomeworkStudentDto> Students { get; init; } = new();
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AttachmentUrl);
 }
 
 public sealed class HomeworkStudentDto

@@ -3,6 +3,8 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Homework.CreateMultipleChoiceHomework;
+using Kidzgo.Application.QuestionBank.Shared;
+using Kidzgo.Application.Homework.Shared;
 using Kidzgo.Application.Shared;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Classes;
@@ -100,47 +102,40 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             .GroupBy(d => d.Level)
             .Select(g => new { Level = g.Key, Count = g.Sum(x => x.Count) })
             .ToList();
-
-        var levels = distribution
-            .Select(d => d.Level)
-            .ToList();
-
-        var bankItems = await context.QuestionBankItems
-            .Where(q => q.ProgramId == command.ProgramId &&
-                        levels.Contains(q.Level) &&
-                        q.QuestionType == HomeworkQuestionType.MultipleChoice)
-            .ToListAsync(cancellationToken);
-
-        var grouped = bankItems
-            .GroupBy(q => q.Level)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        foreach (var dist in distribution)
-        {
-            grouped.TryGetValue(dist.Level, out var list);
-            var available = list?.Count ?? 0;
-            if (available < dist.Count)
+        var selection = await QuestionBankMatrixSelector.SelectAsync(
+            context,
+            new QuestionBankMatrixSelectionRequest
             {
-                return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
-                    HomeworkErrors.InsufficientQuestionsInBank(dist.Level, dist.Count, available));
-            }
-        }
+                ProgramId = command.ProgramId,
+                QuestionType = HomeworkQuestionType.MultipleChoice,
+                Skill = command.Skills,
+                Topic = command.Topic,
+                ShuffleQuestions = true,
+                Distribution = distribution
+                    .Select(x => new QuestionBankMatrixLevelCount
+                    {
+                        Level = x.Level,
+                        Count = x.Count
+                    })
+                    .ToList()
+            },
+            cancellationToken);
 
-        var random = new Random();
-        var selected = new List<QuestionBankItem>();
-
-        foreach (var dist in distribution)
+        if (selection.InsufficientLevel.HasValue)
         {
-            var pool = grouped[dist.Level];
-            Shuffle(pool, random);
-            selected.AddRange(pool.Take(dist.Count));
+            return Result.Failure<CreateMultipleChoiceHomeworkResponse>(
+                HomeworkErrors.InsufficientQuestionsInBank(
+                    selection.InsufficientLevel.Value,
+                    selection.RequiredCount,
+                    selection.AvailableCount));
         }
 
-        Shuffle(selected, random);
+        var selected = selection.SelectedItems;
 
         var dueAtUtc = VietnamTime.NormalizeToUtc(command.DueAt);
 
         var now = VietnamTime.UtcNow();
+        var normalizedSkills = HomeworkDeliveryMetadata.NormalizeSkills(command.Skills, command.AttachmentUrl);
 
         var maxScore = selected.Sum(q => q.Points);
 
@@ -152,6 +147,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = command.Title,
             Description = command.Description,
             DueAt = dueAtUtc,
+            Skills = normalizedSkills,
             Topic = command.Topic,
             GrammarTags = StringListJson.Serialize(command.GrammarTags),
             VocabularyTags = StringListJson.Serialize(command.VocabularyTags),
@@ -164,13 +160,14 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             AiRecommendEnabled = command.AiRecommendEnabled ?? false,
             MissionId = command.MissionId,
             Instructions = command.Instructions,
+            AttachmentUrl = command.AttachmentUrl,
             CreatedBy = userContext.UserId,
             CreatedAt = now
         };
 
         context.HomeworkAssignments.Add(homework);
 
-        var questionDtos = new List<HomeworkQuestionDto>();
+        var questionDtos = new List<Kidzgo.Application.Homework.CreateMultipleChoiceHomework.HomeworkQuestionDto>();
         for (int i = 0; i < selected.Count; i++)
         {
             var bank = selected[i];
@@ -237,6 +234,7 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             Title = homework.Title,
             Description = homework.Description,
             DueAt = homework.DueAt,
+            Skills = homework.Skills,
             Topic = homework.Topic,
             GrammarTags = StringListJson.Deserialize(homework.GrammarTags),
             VocabularyTags = StringListJson.Deserialize(homework.VocabularyTags),
@@ -247,18 +245,10 @@ public sealed class CreateMultipleChoiceHomeworkFromBankCommandHandler(
             AiHintEnabled = homework.AiHintEnabled,
             AiRecommendEnabled = homework.AiRecommendEnabled,
             Instructions = homework.Instructions,
+            AttachmentUrl = homework.AttachmentUrl,
             CreatedAt = homework.CreatedAt,
             AssignedStudentsCount = homeworkStudents.Count,
             Questions = questionDtos
         };
-    }
-
-    private static void Shuffle<T>(IList<T> list, Random random)
-    {
-        for (int i = list.Count - 1; i > 0; i--)
-        {
-            var j = random.Next(i + 1);
-            (list[i], list[j]) = (list[j], list[i]);
-        }
     }
 }

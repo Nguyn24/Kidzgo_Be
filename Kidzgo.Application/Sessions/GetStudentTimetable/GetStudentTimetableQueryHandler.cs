@@ -18,55 +18,107 @@ public sealed class GetStudentTimetableQueryHandler(
 {
     public async Task<Result<GetStudentTimetableResponse>> Handle(GetStudentTimetableQuery query, CancellationToken cancellationToken)
     {
-        // Get StudentId from context (token)
-        var studentId = userContext.StudentId;
+        var targetStudentsResult = await ResolveTargetStudentsAsync(cancellationToken);
+        if (!targetStudentsResult.IsSuccess)
+        {
+            return Result.Failure<GetStudentTimetableResponse>(targetStudentsResult.Error);
+        }
 
+        var response = await BuildTimetableResponseAsync(targetStudentsResult.Value, query, cancellationToken);
+
+        return Result.Success(response);
+    }
+
+    private async Task<Result<List<StudentTimetableTarget>>> ResolveTargetStudentsAsync(CancellationToken cancellationToken)
+    {
+        if (userContext.ParentId.HasValue)
+        {
+            return await ResolveParentStudentsAsync(cancellationToken);
+        }
+
+        var studentId = userContext.StudentId;
         if (!studentId.HasValue)
         {
-            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
+            return Result.Failure<List<StudentTimetableTarget>>(ProfileErrors.StudentNotFound);
         }
 
-        // Verify student exists and is active
         var profile = await context.Profiles
-            .FirstOrDefaultAsync(p => p.Id == studentId.Value, cancellationToken);
+            .AsNoTracking()
+            .Where(p =>
+                p.Id == studentId.Value &&
+                p.ProfileType == Domain.Users.ProfileType.Student &&
+                !p.IsDeleted &&
+                p.IsActive &&
+                p.UserId == userContext.UserId)
+            .Select(p => new StudentTimetableTarget(
+                p.Id,
+                p.DisplayName,
+                p.AvatarUrl))
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (profile == null)
+        if (profile is null)
         {
-            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.NotFound(studentId.Value));
+            return Result.Failure<List<StudentTimetableTarget>>(ProfileErrors.NotFound(studentId.Value));
         }
 
-        if (profile.ProfileType != Domain.Users.ProfileType.Student)
+        return Result.Success(new List<StudentTimetableTarget> { profile });
+    }
+
+    private async Task<Result<List<StudentTimetableTarget>>> ResolveParentStudentsAsync(CancellationToken cancellationToken)
+    {
+        var parentProfileId = userContext.ParentId!.Value;
+
+        var parentExists = await context.Profiles
+            .AsNoTracking()
+            .AnyAsync(p =>
+                p.Id == parentProfileId &&
+                p.UserId == userContext.UserId &&
+                p.ProfileType == Domain.Users.ProfileType.Parent &&
+                !p.IsDeleted &&
+                p.IsActive,
+                cancellationToken);
+
+        if (!parentExists)
         {
-            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
+            return Result.Failure<List<StudentTimetableTarget>>(
+                Error.NotFound("ParentProfile", "Parent profile not found"));
         }
 
-        if (!profile.IsActive || profile.IsDeleted)
+        var students = await context.ParentStudentLinks
+            .AsNoTracking()
+            .Where(link =>
+                link.ParentProfileId == parentProfileId &&
+                link.StudentProfile.ProfileType == Domain.Users.ProfileType.Student &&
+                !link.StudentProfile.IsDeleted &&
+                link.StudentProfile.IsActive)
+            .Select(link => new StudentTimetableTarget(
+                link.StudentProfileId,
+                link.StudentProfile.DisplayName,
+                link.StudentProfile.AvatarUrl))
+            .Distinct()
+            .OrderBy(student => student.DisplayName)
+            .ToListAsync(cancellationToken);
+
+        return Result.Success(students);
+    }
+
+    private async Task<GetStudentTimetableResponse> BuildTimetableResponseAsync(
+        List<StudentTimetableTarget> students,
+        GetStudentTimetableQuery query,
+        CancellationToken cancellationToken)
+    {
+        if (students.Count == 0)
         {
-            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
+            return new GetStudentTimetableResponse();
         }
 
-        // Verify the student belongs to the current user
-        if (profile.UserId != userContext.UserId)
-        {
-            return Result.Failure<GetStudentTimetableResponse>(ProfileErrors.StudentNotFound);
-        }
-
-        DateTime? fromUtc = null;
-        if (query.From.HasValue)
-        {
-            fromUtc = VietnamTime.NormalizeToUtc(query.From.Value);
-        }
-
-        DateTime? toUtc = null;
-        if (query.To.HasValue)
-        {
-            var normalizedToUtc = VietnamTime.NormalizeToUtc(query.To.Value);
-            toUtc = VietnamTime.EndOfVietnamDayUtc(normalizedToUtc);
-        }
+        var studentIds = students.Select(student => student.Id).ToList();
+        var studentLookup = students.ToDictionary(student => student.Id);
+        var (fromUtc, toUtc) = NormalizeDateRange(query);
 
         var regularAssignmentsQuery = context.StudentSessionAssignments
             .AsNoTracking()
-            .Where(a => a.StudentProfileId == studentId.Value
+            .Where(a => studentIds.Contains(a.StudentProfileId)
                 && a.Status == StudentSessionAssignmentStatus.Assigned
                 && a.Session.Status != SessionStatus.Cancelled);
 
@@ -85,6 +137,7 @@ public sealed class GetStudentTimetableQueryHandler(
         var regularAssignments = await regularAssignmentsQuery
             .Select(a => new
             {
+                a.StudentProfileId,
                 a.SessionId,
                 a.ClassEnrollmentId,
                 a.RegistrationId,
@@ -94,12 +147,12 @@ public sealed class GetStudentTimetableQueryHandler(
 
         var studentActiveEnrollmentsQuery = context.ClassEnrollments
             .AsNoTracking()
-            .Where(ce => ce.StudentProfileId == studentId.Value
+            .Where(ce => studentIds.Contains(ce.StudentProfileId)
                 && ce.Status == EnrollmentStatus.Active);
 
         var enrollmentsWithAssignmentIds = await context.StudentSessionAssignments
             .AsNoTracking()
-            .Where(a => a.StudentProfileId == studentId.Value)
+            .Where(a => studentIds.Contains(a.StudentProfileId))
             .Select(a => a.ClassEnrollmentId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -111,6 +164,7 @@ public sealed class GetStudentTimetableQueryHandler(
             .Select(ce => new
             {
                 ce.Id,
+                ce.StudentProfileId,
                 ce.ClassId,
                 ce.EnrollDate,
                 ce.RegistrationId,
@@ -123,23 +177,26 @@ public sealed class GetStudentTimetableQueryHandler(
             .Distinct()
             .ToList();
 
-        var legacySessionsQuery = context.Sessions
-            .AsNoTracking()
-            .Where(s => s.Status != SessionStatus.Cancelled
-                && legacyClassIds.Contains(s.ClassId));
-
-        if (fromUtc.HasValue)
+        var legacySessions = new List<Session>();
+        if (legacyClassIds.Count > 0)
         {
-            legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime >= fromUtc.Value);
-        }
+            var legacySessionsQuery = context.Sessions
+                .AsNoTracking()
+                .Where(s => s.Status != SessionStatus.Cancelled
+                    && legacyClassIds.Contains(s.ClassId));
 
-        if (toUtc.HasValue)
-        {
-            legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime <= toUtc.Value);
-        }
+            if (fromUtc.HasValue)
+            {
+                legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime >= fromUtc.Value);
+            }
 
-        var legacySessions = await legacySessionsQuery
-            .ToListAsync(cancellationToken);
+            if (toUtc.HasValue)
+            {
+                legacySessionsQuery = legacySessionsQuery.Where(s => s.PlannedDatetime <= toUtc.Value);
+            }
+
+            legacySessions = await legacySessionsQuery.ToListAsync(cancellationToken);
+        }
 
         var legacyAssignments = legacySessions
             .SelectMany(session => legacyEnrollments
@@ -148,11 +205,12 @@ public sealed class GetStudentTimetableQueryHandler(
                     enrollment.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.PlannedDatetime))
                 .Select(enrollment => new
                 {
+                    enrollment.StudentProfileId,
                     SessionId = session.Id,
                     enrollment.RegistrationId,
                     enrollment.Track
                 }))
-            .GroupBy(x => x.SessionId)
+            .GroupBy(x => new { x.StudentProfileId, x.SessionId })
             .Select(group => group
                 .OrderByDescending(x => x.RegistrationId.HasValue)
                 .First())
@@ -160,7 +218,7 @@ public sealed class GetStudentTimetableQueryHandler(
 
         var makeupAssignmentsQuery = context.MakeupAllocations
             .AsNoTracking()
-            .Where(a => a.MakeupCredit.StudentProfileId == studentId.Value
+            .Where(a => studentIds.Contains(a.MakeupCredit.StudentProfileId)
                 && a.Status != MakeupAllocationStatus.Cancelled
                 && a.TargetSession.Status != SessionStatus.Cancelled);
 
@@ -179,15 +237,16 @@ public sealed class GetStudentTimetableQueryHandler(
         var makeupAssignments = await makeupAssignmentsQuery
             .Select(a => new
             {
+                StudentProfileId = a.MakeupCredit.StudentProfileId,
                 SessionId = a.TargetSessionId
             })
             .ToListAsync(cancellationToken);
 
-        var sessionMetadata = new Dictionary<Guid, (Guid? RegistrationId, string? Track, bool IsMakeup)>();
+        var sessionMetadata = new Dictionary<(Guid StudentProfileId, Guid SessionId), SessionMetadata>();
 
         foreach (var assignment in regularAssignments)
         {
-            sessionMetadata[assignment.SessionId] = (
+            sessionMetadata[(assignment.StudentProfileId, assignment.SessionId)] = new SessionMetadata(
                 assignment.RegistrationId,
                 RegistrationTrackHelper.ToTrackName(assignment.Track),
                 false);
@@ -196,8 +255,8 @@ public sealed class GetStudentTimetableQueryHandler(
         foreach (var legacyAssignment in legacyAssignments)
         {
             sessionMetadata.TryAdd(
-                legacyAssignment.SessionId,
-                (
+                (legacyAssignment.StudentProfileId, legacyAssignment.SessionId),
+                new SessionMetadata(
                     legacyAssignment.RegistrationId,
                     RegistrationTrackHelper.ToTrackName(legacyAssignment.Track),
                     false));
@@ -205,22 +264,25 @@ public sealed class GetStudentTimetableQueryHandler(
 
         foreach (var makeupAssignment in makeupAssignments)
         {
-            if (sessionMetadata.TryGetValue(makeupAssignment.SessionId, out var existingMetadata))
+            var key = (makeupAssignment.StudentProfileId, makeupAssignment.SessionId);
+
+            if (sessionMetadata.TryGetValue(key, out var existingMetadata))
             {
-                sessionMetadata[makeupAssignment.SessionId] = (
-                    existingMetadata.RegistrationId,
-                    existingMetadata.Track,
-                    true);
+                sessionMetadata[key] = existingMetadata with { IsMakeup = true };
                 continue;
             }
 
-            sessionMetadata[makeupAssignment.SessionId] = (null, null, true);
+            sessionMetadata[key] = new SessionMetadata(null, null, true);
         }
 
-        var sessionIds = sessionMetadata.Keys.ToList();
+        var sessionIds = sessionMetadata.Keys
+            .Select(key => key.SessionId)
+            .Distinct()
+            .ToList();
+
         if (sessionIds.Count == 0)
         {
-            return Result.Success(new GetStudentTimetableResponse());
+            return new GetStudentTimetableResponse();
         }
 
         var sessionDetails = await context.Sessions
@@ -249,65 +311,106 @@ public sealed class GetStudentTimetableQueryHandler(
                 PlannedAssistantId = s.PlannedAssistantId,
                 PlannedAssistantName = s.PlannedAssistant != null ? s.PlannedAssistant.Name : null,
                 LessonPlanId = s.LessonPlan != null ? s.LessonPlan.Id : null,
-                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null,
-                AttendanceStatus = s.Attendances
-                    .Where(a => a.StudentProfileId == studentId.Value)
-                    .Select(a => a.AttendanceStatus.ToString())
-                    .FirstOrDefault(),
-                AbsenceType = s.Attendances
-                    .Where(a => a.StudentProfileId == studentId.Value)
-                    .Select(a => a.AbsenceType.ToString())
-                    .FirstOrDefault(),
-                AttendanceMarkedAt = s.Attendances
-                    .Where(a => a.StudentProfileId == studentId.Value)
-                    .Select(a => a.MarkedAt)
-                    .FirstOrDefault()
+                LessonPlanLink = s.LessonPlan != null ? $"/api/lesson-plans/{s.LessonPlan.Id}" : null
+            })
+            .ToDictionaryAsync(s => s.Id, cancellationToken);
+
+        var attendances = await context.Attendances
+            .AsNoTracking()
+            .Where(a => sessionIds.Contains(a.SessionId) && studentIds.Contains(a.StudentProfileId))
+            .Select(a => new
+            {
+                a.SessionId,
+                a.StudentProfileId,
+                AttendanceStatus = a.AttendanceStatus.ToString(),
+                AbsenceType = a.AbsenceType.ToString(),
+                AttendanceMarkedAt = a.MarkedAt
             })
             .ToListAsync(cancellationToken);
 
-        var sessions = sessionDetails
-            .Select(s =>
+        var attendanceLookup = attendances.ToDictionary(
+            attendance => (attendance.StudentProfileId, attendance.SessionId),
+            attendance => attendance);
+
+        var sessions = sessionMetadata
+            .Where(entry => sessionDetails.ContainsKey(entry.Key.SessionId))
+            .Select(entry =>
             {
-                var metadata = sessionMetadata[s.Id];
+                var student = studentLookup[entry.Key.StudentProfileId];
+                var session = sessionDetails[entry.Key.SessionId];
+                attendanceLookup.TryGetValue((entry.Key.StudentProfileId, entry.Key.SessionId), out var attendance);
+
                 return new TimetableItemDto
                 {
-                    Id = s.Id,
-                    Color = s.Color,
-                    ClassId = s.ClassId,
-                    ClassCode = s.ClassCode,
-                    ClassTitle = s.ClassTitle,
-                    PlannedDatetime = s.PlannedDatetime,
-                    ActualDatetime = s.ActualDatetime,
-                    DurationMinutes = s.DurationMinutes,
-                    ParticipationType = s.ParticipationType,
-                    Status = s.Status,
-                    PlannedRoomId = s.PlannedRoomId,
-                    PlannedRoomName = s.PlannedRoomName,
-                    ActualRoomId = s.ActualRoomId,
-                    ActualRoomName = s.ActualRoomName,
-                    PlannedTeacherId = s.PlannedTeacherId,
-                    PlannedTeacherName = s.PlannedTeacherName,
-                    ActualTeacherId = s.ActualTeacherId,
-                    ActualTeacherName = s.ActualTeacherName,
-                    PlannedAssistantId = s.PlannedAssistantId,
-                    PlannedAssistantName = s.PlannedAssistantName,
-                    LessonPlanId = s.LessonPlanId,
-                    LessonPlanLink = s.LessonPlanLink,
-                    RegistrationId = metadata.RegistrationId,
-                    Track = metadata.Track,
-                    IsMakeup = metadata.IsMakeup,
-                    AttendanceStatus = s.AttendanceStatus,
-                    AbsenceType = s.AbsenceType,
-                    AttendanceMarkedAt = s.AttendanceMarkedAt
+                    Id = session.Id,
+                    StudentProfileId = student.Id,
+                    StudentDisplayName = student.DisplayName,
+                    StudentAvatarUrl = student.AvatarUrl,
+                    Color = session.Color,
+                    ClassId = session.ClassId,
+                    ClassCode = session.ClassCode,
+                    ClassTitle = session.ClassTitle,
+                    PlannedDatetime = session.PlannedDatetime,
+                    ActualDatetime = session.ActualDatetime,
+                    DurationMinutes = session.DurationMinutes,
+                    ParticipationType = session.ParticipationType,
+                    Status = session.Status,
+                    PlannedRoomId = session.PlannedRoomId,
+                    PlannedRoomName = session.PlannedRoomName,
+                    ActualRoomId = session.ActualRoomId,
+                    ActualRoomName = session.ActualRoomName,
+                    PlannedTeacherId = session.PlannedTeacherId,
+                    PlannedTeacherName = session.PlannedTeacherName,
+                    ActualTeacherId = session.ActualTeacherId,
+                    ActualTeacherName = session.ActualTeacherName,
+                    PlannedAssistantId = session.PlannedAssistantId,
+                    PlannedAssistantName = session.PlannedAssistantName,
+                    LessonPlanId = session.LessonPlanId,
+                    LessonPlanLink = session.LessonPlanLink,
+                    RegistrationId = entry.Value.RegistrationId,
+                    Track = entry.Value.Track,
+                    IsMakeup = entry.Value.IsMakeup,
+                    AttendanceStatus = attendance?.AttendanceStatus,
+                    AbsenceType = attendance?.AbsenceType,
+                    AttendanceMarkedAt = attendance?.AttendanceMarkedAt
                 };
             })
             .OrderBy(s => s.PlannedDatetime)
+            .ThenBy(s => s.StudentDisplayName)
             .ToList();
 
-        return Result.Success(new GetStudentTimetableResponse
+        return new GetStudentTimetableResponse
         {
             Sessions = sessions
-        });
+        };
     }
+
+    private static (DateTime? FromUtc, DateTime? ToUtc) NormalizeDateRange(GetStudentTimetableQuery query)
+    {
+        DateTime? fromUtc = null;
+        if (query.From.HasValue)
+        {
+            fromUtc = VietnamTime.NormalizeToUtc(query.From.Value);
+        }
+
+        DateTime? toUtc = null;
+        if (query.To.HasValue)
+        {
+            var normalizedToUtc = VietnamTime.NormalizeToUtc(query.To.Value);
+            toUtc = VietnamTime.EndOfVietnamDayUtc(normalizedToUtc);
+        }
+
+        return (fromUtc, toUtc);
+    }
+
+    private sealed record StudentTimetableTarget(
+        Guid Id,
+        string DisplayName,
+        string? AvatarUrl);
+
+    private sealed record SessionMetadata(
+        Guid? RegistrationId,
+        string? Track,
+        bool IsMakeup);
 }
 

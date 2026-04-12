@@ -11,6 +11,7 @@ public sealed class CreateMultipleChoiceHomeworkCommand : ICommand<CreateMultipl
     public string Title { get; init; } = null!;
     public string? Description { get; init; }
     public DateTime? DueAt { get; init; }
+    public string? Skills { get; init; }
     public string? Topic { get; init; }
     public List<string>? GrammarTags { get; init; }
     public List<string>? VocabularyTags { get; init; }
@@ -21,6 +22,7 @@ public sealed class CreateMultipleChoiceHomeworkCommand : ICommand<CreateMultipl
     public bool? AiRecommendEnabled { get; init; }
     public Guid? MissionId { get; init; }
     public string? Instructions { get; init; }
+    public string? AttachmentUrl { get; init; }
     public List<CreateHomeworkQuestionDto> Questions { get; init; } = new();
 }
 

@@ -16,6 +16,7 @@ using Kidzgo.Application.Exams.GetExamQuestions;
 using Kidzgo.Application.Exams.GetExamQuestionById;
 using Kidzgo.Application.Exams.UpdateExamQuestion;
 using Kidzgo.Application.Exams.DeleteExamQuestion;
+using Kidzgo.Application.Exams.CreateExamQuestionsFromBankMatrix;
 using Kidzgo.Application.Exams.StartExamSubmission;
 using Kidzgo.Application.Exams.SaveExamSubmissionAnswer;
 using Kidzgo.Application.Exams.SubmitExamSubmission;
@@ -23,6 +24,7 @@ using Kidzgo.Application.Exams.GetExamSubmissions;
 using Kidzgo.Application.Exams.GetExamSubmission;
 using Kidzgo.Application.Exams.GradeExamSubmission;
 using Kidzgo.Domain.Exams;
+using Kidzgo.Domain.Homework;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -287,6 +289,54 @@ public class ExamController : ControllerBase
     }
 
     /// UC-164: Xem danh sách Exam Questions của Exam
+    /// Generate exam questions from question bank using difficulty matrix
+    [HttpPost("{examId:guid}/questions/from-bank-matrix")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> CreateExamQuestionsFromBankMatrix(
+        Guid examId,
+        [FromBody] CreateExamQuestionsFromBankMatrixRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!Enum.TryParse<QuestionType>(
+                string.IsNullOrWhiteSpace(request.QuestionType) ? nameof(QuestionType.MultipleChoice) : request.QuestionType,
+                ignoreCase: true,
+                out var questionType))
+        {
+            return Results.BadRequest($"Invalid question type: {request.QuestionType}");
+        }
+
+        var distribution = new List<ExamQuestionMatrixLevelCountDto>();
+        for (int i = 0; i < request.Distribution.Count; i++)
+        {
+            var item = request.Distribution[i];
+            if (!Enum.TryParse<QuestionLevel>(item.Level, ignoreCase: true, out var level))
+            {
+                return Results.BadRequest($"Invalid level: {item.Level}");
+            }
+
+            distribution.Add(new ExamQuestionMatrixLevelCountDto
+            {
+                Level = level,
+                Count = item.Count
+            });
+        }
+
+        var command = new CreateExamQuestionsFromBankMatrixCommand
+        {
+            ExamId = examId,
+            TotalQuestions = request.TotalQuestions,
+            QuestionType = questionType,
+            Skill = request.Skill,
+            Topic = request.Topic,
+            ReplaceExistingQuestions = request.ReplaceExistingQuestions,
+            ShuffleQuestions = request.ShuffleQuestions,
+            Distribution = distribution
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
     [HttpGet("{examId:guid}/questions")]
     [Authorize]
     public async Task<IResult> GetExamQuestions(
