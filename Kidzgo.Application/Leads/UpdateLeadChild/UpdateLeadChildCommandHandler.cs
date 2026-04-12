@@ -4,6 +4,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM.Errors;
 using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using VietnamTime = Kidzgo.Domain.Time.VietnamTime;
 
 namespace Kidzgo.Application.Leads.UpdateLeadChild;
 
@@ -41,20 +42,15 @@ public sealed class UpdateLeadChildCommandHandler(
             leadChild.ChildName = command.ChildName.Trim();
         }
 
-        // if (command.Dob.HasValue)
-        // {
-        //     leadChild.Dob = DateOnly(command.Dob.Value.Date, DateTimeKind.Utc);
-        // }
-        else if (command.Dob == null && command.Dob.HasValue == false)
+        if (command.Dob.HasValue)
         {
-            // Explicit null - clear the value
-            leadChild.Dob = null;
+            leadChild.Dob = VietnamTime.ToVietnamDateOnly(command.Dob.Value);
         }
 
-        // if (command.Gender is not null)
-        // {
-        //     leadChild.Gender = string.IsNullOrWhiteSpace(command.Gender.ToString())  : (Gender)command.Gender;
-        // }
+        if (command.Gender.HasValue)
+        {
+            leadChild.Gender = command.Gender.Value;
+        }
 
         if (command.ProgramInterest is not null)
         {
