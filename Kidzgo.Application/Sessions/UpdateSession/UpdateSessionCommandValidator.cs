@@ -18,6 +18,11 @@ public sealed class UpdateSessionCommandValidator : AbstractValidator<UpdateSess
         RuleFor(c => c.DurationMinutes)
             .GreaterThan(0)
             .WithMessage("DurationMinutes must be greater than 0");
+
+        RuleFor(c => c.Color)
+            .MaximumLength(50)
+            .WithMessage("Color must not exceed 50 characters")
+            .When(c => c.Color is not null);
     }
 }
 

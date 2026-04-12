@@ -162,6 +162,12 @@ public sealed class UpdateSessionsByClassCommandHandler(
                     hasChanges = true;
                 }
 
+                if (command.Color != null)
+                {
+                    session.Color = command.Color;
+                    hasChanges = true;
+                }
+
                 if (hasChanges)
                 {
                     session.UpdatedAt = now;

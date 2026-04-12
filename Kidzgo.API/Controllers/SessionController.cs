@@ -139,7 +139,8 @@ public class SessionController : ControllerBase
             PlannedRoomId = request.PlannedRoomId,
             PlannedTeacherId = request.PlannedTeacherId,
             PlannedAssistantId = request.PlannedAssistantId,
-            ParticipationType = participationType
+            ParticipationType = participationType,
+            Color = request.Color
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -178,7 +179,24 @@ public class SessionController : ControllerBase
             PlannedRoomId = request.PlannedRoomId,
             PlannedTeacherId = request.PlannedTeacherId,
             PlannedAssistantId = request.PlannedAssistantId,
-            ParticipationType = participationType
+            ParticipationType = participationType,
+            Color = request.Color
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPut("batch-color")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateSessionBatchColor(
+        [FromBody] UpdateSessionBatchColorRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateSessionsByClassCommand
+        {
+            ClassId = request.ClassId,
+            Color = request.Color
         };
 
         var result = await _mediator.Send(command, cancellationToken);

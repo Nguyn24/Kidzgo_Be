@@ -50,6 +50,10 @@ public sealed class UpdateSessionCommandHandler(
         session.PlannedTeacherId = command.PlannedTeacherId;
         session.PlannedAssistantId = command.PlannedAssistantId;
         session.ParticipationType = command.ParticipationType;
+        if (command.Color != null)
+        {
+            session.Color = command.Color;
+        }
         session.UpdatedAt = VietnamTime.UtcNow();
 
         await studentSessionAssignmentService.SyncAssignmentsForSessionAsync(session, cancellationToken);

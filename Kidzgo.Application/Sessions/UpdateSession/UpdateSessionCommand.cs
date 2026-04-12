@@ -12,6 +12,7 @@ public sealed class UpdateSessionCommand : ICommand<UpdateSessionResponse>
     public Guid? PlannedTeacherId { get; init; }
     public Guid? PlannedAssistantId { get; init; }
     public ParticipationType ParticipationType { get; init; }
+    public string? Color { get; init; }
 }
 
 
