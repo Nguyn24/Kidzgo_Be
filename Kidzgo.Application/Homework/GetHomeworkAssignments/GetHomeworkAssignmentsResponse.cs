@@ -1,3 +1,5 @@
+using Kidzgo.Application.Homework.Shared;
+
 using Kidzgo.Domain.Common;
 
 namespace Kidzgo.Application.Homework.GetHomeworkAssignments;
@@ -21,6 +23,7 @@ public sealed class HomeworkAssignmentDto
     public string? Pages { get; init; }
     public string? Skills { get; init; }
     public string? Topic { get; init; }
+    public string? AttachmentUrl { get; init; }
     public string SubmissionType { get; init; } = null!;
     public decimal? MaxScore { get; init; }
     public int? RewardStars { get; init; }
@@ -36,5 +39,6 @@ public sealed class HomeworkAssignmentDto
     public int GradedCount { get; init; }
     public int LateCount { get; init; }
     public int MissingCount { get; init; }
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AttachmentUrl);
 }
 

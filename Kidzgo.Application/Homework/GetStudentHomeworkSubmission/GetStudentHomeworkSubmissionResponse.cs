@@ -63,6 +63,7 @@ public sealed class GetStudentHomeworkSubmissionResponse
     public string? TeacherName { get; init; }
     public List<string> AssignmentAttachmentUrls { get; init; } = new();
     public HomeworkSubmissionPayloadDto Submission { get; init; } = new();
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AssignmentAttachmentUrl);
 }
 
 public sealed class HomeworkSubmissionPayloadDto

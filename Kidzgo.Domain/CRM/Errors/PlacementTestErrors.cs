@@ -1,4 +1,5 @@
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Homework;
 
 namespace Kidzgo.Domain.CRM.Errors;
 
@@ -55,5 +56,21 @@ public static class PlacementTestErrors
     public static Error RetakeAlreadyScheduled(Guid studentProfileId) => Error.Conflict(
         "PlacementTest.RetakeAlreadyScheduled",
         $"Student already has a scheduled or completed retake placement test");
+
+    public static Error ProgramNotResolved(Guid placementTestId) => Error.Validation(
+        "PlacementTest.ProgramNotResolved",
+        $"Cannot resolve program for placement test '{placementTestId}'. Provide ProgramId explicitly or set ProgramRecommendation/Class first.");
+
+    public static readonly Error InvalidQuestionMatrixDistribution = Error.Validation(
+        "PlacementTest.InvalidQuestionMatrixDistribution",
+        "Question distribution must have at least one level with count > 0");
+
+    public static Error MatrixTotalMismatch(int expectedTotal, int distributedTotal) => Error.Validation(
+        "PlacementTest.MatrixTotalMismatch",
+        $"TotalQuestions = {expectedTotal} does not match distributed total = {distributedTotal}");
+
+    public static Error InsufficientQuestionsInBank(QuestionLevel level, int required, int available) => Error.Validation(
+        "PlacementTest.InsufficientQuestionsInBank",
+        $"Not enough question bank items for level '{level}'. Required {required}, available {available}");
 }
 

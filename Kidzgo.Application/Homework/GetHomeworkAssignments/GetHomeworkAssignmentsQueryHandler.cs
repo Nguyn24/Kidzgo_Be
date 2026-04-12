@@ -86,6 +86,7 @@ public sealed class GetHomeworkAssignmentsQueryHandler(
                 Pages = h.Pages,
                 Skills = h.Skills,
                 Topic = h.Topic,
+                AttachmentUrl = h.AttachmentUrl,
                 SubmissionType = SubmissionTypeMapper.ToApiString(h.SubmissionType),
                 MaxScore = h.MaxScore,
                 RewardStars = h.RewardStars,

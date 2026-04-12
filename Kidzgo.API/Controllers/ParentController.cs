@@ -9,6 +9,7 @@ using Kidzgo.Application.Exams.GetStudentExamResults;
 using Kidzgo.Application.Invoices.GetParentInvoices;
 using Kidzgo.Application.MakeupCredits.GetParentStudentsWithMakeupOrLeave;
 using Kidzgo.Application.Media.GetMedia;
+using Kidzgo.Application.Media.Shared;
 using Kidzgo.Application.Notifications.GetParentNotifications;
 using Kidzgo.Application.Payments.GetParentPayments;
 using Kidzgo.Application.Sessions.GetStudentTimetable;
@@ -192,18 +193,48 @@ public class ParentController : ControllerBase
     [HttpGet("media")]
     public async Task<IResult> GetMedia(
         [FromQuery] Guid? studentProfileId,
+        [FromQuery] Guid? classId,
+        [FromQuery] string? monthTag,
+        [FromQuery] DateTime? date,
         [FromQuery] string? type,
         CancellationToken cancellationToken = default)
     {
-        var student = await ResolveStudentProfileAsync(studentProfileId, cancellationToken);
-        if (student is null)
-        {
-            return NotFoundProblem("StudentProfile", "Student profile not linked to current parent");
-        }
-
         var mediaQuery = _context.MediaAssets
             .AsNoTracking()
-            .Where(m => !m.IsDeleted && m.StudentProfileId == student.Id);
+            .Where(m => !m.IsDeleted);
+
+        mediaQuery = await MediaReadAccessHelper.ApplyReadAccessFilterAsync(
+            mediaQuery,
+            _context,
+            _userContext,
+            studentProfileId,
+            cancellationToken);
+
+        if (!await mediaQuery.AnyAsync(cancellationToken))
+        {
+            var student = await ResolveStudentProfileAsync(studentProfileId, cancellationToken);
+            if (student is null)
+            {
+                return NotFoundProblem("StudentProfile", "Student profile not linked to current parent");
+            }
+        }
+
+        if (classId.HasValue)
+        {
+            mediaQuery = mediaQuery.Where(m => m.ClassId == classId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(monthTag))
+        {
+            mediaQuery = mediaQuery.Where(m => m.MonthTag == monthTag);
+        }
+
+        if (date.HasValue)
+        {
+            var startOfDay = date.Value.Date;
+            var endOfDay = startOfDay.AddDays(1);
+            mediaQuery = mediaQuery.Where(m => m.CreatedAt >= startOfDay && m.CreatedAt < endOfDay);
+        }
 
         if (!string.IsNullOrWhiteSpace(type) && Enum.TryParse<MediaType>(type, true, out var parsedType))
         {
