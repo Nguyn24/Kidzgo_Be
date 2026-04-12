@@ -18,10 +18,10 @@ public sealed class ChangeUserPinCommandHandler(
     {
         Guid userId = userContext.UserId;
 
-        User? user = await context.Users
-            .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        bool userExists = await context.Users
+            .AnyAsync(u => u.Id == userId, cancellationToken);
 
-        if (user is null)
+        if (!userExists)
         {
             return Result.Failure(UserErrors.NotFound(userId));
         }
@@ -31,23 +31,46 @@ public sealed class ChangeUserPinCommandHandler(
             return Result.Failure(PinErrors.Invalid);
         }
 
-        if (string.IsNullOrWhiteSpace(user.PinHash))
+        Profile? profile = await GetCurrentParentProfileAsync(userId, cancellationToken);
+        if (profile is null)
         {
-            // Nếu chưa có PIN thì không cho đổi (phải verify/set trước)
+            return Result.Failure(ProfileErrors.Invalid);
+        }
+
+        if (string.IsNullOrWhiteSpace(profile.PinHash))
+        {
             return Result.Failure(PinErrors.NotSet);
         }
 
-        bool ok = pinHasher.Verify(command.CurrentPin, user.PinHash);
+        bool ok = pinHasher.Verify(command.CurrentPin, profile.PinHash);
         if (!ok)
         {
             return Result.Failure(PinErrors.Wrong);
         }
 
-        user.PinHash = pinHasher.Hash(command.NewPin);
+        profile.PinHash = pinHasher.Hash(command.NewPin);
 
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    private Task<Profile?> GetCurrentParentProfileAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        IQueryable<Profile> query = context.Profiles
+            .Where(p => p.UserId == userId &&
+                        p.ProfileType == ProfileType.Parent &&
+                        !p.IsDeleted &&
+                        p.IsActive);
+
+        if (userContext.ParentId.HasValue)
+        {
+            query = query.Where(p => p.Id == userContext.ParentId.Value);
+        }
+
+        return query
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private static bool IsValidPin(string pin)
@@ -60,10 +83,3 @@ public sealed class ChangeUserPinCommandHandler(
         return pin.All(char.IsDigit);
     }
 }
-
-
-
-
-
-
-

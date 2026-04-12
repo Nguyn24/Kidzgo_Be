@@ -14,6 +14,9 @@ public class ParentPinResetTokenConfiguration : IEntityTypeConfiguration<ParentP
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(x => x.OtpCodeHash)
+            .HasMaxLength(255);
+
         builder.Property(x => x.ExpiresAt)
             .IsRequired();
 
