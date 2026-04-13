@@ -47,8 +47,6 @@ public class MissionController : ControllerBase
             ProgressMode = request.ProgressMode,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
-            RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp,
             TotalRequired = request.TotalRequired
         };
 
@@ -123,8 +121,6 @@ public class MissionController : ControllerBase
             ProgressMode = request.ProgressMode,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
-            RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp,
             TotalRequired = request.TotalRequired
         };
 

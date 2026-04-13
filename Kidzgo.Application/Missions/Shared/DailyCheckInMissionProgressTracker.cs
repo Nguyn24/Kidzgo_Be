@@ -16,15 +16,17 @@ public static class DailyCheckInMissionProgressTracker
     {
         var now = VietnamTime.UtcNow();
 
-        var activeMissionProgresses = await context.MissionProgresses
+        var missionProgresses = await context.MissionProgresses
             .Include(mp => mp.Mission)
             .Where(mp => mp.StudentProfileId == studentProfileId)
             .Where(mp => mp.Mission.MissionType == MissionType.NoUnexcusedAbsence)
             .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
                          mp.Status == MissionProgressStatus.InProgress)
-            .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
-            .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
             .ToListAsync(cancellationToken);
+
+        var activeMissionProgresses = missionProgresses
+            .Where(mp => IsMissionActiveOnCheckInDate(mp.Mission, checkInDate))
+            .ToList();
 
         foreach (var missionProgress in activeMissionProgresses)
         {
@@ -70,12 +72,12 @@ public static class DailyCheckInMissionProgressTracker
 
         foreach (var missionProgress in activeMissionProgresses)
         {
-            var startDate = GetMissionStartDate(missionProgress.Mission);
+            var startDate = GetMissionEffectiveStartDate(missionProgress.Mission);
             var endDate = GetMissionEndDate(missionProgress.Mission);
 
             var latestCheckInDate = await context.AttendanceStreaks
                 .Where(s => s.StudentProfileId == missionProgress.StudentProfileId)
-                .Where(s => startDate == null || s.AttendanceDate >= startDate.Value)
+                .Where(s => s.AttendanceDate >= startDate)
                 .Where(s => endDate == null || s.AttendanceDate <= endDate.Value)
                 .Where(s => s.AttendanceDate <= today)
                 .Select(s => (DateOnly?)s.AttendanceDate)
@@ -102,7 +104,8 @@ public static class DailyCheckInMissionProgressTracker
         DateOnly checkInDate,
         CancellationToken cancellationToken)
     {
-        var startDate = GetMissionStartDate(mission);
+        var startAt = GetMissionEffectiveStartAt(mission);
+        var startDate = VietnamTime.ToVietnamDateOnly(startAt);
         var endDate = GetMissionEndDate(mission);
         var effectiveEndDate = endDate.HasValue && endDate.Value < checkInDate
             ? endDate.Value
@@ -110,7 +113,8 @@ public static class DailyCheckInMissionProgressTracker
 
         return await context.AttendanceStreaks
             .Where(s => s.StudentProfileId == studentProfileId)
-            .Where(s => startDate == null || s.AttendanceDate >= startDate.Value)
+            .Where(s => s.AttendanceDate > startDate ||
+                        (s.AttendanceDate == startDate && s.CreatedAt >= startAt))
             .Where(s => s.AttendanceDate <= effectiveEndDate)
             .Select(s => s.AttendanceDate)
             .Distinct()
@@ -124,7 +128,8 @@ public static class DailyCheckInMissionProgressTracker
         DateOnly checkInDate,
         CancellationToken cancellationToken)
     {
-        var startDate = GetMissionStartDate(mission);
+        var startAt = GetMissionEffectiveStartAt(mission);
+        var startDate = VietnamTime.ToVietnamDateOnly(startAt);
         var endDate = GetMissionEndDate(mission);
         var effectiveEndDate = endDate.HasValue && endDate.Value < checkInDate
             ? endDate.Value
@@ -132,7 +137,8 @@ public static class DailyCheckInMissionProgressTracker
 
         var checkInDates = await context.AttendanceStreaks
             .Where(s => s.StudentProfileId == studentProfileId)
-            .Where(s => startDate == null || s.AttendanceDate >= startDate.Value)
+            .Where(s => s.AttendanceDate > startDate ||
+                        (s.AttendanceDate == startDate && s.CreatedAt >= startAt))
             .Where(s => s.AttendanceDate <= effectiveEndDate)
             .Select(s => s.AttendanceDate)
             .Distinct()
@@ -160,10 +166,22 @@ public static class DailyCheckInMissionProgressTracker
         return streak;
     }
 
-    private static DateOnly? GetMissionStartDate(Mission mission)
-        => mission.StartAt.HasValue
-            ? VietnamTime.ToVietnamDateOnly(mission.StartAt.Value)
-            : null;
+    private static bool IsMissionActiveOnCheckInDate(Mission mission, DateOnly checkInDate)
+    {
+        var startDate = GetMissionEffectiveStartDate(mission);
+        var endDate = GetMissionEndDate(mission);
+
+        return checkInDate >= startDate &&
+               (!endDate.HasValue || checkInDate <= endDate.Value);
+    }
+
+    private static DateTime GetMissionEffectiveStartAt(Mission mission)
+        => mission.StartAt.HasValue && mission.StartAt.Value > mission.CreatedAt
+            ? mission.StartAt.Value
+            : mission.CreatedAt;
+
+    private static DateOnly GetMissionEffectiveStartDate(Mission mission)
+        => VietnamTime.ToVietnamDateOnly(GetMissionEffectiveStartAt(mission));
 
     private static DateOnly? GetMissionEndDate(Mission mission)
         => mission.EndAt.HasValue

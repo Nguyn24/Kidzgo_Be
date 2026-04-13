@@ -14,7 +14,5 @@ public sealed class UpdateMissionRequest
     public MissionProgressMode? ProgressMode { get; set; }
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
-    public int? RewardStars { get; set; }
-    public int? RewardExp { get; set; }
     public int? TotalRequired { get; set; }
 }

@@ -5,12 +5,17 @@ using Kidzgo.Application.Gamification.AddXp;
 using Kidzgo.Application.Gamification.DeductStars;
 using Kidzgo.Application.Gamification.DeductXp;
 using Kidzgo.Application.Gamification.CheckInAttendanceStreak;
+using Kidzgo.Application.Gamification.CreateMissionRewardRule;
 using Kidzgo.Application.Gamification.CreateRewardStoreItem;
 using Kidzgo.Application.Gamification.DeleteRewardStoreItem;
 using Kidzgo.Application.Gamification.GetAttendanceStreak;
+using Kidzgo.Application.Gamification.GetMissionRewardRuleById;
+using Kidzgo.Application.Gamification.GetMissionRewardRules;
 using Kidzgo.Application.Gamification.GetMyAttendanceStreak;
 using Kidzgo.Application.Gamification.GetRewardStoreItemById;
 using Kidzgo.Application.Gamification.GetRewardStoreItems;
+using Kidzgo.Application.Gamification.ToggleMissionRewardRuleStatus;
+using Kidzgo.Application.Gamification.UpdateMissionRewardRule;
 using Kidzgo.Application.Gamification.UpdateRewardStoreItem;
 using Kidzgo.Application.Gamification.ToggleRewardStoreItemStatus;
 using Kidzgo.Application.Gamification.GetMyLevel;
@@ -29,6 +34,7 @@ using Kidzgo.Application.Gamification.CancelRewardRedemption;
 using Kidzgo.Application.Gamification.MarkDeliveredRewardRedemption;
 using Kidzgo.Application.Gamification.BatchDeliverRewardRedemptions;
 using Kidzgo.Application.Gamification.ConfirmReceivedRewardRedemption;
+using Kidzgo.Domain.Gamification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -255,6 +261,118 @@ public class GamificationController : ControllerBase
         var query = new GetMyAttendanceStreakQuery();
 
         var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    // ========== Mission Reward Rule Management ==========
+
+    /// <summary>
+    /// Admin setup reward rules for Mission by mission type, progress mode and totalRequired.
+    /// </summary>
+    [HttpPost("mission-reward-rules")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> CreateMissionRewardRule(
+        [FromBody] CreateMissionRewardRuleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateMissionRewardRuleCommand
+        {
+            MissionType = request.MissionType,
+            ProgressMode = request.ProgressMode,
+            TotalRequired = request.TotalRequired,
+            RewardStars = request.RewardStars,
+            RewardExp = request.RewardExp,
+            IsActive = request.IsActive
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchCreated(rule => $"/api/gamification/mission-reward-rules/{rule.Id}");
+    }
+
+    /// <summary>
+    /// View Mission reward rules for creating balanced missions.
+    /// </summary>
+    [HttpGet("mission-reward-rules")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
+    public async Task<IResult> GetMissionRewardRules(
+        [FromQuery] MissionType? missionType,
+        [FromQuery] MissionProgressMode? progressMode,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMissionRewardRulesQuery
+        {
+            MissionType = missionType,
+            ProgressMode = progressMode,
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// View Mission reward rule detail.
+    /// </summary>
+    [HttpGet("mission-reward-rules/{id:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff,Teacher")]
+    public async Task<IResult> GetMissionRewardRuleById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetMissionRewardRuleByIdQuery
+        {
+            Id = id
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Admin update reward rule for Mission.
+    /// </summary>
+    [HttpPut("mission-reward-rules/{id:guid}")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateMissionRewardRule(
+        Guid id,
+        [FromBody] UpdateMissionRewardRuleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateMissionRewardRuleCommand
+        {
+            Id = id,
+            MissionType = request.MissionType,
+            ProgressMode = request.ProgressMode,
+            TotalRequired = request.TotalRequired,
+            RewardStars = request.RewardStars,
+            RewardExp = request.RewardExp,
+            IsActive = request.IsActive
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Toggle Mission reward rule active status.
+    /// </summary>
+    [HttpPatch("mission-reward-rules/{id:guid}/toggle-status")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> ToggleMissionRewardRuleStatus(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ToggleMissionRewardRuleStatusCommand
+        {
+            Id = id
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
 

@@ -52,7 +52,9 @@ public sealed class CheckInAttendanceStreakCommandHandler(
 
         // UC-214: Check if already checked in today
         var existingStreak = await context.AttendanceStreaks
-            .FirstOrDefaultAsync(s => s.StudentProfileId == studentProfileId && s.AttendanceDate == today, cancellationToken);
+            .Where(s => s.StudentProfileId == studentProfileId && s.AttendanceDate == today)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (existingStreak != null)
         {

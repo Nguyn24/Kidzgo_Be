@@ -16,7 +16,5 @@ public sealed class UpdateMissionCommand : ICommand<UpdateMissionResponse>
     public MissionProgressMode? ProgressMode { get; init; }
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
-    public int? RewardStars { get; init; }
-    public int? RewardExp { get; init; }
     public int? TotalRequired { get; init; }
 }

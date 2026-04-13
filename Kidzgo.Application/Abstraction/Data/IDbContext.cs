@@ -71,6 +71,7 @@ public interface IDbContext
     DbSet<StudentLevel> StudentLevels { get; }
     DbSet<AttendanceStreak> AttendanceStreaks { get; }
     DbSet<GamificationSettings> GamificationSettings { get; }
+    DbSet<MissionRewardRule> MissionRewardRules { get; }
 
     // Lesson Plans
     DbSet<HomeworkAssignment> HomeworkAssignments { get; }
