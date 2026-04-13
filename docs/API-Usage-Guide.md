@@ -197,6 +197,35 @@ Base URL: `/api/auth/`
 
 ---
 
+### 1.5.1. Reset Parent PIN
+
+**Endpoint:** `POST /api/auth/reset-pin`
+
+**Mô tả:** Đặt lại PIN mới cho Parent Profile bằng token từ email.
+
+**Authorization:** Không cần (Public)
+
+**Request Body:**
+```json
+{
+  "token": "reset_token_from_email",
+  "newPin": "1234"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "isSuccess": true,
+  "data": null
+}
+```
+
+**Lỗi có thể xảy ra:**
+- `400 Bad Request`: Token không hợp lệ, đã hết hạn hoặc PIN không hợp lệ
+
+---
+
 ### 1.6. Change PIN
 
 **Endpoint:** `PUT /api/auth/change-pin`
@@ -234,6 +263,8 @@ Base URL: `/api/auth/`
 **Mô tả:** Lấy danh sách Profiles của user đang đăng nhập (Parent/Student profiles).
 
 **Authorization:** Required (Bearer Token)
+
+**Request Body:** KhÃ´ng cáº§n
 
 **Response (200 OK):**
 ```json
@@ -294,13 +325,6 @@ Base URL: `/api/auth/`
 
 **Authorization:** Required (Bearer Token)
 
-**Request Body:**
-```json
-{
-  "profileId": "guid"
-}
-```
-
 **Response (200 OK):**
 ```json
 {
@@ -321,13 +345,6 @@ Base URL: `/api/auth/`
 **Mô tả:** Yêu cầu reset PIN cho Parent Profile (gửi email reset link).
 
 **Authorization:** Required (Bearer Token)
-
-**Request Body:**
-```json
-{
-  "profileId": "guid"
-}
-```
 
 **Response (200 OK):**
 ```json

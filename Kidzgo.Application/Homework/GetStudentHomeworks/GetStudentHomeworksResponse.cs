@@ -35,5 +35,6 @@ public sealed class StudentHomeworkDto
     public List<HomeworkSubmissionAttemptDto> Attempts { get; init; } = new();
     public bool IsLate { get; init; }
     public bool IsOverdue { get; init; }
+    public bool IsListeningQuiz => HomeworkDeliveryMetadata.IsListeningQuiz(Skills, AssignmentAttachmentUrl);
 }
 

@@ -7,6 +7,9 @@ using Kidzgo.Application.Authentication.Login;
 using Kidzgo.Application.Authentication.ResetPassword;
 using Kidzgo.Application.Authentication.VerifyUserPin;
 using Kidzgo.Application.Authentication.Profiles.RequestParentPinReset;
+using Kidzgo.Application.Authentication.Profiles.ResetParentPin;
+using Kidzgo.Application.Authentication.Profiles.RequestParentPinResetZaloOtp;
+using Kidzgo.Application.Authentication.Profiles.VerifyParentPinResetZaloOtp;
 using Kidzgo.Application.Profiles.GetProfiles;
 using Kidzgo.Application.Profiles.SelectStudentProfile;
 using Kidzgo.Application.Profiles.VerifyParentPin;
@@ -125,6 +128,46 @@ public class AuthenticateController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpPost("reset-pin")]
+    [AllowAnonymous]
+    public async Task<IResult> ResetParentPin([FromBody] ResetParentPinRequest request, CancellationToken cancellationToken)
+    {
+        var command = new ResetParentPinCommand
+        {
+            Token = request.Token,
+            NewPin = request.NewPin
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [Authorize]
+    [HttpPost("profiles/request-pin-reset-zalo-otp")]
+    public async Task<IResult> RequestParentPinResetZaloOtp(CancellationToken cancellationToken)
+    {
+        var command = new RequestParentPinResetZaloOtpCommand();
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [AllowAnonymous]
+    [HttpPost("profiles/verify-pin-reset-zalo-otp")]
+    public async Task<IResult> VerifyParentPinResetZaloOtp(
+        [FromBody] VerifyParentPinResetZaloOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new VerifyParentPinResetZaloOtpCommand
+        {
+            ChallengeId = request.ChallengeId,
+            Otp = request.Otp
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
     [Authorize]
     [HttpPost("profiles/verify-parent-pin")]
     public async Task<IResult> VerifyParentPin([FromBody] VerifyParentPinRequest request, CancellationToken cancellationToken)
@@ -169,14 +212,11 @@ public class AuthenticateController : ControllerBase
     /// Request PIN reset for Parent profile (nếu có email flow)
     [Authorize]
     [HttpPost("profiles/request-pin-reset")]
-    public async Task<IResult> RequestParentPinReset([FromBody] RequestParentPinResetRequest request, CancellationToken cancellationToken)
+    public async Task<IResult> RequestParentPinReset(CancellationToken cancellationToken)
     {
-        var command = new RequestParentPinResetCommand
-        {
-            ProfileId = request.ProfileId
-        };
+        var command = new RequestParentPinResetCommand();
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
-} 
+}
