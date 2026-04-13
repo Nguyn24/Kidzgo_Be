@@ -11,4 +11,5 @@ public sealed class CreateUserCommand : ICommand<CreateUserCommandResponse>
     public string Role { get; init; } = null!;
     public Guid? BranchId { get; init; }
     public string? PhoneNumber { get; init; }
+    public string? TeacherCompensationType { get; init; }
 }

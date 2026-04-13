@@ -33,6 +33,7 @@ public sealed class GetUserByIdQueryHandler(IDbContext context)
             PhoneNumber = user.PhoneNumber,
             Email = user.Email,
             Role = user.Role.ToString(),
+            TeacherCompensationType = user.TeacherCompensationType?.ToString(),
             BranchId = user.BranchId,
             BranchCode = user.Branch?.Code,
             BranchName = user.Branch?.Name,

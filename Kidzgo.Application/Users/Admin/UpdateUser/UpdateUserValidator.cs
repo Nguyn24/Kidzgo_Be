@@ -28,5 +28,12 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
                 .Must(PhoneNumberNormalizer.IsValidVietnamesePhoneNumber)
                 .WithMessage("Phone number must be a valid 10-digit Vietnamese phone number");
         });
+
+        When(command => !string.IsNullOrWhiteSpace(command.TeacherCompensationType), () =>
+        {
+            RuleFor(command => command.TeacherCompensationType)
+                .Must(value => Enum.TryParse<TeacherCompensationType>(value, true, out _))
+                .WithMessage("TeacherCompensationType must be a valid value: VietnameseTeacher, ForeignTeacher, Assistant");
+        });
     }
 }
