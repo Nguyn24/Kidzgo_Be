@@ -5,5 +5,6 @@ public enum MissionType
     HomeworkStreak,
     ReadingStreak,
     NoUnexcusedAbsence,
+    ClassAttendance,
     Custom
 }

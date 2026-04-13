@@ -258,7 +258,7 @@ public class GamificationController : ControllerBase
         return result.MatchOk();
     }
 
-    // ========== Reward Store Management (UC-221 to UC-227) ==========
+    // ========== Reward Store Management ==========
 
     /// <summary>
     /// UC-221: Tạo Reward Store Item
@@ -275,7 +275,6 @@ public class GamificationController : ControllerBase
             Description = request.Description,
             ImageUrl = request.ImageUrl,
             CostStars = request.CostStars,
-            Quantity = request.Quantity,
             IsActive = request.IsActive
         };
 
@@ -346,7 +345,6 @@ public class GamificationController : ControllerBase
     /// <summary>
     /// UC-224: Cập nhật Reward Store Item
     /// UC-226: Thiết lập cost_stars cho Item
-    /// UC-227: Quản lý quantity của Item
     /// </summary>
     [HttpPut("reward-store/items/{id:guid}")]
     [Authorize(Roles = "Admin,ManagementStaff")]
@@ -362,7 +360,6 @@ public class GamificationController : ControllerBase
             Description = request.Description,
             ImageUrl = request.ImageUrl,
             CostStars = request.CostStars,
-            Quantity = request.Quantity,
             IsActive = request.IsActive
         };
 

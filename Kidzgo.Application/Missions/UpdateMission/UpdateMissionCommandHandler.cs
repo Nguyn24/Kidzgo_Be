@@ -122,6 +122,11 @@ public sealed class UpdateMissionCommandHandler(
         mission.TargetStudentId = command.TargetStudentId;
         mission.TargetGroup = command.TargetGroup;
         mission.MissionType = command.MissionType;
+        if (command.ProgressMode.HasValue)
+        {
+            mission.ProgressMode = command.ProgressMode.Value;
+        }
+
         mission.StartAt = startAtUtc;
         mission.EndAt = endAtUtc;
         mission.RewardStars = command.RewardStars;
@@ -140,6 +145,7 @@ public sealed class UpdateMissionCommandHandler(
             TargetStudentId = mission.TargetStudentId,
             TargetGroup = mission.TargetGroup,
             MissionType = mission.MissionType.ToString(),
+            ProgressMode = mission.ProgressMode.ToString(),
             StartAt = mission.StartAt,
             EndAt = mission.EndAt,
             RewardStars = mission.RewardStars,

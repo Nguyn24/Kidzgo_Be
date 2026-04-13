@@ -17,6 +17,7 @@ public class Mission : Entity
     public Guid? TargetStudentId { get; set; } // Chi duy nhat cho Scope.Student
     public List<Guid>? TargetGroup { get; set; } // Danh sach student IDs cho Scope.Group
     public MissionType MissionType { get; set; }
+    public MissionProgressMode ProgressMode { get; set; } = MissionProgressMode.Count;
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
     public int? RewardStars { get; set; }

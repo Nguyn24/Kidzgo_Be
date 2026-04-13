@@ -16,6 +16,7 @@ public sealed class MyMissionProgressDto
     public string Title { get; init; } = null!;
     public string? Description { get; init; }
     public string MissionType { get; init; } = null!;
+    public string ProgressMode { get; init; } = null!;
     public string Status { get; init; } = null!;
     public decimal? ProgressValue { get; init; }
     public int? TotalRequired { get; init; }

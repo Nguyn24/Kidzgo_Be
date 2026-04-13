@@ -55,7 +55,8 @@ public sealed class GetMissionProgressQueryHandler(
                 StudentName = mp.StudentProfile.DisplayName,
                 Status = mp.Status.ToString(),
                 ProgressValue = mp.ProgressValue,
-                ProgressPercentage = CalculateProgressPercentage(mp.ProgressValue),
+                TotalRequired = mission.TotalRequired,
+                ProgressPercentage = CalculateProgressPercentage(mp.ProgressValue, mission.TotalRequired),
                 CompletedAt = mp.CompletedAt,
                 VerifiedBy = mp.VerifiedBy,
                 VerifiedByName = mp.VerifiedByUser != null ? mp.VerifiedByUser.Name : null
@@ -73,21 +74,27 @@ public sealed class GetMissionProgressQueryHandler(
             Mission = new MissionProgressInfoDto
             {
                 Id = mission.Id,
-                Title = mission.Title
+                Title = mission.Title,
+                MissionType = mission.MissionType.ToString(),
+                ProgressMode = mission.ProgressMode.ToString(),
+                TotalRequired = mission.TotalRequired
             },
             Progresses = page
         };
     }
 
-    private static decimal CalculateProgressPercentage(decimal? progressValue)
+    private static decimal CalculateProgressPercentage(decimal? progressValue, int? totalRequired)
     {
         if (!progressValue.HasValue)
         {
             return 0;
         }
 
-        // progressValue is already a percentage (0-100)
-        // If it's > 100, cap it at 100
+        if (totalRequired.HasValue && totalRequired.Value > 0)
+        {
+            return Math.Min(100, Math.Max(0, progressValue.Value * 100 / totalRequired.Value));
+        }
+
         return Math.Min(100, Math.Max(0, progressValue.Value));
     }
 }

@@ -1,4 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.LessonPlans;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +30,7 @@ public sealed class MarkOverdueHomeworkSubmissionsJob(
 
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IDbContext>();
+        var gamificationService = scope.ServiceProvider.GetRequiredService<IGamificationService>();
 
         // Overdue = due date passed, not submitted yet, and still Assigned
         var overdue = await db.HomeworkStudents
@@ -56,7 +59,23 @@ public sealed class MarkOverdueHomeworkSubmissionsJob(
             }
         }
 
+        var affectedStudentIds = overdue
+            .Select(hs => hs.StudentProfileId)
+            .Distinct()
+            .ToList();
+
         await db.SaveChangesAsync(cancellationToken);
+
+        foreach (var studentProfileId in affectedStudentIds)
+        {
+            await HomeworkMissionProgressTracker.TrackAsync(
+                db,
+                gamificationService,
+                studentProfileId,
+                now,
+                cancellationToken);
+        }
+
         logger.LogInformation(
             "Marked {Count} overdue homework submissions as Missing and auto-graded 0",
             overdue.Count);
