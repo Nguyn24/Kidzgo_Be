@@ -36,6 +36,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.PhoneNumber)
             .HasMaxLength(50);
 
+        builder.Property(x => x.TeacherCompensationType)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
         builder.Property(x => x.Role)
             .HasConversion<string>()   
             .HasMaxLength(20)
