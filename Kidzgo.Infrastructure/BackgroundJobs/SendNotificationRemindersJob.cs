@@ -100,9 +100,9 @@ public sealed class SendNotificationRemindersJob(
         // Get existing notifications to avoid duplicates
         var sessionIds = sessions.Select(s => s.Id).ToList();
         var existingNotifications = await db.Notifications
-            .Where(n => 
-                n.Channel == NotificationChannel.Email &&
-                n.Status == NotificationStatus.Sent &&
+            .Where(n =>
+                n.Channel == NotificationChannel.InApp &&
+                n.Kind == "session_reminder" &&
                 !string.IsNullOrEmpty(n.TemplateId) &&
                 sessionIds.Any(sid => n.TemplateId == sid.ToString()))
             .Select(n => $"{n.TemplateId}_{n.RecipientUserId}")
@@ -119,7 +119,7 @@ public sealed class SendNotificationRemindersJob(
                     .Include(sp => sp.User)
                     .FirstOrDefaultAsync(sp => sp.Id == participant.StudentProfileId, cancellationToken);
 
-                if (studentProfile?.User == null || string.IsNullOrWhiteSpace(studentProfile.User.Email))
+                if (studentProfile?.User == null)
                     continue;
 
                 // Check if notification already sent
