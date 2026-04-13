@@ -110,6 +110,20 @@ public sealed class CreateMissionCommandHandler(
         var startAtUtc = VietnamTime.NormalizeToUtc(command.StartAt);
         var endAtUtc = VietnamTime.NormalizeToUtc(command.EndAt);
 
+        var rewardRuleResult = await MissionRewardRuleResolver.ResolveActiveAsync(
+            context,
+            command.MissionType,
+            command.ProgressMode,
+            command.TotalRequired,
+            cancellationToken);
+
+        if (rewardRuleResult.IsFailure)
+        {
+            return Result.Failure<CreateMissionResponse>(rewardRuleResult.Error);
+        }
+
+        var rewardRule = rewardRuleResult.Value;
+
         var mission = new Mission
         {
             Id = Guid.NewGuid(),
@@ -123,9 +137,9 @@ public sealed class CreateMissionCommandHandler(
             ProgressMode = command.ProgressMode,
             StartAt = startAtUtc,
             EndAt = endAtUtc,
-            RewardStars = command.RewardStars,
-            RewardExp = command.RewardExp,
-            TotalRequired = command.TotalRequired,
+            RewardStars = rewardRule.RewardStars,
+            RewardExp = rewardRule.RewardExp,
+            TotalRequired = rewardRule.TotalRequired,
             CreatedBy = userId,
             CreatedAt = now
         };

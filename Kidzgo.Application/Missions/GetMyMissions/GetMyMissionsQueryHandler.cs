@@ -36,7 +36,8 @@ public sealed class GetMyMissionsQueryHandler(
 
         // Apply pagination and ordering
         var progresses = await baseQuery
-            .OrderByDescending(mp => mp.Status == MissionProgressStatus.Completed)
+            .OrderBy(mp => mp.Status == MissionProgressStatus.Completed)
+            .ThenByDescending(mp => mp.Mission.CreatedAt)
             .ThenBy(mp => mp.Mission.EndAt ?? DateTime.MaxValue)
             .ThenByDescending(mp => mp.Id)
             .Skip((query.PageNumber - 1) * query.PageSize)
@@ -59,6 +60,7 @@ public sealed class GetMyMissionsQueryHandler(
                 RewardExp = mp.Mission.RewardExp,
                 StartAt = mp.Mission.StartAt,
                 EndAt = mp.Mission.EndAt,
+                CreatedAt = mp.Mission.CreatedAt,
                 CompletedAt = mp.CompletedAt
             })
             .ToListAsync(cancellationToken);

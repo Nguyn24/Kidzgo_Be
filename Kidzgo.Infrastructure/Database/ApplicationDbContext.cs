@@ -79,6 +79,7 @@ public sealed class ApplicationDbContext(
     public DbSet<StudentLevel> StudentLevels => Set<StudentLevel>();
     public DbSet<AttendanceStreak> AttendanceStreaks => Set<AttendanceStreak>();
     public DbSet<GamificationSettings> GamificationSettings => Set<GamificationSettings>();
+    public DbSet<MissionRewardRule> MissionRewardRules => Set<MissionRewardRule>();
 
     // Lesson Plans
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();

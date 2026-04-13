@@ -3,6 +3,7 @@ using System;
 using Kidzgo.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kidzgo.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260413042519_FixGamificationAndMission")]
+    partial class FixGamificationAndMission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1210,50 +1213,6 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasDatabaseName("mission_progress_unique");
 
                     b.ToTable("MissionProgresses", "public");
-                });
-
-            modelBuilder.Entity("Kidzgo.Domain.Gamification.MissionRewardRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MissionType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("ProgressMode")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Count");
-
-                    b.Property<int>("RewardExp")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RewardStars")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalRequired")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MissionType", "ProgressMode", "TotalRequired")
-                        .IsUnique();
-
-                    b.ToTable("MissionRewardRules", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Gamification.RewardRedemption", b =>

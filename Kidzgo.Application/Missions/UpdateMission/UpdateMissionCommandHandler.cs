@@ -113,6 +113,21 @@ public sealed class UpdateMissionCommandHandler(
 
         var startAtUtc = VietnamTime.NormalizeToUtc(command.StartAt);
         var endAtUtc = VietnamTime.NormalizeToUtc(command.EndAt);
+        var progressMode = command.ProgressMode ?? mission.ProgressMode;
+
+        var rewardRuleResult = await MissionRewardRuleResolver.ResolveActiveAsync(
+            context,
+            command.MissionType,
+            progressMode,
+            command.TotalRequired,
+            cancellationToken);
+
+        if (rewardRuleResult.IsFailure)
+        {
+            return Result.Failure<UpdateMissionResponse>(rewardRuleResult.Error);
+        }
+
+        var rewardRule = rewardRuleResult.Value;
 
         // Update mission
         mission.Title = command.Title;
@@ -122,16 +137,12 @@ public sealed class UpdateMissionCommandHandler(
         mission.TargetStudentId = command.TargetStudentId;
         mission.TargetGroup = command.TargetGroup;
         mission.MissionType = command.MissionType;
-        if (command.ProgressMode.HasValue)
-        {
-            mission.ProgressMode = command.ProgressMode.Value;
-        }
-
+        mission.ProgressMode = progressMode;
         mission.StartAt = startAtUtc;
         mission.EndAt = endAtUtc;
-        mission.RewardStars = command.RewardStars;
-        mission.RewardExp = command.RewardExp;
-        mission.TotalRequired = command.TotalRequired;
+        mission.RewardStars = rewardRule.RewardStars;
+        mission.RewardExp = rewardRule.RewardExp;
+        mission.TotalRequired = rewardRule.TotalRequired;
 
         await context.SaveChangesAsync(cancellationToken);
 

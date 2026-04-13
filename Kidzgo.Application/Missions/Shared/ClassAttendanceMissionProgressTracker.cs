@@ -26,6 +26,7 @@ public static class ClassAttendanceMissionProgressTracker
                          mp.Status == MissionProgressStatus.InProgress)
             .Where(mp => mp.Mission.Scope != MissionScope.Class ||
                          mp.Mission.TargetClassId == session.ClassId)
+            .Where(mp => mp.Mission.CreatedAt <= attendanceAt)
             .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= attendanceAt)
             .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= attendanceAt)
             .ToListAsync(cancellationToken);
@@ -70,7 +71,7 @@ public static class ClassAttendanceMissionProgressTracker
             .Where(a => a.StudentProfileId == studentProfileId)
             .Where(a => a.AttendanceStatus == AttendanceStatus.Present)
             .Where(a => !targetClassId.HasValue || a.Session.ClassId == targetClassId.Value)
-            .Where(a => mission.StartAt == null || (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) >= mission.StartAt)
+            .Where(a => (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) >= GetMissionEffectiveStartAt(mission))
             .Where(a => mission.EndAt == null || (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) <= mission.EndAt)
             .Where(a => (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) <= asOfAt)
             .Select(a => a.SessionId)
@@ -92,7 +93,7 @@ public static class ClassAttendanceMissionProgressTracker
         var records = await context.Attendances
             .Where(a => a.StudentProfileId == studentProfileId)
             .Where(a => !targetClassId.HasValue || a.Session.ClassId == targetClassId.Value)
-            .Where(a => mission.StartAt == null || (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) >= mission.StartAt)
+            .Where(a => (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) >= GetMissionEffectiveStartAt(mission))
             .Where(a => mission.EndAt == null || (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) <= mission.EndAt)
             .Where(a => (a.Session.ActualDatetime ?? a.Session.PlannedDatetime) <= asOfAt)
             .OrderBy(a => a.Session.ActualDatetime ?? a.Session.PlannedDatetime)
@@ -119,6 +120,11 @@ public static class ClassAttendanceMissionProgressTracker
 
         return streak;
     }
+
+    private static DateTime GetMissionEffectiveStartAt(Mission mission)
+        => mission.StartAt.HasValue && mission.StartAt.Value > mission.CreatedAt
+            ? mission.StartAt.Value
+            : mission.CreatedAt;
 
     private sealed record AttendanceProgressRecord(Guid SessionId, AttendanceStatus AttendanceStatus);
 }

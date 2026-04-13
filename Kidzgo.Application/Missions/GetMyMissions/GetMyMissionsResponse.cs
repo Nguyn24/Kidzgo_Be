@@ -25,5 +25,6 @@ public sealed class MyMissionProgressDto
     public int? RewardExp { get; init; }
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
+    public DateTime CreatedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
 }

@@ -21,6 +21,7 @@ public static class HomeworkMissionProgressTracker
             .Where(mp => mp.Mission.MissionType == MissionType.HomeworkStreak)
             .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
                          mp.Status == MissionProgressStatus.InProgress)
+            .Where(mp => mp.Mission.CreatedAt <= asOfAt)
             .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= asOfAt)
             .Where(mp => mp.Mission.EndAt == null ||
                          mp.Mission.EndAt >= asOfAt ||
@@ -149,8 +150,13 @@ public static class HomeworkMissionProgressTracker
            (!record.DueAt.HasValue || record.SubmittedAt.Value <= record.DueAt.Value);
 
     private static bool IsWithinMissionWindow(DateTime value, Mission mission)
-        => (mission.StartAt == null || value >= mission.StartAt.Value) &&
+        => value >= GetMissionEffectiveStartAt(mission) &&
            (mission.EndAt == null || value <= mission.EndAt.Value);
+
+    private static DateTime GetMissionEffectiveStartAt(Mission mission)
+        => mission.StartAt.HasValue && mission.StartAt.Value > mission.CreatedAt
+            ? mission.StartAt.Value
+            : mission.CreatedAt;
 
     private sealed record HomeworkProgressRecord(
         Guid AssignmentId,
