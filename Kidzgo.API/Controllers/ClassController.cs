@@ -1,4 +1,5 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Classes.AssignTeacher;
 using Kidzgo.Application.Classes.ChangeClassStatus;
@@ -9,6 +10,7 @@ using Kidzgo.Application.Classes.GetClassById;
 using Kidzgo.Application.Classes.GetClasses;
 using Kidzgo.Application.Classes.GetClassStudents;
 using Kidzgo.Application.Classes.UpdateClass;
+using Kidzgo.Application.Classes.UpdateClassColor;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -164,6 +166,29 @@ public class ClassController : ControllerBase
     }
 
     /// UC-061: XÃ³a má»m Class (Set status = Closed)
+    [HttpPatch("{classId:guid}/color")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateClassColor(
+        Guid classId,
+        [FromBody] UpdateClassColorRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateClassColorCommand
+        {
+            ClassId = classId,
+            Color = request.Color
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return CustomResults.Problem(result);
+        }
+
+        return Results.Ok(new { isSuccess = true });
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IResult> DeleteClass(
