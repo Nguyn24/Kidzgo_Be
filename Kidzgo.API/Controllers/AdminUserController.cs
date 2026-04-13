@@ -87,7 +87,8 @@ public class AdminUserController : ControllerBase
             Password = request.Password,
             Role = request.Role,
             BranchId = request.BranchId,
-            PhoneNumber = request.PhoneNumber
+            PhoneNumber = request.PhoneNumber,
+            TeacherCompensationType = request.TeacherCompensationType
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -108,6 +109,7 @@ public class AdminUserController : ControllerBase
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             Role = request.Role,
+            TeacherCompensationType = request.TeacherCompensationType,
             IsActive = request.IsActive,
             isDeleted = request.IsDeleted
         };

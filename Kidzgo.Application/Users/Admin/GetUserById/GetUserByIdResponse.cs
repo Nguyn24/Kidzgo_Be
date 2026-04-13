@@ -10,6 +10,7 @@ public sealed class GetUserByIdResponse
     public string? PhoneNumber { get; set; }
     public string Email { get; set; } = null!;
     public string Role { get; set; } = null!;
+    public string? TeacherCompensationType { get; set; }
     public Guid? BranchId { get; set; }
     public string? BranchCode { get; set; }
     public string? BranchName { get; set; }

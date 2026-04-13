@@ -10,6 +10,9 @@ using Kidzgo.Application.Sessions.GetTeacherTimetable;
 using Kidzgo.Application.Users.GetCurrentUser;
 using Kidzgo.Application.Users.GetTeacherOverview;
 using Kidzgo.Application.Users.UpdateCurrentUser;
+using Kidzgo.Domain.Payroll;
+using Kidzgo.Domain.Sessions;
+using Kidzgo.Domain.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -211,6 +214,29 @@ public class TeacherController : ControllerBase
             ? _userContext.UserId
             : teacherUserId ?? _userContext.UserId;
 
+        var teacherProfile = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == targetTeacherId)
+            .Select(u => new
+            {
+                u.Id,
+                u.TeacherCompensationType
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (teacherProfile is null)
+        {
+            return Results.Problem(title: "Teacher", detail: "Teacher not found", statusCode: StatusCodes.Status404NotFound);
+        }
+
+        var compensationSettings = await _context.TeacherCompensationSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var standardSessionDurationMinutes = compensationSettings?.StandardSessionDurationMinutes > 0
+            ? compensationSettings.StandardSessionDurationMinutes
+            : 90;
+
         var workHoursQuery = _context.MonthlyWorkHours
             .AsNoTracking()
             .Where(m => m.StaffUserId == targetTeacherId);
@@ -220,24 +246,161 @@ public class TeacherController : ControllerBase
             workHoursQuery = workHoursQuery.Where(m => m.Year == year.Value);
         }
 
-        var monthlyData = await workHoursQuery
-            .OrderBy(m => m.Year)
-            .ThenBy(m => m.Month)
+        var workHours = await workHoursQuery
             .Select(m => new
             {
-                month = $"{m.Year:D4}-{m.Month:D2}",
-                hours = m.TotalHours,
-                income = _context.PayrollPayments
-                    .Where(p => p.StaffUserId == targetTeacherId && p.PaidAt != null && p.PaidAt.Value.Year == m.Year && p.PaidAt.Value.Month == m.Month)
-                    .Sum(p => (decimal?)p.Amount) ?? 0,
-                rate = m.Contract.HourlyRate,
-                classCount = m.TeachingSessions,
-                status = m.IsLocked ? "Locked" : "Open"
+                m.Year,
+                m.Month,
+                m.TotalHours,
+                m.TeachingSessions,
+                m.IsLocked,
+                ContractHourlyRate = m.Contract.HourlyRate
             })
             .ToListAsync(cancellationToken);
 
+        var sessionsQuery = _context.Sessions
+            .AsNoTracking()
+            .Where(s =>
+                s.Status != SessionStatus.Cancelled &&
+                (((s.ActualTeacherId ?? s.PlannedTeacherId) == targetTeacherId) ||
+                 ((s.ActualAssistantId ?? s.PlannedAssistantId) == targetTeacherId)));
+
+        if (year.HasValue)
+        {
+            sessionsQuery = sessionsQuery.Where(s =>
+                (s.ActualDatetime.HasValue ? s.ActualDatetime.Value.Year : s.PlannedDatetime.Year) == year.Value);
+        }
+
+        var teacherSessions = await sessionsQuery
+            .Select(s => new TeacherTimesheetSessionRow
+            {
+                Id = s.Id,
+                OccurredAt = s.ActualDatetime ?? s.PlannedDatetime,
+                DurationMinutes = s.DurationMinutes,
+                IsAssistant = (s.ActualAssistantId ?? s.PlannedAssistantId) == targetTeacherId
+            })
+            .ToListAsync(cancellationToken);
+
+        var sessionIds = teacherSessions.Select(s => s.Id).ToList();
+
+        var sessionRoleOverrides = sessionIds.Count == 0
+            ? new List<TeacherSessionRoleOverride>()
+            : await _context.SessionRoles
+                .AsNoTracking()
+                .Where(sr => sr.StaffUserId == targetTeacherId && sessionIds.Contains(sr.SessionId))
+                .Select(sr => new TeacherSessionRoleOverride
+                {
+                    SessionId = sr.SessionId,
+                    RoleType = sr.RoleType,
+                    PayableUnitPrice = sr.PayableUnitPrice,
+                    PayableAllowance = sr.PayableAllowance
+                })
+                .ToListAsync(cancellationToken);
+
+        var contracts = await _context.Contracts
+            .AsNoTracking()
+            .Where(c => c.StaffUserId == targetTeacherId)
+            .Select(c => new TeacherContractRate
+            {
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                HourlyRate = c.HourlyRate,
+                IsActive = c.IsActive
+            })
+            .ToListAsync(cancellationToken);
+
+        var workHoursLookup = workHours.ToDictionary(
+            x => GetMonthKey(x.Year, x.Month),
+            x => x);
+
+        var roleOverridesLookup = sessionRoleOverrides
+            .GroupBy(x => x.SessionId)
+            .ToDictionary(x => x.Key, x => (IReadOnlyCollection<TeacherSessionRoleOverride>)x.ToList());
+
+        var effectiveTeacherType = teacherProfile.TeacherCompensationType ?? TeacherCompensationType.VietnameseTeacher;
+
+        var sessionSummaries = teacherSessions
+            .Select(session =>
+            {
+                roleOverridesLookup.TryGetValue(session.Id, out var sessionOverrides);
+                var sessionRoleOverride = SelectMatchingSessionRole(session.IsAssistant, sessionOverrides);
+
+                var defaultSessionRate = ResolveDefaultSessionRate(
+                    session.IsAssistant,
+                    effectiveTeacherType,
+                    compensationSettings);
+
+                var contractHourlyRate = ResolveContractHourlyRate(contracts, DateOnly.FromDateTime(session.OccurredAt));
+                var fallbackSessionRate = contractHourlyRate.HasValue
+                    ? Math.Round(contractHourlyRate.Value * standardSessionDurationMinutes / 60m, 2)
+                    : 0m;
+
+                var effectiveSessionRate = sessionRoleOverride?.PayableUnitPrice
+                    ?? (defaultSessionRate > 0 ? defaultSessionRate : fallbackSessionRate);
+
+                var allowance = sessionRoleOverride?.PayableAllowance ?? 0m;
+                var proratedIncome = standardSessionDurationMinutes <= 0
+                    ? 0m
+                    : Math.Round(effectiveSessionRate * session.DurationMinutes / standardSessionDurationMinutes, 2);
+
+                return new
+                {
+                    session.OccurredAt,
+                    session.DurationMinutes,
+                    SessionRate = effectiveSessionRate,
+                    Income = proratedIncome + allowance
+                };
+            })
+            .ToList();
+
+        var sessionMonthLookup = sessionSummaries
+            .GroupBy(x => GetMonthKey(x.OccurredAt.Year, x.OccurredAt.Month))
+            .ToDictionary(
+                x => x.Key,
+                x => new
+                {
+                    Hours = Math.Round(x.Sum(item => item.DurationMinutes) / 60m, 2),
+                    Income = Math.Round(x.Sum(item => item.Income), 2),
+                    AverageSessionRate = x.Any() ? Math.Round(x.Average(item => item.SessionRate), 2) : 0m,
+                    SessionCount = x.Count()
+                });
+
+        var monthKeys = workHoursLookup.Keys
+            .Union(sessionMonthLookup.Keys)
+            .OrderBy(x => x)
+            .ToList();
+
+        var monthlyData = monthKeys
+            .Select(monthKey =>
+            {
+                workHoursLookup.TryGetValue(monthKey, out var workHour);
+                sessionMonthLookup.TryGetValue(monthKey, out var sessionMonth);
+
+                return new
+                {
+                    month = monthKey,
+                    hours = workHour?.TotalHours ?? sessionMonth?.Hours ?? 0m,
+                    income = sessionMonth?.Income ?? 0m,
+                    rate = sessionMonth?.AverageSessionRate
+                        ?? (workHour?.ContractHourlyRate.HasValue == true
+                            ? Math.Round(workHour.ContractHourlyRate.Value * standardSessionDurationMinutes / 60m, 2)
+                            : 0m),
+                    classCount = workHour?.TeachingSessions ?? sessionMonth?.SessionCount ?? 0,
+                    status = workHour?.IsLocked == true ? "Locked" : "Open"
+                };
+            })
+            .ToList();
+
         return OkData(new
         {
+            teacherCompensationType = effectiveTeacherType.ToString(),
+            standardSessionDurationMinutes,
+            defaultRates = new
+            {
+                foreignTeacher = compensationSettings?.ForeignTeacherDefaultSessionRate ?? 0m,
+                vietnameseTeacher = compensationSettings?.VietnameseTeacherDefaultSessionRate ?? 0m,
+                assistant = compensationSettings?.AssistantDefaultSessionRate ?? 0m
+            },
             monthlyData,
             yearlySummary = new
             {
@@ -252,5 +415,80 @@ public class TeacherController : ControllerBase
     private static IResult OkData<T>(T data)
     {
         return Results.Ok(ApiResult<T>.Success(data));
+    }
+
+    private static string GetMonthKey(int year, int month)
+    {
+        return $"{year:D4}-{month:D2}";
+    }
+
+    private static decimal ResolveDefaultSessionRate(
+        bool isAssistant,
+        TeacherCompensationType teacherCompensationType,
+        TeacherCompensationSettings? compensationSettings)
+    {
+        if (isAssistant)
+        {
+            return compensationSettings?.AssistantDefaultSessionRate ?? 0m;
+        }
+
+        return teacherCompensationType switch
+        {
+            TeacherCompensationType.ForeignTeacher => compensationSettings?.ForeignTeacherDefaultSessionRate ?? 0m,
+            TeacherCompensationType.Assistant => compensationSettings?.AssistantDefaultSessionRate ?? 0m,
+            _ => compensationSettings?.VietnameseTeacherDefaultSessionRate ?? 0m
+        };
+    }
+
+    private static decimal? ResolveContractHourlyRate(
+        IReadOnlyCollection<TeacherContractRate> contracts,
+        DateOnly sessionDate)
+    {
+        return contracts
+            .Where(c => c.StartDate <= sessionDate && (!c.EndDate.HasValue || c.EndDate.Value >= sessionDate))
+            .OrderByDescending(c => c.IsActive)
+            .ThenByDescending(c => c.StartDate)
+            .Select(c => c.HourlyRate)
+            .FirstOrDefault();
+    }
+
+    private static TeacherSessionRoleOverride? SelectMatchingSessionRole(
+        bool isAssistant,
+        IReadOnlyCollection<TeacherSessionRoleOverride>? sessionOverrides)
+    {
+        if (sessionOverrides is null || sessionOverrides.Count == 0)
+        {
+            return null;
+        }
+
+        return sessionOverrides.FirstOrDefault(overrideItem =>
+                   isAssistant
+                       ? overrideItem.RoleType == SessionRoleType.Assistant
+                       : overrideItem.RoleType != SessionRoleType.Assistant)
+               ?? sessionOverrides.First();
+    }
+
+    private sealed class TeacherTimesheetSessionRow
+    {
+        public Guid Id { get; init; }
+        public DateTime OccurredAt { get; init; }
+        public int DurationMinutes { get; init; }
+        public bool IsAssistant { get; init; }
+    }
+
+    private sealed class TeacherSessionRoleOverride
+    {
+        public Guid SessionId { get; init; }
+        public SessionRoleType RoleType { get; init; }
+        public decimal? PayableUnitPrice { get; init; }
+        public decimal? PayableAllowance { get; init; }
+    }
+
+    private sealed class TeacherContractRate
+    {
+        public DateOnly StartDate { get; init; }
+        public DateOnly? EndDate { get; init; }
+        public decimal? HourlyRate { get; init; }
+        public bool IsActive { get; init; }
     }
 }
