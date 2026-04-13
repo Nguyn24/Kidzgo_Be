@@ -44,10 +44,9 @@ public class MissionController : ControllerBase
             TargetStudentId = request.TargetStudentId,
             TargetGroup = request.TargetGroup,
             MissionType = request.MissionType,
+            ProgressMode = request.ProgressMode,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
-            RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp,
             TotalRequired = request.TotalRequired
         };
 
@@ -119,10 +118,9 @@ public class MissionController : ControllerBase
             TargetStudentId = request.TargetStudentId,
             TargetGroup = request.TargetGroup,
             MissionType = request.MissionType,
+            ProgressMode = request.ProgressMode,
             StartAt = request.StartAt,
             EndAt = request.EndAt,
-            RewardStars = request.RewardStars,
-            RewardExp = request.RewardExp,
             TotalRequired = request.TotalRequired
         };
 

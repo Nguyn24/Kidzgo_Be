@@ -12,7 +12,7 @@ namespace Kidzgo.Application.Gamification.CancelRewardRedemption;
 
 /// <summary>
 /// UC-232: Staff từ chối Reward Redemption (CANCELLED)
-/// Note: Khi cancel, cần hoàn lại stars và tăng lại quantity của item
+/// Note: Khi cancel, chỉ hoàn lại stars; item quantity được giữ nguyên để dành cho luồng tồn kho sau này.
 /// </summary>
 public sealed class CancelRewardRedemptionCommandHandler(
     IDbContext context,
@@ -41,28 +41,21 @@ public sealed class CancelRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.InvalidStatusTransition(redemption.Status, RedemptionStatus.Cancelled));
         }
 
-        // Get item to restore quantity and get cost stars
-        var item = redemption.Item;
-        if (item == null)
+        var totalCostStars = redemption.StarsDeducted;
+        if (!totalCostStars.HasValue && redemption.Item == null)
         {
             return Result.Failure<CancelRewardRedemptionResponse>(
                 RewardRedemptionErrors.ItemNotFound(redemption.ItemId));
         }
 
         var now = VietnamTime.UtcNow();
-
-        // Calculate total cost based on quantity
-        var totalCostStars = redemption.StarsDeducted ?? (item.CostStars * redemption.Quantity);
-
-        // Restore item quantity
-        item.Quantity += redemption.Quantity;
-        item.UpdatedAt = now;
+        totalCostStars ??= redemption.Item!.CostStars * redemption.Quantity;
 
         // Refund stars to student
         var addStarsCommand = new AddStarsCommand
         {
             StudentProfileId = redemption.StudentProfileId,
-            Amount = totalCostStars, // Refund the total cost based on quantity
+            Amount = totalCostStars.Value,
             Reason = $"Refund for cancelled redemption: {redemption.ItemName} x{redemption.Quantity}"
         };
 

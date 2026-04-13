@@ -10,6 +10,7 @@ public sealed class UpdateMissionResponse
     public Guid? TargetStudentId { get; init; }
     public List<Guid>? TargetGroup { get; init; }
     public string MissionType { get; init; } = null!;
+    public string ProgressMode { get; init; } = null!;
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
     public int? RewardStars { get; init; }

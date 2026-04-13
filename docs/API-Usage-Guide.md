@@ -4924,6 +4924,8 @@ Base URL: `/api/leads`
 
 **Authorization:** Required (Roles: `Admin`, `ManagementStaff`, `AccountantStaff`)
 
+**Note:** Response detail lead hiện có thêm `programInterestSummary`, là chuỗi tổng hợp từ các `LeadChild.ProgramInterest` khác rỗng, loại trùng và nối bằng dấu phẩy.
+
 ---
 
 ### 19.5. Update Lead

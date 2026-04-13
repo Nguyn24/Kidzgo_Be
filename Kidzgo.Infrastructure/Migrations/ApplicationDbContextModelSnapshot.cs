@@ -423,6 +423,16 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateOnly>("EnrollDate")
                         .HasColumnType("date");
 
+                    b.Property<DateTime?>("EnrollmentConfirmationPdfGeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("EnrollmentConfirmationPdfGeneratedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EnrollmentConfirmationPdfUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<Guid?>("RegistrationId")
                         .HasColumnType("uuid");
 
@@ -1116,6 +1126,13 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("ProgressMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Count");
+
                     b.Property<int?>("RewardExp")
                         .HasColumnType("integer");
 
@@ -1193,6 +1210,50 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasDatabaseName("mission_progress_unique");
 
                     b.ToTable("MissionProgresses", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Gamification.MissionRewardRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MissionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProgressMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Count");
+
+                    b.Property<int>("RewardExp")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RewardStars")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalRequired")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MissionType", "ProgressMode", "TotalRequired")
+                        .IsUnique();
+
+                    b.ToTable("MissionRewardRules", "public");
                 });
 
             modelBuilder.Entity("Kidzgo.Domain.Gamification.RewardRedemption", b =>

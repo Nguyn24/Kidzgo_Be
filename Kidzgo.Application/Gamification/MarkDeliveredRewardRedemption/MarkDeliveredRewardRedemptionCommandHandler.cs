@@ -1,4 +1,3 @@
-using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
@@ -11,10 +10,8 @@ namespace Kidzgo.Application.Gamification.MarkDeliveredRewardRedemption;
 /// <summary>
 /// UC-233: Staff trao quà (DELIVERED)
 /// </summary>
-public sealed class MarkDeliveredRewardRedemptionCommandHandler(
-    IDbContext context,
-    IUserContext userContext
-) : ICommandHandler<MarkDeliveredRewardRedemptionCommand, MarkDeliveredRewardRedemptionResponse>
+public sealed class MarkDeliveredRewardRedemptionCommandHandler(IDbContext context)
+    : ICommandHandler<MarkDeliveredRewardRedemptionCommand, MarkDeliveredRewardRedemptionResponse>
 {
     public async Task<Result<MarkDeliveredRewardRedemptionResponse>> Handle(
         MarkDeliveredRewardRedemptionCommand command,

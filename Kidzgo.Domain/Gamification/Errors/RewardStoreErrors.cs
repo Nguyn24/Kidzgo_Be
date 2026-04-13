@@ -13,10 +13,5 @@ public static class RewardStoreErrors
         Error.Validation(
             "RewardStore.InvalidCostStars",
             "Cost stars must be greater than 0");
-
-    public static Error InvalidQuantity =>
-        Error.Validation(
-            "RewardStore.InvalidQuantity",
-            "Quantity must be greater than or equal to 0");
 }
 

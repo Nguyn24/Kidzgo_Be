@@ -11,6 +11,7 @@ public sealed class GetLeadByIdResponse
     public string? Email { get; init; }
     public string? Company { get; init; }
     public string? Subject { get; init; }
+    public string? ProgramInterestSummary { get; init; }
     public Guid? BranchPreference { get; init; }
     public string? BranchPreferenceName { get; init; }
     public string? Notes { get; init; }

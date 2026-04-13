@@ -13,6 +13,9 @@ public sealed class MissionProgressInfoDto
 {
     public Guid Id { get; init; }
     public string Title { get; init; } = null!;
+    public string MissionType { get; init; } = null!;
+    public string ProgressMode { get; init; } = null!;
+    public int? TotalRequired { get; init; }
 }
 
 public sealed class MissionProgressDto
@@ -23,6 +26,7 @@ public sealed class MissionProgressDto
     public string StudentName { get; init; } = null!;
     public string Status { get; init; } = null!;
     public decimal? ProgressValue { get; init; }
+    public int? TotalRequired { get; init; }
     public decimal ProgressPercentage { get; init; }
     public DateTime? CompletedAt { get; init; }
     public Guid? VerifiedBy { get; init; }

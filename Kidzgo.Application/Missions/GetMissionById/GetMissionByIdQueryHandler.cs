@@ -37,10 +37,12 @@ public sealed class GetMissionByIdQueryHandler(
             TargetStudentId = mission.TargetStudentId,
             TargetGroup = mission.TargetGroup,
             MissionType = mission.MissionType.ToString(),
+            ProgressMode = mission.ProgressMode.ToString(),
             StartAt = mission.StartAt,
             EndAt = mission.EndAt,
             RewardStars = mission.RewardStars,
             RewardExp = mission.RewardExp,
+            TotalRequired = mission.TotalRequired,
             CreatedBy = mission.CreatedBy,
             CreatedByName = mission.CreatedByUser != null ? mission.CreatedByUser.Name : null,
             CreatedAt = mission.CreatedAt

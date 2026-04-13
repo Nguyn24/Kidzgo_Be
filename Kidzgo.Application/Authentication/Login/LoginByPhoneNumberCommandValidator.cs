@@ -12,6 +12,6 @@ public sealed class LoginByPhoneNumberCommandValidator : AbstractValidator<Login
             .NotEmpty()
             .WithMessage("Phone number is required")
             .Must(PhoneNumberNormalizer.IsValidVietnamesePhoneNumber)
-            .WithMessage("Phone number must be a valid Vietnamese phone number");
+            .WithMessage("Phone number must be a valid 10-digit Vietnamese phone number");
     }
 }

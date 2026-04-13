@@ -46,6 +46,12 @@ public class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.ProgressMode)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired()
+            .HasDefaultValue(MissionProgressMode.Count);
+
         builder.Property(x => x.StartAt);
 
         builder.Property(x => x.EndAt);

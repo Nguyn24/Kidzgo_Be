@@ -69,7 +69,7 @@ public static class PhoneNumberNormalizer
 
     private static bool IsValidLocalVietnamesePhoneNumber(string phoneNumber)
     {
-        return phoneNumber.Length is 10 or 11 &&
+        return phoneNumber.Length == 10 &&
                phoneNumber.StartsWith("0", StringComparison.Ordinal);
     }
 }

@@ -17,9 +17,12 @@ public sealed class CreateLeadCommandHandler(
         CreateLeadCommand command,
         CancellationToken cancellationToken)
     {
+        var normalizedPhone = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.Phone);
+        var phoneLookupCandidates = PhoneNumberNormalizer.GetLookupCandidates(command.Phone);
+
         // Validate required fields
         if (string.IsNullOrWhiteSpace(command.ContactName) &&
-            string.IsNullOrWhiteSpace(command.Phone) &&
+            normalizedPhone is null &&
             string.IsNullOrWhiteSpace(command.Email) &&
             string.IsNullOrWhiteSpace(command.ZaloId))
         {
@@ -30,7 +33,9 @@ public sealed class CreateLeadCommandHandler(
         // Check for duplicate lead (by phone, email, or zalo_id)
         var duplicateLead = await context.Leads
             .FirstOrDefaultAsync(l =>
-                (!string.IsNullOrWhiteSpace(command.Phone) && l.Phone == command.Phone) ||
+                (phoneLookupCandidates.Length > 0 &&
+                 l.Phone != null &&
+                 phoneLookupCandidates.Contains(l.Phone)) ||
                 (!string.IsNullOrWhiteSpace(command.Email) && l.Email == command.Email) ||
                 (!string.IsNullOrWhiteSpace(command.ZaloId) && l.ZaloId == command.ZaloId),
                 cancellationToken);
@@ -80,7 +85,7 @@ public sealed class CreateLeadCommandHandler(
             Source = command.Source,
             Campaign = command.Campaign?.Trim(),
             ContactName = command.ContactName.Trim(),
-            Phone = command.Phone?.Trim(),
+            Phone = normalizedPhone,
             ZaloId = command.ZaloId?.Trim(),
             Email = command.Email?.Trim(),
             Company = command.Company?.Trim(),
