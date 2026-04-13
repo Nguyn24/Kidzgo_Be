@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Media.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -15,19 +16,8 @@ public sealed class GetMediaQueryHandler(
 {
     public async Task<Result<GetMediaResponse>> Handle(GetMediaQuery query, CancellationToken cancellationToken)
     {
-        // Get StudentId from context (token)
-        var studentId = userContext.StudentId;
-
-        if (!studentId.HasValue)
-        {
-            return Result.Failure<GetMediaResponse>(ProfileErrors.StudentNotFound);
-        }
-
-        // Verify the student belongs to the current user
-        var profile = await context.Profiles
-            .FirstOrDefaultAsync(p => p.Id == studentId.Value && p.UserId == userContext.UserId, cancellationToken);
-
-        if (profile == null || profile.ProfileType != Domain.Users.ProfileType.Student)
+        var role = await MediaReadAccessHelper.GetCurrentUserRoleAsync(context, userContext, cancellationToken);
+        if (role is null)
         {
             return Result.Failure<GetMediaResponse>(ProfileErrors.StudentNotFound);
         }
@@ -53,13 +43,24 @@ public sealed class GetMediaQueryHandler(
             mediaQuery = mediaQuery.Where(m => m.ClassId == query.ClassId.Value);
         }
 
-        // Filter by student from context
-        mediaQuery = mediaQuery.Where(m => m.StudentProfileId == studentId.Value);
+        mediaQuery = await MediaReadAccessHelper.ApplyReadAccessFilterAsync(
+            mediaQuery,
+            context,
+            userContext,
+            query.StudentProfileId,
+            cancellationToken);
 
         // Filter by month tag
         if (!string.IsNullOrWhiteSpace(query.MonthTag))
         {
             mediaQuery = mediaQuery.Where(m => m.MonthTag == query.MonthTag);
+        }
+
+        if (query.Date.HasValue)
+        {
+            var startOfDay = query.Date.Value.Date;
+            var endOfDay = startOfDay.AddDays(1);
+            mediaQuery = mediaQuery.Where(m => m.CreatedAt >= startOfDay && m.CreatedAt < endOfDay);
         }
 
         // Filter by type

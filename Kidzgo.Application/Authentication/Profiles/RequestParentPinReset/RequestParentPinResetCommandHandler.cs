@@ -20,9 +20,14 @@ public sealed class RequestParentPinResetCommandHandler(
 
         Profile? profile = await context.Profiles
             .Include(p => p.User)
-            .SingleOrDefaultAsync(p => p.Id == command.ProfileId && p.UserId == userId, cancellationToken);
+            .SingleOrDefaultAsync(
+                p => p.UserId == userId &&
+                     p.ProfileType == ProfileType.Parent &&
+                     !p.IsDeleted &&
+                     p.IsActive,
+                cancellationToken);
 
-        if (profile is null || profile.ProfileType != ProfileType.Parent || profile.IsDeleted || !profile.IsActive)
+        if (profile is null)
         {
             return Result.Failure(ProfileErrors.Invalid);
         }

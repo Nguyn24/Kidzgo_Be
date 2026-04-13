@@ -1,5 +1,7 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Media.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Media.GetMediaById;
 
 public sealed class GetMediaByIdQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetMediaByIdQuery, GetMediaByIdResponse>
 {
     public async Task<Result<GetMediaByIdResponse>> Handle(GetMediaByIdQuery query, CancellationToken cancellationToken)
@@ -22,6 +25,13 @@ public sealed class GetMediaByIdQueryHandler(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (media is null)
+        {
+            return Result.Failure<GetMediaByIdResponse>(
+                MediaErrors.NotFound(query.Id));
+        }
+
+        var canRead = await MediaReadAccessHelper.CanReadAsync(context, userContext, media, cancellationToken);
+        if (!canRead)
         {
             return Result.Failure<GetMediaByIdResponse>(
                 MediaErrors.NotFound(query.Id));

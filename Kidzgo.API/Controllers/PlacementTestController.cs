@@ -8,10 +8,12 @@ using Kidzgo.Application.PlacementTests.GetPlacementTests;
 using Kidzgo.Application.PlacementTests.MarkPlacementTestNoShow;
 using Kidzgo.Application.PlacementTests.RetakePlacementTest;
 using Kidzgo.Application.PlacementTests.SchedulePlacementTest;
+using Kidzgo.Application.PlacementTests.CreatePlacementTestQuestionsFromBankMatrix;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTest;
 using Kidzgo.Application.PlacementTests.UpdatePlacementTestResults;
 using Kidzgo.Application.Abstraction.Query;
 using Kidzgo.Domain.CRM;
+using Kidzgo.Domain.Homework;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -167,6 +169,53 @@ public class PlacementTestController : ControllerBase
             SecondaryProgramRecommendationId = request.SecondaryProgramRecommendationId,
             SecondaryProgramSkillFocus = request.SecondaryProgramSkillFocus,
             AttachmentUrl = request.AttachmentUrl
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("{id}/questions/from-bank-matrix")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> CreatePlacementTestQuestionsFromBankMatrix(
+        Guid id,
+        [FromBody] CreatePlacementTestQuestionsFromBankMatrixRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!Enum.TryParse<HomeworkQuestionType>(
+                string.IsNullOrWhiteSpace(request.QuestionType) ? nameof(HomeworkQuestionType.MultipleChoice) : request.QuestionType,
+                ignoreCase: true,
+                out var questionType))
+        {
+            return Results.BadRequest($"Invalid question type: {request.QuestionType}");
+        }
+
+        var distribution = new List<PlacementTestQuestionMatrixLevelCountDto>();
+        for (int i = 0; i < request.Distribution.Count; i++)
+        {
+            var item = request.Distribution[i];
+            if (!Enum.TryParse<QuestionLevel>(item.Level, ignoreCase: true, out var level))
+            {
+                return Results.BadRequest($"Invalid level: {item.Level}");
+            }
+
+            distribution.Add(new PlacementTestQuestionMatrixLevelCountDto
+            {
+                Level = level,
+                Count = item.Count
+            });
+        }
+
+        var command = new CreatePlacementTestQuestionsFromBankMatrixCommand
+        {
+            PlacementTestId = id,
+            ProgramId = request.ProgramId,
+            QuestionType = questionType,
+            Skill = request.Skill,
+            Topic = request.Topic,
+            ShuffleQuestions = request.ShuffleQuestions,
+            TotalQuestions = request.TotalQuestions,
+            Distribution = distribution
         };
 
         var result = await _mediator.Send(command, cancellationToken);

@@ -4253,6 +4253,19 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("OtpAttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OtpCodeHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("OtpExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("OtpVerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 

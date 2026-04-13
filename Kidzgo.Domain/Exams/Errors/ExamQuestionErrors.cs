@@ -1,5 +1,7 @@
 using Kidzgo.Domain.Common;
 
+using Kidzgo.Domain.Homework;
+
 namespace Kidzgo.Domain.Exams.Errors;
 
 public static class ExamQuestionErrors
@@ -27,6 +29,26 @@ public static class ExamQuestionErrors
     public static readonly Error HasSubmissions = Error.Conflict(
         "ExamQuestion.HasSubmissions",
         "Cannot delete question that has submission answers");
+
+    public static readonly Error InvalidMatrixDistribution = Error.Validation(
+        "ExamQuestion.InvalidMatrixDistribution",
+        "Question distribution must have at least one level with count > 0");
+
+    public static Error MatrixTotalMismatch(int expectedTotal, int distributedTotal) => Error.Validation(
+        "ExamQuestion.MatrixTotalMismatch",
+        $"TotalQuestions = {expectedTotal} does not match distributed total = {distributedTotal}");
+
+    public static readonly Error UnsupportedQuestionBankType = Error.Validation(
+        "ExamQuestion.UnsupportedQuestionBankType",
+        "Question bank matrix currently supports only MultipleChoice and Text question types");
+
+    public static readonly Error CannotRegenerateWhenSubmissionsExist = Error.Conflict(
+        "ExamQuestion.CannotRegenerateWhenSubmissionsExist",
+        "Cannot regenerate exam questions because this exam already has submissions");
+
+    public static Error InsufficientQuestionsInBank(QuestionLevel level, int required, int available) => Error.Validation(
+        "ExamQuestion.InsufficientQuestionsInBank",
+        $"Not enough question bank items for level '{level}'. Required {required}, available {available}");
 }
 
 
