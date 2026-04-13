@@ -48,11 +48,12 @@ public sealed class GetMyMissionsQueryHandler(
                 Title = mp.Mission.Title,
                 Description = mp.Mission.Description,
                 MissionType = mp.Mission.MissionType.ToString(),
+                ProgressMode = mp.Mission.ProgressMode.ToString(),
                 Status = mp.Status.ToString(),
                 ProgressValue = mp.ProgressValue,
                 TotalRequired = mp.Mission.TotalRequired,
                 ProgressPercentage = mp.Mission.TotalRequired.HasValue && mp.Mission.TotalRequired.Value > 0
-                    ? (decimal)mp.ProgressValue.Value * 100 / mp.Mission.TotalRequired.Value
+                    ? (mp.ProgressValue ?? 0) * 100 / mp.Mission.TotalRequired.Value
                     : (mp.ProgressValue.HasValue ? 100m : 0m),
                 RewardStars = mp.Mission.RewardStars,
                 RewardExp = mp.Mission.RewardExp,

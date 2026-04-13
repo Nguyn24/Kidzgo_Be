@@ -47,6 +47,13 @@ public class ClassEnrollmentConfiguration : IEntityTypeConfiguration<ClassEnroll
         builder.Property(x => x.SessionSelectionPattern)
             .HasMaxLength(500);
 
+        builder.Property(x => x.EnrollmentConfirmationPdfUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(x => x.EnrollmentConfirmationPdfGeneratedAt);
+
+        builder.Property(x => x.EnrollmentConfirmationPdfGeneratedBy);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

@@ -19,10 +19,10 @@ public static class RewardRedemptionErrors
             "RewardRedemption.ItemNotActive",
             $"Reward store item {itemId} is not active");
 
-    public static Error InsufficientQuantity(Guid itemId, int available, int requested) =>
-        Error.Conflict(
-            "RewardRedemption.InsufficientQuantity",
-            $"Reward store item {itemId} has insufficient quantity. Available: {available}, Requested: {requested}");
+    public static Error InvalidQuantity =>
+        Error.Validation(
+            "RewardRedemption.InvalidQuantity",
+            "Quantity must be greater than 0");
 
     public static Error InsufficientStars(Guid studentProfileId, int currentBalance, int required) =>
         Error.Conflict(

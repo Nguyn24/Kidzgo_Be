@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
@@ -55,6 +56,13 @@ public sealed class CheckInAttendanceStreakCommandHandler(
 
         if (existingStreak != null)
         {
+            await DailyCheckInMissionProgressTracker.TrackAsync(
+                context,
+                gamificationService,
+                studentProfileId,
+                today,
+                cancellationToken);
+
             // Already checked in today, return existing record
             var allStreaksForMax = await context.AttendanceStreaks
                 .Where(s => s.StudentProfileId == studentProfileId)
@@ -139,64 +147,12 @@ public sealed class CheckInAttendanceStreakCommandHandler(
             "Daily Check-in",
             cancellationToken);
 
-        // ============================================================
-        // GIAI DOAN 3: Track NoUnexcusedAbsence Mission progress
-        // ============================================================
-        var now = VietnamTime.UtcNow();
-
-        var activeAttendanceMissions = await context.MissionProgresses
-            .Include(mp => mp.Mission)
-            .Where(mp => mp.StudentProfileId == studentProfileId)
-            .Where(mp => mp.Mission.MissionType == MissionType.NoUnexcusedAbsence)
-            .Where(mp => mp.Status == MissionProgressStatus.Assigned ||
-                         mp.Status == MissionProgressStatus.InProgress)
-            .Where(mp => mp.Mission.StartAt == null || mp.Mission.StartAt <= now)
-            .Where(mp => mp.Mission.EndAt == null || mp.Mission.EndAt >= now)
-            .ToListAsync(cancellationToken);
-
-        foreach (var missionProgress in activeAttendanceMissions)
-        {
-            if (missionProgress.Status == MissionProgressStatus.Assigned)
-            {
-                missionProgress.Status = MissionProgressStatus.InProgress;
-            }
-
-            missionProgress.ProgressValue = (missionProgress.ProgressValue ?? 0) + 1;
-
-            var totalRequired = missionProgress.Mission.TotalRequired;
-            if (totalRequired.HasValue && missionProgress.ProgressValue >= totalRequired.Value)
-            {
-                missionProgress.Status = MissionProgressStatus.Completed;
-                missionProgress.CompletedAt = now;
-
-                if (missionProgress.Mission.RewardStars.HasValue &&
-                    missionProgress.Mission.RewardStars.Value > 0)
-                {
-                    await gamificationService.AddStarsForMissionCompletion(
-                        studentProfileId,
-                        missionProgress.Mission.RewardStars.Value,
-                        missionProgress.MissionId,
-                        reason: $"Completed NoUnexcusedAbsence Mission: {missionProgress.Mission.Title}",
-                        cancellationToken);
-                }
-
-                if (missionProgress.Mission.RewardExp.HasValue &&
-                    missionProgress.Mission.RewardExp.Value > 0)
-                {
-                    await gamificationService.AddXpForMissionCompletion(
-                        studentProfileId,
-                        missionProgress.Mission.RewardExp.Value,
-                        missionProgress.MissionId,
-                        reason: $"Completed NoUnexcusedAbsence Mission: {missionProgress.Mission.Title}",
-                        cancellationToken);
-                }
-            }
-        }
-
-        if (activeAttendanceMissions.Count > 0)
-        {
-            await context.SaveChangesAsync(cancellationToken);
-        }
+        await DailyCheckInMissionProgressTracker.TrackAsync(
+            context,
+            gamificationService,
+            studentProfileId,
+            today,
+            cancellationToken);
 
         return Result.Success(new CheckInAttendanceStreakResponse
         {

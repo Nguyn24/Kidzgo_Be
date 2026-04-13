@@ -1,5 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework;
 using Kidzgo.Domain.Homework.Errors;
@@ -10,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Homework.MarkHomeworkLateOrMissing;
 
 public sealed class MarkHomeworkLateOrMissingCommandHandler(
-    IDbContext context
+    IDbContext context,
+    IGamificationService gamificationService
 ) : ICommandHandler<MarkHomeworkLateOrMissingCommand, MarkHomeworkLateOrMissingResponse>
 {
     public async Task<Result<MarkHomeworkLateOrMissingResponse>> Handle(
@@ -46,6 +49,13 @@ public sealed class MarkHomeworkLateOrMissingCommandHandler(
         homeworkStudent.Status = command.Status;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await HomeworkMissionProgressTracker.TrackAsync(
+            context,
+            gamificationService,
+            homeworkStudent.StudentProfileId,
+            VietnamTime.UtcNow(),
+            cancellationToken);
 
         return new MarkHomeworkLateOrMissingResponse
         {

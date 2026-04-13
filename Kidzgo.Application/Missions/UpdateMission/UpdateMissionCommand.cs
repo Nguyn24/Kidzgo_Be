@@ -13,6 +13,7 @@ public sealed class UpdateMissionCommand : ICommand<UpdateMissionResponse>
     public Guid? TargetStudentId { get; init; }
     public List<Guid>? TargetGroup { get; init; }
     public MissionType MissionType { get; init; }
+    public MissionProgressMode? ProgressMode { get; init; }
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
     public int? RewardStars { get; init; }

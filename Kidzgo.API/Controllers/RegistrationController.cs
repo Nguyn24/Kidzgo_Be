@@ -3,6 +3,7 @@ using Kidzgo.API.Requests;
 using Kidzgo.Application.Registrations.AssignClass;
 using Kidzgo.Application.Registrations.CancelRegistration;
 using Kidzgo.Application.Registrations.CreateRegistration;
+using Kidzgo.Application.Registrations.GenerateEnrollmentConfirmationPdf;
 using Kidzgo.Application.Registrations.GetRegistrationById;
 using Kidzgo.Application.Registrations.GetRegistrations;
 using Kidzgo.Application.Registrations.GetWaitingList;
@@ -162,6 +163,20 @@ public class RegistrationController : ControllerBase
             SessionSelectionPattern = request.SessionSelectionPattern
         };
 
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Xuat phieu xac nhan nhap hoc PDF sau khi hoc vien duoc xep lop
+    [HttpPost("{id:guid}/enrollment-confirmation-pdf")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GenerateEnrollmentConfirmationPdf(
+        Guid id,
+        [FromQuery] string track = "primary",
+        [FromQuery] bool regenerate = false,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new GenerateEnrollmentConfirmationPdfCommand(id, track, regenerate);
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }

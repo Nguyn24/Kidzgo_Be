@@ -37,7 +37,6 @@ public sealed class GetRewardStoreItemsQueryHandler(IDbContext context)
                 Description = i.Description,
                 ImageUrl = i.ImageUrl,
                 CostStars = i.CostStars,
-                Quantity = i.Quantity,
                 IsActive = i.IsActive,
                 CreatedAt = i.CreatedAt
             })
