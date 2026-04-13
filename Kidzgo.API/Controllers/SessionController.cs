@@ -1,4 +1,5 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Sessions.CancelSession;
 using Kidzgo.Application.Sessions.CheckSessionConflicts;
@@ -11,6 +12,7 @@ using Kidzgo.Application.Sessions.GetSessionRoles;
 using Kidzgo.Application.Sessions.GetSessions;
 using Kidzgo.Application.Sessions.GenerateSessionsFromPattern;
 using Kidzgo.Application.Sessions.UpdateSession;
+using Kidzgo.Application.Sessions.UpdateSessionColor;
 using Kidzgo.Application.Sessions.UpdateSessionRole;
 using Kidzgo.Application.Sessions.UpdateSessionsByClass;
 using MediatR;
@@ -146,7 +148,31 @@ public class SessionController : ControllerBase
         return result.MatchOk();
     }
 
-    /// UC-079-Bulk: Cập nhật nhiều Sessions của một Class cùng lúc
+    /// UC-079-Color: Cap nhat mau hien thi cua Session
+    [HttpPatch("{id:guid}/color")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> UpdateSessionColor(
+        Guid id,
+        [FromBody] UpdateSessionColorRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateSessionColorCommand
+        {
+            SessionId = id,
+            Color = request.Color
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return CustomResults.Problem(result);
+        }
+
+        return Results.Ok(new { isSuccess = true });
+    }
+
+    /// UC-079-Bulk: Cap nhat nhieu Sessions cua mot Class cung luc
     [HttpPut("by-class")]
     [Authorize(Roles = "Admin,ManagementStaff")]
     public async Task<IResult> UpdateSessionsByClass(
