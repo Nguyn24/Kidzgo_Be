@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using System.Net;
 using System.Text;
 using Kidzgo.Application.Abstraction.Authentication;
@@ -7,6 +8,7 @@ using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Users.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Kidzgo.Application.Profiles.CreateProfile;
 
@@ -14,7 +16,8 @@ public sealed class ProfileCreatedDomainEventHandler(
     IDbContext context,
     IMailService mailService,
     ITemplateRenderer templateRenderer,
-    IClientUrlProvider clientUrlProvider
+    IClientUrlProvider clientUrlProvider,
+    ILogger<ProfileCreatedDomainEventHandler> logger
 ) : INotificationHandler<ProfileCreatedDomainEvent>
 {
     private const string TemplateCode = "PROFILE_CREATED";
@@ -26,49 +29,68 @@ public sealed class ProfileCreatedDomainEventHandler(
             return;
         }
 
-        EmailTemplate? template = await context.EmailTemplates
-            .Where(t => t.Code == TemplateCode && t.IsActive && !t.IsDeleted)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        if (template is null)
+        try
         {
-            return;
+            EmailTemplate? template = await context.EmailTemplates
+                .Where(t => t.Code == TemplateCode && t.IsActive && !t.IsDeleted)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (template is null)
+            {
+                return;
+            }
+
+            var orderedProfiles = notification.Profiles.ToList();
+
+            var firstProfile = orderedProfiles[0];
+            var verifyLink = $"{clientUrlProvider.GetApiUrl()}/api/profiles/{firstProfile.ProfileId}/reactivate-and-update";
+            var recipientName = string.IsNullOrWhiteSpace(notification.RecipientName)
+                ? firstProfile.DisplayName
+                : notification.RecipientName;
+
+            var placeholders = new Dictionary<string, string>
+            {
+                ["recipient_name"] = recipientName,
+                ["profile_count"] = orderedProfiles.Count.ToString(),
+                ["profile_names"] = string.Join(", ", orderedProfiles.Select(profile => profile.DisplayName)),
+                ["profiles_html"] = BuildProfilesHtml(orderedProfiles),
+                ["email"] = notification.Email,
+                ["phone"] = notification.Phone,
+                ["password"] = notification.Password,
+                ["pin"] = notification.Pin,
+                ["verify_link"] = verifyLink,
+                // Backward-compatible placeholders for older template revisions.
+                ["profile_name"] = firstProfile.DisplayName,
+                ["profile_type"] = firstProfile.ProfileType,
+                ["full_name"] = firstProfile.FullName,
+                ["gender"] = firstProfile.Gender,
+                ["birth_day"] = firstProfile.Birthday,
+                ["zalo_id"] = firstProfile.ZaloId,
+                ["created_at"] = firstProfile.CreatedAt,
+                ["update_link"] = verifyLink
+            };
+
+            string subject = templateRenderer.Render(template.Subject, placeholders);
+            string body = templateRenderer.Render(template.Body ?? string.Empty, placeholders);
+
+            await mailService.SendEmailAsync(notification.Email, subject, body, cancellationToken);
         }
-
-        var orderedProfiles = notification.Profiles.ToList();
-
-        var firstProfile = orderedProfiles[0];
-        var verifyLink = $"{clientUrlProvider.GetApiUrl()}/api/profiles/{firstProfile.ProfileId}/reactivate-and-update";
-        var recipientName = string.IsNullOrWhiteSpace(notification.RecipientName)
-            ? firstProfile.DisplayName
-            : notification.RecipientName;
-
-        var placeholders = new Dictionary<string, string>
+        catch (SmtpException exception)
         {
-            ["recipient_name"] = recipientName,
-            ["profile_count"] = orderedProfiles.Count.ToString(),
-            ["profile_names"] = string.Join(", ", orderedProfiles.Select(profile => profile.DisplayName)),
-            ["profiles_html"] = BuildProfilesHtml(orderedProfiles),
-            ["email"] = notification.Email,
-            ["phone"] = notification.Phone,
-            ["password"] = notification.Password,
-            ["pin"] = notification.Pin,
-            ["verify_link"] = verifyLink,
-            // Backward-compatible placeholders for older template revisions.
-            ["profile_name"] = firstProfile.DisplayName,
-            ["profile_type"] = firstProfile.ProfileType,
-            ["full_name"] = firstProfile.FullName,
-            ["gender"] = firstProfile.Gender,
-            ["birth_day"] = firstProfile.Birthday,
-            ["zalo_id"] = firstProfile.ZaloId,
-            ["created_at"] = firstProfile.CreatedAt,
-            ["update_link"] = verifyLink
-        };
-
-        string subject = templateRenderer.Render(template.Subject, placeholders);
-        string body = templateRenderer.Render(template.Body ?? string.Empty, placeholders);
-
-        await mailService.SendEmailAsync(notification.Email, subject, body, cancellationToken);
+            logger.LogWarning(
+                exception,
+                "Failed to send profile created email for user {UserId} to {Email}. Approval will continue.",
+                notification.UserId,
+                notification.Email);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Unexpected error while preparing or sending profile created email for user {UserId} to {Email}. Approval will continue.",
+                notification.UserId,
+                notification.Email);
+        }
     }
 
     private static string BuildProfilesHtml(IEnumerable<ProfileCreatedEmailProfile> profiles)
