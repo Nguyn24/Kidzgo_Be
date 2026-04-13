@@ -335,6 +335,7 @@ Lấy chi tiết lead.
     "email": "parent@example.com",
     "company": null,
     "subject": null,
+    "programInterestSummary": "Cambridge Starters, Math",
     "branchPreference": "guid-or-null",
     "branchPreferenceName": "Branch 1",
     "notes": "Interested in trial",
@@ -355,6 +356,8 @@ Lấy chi tiết lead.
 | Status | Code | Meaning |
 | --- | --- | --- |
 | `404` | `Lead.NotFound` | Lead không tồn tại |
+
+`programInterestSummary` được tổng hợp từ tất cả `LeadChild.ProgramInterest` khác rỗng, loại trùng và nối bằng dấu phẩy để FE có thể hiển thị nhanh ở tab thông tin lead.
 
 ## 6.5. PUT `/api/leads/{id}`
 

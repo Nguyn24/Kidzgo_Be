@@ -20,10 +20,12 @@ public sealed class MissionDto
     public Guid? TargetStudentId { get; init; }
     public List<Guid>? TargetGroup { get; init; }
     public string MissionType { get; init; } = null!;
+    public string ProgressMode { get; init; } = null!;
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
     public int? RewardStars { get; init; }
     public int? RewardExp { get; init; }
+    public int? TotalRequired { get; init; }
     public Guid? CreatedBy { get; init; }
     public string? CreatedByName { get; init; }
     public DateTime CreatedAt { get; init; }

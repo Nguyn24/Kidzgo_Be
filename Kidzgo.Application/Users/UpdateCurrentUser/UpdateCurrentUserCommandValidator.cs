@@ -18,7 +18,7 @@ public sealed class UpdateCurrentUserCommandValidator : AbstractValidator<Update
             RuleFor(command => command.PhoneNumber!)
                 .MaximumLength(50)
                 .Must(PhoneNumberNormalizer.IsValidVietnamesePhoneNumber)
-                .WithMessage("Phone number must be a valid Vietnamese phone number");
+                .WithMessage("Phone number must be a valid 10-digit Vietnamese phone number");
         });
     }
 }

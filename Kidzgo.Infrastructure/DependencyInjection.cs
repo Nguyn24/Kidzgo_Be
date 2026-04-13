@@ -112,6 +112,29 @@ public static class DependencyInjection
                 }
             });
 
+            // Register ResetMissedDailyCheckInMissionProgressJob
+            var resetDailyCheckInMissionJobKey = new JobKey(nameof(ResetMissedDailyCheckInMissionProgressJob));
+            var resetDailyCheckInMissionCron = configuration["Quartz:Schedules:ResetMissedDailyCheckInMissionProgressJob"];
+
+            q.AddJob<ResetMissedDailyCheckInMissionProgressJob>(opts => opts.WithIdentity(resetDailyCheckInMissionJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(resetDailyCheckInMissionJobKey)
+                    .WithIdentity($"{nameof(ResetMissedDailyCheckInMissionProgressJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(resetDailyCheckInMissionCron))
+                {
+                    opts.WithCronSchedule(resetDailyCheckInMissionCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInHours(1)
+                        .RepeatForever());
+                }
+            });
+
             // Register SendNotificationRemindersJob (UC-331-336)
             var notificationRemindersJobKey = new JobKey(nameof(SendNotificationRemindersJob));
             var notificationRemindersCron = configuration["Quartz:Schedules:SendNotificationRemindersJob"];
@@ -299,6 +322,7 @@ public static class DependencyInjection
         
         // Register PDF Report Generator
         services.AddScoped<Application.Abstraction.Reports.IPdfReportGenerator, Reports.QuestPdfReportGenerator>();
+        services.AddScoped<IEnrollmentConfirmationPdfGenerator, Reports.EnrollmentConfirmationPdfGenerator>();
         
         return services;
     }

@@ -17,6 +17,9 @@ public class ClassEnrollment : Entity
     public Guid? RegistrationId { get; set; }
     public RegistrationTrackType Track { get; set; } = RegistrationTrackType.Primary;
     public string? SessionSelectionPattern { get; set; }
+    public string? EnrollmentConfirmationPdfUrl { get; set; }
+    public DateTime? EnrollmentConfirmationPdfGeneratedAt { get; set; }
+    public Guid? EnrollmentConfirmationPdfGeneratedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

@@ -110,6 +110,20 @@ public sealed class CreateMissionCommandHandler(
         var startAtUtc = VietnamTime.NormalizeToUtc(command.StartAt);
         var endAtUtc = VietnamTime.NormalizeToUtc(command.EndAt);
 
+        var rewardRuleResult = await MissionRewardRuleResolver.ResolveActiveAsync(
+            context,
+            command.MissionType,
+            command.ProgressMode,
+            command.TotalRequired,
+            cancellationToken);
+
+        if (rewardRuleResult.IsFailure)
+        {
+            return Result.Failure<CreateMissionResponse>(rewardRuleResult.Error);
+        }
+
+        var rewardRule = rewardRuleResult.Value;
+
         var mission = new Mission
         {
             Id = Guid.NewGuid(),
@@ -120,11 +134,12 @@ public sealed class CreateMissionCommandHandler(
             TargetStudentId = command.TargetStudentId,
             TargetGroup = command.TargetGroup,
             MissionType = command.MissionType,
+            ProgressMode = command.ProgressMode,
             StartAt = startAtUtc,
             EndAt = endAtUtc,
-            RewardStars = command.RewardStars,
-            RewardExp = command.RewardExp,
-            TotalRequired = command.TotalRequired,
+            RewardStars = rewardRule.RewardStars,
+            RewardExp = rewardRule.RewardExp,
+            TotalRequired = rewardRule.TotalRequired,
             CreatedBy = userId,
             CreatedAt = now
         };
@@ -140,9 +155,23 @@ public sealed class CreateMissionCommandHandler(
         {
             case MissionScope.Class when command.TargetClassId.HasValue:
                 // Lay danh sach student profiles dang ACTIVE trong lop
+                var missionStartDate = VietnamTime.ToVietnamDateOnly(startAtUtc ?? now);
+                var missionEndDate = VietnamTime.ToVietnamDateOnly(endAtUtc ?? startAtUtc ?? now);
+
                 targetStudentIds = await context.ClassEnrollments
-                    .Where(e => e.ClassId == command.TargetClassId.Value && e.Status == EnrollmentStatus.Active)
+                    .AsNoTracking()
+                    .Where(e =>
+                        e.ClassId == command.TargetClassId.Value &&
+                        e.Status == EnrollmentStatus.Active &&
+                        !context.PauseEnrollmentRequestHistories.Any(h =>
+                            h.StudentProfileId == e.StudentProfileId &&
+                            h.ClassId == e.ClassId &&
+                            h.NewStatus == EnrollmentStatus.Paused &&
+                            h.PauseEnrollmentRequest.Status == PauseEnrollmentRequestStatus.Approved &&
+                            h.PauseFrom <= missionEndDate &&
+                            h.PauseTo >= missionStartDate))
                     .Select(e => e.StudentProfileId)
+                    .Distinct()
                     .ToListAsync(cancellationToken);
                 break;
 
@@ -236,6 +265,7 @@ public sealed class CreateMissionCommandHandler(
             TargetStudentId = mission.TargetStudentId,
             TargetGroup = mission.TargetGroup,
             MissionType = mission.MissionType.ToString(),
+            ProgressMode = mission.ProgressMode.ToString(),
             StartAt = mission.StartAt,
             EndAt = mission.EndAt,
             RewardStars = mission.RewardStars,
@@ -256,6 +286,7 @@ public sealed class CreateMissionCommandHandler(
         }
 
         details.Add($"Loại nhiệm vụ: {mission.MissionType}.");
+        details.Add($"Cách tính: {mission.ProgressMode}.");
 
         if (!string.IsNullOrWhiteSpace(classTitle))
         {

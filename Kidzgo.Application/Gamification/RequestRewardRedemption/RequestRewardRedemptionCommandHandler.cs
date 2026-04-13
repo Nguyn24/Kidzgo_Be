@@ -44,8 +44,9 @@ public sealed class RequestRewardRedemptionCommandHandler(
                 RewardRedemptionErrors.StudentProfileNotFound(studentProfileId));
         }
 
-        // Validate item exists, is active, and has quantity
+        // Validate item exists and is active
         var item = await context.RewardStoreItems
+            .AsNoTracking()
             .FirstOrDefaultAsync(i => i.Id == command.ItemId && !i.IsDeleted, cancellationToken);
 
         if (item == null)
@@ -64,13 +65,7 @@ public sealed class RequestRewardRedemptionCommandHandler(
         if (command.Quantity <= 0)
         {
             return Result.Failure<RequestRewardRedemptionResponse>(
-                RewardRedemptionErrors.InsufficientQuantity(command.ItemId, item.Quantity, command.Quantity));
-        }
-
-        if (item.Quantity < command.Quantity)
-        {
-            return Result.Failure<RequestRewardRedemptionResponse>(
-                RewardRedemptionErrors.InsufficientQuantity(command.ItemId, item.Quantity, command.Quantity));
+                RewardRedemptionErrors.InvalidQuantity);
         }
 
         // Calculate total cost
@@ -102,10 +97,6 @@ public sealed class RequestRewardRedemptionCommandHandler(
         {
             return Result.Failure<RequestRewardRedemptionResponse>(deductResult.Error);
         }
-
-        // Decrease item quantity
-        item.Quantity -= command.Quantity;
-        item.UpdatedAt = VietnamTime.UtcNow();
 
         // UC-228 & UC-236: Create redemption with item name at redemption time
         var now = VietnamTime.UtcNow();

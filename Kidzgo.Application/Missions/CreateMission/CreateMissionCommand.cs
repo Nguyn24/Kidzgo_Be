@@ -12,9 +12,8 @@ public sealed class CreateMissionCommand : ICommand<CreateMissionResponse>
     public Guid? TargetStudentId { get; init; }
     public List<Guid>? TargetGroup { get; init; }
     public MissionType MissionType { get; init; }
+    public MissionProgressMode ProgressMode { get; init; } = MissionProgressMode.Count;
     public DateTime? StartAt { get; init; }
     public DateTime? EndAt { get; init; }
-    public int? RewardStars { get; init; }
-    public int? RewardExp { get; init; }
     public int? TotalRequired { get; init; }
 }

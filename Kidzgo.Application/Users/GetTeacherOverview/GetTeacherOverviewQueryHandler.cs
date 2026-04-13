@@ -21,6 +21,7 @@ public sealed class GetTeacherOverviewQueryHandler(
     {
         var userId = userContext.UserId;
         var now = VietnamTime.UtcNow();
+        var today = VietnamTime.ToVietnamDateOnly(now);
         var fromDate = query.FromDate ?? now.AddMonths(-1);
         var toDate = query.ToDate ?? now.AddMonths(1);
 
@@ -172,7 +173,7 @@ public sealed class GetTeacherOverviewQueryHandler(
         var upcomingExams = await context.Exams
             .AsNoTracking()
             .Where(e => classIds.Contains(e.ClassId) &&
-                       e.Date.ToDateTime(TimeOnly.MinValue) >= now)
+                       e.Date >= today)
             .OrderBy(e => e.Date)
             .Take(10)
             .Select(e => new ExamSummaryDto

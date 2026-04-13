@@ -1,6 +1,8 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
@@ -14,6 +16,7 @@ namespace Kidzgo.Application.Attendance.MarkAttendance;
 public sealed class MarkAttendanceCommandHandler(
     IDbContext context,
     IUserContext userContext,
+    IGamificationService gamificationService,
     SessionParticipantService sessionParticipantService)
     : ICommandHandler<MarkAttendanceCommand, MarkAttendanceResponse>
 {
@@ -34,6 +37,7 @@ public sealed class MarkAttendanceCommandHandler(
         }
 
         var results = new List<AttendanceResultItem>();
+        var studentsWithClassAttendanceMissionChanges = new HashSet<Guid>();
         var participants = await sessionParticipantService.GetParticipantsAsync(command.SessionId, cancellationToken);
         var participantsByStudent = participants.ToDictionary(p => p.StudentProfileId);
 
@@ -52,6 +56,7 @@ public sealed class MarkAttendanceCommandHandler(
 
             var hadExistingAttendance = attendance is not null;
             var previousStatus = attendance?.AttendanceStatus;
+            var shouldTrackClassAttendanceMission = previousStatus != item.AttendanceStatus;
 
             if (attendance is null)
             {
@@ -116,6 +121,11 @@ public sealed class MarkAttendanceCommandHandler(
             attendance.MarkedBy = userContext.UserId;
             attendance.MarkedAt = VietnamTime.UtcNow();
 
+            if (shouldTrackClassAttendanceMission)
+            {
+                studentsWithClassAttendanceMissionChanges.Add(item.StudentProfileId);
+            }
+
             results.Add(new AttendanceResultItem
             {
                 Id = attendance.Id,
@@ -129,6 +139,16 @@ public sealed class MarkAttendanceCommandHandler(
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var studentProfileId in studentsWithClassAttendanceMissionChanges)
+        {
+            await ClassAttendanceMissionProgressTracker.TrackAsync(
+                context,
+                gamificationService,
+                studentProfileId,
+                session,
+                cancellationToken);
+        }
 
         return Result.Success(new MarkAttendanceResponse()
         {

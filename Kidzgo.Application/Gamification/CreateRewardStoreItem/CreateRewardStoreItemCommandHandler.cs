@@ -24,12 +24,6 @@ public sealed class CreateRewardStoreItemCommandHandler(
                 RewardStoreErrors.InvalidCostStars);
         }
 
-        if (command.Quantity < 0)
-        {
-            return Result.Failure<CreateRewardStoreItemResponse>(
-                RewardStoreErrors.InvalidQuantity);
-        }
-
         var now = VietnamTime.UtcNow();
         var item = new RewardStoreItem
         {
@@ -38,7 +32,6 @@ public sealed class CreateRewardStoreItemCommandHandler(
             Description = command.Description?.Trim(),
             ImageUrl = command.ImageUrl?.Trim(),
             CostStars = command.CostStars,
-            Quantity = command.Quantity,
             IsActive = command.IsActive,
             IsDeleted = false,
             CreatedAt = now,
@@ -55,7 +48,6 @@ public sealed class CreateRewardStoreItemCommandHandler(
             Description = item.Description,
             ImageUrl = item.ImageUrl,
             CostStars = item.CostStars,
-            Quantity = item.Quantity,
             IsActive = item.IsActive,
             CreatedAt = item.CreatedAt
         });

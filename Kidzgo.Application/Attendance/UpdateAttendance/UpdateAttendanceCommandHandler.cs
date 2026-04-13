@@ -1,6 +1,8 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Abstraction.Services;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Audit;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
@@ -12,7 +14,8 @@ namespace Kidzgo.Application.Attendance.UpdateAttendance;
 
 public sealed class UpdateAttendanceCommandHandler(
     IDbContext context,
-    IUserContext userContext)
+    IUserContext userContext,
+    IGamificationService gamificationService)
     : ICommandHandler<UpdateAttendanceCommand, UpdateAttendanceResponse>
 {
     public async Task<Result<UpdateAttendanceResponse>> Handle(UpdateAttendanceCommand request, CancellationToken cancellationToken)
@@ -49,6 +52,7 @@ public sealed class UpdateAttendanceCommandHandler(
         // Store old values for audit log
         var oldStatus = attendance.AttendanceStatus;
         var oldNote = attendance.Note;
+        var shouldTrackClassAttendanceMission = oldStatus != request.AttendanceStatus;
 
         // Update attendance
         attendance.AttendanceStatus = request.AttendanceStatus;
@@ -77,6 +81,16 @@ public sealed class UpdateAttendanceCommandHandler(
         context.AuditLogs.Add(auditLog);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        if (shouldTrackClassAttendanceMission)
+        {
+            await ClassAttendanceMissionProgressTracker.TrackAsync(
+                context,
+                gamificationService,
+                attendance.StudentProfileId,
+                attendance.Session,
+                cancellationToken);
+        }
 
         return new UpdateAttendanceResponse
         {

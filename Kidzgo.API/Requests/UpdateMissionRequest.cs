@@ -11,9 +11,8 @@ public sealed class UpdateMissionRequest
     public Guid? TargetStudentId { get; set; }
     public List<Guid>? TargetGroup { get; set; }
     public MissionType MissionType { get; set; }
+    public MissionProgressMode? ProgressMode { get; set; }
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
-    public int? RewardStars { get; set; }
-    public int? RewardExp { get; set; }
     public int? TotalRequired { get; set; }
 }

@@ -17,6 +17,7 @@ public sealed class GetLeadByIdQueryHandler(
         var lead = await context.Leads
             .Include(l => l.OwnerStaffUser)
             .Include(l => l.BranchPreferenceNavigation)
+            .Include(l => l.LeadChildren)
             .FirstOrDefaultAsync(l => l.Id == query.LeadId, cancellationToken);
 
         if (lead is null)
@@ -24,6 +25,12 @@ public sealed class GetLeadByIdQueryHandler(
             return Result.Failure<GetLeadByIdResponse>(
                 LeadErrors.NotFound(query.LeadId));
         }
+
+        var programInterestSummary = lead.LeadChildren
+            .Select(child => child.ProgramInterest?.Trim())
+            .Where(programInterest => !string.IsNullOrWhiteSpace(programInterest))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         return Result.Success(new GetLeadByIdResponse
         {
@@ -36,6 +43,9 @@ public sealed class GetLeadByIdQueryHandler(
             Email = lead.Email,
             Company = lead.Company,
             Subject = lead.Subject,
+            ProgramInterestSummary = programInterestSummary.Count > 0
+                ? string.Join(", ", programInterestSummary)
+                : null,
             BranchPreference = lead.BranchPreference,
             BranchPreferenceName = lead.BranchPreferenceNavigation?.Name,
             Notes = lead.Notes,
