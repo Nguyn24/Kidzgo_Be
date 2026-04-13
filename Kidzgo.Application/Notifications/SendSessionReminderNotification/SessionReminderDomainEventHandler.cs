@@ -1,98 +1,76 @@
-using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace Kidzgo.Application.Notifications.SendSessionReminderNotification;
 
 public sealed class SessionReminderDomainEventHandler(
-    IDbContext context,
-    IMailService mailService,
-    ITemplateRenderer templateRenderer
+    IDbContext context
 ) : INotificationHandler<SessionReminderDomainEvent>
 {
-    private const string TemplateCode = "SESSION_REMINDER";
-
     public async Task Handle(SessionReminderDomainEvent notification, CancellationToken cancellationToken)
     {
-        var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Id == notification.RecipientUserId, cancellationToken);
+        var userExists = await context.Users
+            .AnyAsync(u => u.Id == notification.RecipientUserId, cancellationToken);
 
-        if (user is null || string.IsNullOrWhiteSpace(user.Email))
+        if (!userExists)
         {
             return;
         }
 
-        // Get notification template
-        var template = await context.NotificationTemplates
-            .Where(t => t.Code == TemplateCode && t.Channel == NotificationChannel.Email && t.IsActive && !t.IsDeleted)
-            .FirstOrDefaultAsync(cancellationToken);
+        var startTimeText = notification.SessionStartTime.ToString("dd/MM/yyyy HH:mm");
+        var sessionTitle = string.IsNullOrWhiteSpace(notification.SessionTitle) ? "buổi học" : notification.SessionTitle;
+        var className = string.IsNullOrWhiteSpace(notification.ClassName) ? "Lớp học" : notification.ClassName;
+        var studentName = string.IsNullOrWhiteSpace(notification.StudentName) ? "học sinh" : notification.StudentName;
+        var classroomName = string.IsNullOrWhiteSpace(notification.ClassroomName) ? "chưa cập nhật" : notification.ClassroomName;
+        var location = string.IsNullOrWhiteSpace(notification.Location) ? "trung tâm" : notification.Location;
 
-        if (template is null)
-        {
-            return;
-        }
+        var title = $"Nhắc nhở: Buổi học {sessionTitle} sắp bắt đầu";
+        var content =
+            $"Học sinh {studentName} có buổi học {className} lúc {startTimeText} tại {location}, phòng {classroomName}.";
+        var deeplink = $"/sessions/{notification.SessionId}";
+        var now = VietnamTime.UtcNow();
 
-        // Parse placeholders if available
-        var placeholders = new Dictionary<string, string>
+        var notifications = new List<Notification>
         {
-            ["session_title"] = notification.SessionTitle,
-            ["session_start_time"] = notification.SessionStartTime.ToString("dd/MM/yyyy HH:mm"),
-            ["class_name"] = notification.ClassName ?? "",
-            ["location"] = notification.Location ?? "",
-            ["student_name"] = notification.StudentName ?? "",
-            ["classroom_name"] = notification.ClassroomName ?? ""
+            CreateNotification(NotificationChannel.InApp),
+            CreateNotification(NotificationChannel.Push),
+            CreateNotification(NotificationChannel.ZaloOa)
         };
 
-        // If template has placeholders JSON, merge with defaults
-        if (!string.IsNullOrWhiteSpace(template.Placeholders))
-        {
-            try
-            {
-                var templatePlaceholders = JsonSerializer.Deserialize<Dictionary<string, string>>(template.Placeholders);
-                if (templatePlaceholders != null)
-                {
-                    foreach (var kvp in templatePlaceholders)
-                    {
-                        placeholders[kvp.Key] = kvp.Value;
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore JSON parse errors
-            }
-        }
-
-        // Render template
-        string subject = templateRenderer.Render(template.Title, placeholders);
-        string body = templateRenderer.Render(template.Content ?? string.Empty, placeholders);
-
-        // Send email
-        await mailService.SendEmailAsync(user.Email, subject, body, cancellationToken);
-
-        // Create notification record
-        // Store session ID in TemplateId to track which session this reminder is for
-        var notificationRecord = new Notification
-        {
-            Id = Guid.NewGuid(),
-            RecipientUserId = notification.RecipientUserId,
-            RecipientProfileId = notification.RecipientProfileId,
-            Channel = NotificationChannel.Email,
-            Title = subject,
-            Content = body,
-            Status = NotificationStatus.Sent,
-            SentAt = VietnamTime.UtcNow(),
-            NotificationTemplateId = template.Id,
-            TemplateId = notification.SessionId.ToString(), // Store session ID to avoid duplicates
-            CreatedAt = VietnamTime.UtcNow()
-        };
-
-        context.Notifications.Add(notificationRecord);
+        context.Notifications.AddRange(notifications);
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var notificationRecord in notifications.Where(n => n.Channel != NotificationChannel.InApp))
+        {
+            notificationRecord.Raise(new NotificationCreatedDomainEvent(notificationRecord.Id, notificationRecord.Channel));
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        Notification CreateNotification(NotificationChannel channel)
+        {
+            return new Notification
+            {
+                Id = Guid.NewGuid(),
+                RecipientUserId = notification.RecipientUserId,
+                RecipientProfileId = notification.RecipientProfileId,
+                Channel = channel,
+                Title = title,
+                Content = content,
+                Deeplink = deeplink,
+                Status = NotificationStatus.Pending,
+                TemplateId = notification.SessionId.ToString(),
+                CreatedAt = now,
+                TargetRole = "Student",
+                Kind = "session_reminder",
+                Priority = "normal",
+                SenderRole = "System",
+                SenderName = "KidzGo Centre",
+                ScopeStudentProfileId = notification.RecipientProfileId
+            };
+        }
     }
 }
-

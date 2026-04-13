@@ -140,5 +140,55 @@ public class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailTemplate
             CreatedAt = seedDate,
             UpdatedAt = seedDate
         });
+
+        builder.HasData(new EmailTemplate
+        {
+            Id = Guid.Parse("c1f73d87-8d4c-45c2-bf8f-3d79e2f4b6a1"),
+            Code = "PARENT_PIN_RESET",
+            Subject = "KidzGo | Yêu cầu đặt lại PIN phụ huynh",
+            Body = """
+                   <div style="margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#1f2937;">
+                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;">
+                       <tr>
+                         <td align="center">
+                           <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08);">
+                             <tr>
+                               <td style="padding:0;background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);">
+                                 <div style="padding:28px 30px 24px 30px;color:#ffffff;">
+                                   <p style="margin:0 0 8px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">KidzGo Learning Center</p>
+                                   <h1 style="margin:0;font-size:28px;line-height:1.3;font-weight:700;">Đặt lại PIN phụ huynh</h1>
+                                   <p style="margin:10px 0 0 0;font-size:15px;line-height:1.6;opacity:.95;">
+                                     Xin chào {{user_name}}, chúng tôi đã nhận được yêu cầu đặt lại PIN cho hồ sơ {{profile_name}}.
+                                   </p>
+                                 </div>
+                               </td>
+                             </tr>
+                             <tr>
+                               <td style="padding:26px 30px 12px 30px;">
+                                 <p style="margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#475569;">
+                                   Để tiếp tục, vui lòng bấm vào nút bên dưới. Liên kết này chỉ có hiệu lực trong 1 giờ.
+                                 </p>
+                               </td>
+                             </tr>
+                             <tr>
+                               <td style="padding:8px 30px 28px 30px;">
+                                 <a href="{{reset_link}}" style="display:inline-block;background:#ea580c;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;">Đặt lại PIN</a>
+                                 <p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#64748b;">
+                                   Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc liên hệ bộ phận hỗ trợ của KidzGo.
+                                 </p>
+                               </td>
+                             </tr>
+                           </table>
+                         </td>
+                       </tr>
+                     </table>
+                   </div>
+                   """,
+            Placeholders = """["profile_name","user_name","reset_link"]""",
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = seedDate,
+            UpdatedAt = seedDate
+        });
     }
 }
