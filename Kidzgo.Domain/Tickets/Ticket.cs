@@ -18,6 +18,10 @@ public class Ticket : Entity
     public TicketStatus Status { get; set; }
     public TicketType Type { get; set; }
     public Guid? AssignedToUserId { get; set; }
+    public bool IsIncidentReport { get; set; }
+    public IncidentReportCategory? IncidentCategory { get; set; }
+    public IncidentReportStatus? IncidentStatus { get; set; }
+    public string? IncidentEvidenceUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
