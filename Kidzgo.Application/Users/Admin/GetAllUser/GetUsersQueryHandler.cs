@@ -49,6 +49,7 @@ public sealed class GetUsersQueryHandler(IDbContext context)
             PhoneNumber = u.PhoneNumber,
             Email = u.Email,
             Role = u.Role.ToString(),
+            TeacherCompensationType = u.TeacherCompensationType?.ToString(),
             BranchId = u.BranchId,
             BranchName = u.Branch != null ? u.Branch.Name : null,
             IsActive = u.IsActive,

@@ -10,6 +10,7 @@ public class UpdateUserResponse
     public string Email { get; init; } = null!;
     public string? PhoneNumber { get; init; }
     public string Role { get; init; } = null!;
+    public string? TeacherCompensationType { get; init; }
     public Guid? BranchId { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
@@ -24,6 +25,7 @@ public class UpdateUserResponse
         Email = user.Email;
         PhoneNumber = user.PhoneNumber;
         Role = user.Role.ToString();
+        TeacherCompensationType = user.TeacherCompensationType?.ToString();
         BranchId = user.BranchId;
         IsActive = user.IsActive;
         IsDeleted = user.IsDeleted;

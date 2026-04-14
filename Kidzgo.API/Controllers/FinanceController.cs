@@ -4,6 +4,8 @@ using Kidzgo.API.Requests;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Invoices.CreatePayOSLink;
+using Kidzgo.Application.Payroll.GetTeacherCompensationSettings;
+using Kidzgo.Application.Payroll.UpdateTeacherCompensationSettings;
 using Kidzgo.Application.Users.GetAccountantStaffOverview;
 using Kidzgo.Domain.Finance;
 using Kidzgo.Domain.Payroll;
@@ -228,6 +230,30 @@ public class FinanceController : ControllerBase
         }
 
         return OkData(rows);
+    }
+
+    [HttpGet("payroll/teacher-compensation-settings")]
+    public async Task<IResult> GetTeacherCompensationSettings(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetTeacherCompensationSettingsQuery(), cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPut("payroll/teacher-compensation-settings")]
+    public async Task<IResult> UpdateTeacherCompensationSettings(
+        [FromBody] UpdateTeacherCompensationSettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateTeacherCompensationSettingsCommand
+        {
+            StandardSessionDurationMinutes = request.StandardSessionDurationMinutes,
+            ForeignTeacherDefaultSessionRate = request.ForeignTeacherDefaultSessionRate,
+            VietnameseTeacherDefaultSessionRate = request.VietnameseTeacherDefaultSessionRate,
+            AssistantDefaultSessionRate = request.AssistantDefaultSessionRate
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
     }
 
     [HttpGet("dues")]

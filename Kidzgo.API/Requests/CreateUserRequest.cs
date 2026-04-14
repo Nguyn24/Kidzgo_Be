@@ -24,5 +24,6 @@ public sealed class CreateUserRequest
 
     public Guid? BranchId { get; set; }
     public string? PhoneNumber { get; set; }
+    public string? TeacherCompensationType { get; set; }
 }
 
