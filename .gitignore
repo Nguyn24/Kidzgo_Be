@@ -32,6 +32,8 @@ logs/
 *.env.*
 secrets.*
 Kidzgo.API/appsettings.Development.json
+Kidzgo.API/appsettings.Local.json
+Kidzgo.API/appsettings.*.local.json
 
 # Firebase Service Account (contains sensitive credentials)
 **/firebase-service-account.json
