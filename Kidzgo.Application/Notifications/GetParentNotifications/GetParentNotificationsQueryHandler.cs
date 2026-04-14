@@ -63,8 +63,9 @@ public sealed class GetParentNotificationsQueryHandler(
         var notificationsQuery = context.Notifications
             .Include(n => n.RecipientUser)
             .Include(n => n.RecipientProfile)
-            .Where(n => n.RecipientUserId == userId || 
-                       (n.RecipientProfileId.HasValue && profileIds.Contains(n.RecipientProfileId.Value)))
+            .Where(n => n.Channel == NotificationChannel.InApp &&
+                        (n.RecipientUserId == userId ||
+                         (n.RecipientProfileId.HasValue && profileIds.Contains(n.RecipientProfileId.Value))))
             .AsQueryable();
 
         // Filter by unread only

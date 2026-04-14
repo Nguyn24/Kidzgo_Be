@@ -11,6 +11,7 @@ public class TicketComment : Entity
     public Guid? CommenterProfileId { get; set; }
     public string Message { get; set; } = null!;
     public string? AttachmentUrl { get; set; }
+    public IncidentReportCommentType? IncidentCommentType { get; set; }
     public DateTime CreatedAt { get; set; }
 
     // Navigation properties
