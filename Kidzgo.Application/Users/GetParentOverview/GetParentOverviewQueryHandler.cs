@@ -406,7 +406,8 @@ public sealed class GetParentOverviewQueryHandler(
 
         var unreadNotifications = await context.Notifications
             .AsNoTracking()
-            .CountAsync(n => (n.RecipientUserId == userId || n.RecipientProfileId == selectedStudentId.Value) &&
+            .CountAsync(n => n.Channel == Domain.Notifications.NotificationChannel.InApp &&
+                             (n.RecipientUserId == userId || n.RecipientProfileId == selectedStudentId.Value) &&
                              n.ReadAt == null, cancellationToken);
 
         var selectedStudent = studentProfiles.FirstOrDefault();
