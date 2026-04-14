@@ -47,6 +47,20 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
 
         builder.Property(x => x.AssignedToUserId);
 
+        builder.Property(x => x.IsIncidentReport)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.IncidentCategory)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
+        builder.Property(x => x.IncidentStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(x => x.IncidentEvidenceUrl);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

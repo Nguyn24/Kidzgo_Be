@@ -26,6 +26,10 @@ public class TicketCommentConfiguration : IEntityTypeConfiguration<TicketComment
 
         builder.Property(x => x.AttachmentUrl);
 
+        builder.Property(x => x.IncidentCommentType)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
