@@ -271,6 +271,14 @@ public sealed class AiQuestionBankGenerationRequest
 
     [JsonPropertyName("points_per_question")]
     public int PointsPerQuestion { get; set; } = 1;
+
+    [JsonPropertyName("source_text")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SourceText { get; set; }
+
+    [JsonPropertyName("source_file_name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SourceFileName { get; set; }
 }
 
 public sealed class AiQuestionBankGenerationResult
