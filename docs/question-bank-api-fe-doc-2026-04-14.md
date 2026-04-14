@@ -1,35 +1,35 @@
-# Question Bank API FE Doc - 2026-04-14
+# Tài Liệu API FE - Question Bank - 2026-04-14
 
-Tai lieu nay mo ta cac API trong `QuestionBankController.cs` va phan vua cap nhat cho FE:
+Tài liệu này mô tả các API trong `QuestionBankController.cs` và phần vừa cập nhật cho FE:
 
-- Them API `POST /api/question-bank/ai-generate/from-file` de AI Creator gen cau hoi tu file upload truoc.
-- Neu khong upload file, API moi fallback ve cac field nhu UI AI Creator hien tai.
-- Tang gioi han `questionCount` cua AI Creator tu 10 len 50 cau/request.
-- BE extract text tu file va gui sang AI service bang `source_text` va `source_file_name`.
-- API AI Creator chi tra ve draft cau hoi, chua tu dong luu vao DB. FE muon luu thi goi tiep `POST /api/question-bank`.
+- Thêm API `POST /api/question-bank/ai-generate/from-file` để AI Creator sinh câu hỏi từ file upload trước.
+- Nếu không upload file, API mới fallback về các field như UI AI Creator hiện tại.
+- Tăng giới hạn `questionCount` của AI Creator từ 10 lên 50 câu/request.
+- BE trích xuất text từ file và gửi sang AI service bằng `source_text` và `source_file_name`.
+- API AI Creator chỉ trả về draft câu hỏi, chưa tự động lưu vào DB. FE muốn lưu thì gọi tiếp `POST /api/question-bank`.
 
-## Tong quan role va pham vi du lieu
+## Tổng quan role và phạm vi dữ liệu
 
-Tat ca API trong controller yeu cau user da dang nhap vi controller co `[Authorize]`.
+Tất cả API trong controller yêu cầu user đã đăng nhập vì controller có `[Authorize]`.
 
-| Role | Du lieu duoc xem | Pham vi du lieu | Hanh dong duoc phep |
+| Role | Dữ liệu được xem | Phạm vi dữ liệu | Hành động được phép |
 | --- | --- | --- | --- |
-| Teacher | Question bank items, AI draft items | all trong pham vi API hien tai; co the loc theo `programId`, `level` | view, create, import, ai_generate |
-| ManagementStaff | Question bank items, AI draft items | all trong pham vi API hien tai; co the loc theo `programId`, `level` | view, create, import, ai_generate |
-| Admin | Question bank items, AI draft items | all trong pham vi API hien tai; co the loc theo `programId`, `level` | view, create, import, ai_generate |
-| Parent | Khong duoc truy cap | none | none |
-| Student | Khong duoc truy cap | none | none |
-| Role khac/anonymous | Khong duoc truy cap | none | none |
+| Teacher | Question bank items, AI draft items | `all` trong phạm vi API hiện tại; có thể lọc theo `programId`, `level` | `view`, `create`, `import`, `ai_generate` |
+| ManagementStaff | Question bank items, AI draft items | `all` trong phạm vi API hiện tại; có thể lọc theo `programId`, `level` | `view`, `create`, `import`, `ai_generate` |
+| Admin | Question bank items, AI draft items | `all` trong phạm vi API hiện tại; có thể lọc theo `programId`, `level` | `view`, `create`, `import`, `ai_generate` |
+| Parent | Không được truy cập | `none` | `none` |
+| Student | Không được truy cập | `none` | `none` |
+| Role khác/anonymous | Không được truy cập | `none` | `none` |
 
-Ghi chu:
+Ghi chú:
 
-- Hien tai BE chua enforce scope `own` hoac `department` cho Question Bank.
-- Field `CreatedBy` co luu nguoi tao khi create/import, nhung API list hien tai khong filter theo `CreatedBy`.
-- Controller chua co API edit, approve, delete cho Question Bank.
+- Hiện tại BE chưa enforce scope `own` hoặc `department` cho Question Bank.
+- Field `CreatedBy` có lưu người tạo khi create/import, nhưng API list hiện tại không filter theo `CreatedBy`.
+- Controller chưa có API edit, approve, delete cho Question Bank.
 
-## Response format chung
+## Định dạng response chung
 
-Success tu `MatchOk()` duoc boc trong `ApiResult<T>`:
+Success từ `MatchOk()` được bọc trong `ApiResult<T>`:
 
 ```json
 {
@@ -38,7 +38,7 @@ Success tu `MatchOk()` duoc boc trong `ApiResult<T>`:
 }
 ```
 
-Error tu domain result tra ve dang ProblemDetails:
+Error từ domain result trả về dạng ProblemDetails:
 
 ```json
 {
@@ -49,7 +49,7 @@ Error tu domain result tra ve dang ProblemDetails:
 }
 ```
 
-Mot so validation truc tiep trong controller tra `400 Bad Request` voi body dang string hoac object:
+Một số validation trực tiếp trong controller trả `400 Bad Request` với body dạng string hoặc object:
 
 ```json
 "Invalid level: Expert"
@@ -61,26 +61,26 @@ Mot so validation truc tiep trong controller tra `400 Bad Request` voi body dang
 }
 ```
 
-## Danh sach API
+## Danh sách API
 
 ### 1. GET `/api/question-bank`
 
-Dung de lay danh sach cau hoi trong question bank.
+Dùng để lấy danh sách câu hỏi trong question bank.
 
 Roles: `Teacher`, `ManagementStaff`, `Admin`
 
-Pham vi du lieu: all; FE co the loc bang `programId` va `level`.
+Phạm vi dữ liệu: `all`; FE có thể lọc bằng `programId` và `level`.
 
 Query params:
 
-| Field | Type | Required | Default | Mo ta |
+| Field | Type | Required | Default | Mô tả |
 | --- | --- | --- | --- | --- |
-| `programId` | `Guid?` | No | null | Loc cau hoi theo chuong trinh/goi hoc. Neu null hoac empty Guid thi lay tat ca. |
+| `programId` | `Guid?` | No | null | Lọc câu hỏi theo chương trình/gói học. Nếu null hoặc empty Guid thì lấy tất cả. |
 | `level` | `string?` | No | null | `Easy`, `Medium`, `Hard`. |
-| `pageNumber` | `int` | No | 1 | Trang can lay. |
-| `pageSize` | `int` | No | 10 | So item moi trang. |
+| `pageNumber` | `int` | No | 1 | Trang cần lấy. |
+| `pageSize` | `int` | No | 10 | Số item mỗi trang. |
 
-Success response:
+Response thành công:
 
 ```json
 {
@@ -115,21 +115,21 @@ Success response:
 }
 ```
 
-Error response:
+Response lỗi:
 
-| HTTP | Code/message | Khi nao |
+| HTTP | Code/message | Khi nào |
 | --- | --- | --- |
-| 400 | `Invalid level: {level}` | `level` khong parse duoc thanh `Easy`, `Medium`, `Hard`. |
-| 401 | Unauthorized | Chua dang nhap hoac token khong hop le. |
-| 403 | Forbidden | Role khong thuoc `Teacher`, `ManagementStaff`, `Admin`. |
+| 400 | `Invalid level: {level}` | `level` không parse được thành `Easy`, `Medium`, `Hard`. |
+| 401 | Unauthorized | Chưa đăng nhập hoặc token không hợp lệ. |
+| 403 | Forbidden | Role không thuộc `Teacher`, `ManagementStaff`, `Admin`. |
 
 ### 2. POST `/api/question-bank`
 
-Dung de tao va luu cau hoi thu cong vao question bank. Day cung la API FE nen goi sau khi user review AI draft va muon luu cau hoi.
+Dùng để tạo và lưu câu hỏi thủ công vào question bank. Đây cũng là API FE nên gọi sau khi user review AI draft và muốn lưu câu hỏi.
 
 Roles: `Teacher`, `ManagementStaff`, `Admin`
 
-Pham vi du lieu: create vao `programId` duoc gui trong body.
+Phạm vi dữ liệu: create vào `programId` được gửi trong body.
 
 Body JSON:
 
@@ -154,25 +154,25 @@ Body JSON:
 }
 ```
 
-Body fields:
+Các field trong body:
 
-| Field | Type | Required | Mo ta |
+| Field | Type | Required | Mô tả |
 | --- | --- | --- | --- |
-| `programId` | `Guid` | Yes | Program ton tai trong DB. |
-| `items` | `array` | Yes | Danh sach cau hoi can tao, toi thieu 1 item. |
-| `items[].questionText` | `string` | Yes | Noi dung cau hoi, khong duoc rong. |
-| `items[].questionType` | `string` | Yes | `MultipleChoice` hoac `TextInput`. |
-| `items[].options` | `array<string>` | Required voi `MultipleChoice` | Dap an lua chon, toi thieu 2 option. |
-| `items[].correctAnswer` | `string` | Yes | Dap an dung. Voi `MultipleChoice`, BE normalize theo option text. |
-| `items[].points` | `int` | Yes | Phai lon hon 0. Default DTO la 1. |
-| `items[].explanation` | `string?` | No | Giai thich dap an. |
-| `items[].topic` | `string?` | No | Chu de cau hoi. |
-| `items[].skill` | `string?` | No | Ky nang, vi du `grammar`, `vocabulary`, `reading`. |
-| `items[].grammarTags` | `array<string>?` | No | Tag ngu phap. |
-| `items[].vocabularyTags` | `array<string>?` | No | Tag tu vung. |
+| `programId` | `Guid` | Yes | Program phải tồn tại trong DB. |
+| `items` | `array` | Yes | Danh sách câu hỏi cần tạo, tối thiểu 1 item. |
+| `items[].questionText` | `string` | Yes | Nội dung câu hỏi, không được rỗng. |
+| `items[].questionType` | `string` | Yes | `MultipleChoice` hoặc `TextInput`. |
+| `items[].options` | `array<string>` | Required với `MultipleChoice` | Đáp án lựa chọn, tối thiểu 2 option. |
+| `items[].correctAnswer` | `string` | Yes | Đáp án đúng. Với `MultipleChoice`, BE normalize theo option text. |
+| `items[].points` | `int` | Yes | Phải lớn hơn 0. Default DTO là 1. |
+| `items[].explanation` | `string?` | No | Giải thích đáp án. |
+| `items[].topic` | `string?` | No | Chủ đề câu hỏi. |
+| `items[].skill` | `string?` | No | Kỹ năng, ví dụ `grammar`, `vocabulary`, `reading`. |
+| `items[].grammarTags` | `array<string>?` | No | Tag ngữ pháp. |
+| `items[].vocabularyTags` | `array<string>?` | No | Tag từ vựng. |
 | `items[].level` | `string` | Yes | `Easy`, `Medium`, `Hard`. |
 
-Success response:
+Response thành công:
 
 ```json
 {
@@ -200,24 +200,24 @@ Success response:
 }
 ```
 
-Error response:
+Response lỗi:
 
-| HTTP | Code/message | Khi nao |
+| HTTP | Code/message | Khi nào |
 | --- | --- | --- |
-| 400 | `Invalid question type: {questionType}` | `questionType` khong parse duoc thanh enum. |
-| 400 | `Invalid level: {level}` | `level` khong parse duoc thanh enum. |
-| 400 | `Homework.NoQuestionsProvided` | `items` null hoac rong. |
-| 400 | `Homework.InvalidQuestionText` | `questionText` rong. |
-| 400 | `Homework.InsufficientOptions` | MultipleChoice co it hon 2 options. |
-| 400 | `Homework.InvalidCorrectAnswer` | `correctAnswer` khong match option hop le. |
+| 400 | `Invalid question type: {questionType}` | `questionType` không parse được thành enum. |
+| 400 | `Invalid level: {level}` | `level` không parse được thành enum. |
+| 400 | `Homework.NoQuestionsProvided` | `items` null hoặc rỗng. |
+| 400 | `Homework.InvalidQuestionText` | `questionText` rỗng. |
+| 400 | `Homework.InsufficientOptions` | MultipleChoice có ít hơn 2 options. |
+| 400 | `Homework.InvalidCorrectAnswer` | `correctAnswer` không match option hợp lệ. |
 | 400 | `Homework.InvalidPoints` | `points <= 0`. |
-| 404 | `Homework.ProgramNotFound` | `programId` khong ton tai. |
-| 401 | Unauthorized | Chua dang nhap hoac token khong hop le. |
-| 403 | Forbidden | Role khong hop le. |
+| 404 | `Homework.ProgramNotFound` | `programId` không tồn tại. |
+| 401 | Unauthorized | Chưa đăng nhập hoặc token không hợp lệ. |
+| 403 | Forbidden | Role không hợp lệ. |
 
 ### 3. POST `/api/question-bank/import`
 
-Dung de import file cau hoi co cau truc vao question bank va luu thang vao DB.
+Dùng để import file câu hỏi có cấu trúc vào question bank và lưu thẳng vào DB.
 
 Roles: `Teacher`, `ManagementStaff`, `Admin`
 
@@ -225,41 +225,41 @@ Content-Type: `multipart/form-data`
 
 Query params:
 
-| Field | Type | Required | Mo ta |
+| Field | Type | Required | Mô tả |
 | --- | --- | --- | --- |
-| `programId` | `Guid` | Yes | Program can import cau hoi vao. |
+| `programId` | `Guid` | Yes | Program cần import câu hỏi vào. |
 
 Form-data:
 
-| Field | Type | Required | Mo ta |
+| Field | Type | Required | Mô tả |
 | --- | --- | --- | --- |
-| `file` | `IFormFile` | Yes | File cau hoi co cau truc. Max request size cua endpoint: 20 MB. |
+| `file` | `IFormFile` | Yes | File câu hỏi có cấu trúc. Max request size của endpoint: 20 MB. |
 
-File support:
+File hỗ trợ:
 
 | File type | Rule |
 | --- | --- |
 | `.csv` | Header row + data rows. |
-| `.xlsx`, `.xls` | Lay sheet dau tien, row dau la header. |
-| `.docx` | Can co table dau tien; row dau la header. |
-| `.pdf` | Text phai co header row, delimiter la `,`, `|`, hoac tab. |
+| `.xlsx`, `.xls` | Lấy sheet đầu tiên, row đầu là header. |
+| `.docx` | Cần có table đầu tiên; row đầu là header. |
+| `.pdf` | Text phải có header row, delimiter là `,`, `|`, hoặc tab. |
 
-Required columns:
+Các cột bắt buộc:
 
-| Column | Required | Mo ta |
+| Column | Required | Mô tả |
 | --- | --- | --- |
-| `QuestionText` | Yes | Noi dung cau hoi. |
-| `Options` | Yes voi MultipleChoice | Cac option cach nhau bang `|`. |
-| `CorrectAnswer` | Yes | Dap an dung. |
+| `QuestionText` | Yes | Nội dung câu hỏi. |
+| `Options` | Yes với MultipleChoice | Các option cách nhau bằng `|`. |
+| `CorrectAnswer` | Yes | Đáp án đúng. |
 | `Level` | Yes | `Easy`, `Medium`, `Hard`. |
 
-Optional columns:
+Các cột không bắt buộc:
 
 `QuestionType`, `Topic`, `Skill`, `GrammarTags`, `VocabularyTags`, `Points`, `Explanation`.
 
-Header alias BE dang ho tro:
+Header alias BE đang hỗ trợ:
 
-| Field noi bo | Header aliases |
+| Field nội bộ | Header aliases |
 | --- | --- |
 | `QuestionText` | `questiontext`, `question_text`, `question` |
 | `Options` | `options`, `choices` |
@@ -273,7 +273,7 @@ Header alias BE dang ho tro:
 | `GrammarTags` | `grammartags`, `grammar_tags`, `grammar` |
 | `VocabularyTags` | `vocabularytags`, `vocabulary_tags`, `vocabulary`, `vocabtags`, `vocab_tags` |
 
-Success response:
+Response thành công:
 
 ```json
 {
@@ -284,21 +284,21 @@ Success response:
 }
 ```
 
-Error response:
+Response lỗi:
 
-| HTTP | Code/message | Khi nao |
+| HTTP | Code/message | Khi nào |
 | --- | --- | --- |
-| 400 | `{ "error": "No file provided" }` | Khong gui file hoac file length = 0. |
-| 400 | `Homework.UnsupportedQuestionBankFileType` | Extension khong nam trong danh sach import support. |
-| 400 | `Homework.InvalidQuestionBankFile` | File rong, thieu header, khong co row hop le, khong doc duoc table/text. |
-| 400 | `Homework.InvalidQuestionBankRow` | Loi tren tung row, vi du thieu `QuestionText`, invalid `Level`, invalid `Points`, option khong hop le. |
-| 404 | `Homework.ProgramNotFound` | `programId` khong ton tai. |
-| 401 | Unauthorized | Chua dang nhap hoac token khong hop le. |
-| 403 | Forbidden | Role khong hop le. |
+| 400 | `{ "error": "No file provided" }` | Không gửi file hoặc file length = 0. |
+| 400 | `Homework.UnsupportedQuestionBankFileType` | Extension không nằm trong danh sách import support. |
+| 400 | `Homework.InvalidQuestionBankFile` | File rỗng, thiếu header, không có row hợp lệ, không đọc được table/text. |
+| 400 | `Homework.InvalidQuestionBankRow` | Lỗi trên từng row, ví dụ thiếu `QuestionText`, invalid `Level`, invalid `Points`, option không hợp lệ. |
+| 404 | `Homework.ProgramNotFound` | `programId` không tồn tại. |
+| 401 | Unauthorized | Chưa đăng nhập hoặc token không hợp lệ. |
+| 403 | Forbidden | Role không hợp lệ. |
 
 ### 4. POST `/api/question-bank/ai-generate`
 
-Dung de AI Creator gen draft cau hoi tu cac field tren UI. API nay khong upload file va khong luu DB.
+Dùng để AI Creator sinh draft câu hỏi từ các field trên UI. API này không upload file và không lưu DB.
 
 Roles: `Teacher`, `ManagementStaff`, `Admin`
 
@@ -321,24 +321,24 @@ Body JSON:
 }
 ```
 
-Body fields:
+Các field trong body:
 
-| Field | Type | Required | Default | Mo ta |
+| Field | Type | Required | Default | Mô tả |
 | --- | --- | --- | --- | --- |
 | `programId` | `Guid` | Yes | - | Program context cho AI generation. |
-| `topic` | `string` | Yes | empty | Bat buoc khi khong co source file/text. |
-| `questionType` | `string` | No | `MultipleChoice` | `MultipleChoice` hoac `TextInput`. |
-| `questionCount` | `int` | No | 5 | Tu 1 den 50. |
+| `topic` | `string` | Yes | empty | Bắt buộc khi không có source file/text. |
+| `questionType` | `string` | No | `MultipleChoice` | `MultipleChoice` hoặc `TextInput`. |
+| `questionCount` | `int` | No | 5 | Từ 1 đến 50. |
 | `level` | `string` | No | `Medium` | `Easy`, `Medium`, `Hard`. |
-| `skill` | `string?` | No | null | Ky nang can gen. |
-| `taskStyle` | `string` | No | `standard` | `standard` hoac `translation`. |
-| `grammarTags` | `array<string>` | No | [] | Tag ngu phap. |
-| `vocabularyTags` | `array<string>` | No | [] | Tag tu vung. |
-| `instructions` | `string?` | No | null | Yeu cau bo sung cho AI. |
-| `language` | `string` | No | `vi` | Ngon ngu response. |
-| `pointsPerQuestion` | `int` | No | 1 | Diem moi cau, phai lon hon 0. |
+| `skill` | `string?` | No | null | Kỹ năng cần sinh. |
+| `taskStyle` | `string` | No | `standard` | `standard` hoặc `translation`. |
+| `grammarTags` | `array<string>` | No | [] | Tag ngữ pháp. |
+| `vocabularyTags` | `array<string>` | No | [] | Tag từ vựng. |
+| `instructions` | `string?` | No | null | Yêu cầu bổ sung cho AI. |
+| `language` | `string` | No | `vi` | Ngôn ngữ response. |
+| `pointsPerQuestion` | `int` | No | 1 | Điểm mỗi câu, phải lớn hơn 0. |
 
-Success response:
+Response thành công:
 
 ```json
 {
@@ -366,24 +366,24 @@ Success response:
 }
 ```
 
-Error response:
+Response lỗi:
 
-| HTTP | Code/message | Khi nao |
+| HTTP | Code/message | Khi nào |
 | --- | --- | --- |
 | 400 | `Invalid question type: {questionType}` | `questionType` invalid. |
 | 400 | `Invalid level: {level}` | `level` invalid. |
-| 400 | `Invalid task style: {taskStyle}` | `taskStyle` khac `standard` va `translation`. |
-| 400 | `Homework.AiCreatorTopicRequired` | `topic` rong va khong co source text/file. |
-| 400 | `Homework.AiCreatorQuestionCountInvalid` | `questionCount < 1` hoac `questionCount > 50`. |
+| 400 | `Invalid task style: {taskStyle}` | `taskStyle` khác `standard` và `translation`. |
+| 400 | `Homework.AiCreatorTopicRequired` | `topic` rỗng và không có source text/file. |
+| 400 | `Homework.AiCreatorQuestionCountInvalid` | `questionCount < 1` hoặc `questionCount > 50`. |
 | 400 | `Homework.AiCreatorInvalidPoints` | `pointsPerQuestion <= 0`. |
-| 404 | `Homework.ProgramNotFound` | `programId` khong ton tai. |
-| 500 | Server failure | AI service loi hoac khong goi duoc. |
-| 401 | Unauthorized | Chua dang nhap hoac token khong hop le. |
-| 403 | Forbidden | Role khong hop le. |
+| 404 | `Homework.ProgramNotFound` | `programId` không tồn tại. |
+| 500 | Server failure | AI service lỗi hoặc không gọi được. |
+| 401 | Unauthorized | Chưa đăng nhập hoặc token không hợp lệ. |
+| 403 | Forbidden | Role không hợp lệ. |
 
 ### 5. POST `/api/question-bank/ai-generate/from-file`
 
-Dung de AI Creator gen draft cau hoi tu file upload. Neu FE khong gui `file`, API fallback ve field `topic`, `questionType`, `questionCount`, ... nhu endpoint JSON.
+Dùng để AI Creator sinh draft câu hỏi từ file upload. Nếu FE không gửi `file`, API fallback về field `topic`, `questionType`, `questionCount`, ... như endpoint JSON.
 
 Roles: `Teacher`, `ManagementStaff`, `Admin`
 
@@ -391,35 +391,35 @@ Content-Type: `multipart/form-data`
 
 Request size limit: 20 MB.
 
-Form-data fields:
+Các field form-data:
 
-| Field | Type | Required | Default | Mo ta |
+| Field | Type | Required | Default | Mô tả |
 | --- | --- | --- | --- | --- |
 | `programId` | `Guid` | Yes | - | Program context cho AI generation. |
-| `file` | `IFormFile?` | No | null | File nguon de AI doc truoc. Neu null thi fallback theo `topic`. |
-| `topic` | `string?` | Required neu khong co file | null | Chu de. Neu co file va topic rong, BE dung ten file lam topic fallback. |
-| `questionType` | `string` | No | `MultipleChoice` | `MultipleChoice` hoac `TextInput`. |
-| `questionCount` | `int` | No | 10 | Tu 1 den 50. |
+| `file` | `IFormFile?` | No | null | File nguồn để AI đọc trước. Nếu null thì fallback theo `topic`. |
+| `topic` | `string?` | Required nếu không có file | null | Chủ đề. Nếu có file và topic rỗng, BE dùng tên file làm topic fallback. |
+| `questionType` | `string` | No | `MultipleChoice` | `MultipleChoice` hoặc `TextInput`. |
+| `questionCount` | `int` | No | 10 | Từ 1 đến 50. |
 | `level` | `string` | No | `Medium` | `Easy`, `Medium`, `Hard`. |
-| `skill` | `string?` | No | null | Ky nang can gen. |
-| `taskStyle` | `string` | No | `standard` | `standard` hoac `translation`. |
-| `grammarTags` | `array<string>` hoac comma-separated repeated form value | No | [] | BE co normalize tag cach nhau bang dau phay. |
-| `vocabularyTags` | `array<string>` hoac comma-separated repeated form value | No | [] | BE co normalize tag cach nhau bang dau phay. |
-| `instructions` | `string?` | No | null | Yeu cau bo sung cho AI. |
-| `language` | `string` | No | `vi` | Ngon ngu response. |
-| `pointsPerQuestion` | `int` | No | 1 | Diem moi cau, phai lon hon 0. |
+| `skill` | `string?` | No | null | Kỹ năng cần sinh. |
+| `taskStyle` | `string` | No | `standard` | `standard` hoặc `translation`. |
+| `grammarTags` | `array<string>` hoặc comma-separated repeated form value | No | [] | BE có normalize tag cách nhau bằng dấu phẩy. |
+| `vocabularyTags` | `array<string>` hoặc comma-separated repeated form value | No | [] | BE có normalize tag cách nhau bằng dấu phẩy. |
+| `instructions` | `string?` | No | null | Yêu cầu bổ sung cho AI. |
+| `language` | `string` | No | `vi` | Ngôn ngữ response. |
+| `pointsPerQuestion` | `int` | No | 1 | Điểm mỗi câu, phải lớn hơn 0. |
 
-Supported source file de AI extract text:
+File nguồn được hỗ trợ để AI extract text:
 
-| File type | Xu ly |
+| File type | Xử lý |
 | --- | --- |
-| `.txt`, `.md`, `.csv`, `.json`, `.xml` | Doc text UTF-8/BOM-aware. |
-| `.html`, `.htm` | Strip HTML tags va decode HTML entities. |
-| `.docx` | Doc paragraph text. |
-| `.pdf` | Doc page text bang PdfPig. |
-| `.xlsx`, `.xls` | Doc cell values bang ExcelDataReader. |
+| `.txt`, `.md`, `.csv`, `.json`, `.xml` | Đọc text UTF-8/BOM-aware. |
+| `.html`, `.htm` | Strip HTML tags và decode HTML entities. |
+| `.docx` | Đọc paragraph text. |
+| `.pdf` | Đọc page text bằng PdfPig. |
+| `.xlsx`, `.xls` | Đọc cell values bằng ExcelDataReader. |
 
-BE normalize whitespace va cat source text toi da 50,000 ky tu truoc khi gui sang AI service.
+BE normalize whitespace và cắt source text tối đa 50,000 ký tự trước khi gửi sang AI service.
 
 Example form-data:
 
@@ -437,7 +437,7 @@ language=vi
 pointsPerQuestion=1
 ```
 
-Success response giong `POST /api/question-bank/ai-generate`:
+Response thành công giống `POST /api/question-bank/ai-generate`:
 
 ```json
 {
@@ -465,50 +465,50 @@ Success response giong `POST /api/question-bank/ai-generate`:
 }
 ```
 
-Error response:
+Response lỗi:
 
-| HTTP | Code/message | Khi nao |
+| HTTP | Code/message | Khi nào |
 | --- | --- | --- |
-| 400 | `{ "error": "File is empty" }` | FE gui field `file` nhung file length = 0. |
+| 400 | `{ "error": "File is empty" }` | FE gửi field `file` nhưng file length = 0. |
 | 400 | `Invalid question type: {questionType}` | `questionType` invalid. |
 | 400 | `Invalid level: {level}` | `level` invalid. |
-| 400 | `Invalid task style: {taskStyle}` | `taskStyle` khac `standard` va `translation`. |
-| 400 | `Homework.AiCreatorTopicRequired` | Khong co file/source text va `topic` rong. |
-| 400 | `Homework.AiCreatorQuestionCountInvalid` | `questionCount < 1` hoac `questionCount > 50`. |
+| 400 | `Invalid task style: {taskStyle}` | `taskStyle` khác `standard` và `translation`. |
+| 400 | `Homework.AiCreatorTopicRequired` | Không có file/source text và `topic` rỗng. |
+| 400 | `Homework.AiCreatorQuestionCountInvalid` | `questionCount < 1` hoặc `questionCount > 50`. |
 | 400 | `Homework.AiCreatorInvalidPoints` | `pointsPerQuestion <= 0`. |
-| 400 | `Homework.UnsupportedQuestionBankFileType` | File source khong thuoc danh sach support. |
-| 400 | `Homework.InvalidQuestionBankFile` | File rong, khong co text doc duoc, hoac exception khi extract text. |
-| 404 | `Homework.ProgramNotFound` | `programId` khong ton tai. |
-| 500 | Server failure | AI service loi hoac khong goi duoc. |
-| 401 | Unauthorized | Chua dang nhap hoac token khong hop le. |
-| 403 | Forbidden | Role khong hop le. |
+| 400 | `Homework.UnsupportedQuestionBankFileType` | File source không thuộc danh sách support. |
+| 400 | `Homework.InvalidQuestionBankFile` | File rỗng, không có text đọc được, hoặc exception khi extract text. |
+| 404 | `Homework.ProgramNotFound` | `programId` không tồn tại. |
+| 500 | Server failure | AI service lỗi hoặc không gọi được. |
+| 401 | Unauthorized | Chưa đăng nhập hoặc token không hợp lệ. |
+| 403 | Forbidden | Role không hợp lệ. |
 
-## Status definition
+## Định nghĩa status
 
-Question Bank hien tai khong co business status rieng.
+Question Bank hiện tại không có business status riêng.
 
-| Status | Y nghia |
+| Status | Ý nghĩa |
 | --- | --- |
-| N/A | `QuestionBankItem` khong co status column. |
+| N/A | `QuestionBankItem` không có status column. |
 
-Enum lien quan nhung khong phai status:
+Enum liên quan nhưng không phải status:
 
-| Enum | Gia tri | Y nghia |
+| Enum | Giá trị | Ý nghĩa |
 | --- | --- | --- |
-| `QuestionLevel` | `Easy`, `Medium`, `Hard` | Muc do cau hoi. Dung de filter va render UI. |
-| `HomeworkQuestionType` | `MultipleChoice`, `TextInput` | Loai cau hoi. |
-| `aiUsed` | `true/false` | Co AI tham gia tao draft hay khong. Day la field response AI, khong phai lifecycle status. |
+| `QuestionLevel` | `Easy`, `Medium`, `Hard` | Mức độ câu hỏi. Dùng để filter và render UI. |
+| `HomeworkQuestionType` | `MultipleChoice`, `TextInput` | Loại câu hỏi. |
+| `aiUsed` | `true/false` | Có AI tham gia tạo draft hay không. Đây là field response AI, không phải lifecycle status. |
 
-Luong chuyen trang thai: khong co status transition trong DB.
+Luồng chuyển trạng thái: không có status transition trong DB.
 
-Luong FE de luu cau hoi AI:
+Luồng FE để lưu câu hỏi AI:
 
-1. FE goi `POST /api/question-bank/ai-generate` hoac `POST /api/question-bank/ai-generate/from-file`.
-2. BE tra ve draft trong `data.items`.
-3. User review/chinh sua tren UI.
-4. FE goi `POST /api/question-bank` voi cac item da confirm de luu vao DB.
+1. FE gọi `POST /api/question-bank/ai-generate` hoặc `POST /api/question-bank/ai-generate/from-file`.
+2. BE trả về draft trong `data.items`.
+3. User review/chỉnh sửa trên UI.
+4. FE gọi `POST /api/question-bank` với các item đã confirm để lưu vào DB.
 
-## Permission matrix theo role
+## Ma trận quyền theo role
 
 | API | Teacher | ManagementStaff | Admin | Parent | Student | Anonymous |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -518,29 +518,29 @@ Luong FE de luu cau hoi AI:
 | `POST /api/question-bank/ai-generate` | Yes | Yes | Yes | No | No | No |
 | `POST /api/question-bank/ai-generate/from-file` | Yes | Yes | Yes | No | No | No |
 
-## Validation rule tong hop
+## Validation rule tổng hợp
 
-| Rule | API ap dung | Ket qua khi sai |
+| Rule | API áp dụng | Kết quả khi sai |
 | --- | --- | --- |
-| User phai dang nhap | Tat ca | 401 |
-| Role phai la `Teacher`, `ManagementStaff`, `Admin` | Tat ca | 403 |
-| `programId` phai ton tai | Create, import, ai-generate, ai-generate/from-file | 404 `Homework.ProgramNotFound` |
-| `level` phai la `Easy`, `Medium`, `Hard` | GET filter, create, AI generate | 400 |
-| `questionType` phai la `MultipleChoice` hoac `TextInput` | Create, AI generate | 400 |
-| `taskStyle` phai la `standard` hoac `translation` | AI generate | 400 |
-| `items` phai co it nhat 1 item | Create | 400 `Homework.NoQuestionsProvided` |
-| `questionText` khong rong | Create, import | 400 `Homework.InvalidQuestionText` hoac `Homework.InvalidQuestionBankRow` |
-| MultipleChoice phai co >= 2 options | Create, import | 400 `Homework.InsufficientOptions` hoac `Homework.InvalidQuestionBankRow` |
-| `correctAnswer` phai hop le | Create, import | 400 `Homework.InvalidCorrectAnswer` hoac `Homework.InvalidQuestionBankRow` |
-| `points` / `pointsPerQuestion` phai > 0 | Create, import, AI generate | 400 |
-| `questionCount` tu 1 den 50 | AI generate | 400 `Homework.AiCreatorQuestionCountInvalid` |
-| AI generate can `topic` neu khong co source file/text | AI generate | 400 `Homework.AiCreatorTopicRequired` |
-| Import DB can file co cau truc va header bat buoc | Import | 400 `Homework.InvalidQuestionBankFile` |
-| AI source file phai co extension support va text doc duoc | ai-generate/from-file | 400 `Homework.UnsupportedQuestionBankFileType` hoac `Homework.InvalidQuestionBankFile` |
+| User phải đăng nhập | Tất cả | 401 |
+| Role phải là `Teacher`, `ManagementStaff`, `Admin` | Tất cả | 403 |
+| `programId` phải tồn tại | Create, import, ai-generate, ai-generate/from-file | 404 `Homework.ProgramNotFound` |
+| `level` phải là `Easy`, `Medium`, `Hard` | GET filter, create, AI generate | 400 |
+| `questionType` phải là `MultipleChoice` hoặc `TextInput` | Create, AI generate | 400 |
+| `taskStyle` phải là `standard` hoặc `translation` | AI generate | 400 |
+| `items` phải có ít nhất 1 item | Create | 400 `Homework.NoQuestionsProvided` |
+| `questionText` không rỗng | Create, import | 400 `Homework.InvalidQuestionText` hoặc `Homework.InvalidQuestionBankRow` |
+| MultipleChoice phải có >= 2 options | Create, import | 400 `Homework.InsufficientOptions` hoặc `Homework.InvalidQuestionBankRow` |
+| `correctAnswer` phải hợp lệ | Create, import | 400 `Homework.InvalidCorrectAnswer` hoặc `Homework.InvalidQuestionBankRow` |
+| `points` / `pointsPerQuestion` phải > 0 | Create, import, AI generate | 400 |
+| `questionCount` từ 1 đến 50 | AI generate | 400 `Homework.AiCreatorQuestionCountInvalid` |
+| AI generate cần `topic` nếu không có source file/text | AI generate | 400 `Homework.AiCreatorTopicRequired` |
+| Import DB cần file có cấu trúc và header bắt buộc | Import | 400 `Homework.InvalidQuestionBankFile` |
+| AI source file phải có extension support và text đọc được | ai-generate/from-file | 400 `Homework.UnsupportedQuestionBankFileType` hoặc `Homework.InvalidQuestionBankFile` |
 
-## Luu y cho AI service
+## Lưu ý cho AI service
 
-BE da gui them 2 field vao payload `AiQuestionBankGenerationRequest`:
+BE đã gửi thêm 2 field vào payload `AiQuestionBankGenerationRequest`:
 
 ```json
 {
@@ -549,4 +549,4 @@ BE da gui them 2 field vao payload `AiQuestionBankGenerationRequest`:
 }
 ```
 
-AI service endpoint `/a3/generate-question-bank-items` can doc 2 field nay de uu tien noi dung file. Neu AI service bo qua field moi, BE van chay nhung cau hoi co the khong bam sat file upload.
+AI service endpoint `/a3/generate-question-bank-items` cần đọc 2 field này để ưu tiên nội dung file. Nếu AI service bỏ qua field mới, BE vẫn chạy nhưng câu hỏi có thể không bám sát file upload.
