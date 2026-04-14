@@ -197,16 +197,7 @@ public static class DependencyInjection
     private static IServiceCollection AddMailService(this IServiceCollection services,
         IConfiguration configuration)
     {
-        var mailSettings = configuration.GetSection(nameof(MailSettings)).Get<MailSettings>();
-
-        services.Configure<MailSettings>(options =>
-        {
-            options.SmtpServer = mailSettings!.SmtpServer;
-            options.SmtpPort = mailSettings!.SmtpPort;
-            options.SmtpUsername = mailSettings!.SmtpUsername;
-            options.SmtpPassword = mailSettings!.SmtpPassword;
-        });
-
+        services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
         services.AddTransient<IMailService, MailService>();
         return services;
     }
