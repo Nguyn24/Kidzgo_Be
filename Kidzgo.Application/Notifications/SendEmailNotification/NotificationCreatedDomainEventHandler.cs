@@ -5,6 +5,7 @@ using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Kidzgo.Application.Notifications.SendEmailNotification;
@@ -12,7 +13,8 @@ namespace Kidzgo.Application.Notifications.SendEmailNotification;
 public sealed class NotificationCreatedDomainEventHandler(
     IDbContext context,
     IMailService mailService,
-    ITemplateRenderer templateRenderer
+    ITemplateRenderer templateRenderer,
+    ILogger<NotificationCreatedDomainEventHandler> logger
 ) : INotificationHandler<NotificationCreatedDomainEvent>
 {
     public async Task Handle(NotificationCreatedDomainEvent notification, CancellationToken cancellationToken)
@@ -140,12 +142,16 @@ public sealed class NotificationCreatedDomainEventHandler(
 
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
-            // Mark as failed on error
+            logger.LogError(
+                ex,
+                "Failed to send email notification {NotificationId} to user {RecipientUserId}. Marking notification as failed.",
+                notificationRecord.Id,
+                notificationRecord.RecipientUserId);
+
             notificationRecord.Status = NotificationStatus.Failed;
             await context.SaveChangesAsync(cancellationToken);
-            throw;
         }
     }
 }

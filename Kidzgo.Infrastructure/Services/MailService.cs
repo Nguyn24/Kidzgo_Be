@@ -37,16 +37,18 @@ public class MailService : IMailService
         }.ToMessageBody();
 
         using var smtp = new SmtpClient();
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(GetTimeoutSeconds()));
 
         var secureSocketOptions = ResolveSecureSocketOptions();
         await smtp.ConnectAsync(
             _mailSettings.SmtpServer,
             _mailSettings.SmtpPort,
             secureSocketOptions,
-            cancellationToken);
-        await smtp.AuthenticateAsync(fromEmail, _mailSettings.SmtpPassword, cancellationToken);
-        await smtp.SendAsync(mail, cancellationToken);
-        await smtp.DisconnectAsync(true, cancellationToken);
+            timeoutCts.Token);
+        await smtp.AuthenticateAsync(fromEmail, _mailSettings.SmtpPassword, timeoutCts.Token);
+        await smtp.SendAsync(mail, timeoutCts.Token);
+        await smtp.DisconnectAsync(true, timeoutCts.Token);
     }
 
     private void ValidateSettings(string fromEmail)
@@ -85,5 +87,10 @@ public class MailService : IMailService
             587 => SecureSocketOptions.StartTls,
             _ => SecureSocketOptions.Auto
         };
+    }
+
+    private int GetTimeoutSeconds()
+    {
+        return _mailSettings.TimeoutSeconds > 0 ? _mailSettings.TimeoutSeconds : 30;
     }
 } 

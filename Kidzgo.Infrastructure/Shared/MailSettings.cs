@@ -7,4 +7,5 @@ public class MailSettings
     public string SmtpUsername { get; set; } = string.Empty;
     public string SmtpPassword { get; set; } = string.Empty;
     public string? SecureSocketOptions { get; set; }
+    public int TimeoutSeconds { get; set; } = 30;
 }
