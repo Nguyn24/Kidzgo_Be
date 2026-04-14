@@ -182,4 +182,72 @@ public class QuestionBankController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
     }
+
+    /// <summary>
+    /// Generate draft question bank items with AI Creator from an optional source file.
+    /// If no file is provided, the endpoint falls back to the same fields as the JSON AI Creator flow.
+    /// </summary>
+    [HttpPost("ai-generate/from-file")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    [RequestSizeLimit(20_971_520)]
+    [Consumes("multipart/form-data")]
+    public async Task<IResult> GenerateQuestionBankItemsFromFile(
+        [FromForm] GenerateQuestionBankItemsFromFileRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.File is { Length: 0 })
+        {
+            return Results.BadRequest(new { error = "File is empty" });
+        }
+
+        if (!Enum.TryParse<HomeworkQuestionType>(request.QuestionType, ignoreCase: true, out var questionType))
+        {
+            return Results.BadRequest($"Invalid question type: {request.QuestionType}");
+        }
+
+        if (!Enum.TryParse<QuestionLevel>(request.Level, ignoreCase: true, out var level))
+        {
+            return Results.BadRequest($"Invalid level: {request.Level}");
+        }
+
+        var taskStyle = string.IsNullOrWhiteSpace(request.TaskStyle)
+            ? "standard"
+            : request.TaskStyle.Trim().ToLowerInvariant();
+
+        if (taskStyle is not ("standard" or "translation"))
+        {
+            return Results.BadRequest($"Invalid task style: {request.TaskStyle}");
+        }
+
+        using var sourceFileStream = request.File?.OpenReadStream();
+        var query = new GenerateAiQuestionBankItemsQuery
+        {
+            ProgramId = request.ProgramId,
+            Topic = request.Topic ?? string.Empty,
+            QuestionType = questionType,
+            QuestionCount = request.QuestionCount,
+            Level = level,
+            Skill = request.Skill,
+            TaskStyle = taskStyle,
+            GrammarTags = NormalizeTags(request.GrammarTags),
+            VocabularyTags = NormalizeTags(request.VocabularyTags),
+            Instructions = request.Instructions,
+            Language = request.Language,
+            PointsPerQuestion = request.PointsPerQuestion,
+            SourceFileName = request.File?.FileName,
+            SourceFileStream = sourceFileStream
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    private static List<string> NormalizeTags(IEnumerable<string>? tags)
+    {
+        return tags?
+            .SelectMany(tag => tag.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+    }
 }

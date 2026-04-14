@@ -25,6 +25,14 @@ public sealed class ParentOverviewResponse
     public List<SessionSummaryDto> NextClasses { get; set; } = new();
     public List<ParentPendingApprovalDto> PendingApprovals { get; set; } = new();
     public decimal TuitionDue { get; set; }
+    public string? ProgramName { get; set; }
+    public string? PackageName { get; set; }
+    public int? TotalSessions { get; set; }
+    public int? UsedSessions { get; set; }
+    public int? RemainingSessions { get; set; }
+    public decimal OutstandingAmount { get; set; }
+    public DateTime? NextDueDate { get; set; }
+    public int? DaysUntilDue { get; set; }
     public int UnreadNotifications { get; set; }
 }
 
