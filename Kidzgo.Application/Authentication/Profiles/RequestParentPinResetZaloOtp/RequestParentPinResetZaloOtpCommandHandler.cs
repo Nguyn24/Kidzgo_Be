@@ -45,8 +45,10 @@ public sealed class RequestParentPinResetZaloOtpCommandHandler(
             return Result.Failure<RequestParentPinResetZaloOtpResponse>(ProfileErrors.ZaloIdNotSet);
         }
 
+        DateTime now = VietnamTime.UtcNow();
+
         List<ParentPinResetToken> oldTokens = await context.ParentPinResetTokens
-            .Where(t => t.ProfileId == profile.Id && !t.IsUsed)
+            .Where(t => t.ProfileId == profile.Id && t.UsedAt == null && t.ExpiresAt > now)
             .ToListAsync(cancellationToken);
 
         if (oldTokens.Count > 0)
