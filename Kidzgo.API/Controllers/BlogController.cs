@@ -72,7 +72,7 @@ public class BlogController : ControllerBase
 
    
     [HttpGet("{id:guid}")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IResult> GetBlogById(
         Guid id,
         CancellationToken cancellationToken)
