@@ -5,6 +5,7 @@ using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Sessions;
 using Kidzgo.Domain.Finance;
+using Kidzgo.Domain.Registrations;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Tickets;
 using Kidzgo.Domain.Gamification;
@@ -145,6 +146,33 @@ public sealed class GetParentOverviewQueryHandler(
             classIds = new List<Guid> { query.ClassId.Value };
         }
 
+        var currentRegistrationQuery = context.Registrations
+            .AsNoTracking()
+            .Where(r => r.StudentProfileId == selectedStudentId.Value &&
+                        (r.Status == RegistrationStatus.Studying ||
+                         r.Status == RegistrationStatus.ClassAssigned ||
+                         r.Status == RegistrationStatus.Paused));
+
+        if (query.ClassId.HasValue && classIds.Contains(query.ClassId.Value))
+        {
+            currentRegistrationQuery = currentRegistrationQuery
+                .Where(r => r.ClassId == query.ClassId.Value ||
+                            r.SecondaryClassId == query.ClassId.Value);
+        }
+
+        var currentRegistration = await currentRegistrationQuery
+            .OrderByDescending(r => r.Status == RegistrationStatus.Studying)
+            .ThenByDescending(r => r.ActualStartDate ?? r.ExpectedStartDate ?? r.RegistrationDate)
+            .Select(r => new
+            {
+                ProgramName = r.Program.Name,
+                PackageName = r.TuitionPlan.Name,
+                r.TotalSessions,
+                r.UsedSessions,
+                r.RemainingSessions
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         // Upcoming Sessions
         var upcomingSessionsQuery = context.Sessions
             .AsNoTracking()
@@ -277,6 +305,39 @@ public sealed class GetParentOverviewQueryHandler(
             })
             .ToListAsync(cancellationToken);
 
+        var openInvoices = await context.Invoices
+            .AsNoTracking()
+            .Where(i => studentProfileIds.Contains(i.StudentProfileId) &&
+                       (i.Status == InvoiceStatus.Pending ||
+                        i.Status == InvoiceStatus.Overdue))
+            .Select(i => new
+            {
+                i.Amount,
+                i.DueDate,
+                PaidAmount = i.Payments.Sum(p => (decimal?)p.Amount) ?? 0m
+            })
+            .ToListAsync(cancellationToken);
+
+        var outstandingInvoices = openInvoices
+            .Select(i => new
+            {
+                i.DueDate,
+                RemainingAmount = Math.Max(0m, i.Amount - i.PaidAmount)
+            })
+            .Where(i => i.RemainingAmount > 0m)
+            .ToList();
+
+        var outstandingAmount = outstandingInvoices.Sum(i => i.RemainingAmount);
+        DateOnly? nextDueDateOnly = outstandingInvoices
+            .Where(i => i.DueDate.HasValue)
+            .OrderBy(i => i.DueDate)
+            .Select(i => i.DueDate)
+            .FirstOrDefault();
+        var nextDueDate = nextDueDateOnly?.ToDateTime(TimeOnly.MinValue);
+        var daysUntilDue = nextDueDateOnly.HasValue
+            ? nextDueDateOnly.Value.DayNumber - VietnamTime.ToVietnamDateOnly(now).DayNumber
+            : (int?)null;
+
         // Active Missions
         var activeMissions = await context.MissionProgresses
             .AsNoTracking()
@@ -379,7 +440,15 @@ public sealed class GetParentOverviewQueryHandler(
             Stars = selectedStudent?.TotalStars ?? 0,
             NextClasses = upcomingSessions,
             PendingApprovals = new List<ParentPendingApprovalDto>(),
-            TuitionDue = pendingInvoices.Sum(i => i.Amount),
+            TuitionDue = outstandingAmount,
+            ProgramName = currentRegistration?.ProgramName,
+            PackageName = currentRegistration?.PackageName,
+            TotalSessions = currentRegistration?.TotalSessions,
+            UsedSessions = currentRegistration?.UsedSessions,
+            RemainingSessions = currentRegistration?.RemainingSessions,
+            OutstandingAmount = outstandingAmount,
+            NextDueDate = nextDueDate,
+            DaysUntilDue = daysUntilDue,
             UnreadNotifications = unreadNotifications
         };
     }

@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Homework;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.QuestionBank.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Homework.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +17,37 @@ public sealed class GenerateAiQuestionBankItemsQueryHandler(
         GenerateAiQuestionBankItemsQuery query,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(query.Topic))
+        string? sourceText = string.IsNullOrWhiteSpace(query.SourceText)
+            ? null
+            : query.SourceText.Trim();
+        string? sourceFileName = string.IsNullOrWhiteSpace(query.SourceFileName)
+            ? null
+            : query.SourceFileName.Trim();
+
+        if (query.SourceFileStream is not null)
+        {
+            var extractionResult = QuestionBankAiSourceExtractor.Extract(
+                query.SourceFileStream,
+                sourceFileName ?? "question-bank-source");
+
+            if (extractionResult.IsFailure)
+            {
+                return Result.Failure<GenerateAiQuestionBankItemsResponse>(extractionResult.Error);
+            }
+
+            sourceText = extractionResult.Value.Text;
+            sourceFileName = extractionResult.Value.FileName;
+        }
+
+        if (string.IsNullOrWhiteSpace(query.Topic) && string.IsNullOrWhiteSpace(sourceText))
         {
             return Result.Failure<GenerateAiQuestionBankItemsResponse>(HomeworkErrors.AiCreatorTopicRequired);
         }
 
-        if (query.QuestionCount is < 1 or > 10)
+        if (query.QuestionCount is < 1 or > 50)
         {
             return Result.Failure<GenerateAiQuestionBankItemsResponse>(
-                HomeworkErrors.AiCreatorQuestionCountInvalid(1, 10));
+                HomeworkErrors.AiCreatorQuestionCountInvalid(1, 50));
         }
 
         if (query.PointsPerQuestion <= 0)
@@ -45,7 +68,7 @@ public sealed class GenerateAiQuestionBankItemsQueryHandler(
             new AiQuestionBankGenerationRequest
             {
                 ProgramId = query.ProgramId.ToString(),
-                Topic = query.Topic,
+                Topic = ResolveTopic(query.Topic, sourceFileName),
                 QuestionType = query.QuestionType.ToString(),
                 QuestionCount = query.QuestionCount,
                 Level = query.Level.ToString(),
@@ -55,7 +78,9 @@ public sealed class GenerateAiQuestionBankItemsQueryHandler(
                 VocabularyTags = query.VocabularyTags,
                 Instructions = query.Instructions,
                 Language = string.IsNullOrWhiteSpace(query.Language) ? "vi" : query.Language,
-                PointsPerQuestion = query.PointsPerQuestion
+                PointsPerQuestion = query.PointsPerQuestion,
+                SourceText = sourceText,
+                SourceFileName = sourceFileName
             },
             cancellationToken);
 
@@ -81,5 +106,24 @@ public sealed class GenerateAiQuestionBankItemsQueryHandler(
                 .ToList(),
             Warnings = aiResult.Result.Warnings
         };
+    }
+
+    private static string ResolveTopic(string topic, string? sourceFileName)
+    {
+        if (!string.IsNullOrWhiteSpace(topic))
+        {
+            return topic.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceFileName))
+        {
+            var fileTopic = Path.GetFileNameWithoutExtension(sourceFileName);
+            if (!string.IsNullOrWhiteSpace(fileTopic))
+            {
+                return fileTopic;
+            }
+        }
+
+        return "source file";
     }
 }
