@@ -21,6 +21,7 @@ public sealed class GetSessionByIdQueryHandler(
                 .ThenInclude(c => c.Program)
             .Include(s => s.Class)
                 .ThenInclude(c => c.ClassEnrollments)
+            .Include(s => s.Branch)
             .Include(s => s.PlannedRoom)
             .Include(s => s.ActualRoom)
             .Include(s => s.PlannedTeacher)
@@ -38,24 +39,26 @@ public sealed class GetSessionByIdQueryHandler(
         }
 
         // Calculate attendance summary
-        var totalStudents = session.Class.ClassEnrollments
-            .Count(ce => ce.Status == EnrollmentStatus.Active);
+        var totalStudents = session.Class?.ClassEnrollments
+            ?.Count(ce => ce.Status == EnrollmentStatus.Active)
+            ?? 0;
 
         var attendances = session.Attendances.ToList();
         var presentCount = attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
         var absentCount = attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent);
         var makeupCount = attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Makeup);
-        var notMarkedCount = totalStudents - attendances.Count;
+        var notMarkedCount = Math.Max(totalStudents - attendances.Count, 0);
+        var branchName = session.Branch?.Name ?? session.Class?.Branch?.Name ?? string.Empty;
 
         var sessionDto = new SessionDetailDto
         {
             Id = session.Id,
             Color = session.Color,
             ClassId = session.ClassId,
-            ClassCode = session.Class.Code,
-            ClassTitle = session.Class.Title,
+            ClassCode = session.Class?.Code ?? string.Empty,
+            ClassTitle = session.Class?.Title ?? string.Empty,
             BranchId = session.BranchId,
-            BranchName = session.Branch.Name,
+            BranchName = branchName,
             PlannedDatetime = session.PlannedDatetime,
             ActualDatetime = session.ActualDatetime,
             DurationMinutes = session.DurationMinutes,

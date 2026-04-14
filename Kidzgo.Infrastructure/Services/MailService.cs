@@ -1,5 +1,6 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 using Kidzgo.Application.Abstraction.Authentication;
 using Microsoft.Extensions.Options;
 using What2Gift.Infrastructure.Shared;
@@ -9,13 +10,10 @@ namespace Kidzgo.Infrastructure.Services;
 public class MailService : IMailService
 {
     private readonly MailSettings _mailSettings;
-    private readonly ClientSettings _clientSettings;
 
     public MailService(
-        IOptions<MailSettings> mailSettingsOptions,
-        IOptions<ClientSettings> clientSettingsOptions)
+        IOptions<MailSettings> mailSettingsOptions)
     {
-        _clientSettings = clientSettingsOptions.Value;
         _mailSettings = mailSettingsOptions.Value;
     }
 
@@ -27,25 +25,65 @@ public class MailService : IMailService
         }
 
         string fromEmail = _mailSettings.SmtpUsername;
+        ValidateSettings(fromEmail);
 
-        using var mail = new MailMessage
+        var mail = new MimeMessage();
+        mail.From.Add(MailboxAddress.Parse(fromEmail));
+        mail.To.Add(MailboxAddress.Parse(toEmail));
+        mail.Subject = subject;
+        mail.Body = new BodyBuilder
         {
-            From = new MailAddress(fromEmail),
-            Subject = subject,
-            Body = htmlBody,
-            IsBodyHtml = true
-        };
+            HtmlBody = htmlBody
+        }.ToMessageBody();
 
-        mail.To.Add(toEmail);
+        using var smtp = new SmtpClient();
 
-        using var smtp = new SmtpClient(_mailSettings.SmtpServer, _mailSettings.SmtpPort)
+        var secureSocketOptions = ResolveSecureSocketOptions();
+        await smtp.ConnectAsync(
+            _mailSettings.SmtpServer,
+            _mailSettings.SmtpPort,
+            secureSocketOptions,
+            cancellationToken);
+        await smtp.AuthenticateAsync(fromEmail, _mailSettings.SmtpPassword, cancellationToken);
+        await smtp.SendAsync(mail, cancellationToken);
+        await smtp.DisconnectAsync(true, cancellationToken);
+    }
+
+    private void ValidateSettings(string fromEmail)
+    {
+        if (string.IsNullOrWhiteSpace(_mailSettings.SmtpServer))
         {
-            Credentials = new NetworkCredential(fromEmail, _mailSettings.SmtpPassword),
-            EnableSsl = true,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            UseDefaultCredentials = false
-        };
+            throw new InvalidOperationException("MailSettings:SmtpServer is required.");
+        }
 
-        await smtp.SendMailAsync(mail, cancellationToken);
+        if (_mailSettings.SmtpPort <= 0)
+        {
+            throw new InvalidOperationException("MailSettings:SmtpPort must be greater than 0.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fromEmail))
+        {
+            throw new InvalidOperationException("MailSettings:SmtpUsername is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(_mailSettings.SmtpPassword))
+        {
+            throw new InvalidOperationException("MailSettings:SmtpPassword is required.");
+        }
+    }
+
+    private SecureSocketOptions ResolveSecureSocketOptions()
+    {
+        if (Enum.TryParse<SecureSocketOptions>(_mailSettings.SecureSocketOptions, true, out var configuredOptions))
+        {
+            return configuredOptions;
+        }
+
+        return _mailSettings.SmtpPort switch
+        {
+            465 => SecureSocketOptions.SslOnConnect,
+            587 => SecureSocketOptions.StartTls,
+            _ => SecureSocketOptions.Auto
+        };
     }
 } 
