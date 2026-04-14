@@ -107,6 +107,7 @@ public sealed class ApplicationDbContext(
     public DbSet<SessionRole> SessionRoles => Set<SessionRole>();
     public DbSet<ShiftAttendance> ShiftAttendances => Set<ShiftAttendance>();
     public DbSet<MonthlyWorkHours> MonthlyWorkHours => Set<MonthlyWorkHours>();
+    public DbSet<TeacherCompensationSettings> TeacherCompensationSettings => Set<TeacherCompensationSettings>();
 
     // Programs
     public DbSet<Program> Programs => Set<Program>();

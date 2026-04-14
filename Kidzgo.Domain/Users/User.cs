@@ -30,6 +30,7 @@ public class User : Entity
     public string? AvatarUrl { get; set; }  // Avatar cho user
     public string? AvatarMimeType { get; set; }  // MIME type của avatar
     public long? AvatarFileSize { get; set; }  // Kích thước avatar (bytes)
+    public TeacherCompensationType? TeacherCompensationType { get; set; }
     public Guid? BranchId { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }

@@ -83,8 +83,14 @@ public class CreateUserCommandHandler(
         }
 
         var hashedPassword = passwordHasher.Hash(command.Password);
-        
-        
+
+        TeacherCompensationType? teacherCompensationType = null;
+        if (!string.IsNullOrWhiteSpace(command.TeacherCompensationType) &&
+            Enum.TryParse<TeacherCompensationType>(command.TeacherCompensationType, true, out var parsedTeacherCompensationType))
+        {
+            teacherCompensationType = parsedTeacherCompensationType;
+        }
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -94,6 +100,7 @@ public class CreateUserCommandHandler(
             PhoneNumber = PhoneNumberNormalizer.NormalizeVietnamesePhoneNumber(command.PhoneNumber),
             PasswordHash = hashedPassword,
             Role = role,
+            TeacherCompensationType = role == UserRole.Teacher ? teacherCompensationType : null,
             BranchId = command.BranchId,
             IsActive = true,
             IsDeleted = false,
@@ -113,6 +120,7 @@ public class CreateUserCommandHandler(
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
             Role = user.Role.ToString(),
+            TeacherCompensationType = user.TeacherCompensationType?.ToString(),
             BranchId = user.BranchId,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt

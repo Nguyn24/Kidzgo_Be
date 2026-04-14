@@ -31,6 +31,18 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
             user.Role = role;
         }
 
+        if (request.TeacherCompensationType != null)
+        {
+            if (string.IsNullOrWhiteSpace(request.TeacherCompensationType))
+            {
+                user.TeacherCompensationType = null;
+            }
+            else if (Enum.TryParse<TeacherCompensationType>(request.TeacherCompensationType, true, out var teacherCompensationType))
+            {
+                user.TeacherCompensationType = teacherCompensationType;
+            }
+        }
+
         user.Username = request.Username ?? user.Username;
         user.Name = request.Name ?? user.Name;
         user.Email = request.Email ?? user.Email;
@@ -67,6 +79,11 @@ public sealed class UpdateUserCommandHandler(IDbContext context, IUserContext us
         }
         user.IsActive = request.IsActive ?? user.IsActive;
         user.IsDeleted = request.isDeleted ?? user.IsDeleted;
+        if (user.Role != UserRole.Teacher)
+        {
+            user.TeacherCompensationType = null;
+        }
+        user.UpdatedAt = VietnamTime.UtcNow();
 
         await context.SaveChangesAsync(cancellationToken);
 

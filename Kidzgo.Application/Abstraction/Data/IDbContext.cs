@@ -100,6 +100,7 @@ public interface IDbContext
     DbSet<SessionRole> SessionRoles { get; }
     DbSet<ShiftAttendance> ShiftAttendances { get; }
     DbSet<MonthlyWorkHours> MonthlyWorkHours { get; }
+    DbSet<TeacherCompensationSettings> TeacherCompensationSettings { get; }
 
     // Programs
     DbSet<Program> Programs { get; }
