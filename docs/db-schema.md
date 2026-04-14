@@ -2746,6 +2746,7 @@ Khi phụ huynh xem kết quả:
 - `lesson_plan_templates` → `lesson_plans` (1:N): Một template có thể được dùng cho nhiều lesson plan.
 - `classes` → `homework_assignments` (1:N): Một lớp có nhiều bài tập.
 - `sessions` → `homework_assignments` (1:N): Một buổi học có thể sinh nhiều bài tập.
+- `missions` → `homework_assignments` (1:N, optional): Bài tập có thể gắn với nhiệm vụ qua `homework_assignments.mission_id`; delete behavior hiện là `Restrict`.
 - `homework_assignments` → `homework_questions` (1:N): Một bài tập quiz có nhiều câu hỏi.
 - `homework_assignments` → `homework_student` (1:N): Một bài tập có nhiều submission theo học sinh.
 - `profiles` → `homework_student` (1:N): Một học sinh có nhiều bài đã làm.
@@ -2784,15 +2785,23 @@ Khi phụ huynh xem kết quả:
 - `users` → `report_comments.commenter_id` (1:N): Một user có thể comment trên nhiều report.
 
 ### 6. Quan hệ Gamification
-- `classes` → `missions` (1:N): Một lớp có thể có nhiều nhiệm vụ.
-- `missions` → `mission_progress` (1:N): Một nhiệm vụ có nhiều tiến độ theo học sinh.
-- `profiles` → `mission_progress` (1:N): Một học sinh có nhiều tiến độ nhiệm vụ.
-- `profiles` → `star_transactions` (1:N): Một học sinh có nhiều giao dịch sao.
-- `profiles` → `student_levels` (1:1): Mỗi học sinh có một level hiện tại.
-- `reward_store_items` → `reward_redemptions` (1:N): Một item có thể được đổi nhiều lần.
-- `profiles` → `reward_redemptions` (1:N): Một học sinh có thể đổi nhiều phần quà.
-- `profiles` → `attendance_streaks` (1:N): Một học sinh có nhiều bản ghi chuỗi chuyên cần.
+- `classes` → `missions` (1:N, optional): Một lớp có thể có nhiều nhiệm vụ qua `missions.target_class_id`; delete behavior hiện là `Restrict`.
+- `users` → `missions.created_by` (1:N, optional): User có thể tạo nhiều nhiệm vụ; delete behavior hiện là `Restrict`.
+- `missions` → `mission_progress` (1:N): Một nhiệm vụ có nhiều tiến độ theo học sinh; xóa mission sẽ cascade sang progress.
+- `profiles` → `mission_progress` (1:N): Một học sinh có nhiều tiến độ nhiệm vụ; unique index `mission_progress_unique` đảm bảo mỗi học sinh chỉ có một progress cho mỗi mission.
+- `users` → `mission_progress.verified_by` (1:N, optional): User có thể xác nhận nhiều tiến độ nhiệm vụ; delete behavior hiện là `Restrict`.
+- `missions` → `homework_assignments` (1:N, optional): Nhiệm vụ loại homework có thể liên kết nhiều bài tập qua `homework_assignments.mission_id`; delete behavior hiện là `Restrict`.
+- `profiles` → `star_transactions` (1:N): Một học sinh có nhiều giao dịch sao; xóa profile sẽ cascade sang star transactions.
+- `users` → `star_transactions.created_by` (1:N, optional): User có thể tạo nhiều giao dịch sao thủ công/hệ thống; delete behavior hiện là `Restrict`.
+- `profiles` → `student_levels` (1:1): Mỗi học sinh có một level hiện tại; xóa profile sẽ cascade sang student level.
+- `reward_store_items` → `reward_redemptions` (1:N): Một item có thể được đổi nhiều lần; delete behavior hiện là `Restrict`.
+- `profiles` → `reward_redemptions` (1:N): Một học sinh có thể đổi nhiều phần quà; delete behavior hiện là `Restrict` để giữ lịch sử đổi quà.
+- `users` → `reward_redemptions.handled_by` (1:N, optional): User có thể xử lý nhiều request đổi quà; delete behavior hiện là `Restrict`.
+- `profiles` → `attendance_streaks` (1:N): Một học sinh có nhiều bản ghi chuỗi chuyên cần; unique index `attendance_streak_unique` đảm bảo một học sinh chỉ có một record cho mỗi `attendance_date`.
 - `gamification_settings`: Bảng cấu hình hệ thống, hiện là bảng standalone không có FK sang entity khác.
+- `mission_reward_rules` **NEW**: Bảng setup reward theo `mission_type` + `progress_mode` + `total_required`, hiện là bảng standalone không có FK sang entity khác; unique index `IX_MissionRewardRules_MissionType_ProgressMode_TotalRequired`.
+- `missions.progress_mode` **NEW FIELD**: Cột mới trên `missions` để phân loại cách tính tiến độ `Count`/`Streak`; đây là enum column, không phải FK.
+- `missions.target_student_id` và `missions.target_group`: Hiện lưu student id theo scope `Student`/`Group` nhưng chưa được cấu hình FK trực tiếp tới `profiles`.
 
 ### 7. Quan hệ CRM/Placement
 - `branches` → `leads.branch_preference` (1:N, optional): Lead có thể chọn branch mong muốn.

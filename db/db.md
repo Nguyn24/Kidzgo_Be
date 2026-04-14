@@ -62,6 +62,59 @@ Table parent_student_links {
   created_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table refresh_tokens {
+  id uuid [pk]
+  token varchar(255) [unique]
+  user_id uuid [ref: > users.id]
+  expires timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table password_reset_tokens {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  token varchar(200)
+  expires_at timestamptz
+  used_at timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table parent_pin_reset_tokens {
+  id uuid [pk]
+  profile_id uuid [ref: > profiles.id]
+  token varchar(200)
+  otp_code_hash varchar(255)
+  otp_expires_at timestamptz
+  otp_verified_at timestamptz
+  otp_attempt_count int
+  expires_at timestamptz
+  used_at timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table device_tokens {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  token varchar(500)
+  device_type varchar(50)
+  device_id varchar(200)
+  role varchar(20)
+  browser varchar(100)
+  locale varchar(20)
+  branch_id uuid
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+  last_used_at timestamptz
+
+  Indexes {
+    user_id
+    (user_id, is_active)
+    (user_id, device_id, is_active) [unique]
+  }
+}
+
 // Note: roles and profile_roles are kept for backward compatibility or future use
 // For PARENT/STUDENT profiles, can still use profile_roles if needed
 // For ADMIN/TEACHER/STAFF, role is directly in users.role enum   
@@ -89,6 +142,37 @@ Table programs {
   description text
   is_active boolean
   is_deleted boolean
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table program_leave_policies {
+  id uuid [pk]
+  program_id uuid [ref: > programs.id]
+  max_leaves_per_month int
+  updated_by uuid [ref: - users.id]
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    (program_id) [unique]
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table extracurricular_programs {
+  id uuid [pk]
+  branch_id uuid [ref: > branches.id]
+  name varchar(255)
+  type varchar(100)
+  date date
+  capacity int
+  registered_count int
+  fee numeric
+  location varchar(255)
+  is_active boolean
+  is_deleted boolean
+  created_at timestamptz
+  updated_at timestamptz
 }
 
 Table classrooms {
@@ -124,6 +208,45 @@ Table class_enrollments {
   enroll_date date
   status varchar(20) // ACTIVE/PAUSED/DROPPED
   tuition_plan_id uuid [ref: - tuition_plans.id]
+  registration_id uuid [ref: - registrations.id] // NEW FIELD
+  track varchar(20) // NEW FIELD: Primary/Secondary
+  session_selection_pattern varchar(500) // NEW FIELD
+  enrollment_confirmation_pdf_url varchar(1000) // NEW FIELD
+  enrollment_confirmation_pdf_generated_at timestamptz // NEW FIELD
+  enrollment_confirmation_pdf_generated_by uuid // NEW FIELD
+  created_at timestamptz // NEW FIELD
+  updated_at timestamptz // NEW FIELD
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table registrations {
+  id uuid [pk]
+  student_profile_id uuid [ref: > profiles.id]
+  branch_id uuid [ref: > branches.id]
+  program_id uuid [ref: > programs.id]
+  tuition_plan_id uuid [ref: > tuition_plans.id]
+  secondary_program_id uuid [ref: - programs.id]
+  registration_date timestamptz
+  expected_start_date timestamptz
+  actual_start_date timestamptz
+  preferred_schedule text
+  note text
+  status varchar(20) // New/WaitingForClass/ClassAssigned/Studying/Paused/Completed/Cancelled
+  class_id uuid [ref: - classes.id]
+  class_assigned_date timestamptz
+  entry_type varchar(20) // Immediate/Makeup/Wait/Retake
+  secondary_class_id uuid [ref: - classes.id]
+  secondary_class_assigned_date timestamptz
+  secondary_entry_type varchar(20)
+  secondary_program_skill_focus varchar(50)
+  original_registration_id uuid [ref: - registrations.id]
+  operation_type varchar(20) // Initial/Upgrade/Renewal/Transfer/TransferBranch/Retake
+  total_sessions int
+  used_sessions int
+  remaining_sessions int
+  expiry_date timestamptz
+  created_at timestamptz
+  updated_at timestamptz
 }
 
 Table sessions {
@@ -145,6 +268,29 @@ Table sessions {
   updated_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table student_session_assignments {
+  id uuid [pk]
+  session_id uuid [ref: > sessions.id]
+  student_profile_id uuid [ref: > profiles.id]
+  class_enrollment_id uuid [ref: > class_enrollments.id]
+  registration_id uuid [ref: - registrations.id]
+  track varchar(20) // Primary/Secondary
+  status varchar(20) // Assigned/Cancelled
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    session_id
+    student_profile_id
+    class_enrollment_id
+    registration_id
+    (session_id, status)
+    (student_profile_id, status)
+    (session_id, class_enrollment_id) [unique]
+  }
+}
+
 Table leave_requests {
   id uuid [pk]
   student_profile_id uuid [ref: > profiles.id]
@@ -157,6 +303,41 @@ Table leave_requests {
   requested_at timestamptz
   approved_by uuid [ref: - users.id] // staff user (role=STAFF)
   approved_at timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table pause_enrollment_requests {
+  id uuid [pk]
+  student_profile_id uuid [ref: > profiles.id]
+  class_id uuid [ref: - classes.id]
+  pause_from date
+  pause_to date
+  reason text
+  status varchar(20) // Pending/Approved/Rejected/Cancelled
+  requested_at timestamptz
+  approved_by uuid [ref: - users.id]
+  approved_at timestamptz
+  cancelled_by uuid [ref: - users.id]
+  cancelled_at timestamptz
+  outcome varchar(40) // ContinueSameClass/ReassignEquivalentClass/ContinueWithTutoring
+  outcome_note text
+  outcome_by uuid [ref: - users.id]
+  outcome_at timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table pause_enrollment_request_histories {
+  id uuid [pk]
+  pause_enrollment_request_id uuid [ref: > pause_enrollment_requests.id]
+  student_profile_id uuid [ref: > profiles.id]
+  class_id uuid [ref: > classes.id]
+  enrollment_id uuid [ref: - class_enrollments.id]
+  previous_status varchar(20) // Active/Paused/Dropped
+  new_status varchar(20) // Active/Paused/Dropped
+  pause_from date
+  pause_to date
+  changed_at timestamptz
+  changed_by uuid [ref: - users.id]
 }
 
 Table attendances {
@@ -214,6 +395,112 @@ Table lesson_plans {
   submitted_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table teaching_materials {
+  id uuid [pk]
+  program_id uuid [ref: > programs.id]
+  unit_number int
+  lesson_number int
+  lesson_title varchar(255)
+  relative_path varchar(500)
+  display_name varchar(255)
+  original_file_name varchar(255)
+  storage_path varchar(500)
+  mime_type varchar(255)
+  file_extension varchar(20)
+  file_size bigint
+  file_type varchar(50) // Pdf/Presentation/Audio/Document/Image/Video/Spreadsheet/Archive/Other
+  category varchar(50) // ProgramDocument/LessonSlide/LessonAsset/Supplementary/Other
+  is_encrypted boolean
+  encryption_algorithm varchar(50)
+  encryption_key_version varchar(20)
+  pdf_preview_path varchar(500)
+  pdf_preview_generated_at timestamptz
+  pdf_preview_file_size bigint
+  uploaded_by_user_id uuid [ref: > users.id]
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    program_id
+    (program_id, unit_number, lesson_number)
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table teaching_material_slides {
+  id uuid [pk]
+  teaching_material_id uuid [ref: > teaching_materials.id]
+  slide_number int
+  preview_image_path varchar(500)
+  thumbnail_image_path varchar(500)
+  width int
+  height int
+  notes text
+  generated_at timestamptz
+
+  Indexes {
+    teaching_material_id
+    (teaching_material_id, slide_number) [unique]
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table teaching_material_view_progresses {
+  id uuid [pk]
+  teaching_material_id uuid [ref: > teaching_materials.id]
+  user_id uuid [ref: > users.id]
+  progress_percent int
+  last_slide_viewed int
+  total_time_seconds int
+  view_count int
+  completed boolean
+  first_viewed_at timestamptz
+  last_viewed_at timestamptz
+
+  Indexes {
+    teaching_material_id
+    user_id
+    completed
+    (teaching_material_id, user_id) [unique]
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table teaching_material_bookmarks {
+  id uuid [pk]
+  teaching_material_id uuid [ref: > teaching_materials.id]
+  user_id uuid [ref: > users.id]
+  note varchar(500)
+  created_at timestamptz
+
+  Indexes {
+    (teaching_material_id, user_id) [unique]
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table teaching_material_annotations {
+  id uuid [pk]
+  teaching_material_id uuid [ref: > teaching_materials.id]
+  slide_number int
+  user_id uuid [ref: > users.id]
+  content varchar(2000)
+  color varchar(20)
+  position_x float
+  position_y float
+  type varchar(20) // Note/Highlight/Pin
+  visibility varchar(20) // Private/Class/Public
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    teaching_material_id
+    user_id
+    (teaching_material_id, slide_number)
+  }
+}
+
 Table homework_assignments {
   id uuid [pk]
   class_id uuid [ref: > classes.id]
@@ -246,6 +533,64 @@ Table homework_student {
   attachments jsonb
 
  
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table homework_questions {
+  id uuid [pk]
+  homework_assignment_id uuid [ref: > homework_assignments.id]
+  order_index int
+  question_text text
+  question_type varchar(20) // MultipleChoice/TextInput
+  options jsonb
+  correct_answer text
+  points int
+  explanation text
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table homework_submission_attempts {
+  id uuid [pk]
+  homework_student_id uuid [ref: > homework_student.id]
+  attempt_number int
+  status varchar(20) // Assigned/Submitted/Graded/Late/Missing
+  started_at timestamptz
+  submitted_at timestamptz
+  graded_at timestamptz
+  score numeric
+  teacher_feedback text
+  ai_feedback jsonb
+  text_answer text
+  attachment_url text
+  created_at timestamptz
+
+  Indexes {
+    (homework_student_id, attempt_number) [unique]
+  }
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table question_bank_items {
+  id uuid [pk]
+  program_id uuid [ref: > programs.id]
+  question_text text
+  question_type varchar(20) // MultipleChoice/TextInput
+  options jsonb
+  correct_answer text
+  points int
+  explanation text
+  topic varchar(100)
+  skill varchar(100)
+  grammar_tags jsonb
+  vocabulary_tags jsonb
+  level varchar(10) // Easy/Medium/Hard
+  created_by uuid
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    (program_id, level)
+  }
 }
 
 Table exams {
@@ -431,6 +776,27 @@ Table student_monthly_reports {
   published_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table monthly_report_data {
+  id uuid [pk]
+  report_id uuid [ref: > student_monthly_reports.id]
+  student_profile_id uuid [ref: > profiles.id]
+  month int
+  year int
+  attendance_data jsonb
+  homework_data jsonb
+  test_data jsonb
+  mission_data jsonb
+  notes_data jsonb
+  topics_data jsonb
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    (report_id) [unique]
+  }
+}
+
 Table report_comments {
   id uuid [pk]
   report_id uuid [ref: > student_monthly_reports.id]
@@ -439,20 +805,68 @@ Table report_comments {
   created_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table report_requests {
+  id uuid [pk]
+  report_type varchar(20) // Session/Monthly
+  status varchar(20) // Requested/InProgress/Submitted/Approved/Rejected/Cancelled
+  priority varchar(20) // Low/Normal/High/Urgent
+  assigned_teacher_user_id uuid [ref: > users.id]
+  requested_by_user_id uuid [ref: > users.id]
+  target_student_profile_id uuid [ref: - profiles.id]
+  target_class_id uuid [ref: - classes.id]
+  target_session_id uuid [ref: - sessions.id]
+  month int
+  year int
+  message varchar(1000)
+  due_at timestamptz
+  linked_session_report_id uuid [ref: - session_reports.id]
+  linked_monthly_report_id uuid [ref: - student_monthly_reports.id]
+  submitted_at timestamptz
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    (assigned_teacher_user_id, status, priority, due_at)
+    (report_type, target_class_id, month, year)
+    (report_type, target_student_profile_id, month, year)
+  }
+}
+
 Table missions {
   id uuid [pk]
   title varchar(255)
   description text
   scope varchar(20) // CLASS/STUDENT/GROUP
   target_class_id uuid [ref: - classes.id]
+  target_student_id uuid // NEW FIELD: no FK configured in EF
   target_group jsonb // optional grouping
-  mission_type varchar(50) // HOMEWORK_STREAK/READING_STREAK/NO_UNEXCUSED_ABSENCE/CUSTOM
+  mission_type varchar(50) // HomeworkStreak/ReadingStreak/NoUnexcusedAbsence/ClassAttendance/Custom
+  progress_mode varchar(20) // NEW FIELD: Count/Streak
   start_at timestamptz
   end_at timestamptz
   reward_stars int
   reward_exp int // experience points reward
+  total_required int // NEW FIELD
   created_by uuid [ref: - users.id]
   created_at timestamptz
+}
+
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table mission_reward_rules {
+  id uuid [pk]
+  mission_type varchar(50)
+  progress_mode varchar(20) // Count/Streak
+  total_required int
+  reward_stars int
+  reward_exp int
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+
+  Indexes {
+    (mission_type, progress_mode, total_required) [unique]
+  }
 }
 
 Table mission_progress {
@@ -501,6 +915,15 @@ Table attendance_streaks {
   }
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table gamification_settings {
+  id int [pk]
+  check_in_reward_stars int
+  check_in_reward_exp int
+  created_at timestamptz
+  updated_at timestamptz
+}
+
 Table reward_store_items {
   id uuid [pk]
   title varchar(255)
@@ -511,14 +934,18 @@ Table reward_store_items {
   is_active boolean
   is_deleted boolean
   created_at timestamptz
+  updated_at timestamptz // NEW FIELD
 }
 
 Table reward_redemptions {
   id uuid [pk]
   item_id uuid [ref: > reward_store_items.id]
   item_name varchar(255) // store item name at redemption time
+  quantity int // NEW FIELD
+  stars_deducted int // NEW FIELD
   student_profile_id uuid [ref: > profiles.id]
   status varchar(20) // REQUESTED/APPROVED/DELIVERED/RECEIVED/CANCELLED
+  cancel_reason varchar(1000) // NEW FIELD
   handled_by uuid [ref: - users.id]
   handled_at timestamptz
   delivered_at timestamptz // when staff delivered the reward
@@ -549,24 +976,45 @@ Table leads {
   updated_at timestamptz
 }
 
+// NEW: table exists in the current project and was missing from this dbdiagram file
+Table lead_children {
+  id uuid [pk]
+  lead_id uuid [ref: > leads.id]
+  child_name varchar(255)
+  dob date
+  gender varchar(20)
+  program_interest varchar(255)
+  notes text
+  status varchar(30) // New/BookedTest/TestDone/Enrolled/Lost
+  converted_student_profile_id uuid [ref: - profiles.id]
+  created_at timestamptz
+  updated_at timestamptz
+}
+
 Table placement_tests {
   id uuid [pk]
   lead_id uuid [ref: - leads.id]
+  lead_child_id uuid [ref: - lead_children.id] // NEW FIELD
   student_profile_id uuid [ref: - profiles.id]
   class_id uuid [ref: - classes.id]
   scheduled_at timestamptz
   status varchar(20) // SCHEDULED/NO_SHOW/COMPLETED/CANCELLED
   room varchar(100)
   invigilator_user_id uuid [ref: - users.id] // teacher/staff user
+  original_placement_test_id uuid [ref: - placement_tests.id] // NEW FIELD
   result_score numeric
   listening_score numeric
   speaking_score numeric
   reading_score numeric
   writing_score numeric
   level_recommendation varchar(100)
-  program_recommendation varchar(100)
+  program_recommendation_id uuid [ref: - programs.id] // NEW FIELD
+  secondary_program_recommendation_id uuid [ref: - programs.id] // NEW FIELD
+  secondary_program_skill_focus varchar(50) // NEW FIELD
   notes text
   attachment_url text
+  created_at timestamptz // NEW FIELD
+  updated_at timestamptz // NEW FIELD
 }
 
 Table lead_activities {
