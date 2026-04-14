@@ -17,4 +17,7 @@ public sealed class GenerateAiQuestionBankItemsQuery : IQuery<GenerateAiQuestion
     public string? Instructions { get; init; }
     public string Language { get; init; } = "vi";
     public int PointsPerQuestion { get; init; } = 1;
+    public string? SourceText { get; init; }
+    public string? SourceFileName { get; init; }
+    public Stream? SourceFileStream { get; init; }
 }
