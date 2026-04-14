@@ -1,96 +1,96 @@
-# FE API Contract - Parent Finance and Enrollment Confirmation PDF
+# Tài Liệu API FE - Tài Chính Phụ Huynh và PDF Xác Nhận Nhập Học
 
-Ngay cap nhat: `2026-04-14`
+Ngày cập nhật: `2026-04-14`
 
-Tai lieu nay ghi lai thay doi moi cho FE:
+Tài liệu này ghi lại thay đổi mới cho FE:
 
-- `GET /api/parent/overview` bo sung du lieu hoc phi/cong no va tien do goi hoc.
-- `POST /api/registrations/{id}/enrollment-confirmation-pdf` xuat phieu xac nhan nhap hoc PDF sau khi hoc vien da duoc xep lop.
+- `GET /api/parent/overview` bổ sung dữ liệu học phí/công nợ và tiến độ gói học.
+- `POST /api/registrations/{id}/enrollment-confirmation-pdf` xuất phiếu xác nhận nhập học PDF sau khi học viên đã được xếp lớp.
 
-## 1. Role va pham vi du lieu
+## 1. Role và phạm vi dữ liệu
 
-| Role | Du lieu duoc xem | Pham vi | Hanh dong duoc phep |
+| Role | Dữ liệu được xem | Phạm vi | Hành động được phép |
 | --- | --- | --- | --- |
-| Parent | Dashboard cua hoc sinh da lien ket voi parent profile hien tai | `own`, theo `studentProfileId` trong query hoac `studentId` trong token | `view` parent overview |
-| Admin | Registration, enrollment, PDF xac nhan nhap hoc | `all` theo code hien tai | `view`, `create`, `edit`, `cancel`, `assign`, `transfer`, `upgrade`, `generatePdf`, `regeneratePdf` |
-| ManagementStaff | Registration, enrollment, PDF xac nhan nhap hoc | `all` theo code hien tai; chua enforce branch/department filter trong endpoint nay | `view`, `create`, `edit`, `cancel`, `assign`, `transfer`, `upgrade`, `generatePdf`, `regeneratePdf` |
-| AccountantStaff | Khong duoc goi endpoint PDF theo attribute hien tai | `none` voi endpoint PDF | Khong co quyen tren endpoint PDF |
-| Teacher | Khong duoc goi cac endpoint trong tai lieu nay | `none` | Khong co quyen |
-| Student | Khong duoc goi cac endpoint trong tai lieu nay | `none` | Khong co quyen |
+| Parent | Dashboard của học sinh đã liên kết với parent profile hiện tại | `own`, theo `studentProfileId` trong query hoặc `studentId` trong token | `view` parent overview |
+| Admin | Registration, enrollment, PDF xác nhận nhập học | `all` theo code hiện tại | `view`, `create`, `edit`, `cancel`, `assign`, `transfer`, `upgrade`, `generatePdf`, `regeneratePdf` |
+| ManagementStaff | Registration, enrollment, PDF xác nhận nhập học | `all` theo code hiện tại; chưa enforce branch/department filter trong endpoint này | `view`, `create`, `edit`, `cancel`, `assign`, `transfer`, `upgrade`, `generatePdf`, `regeneratePdf` |
+| AccountantStaff | Không được gọi endpoint PDF theo attribute hiện tại | `none` với endpoint PDF | Không có quyền trên endpoint PDF |
+| Teacher | Không được gọi các endpoint trong tài liệu này | `none` | Không có quyền |
+| Student | Không được gọi các endpoint trong tài liệu này | `none` | Không có quyền |
 
-Luu y:
+Lưu ý:
 
-- `GET /api/parent/overview` hien chi dung `[Authorize]`, nhung handler bat buoc user hien tai phai co `ProfileType.Parent` active va hoc sinh phai nam trong `ParentStudentLinks`.
-- `POST /api/registrations/{id}/enrollment-confirmation-pdf` dung `[Authorize(Roles = "Admin,ManagementStaff")]`.
-- Neu can dung pham vi `department/branch` cho `ManagementStaff`, BE can bo sung filter branch trong handler/controller sau. Hien tai endpoint PDF chua enforce dieu nay.
+- `GET /api/parent/overview` hiện chỉ dùng `[Authorize]`, nhưng handler bắt buộc user hiện tại phải có `ProfileType.Parent` active và học sinh phải nằm trong `ParentStudentLinks`.
+- `POST /api/registrations/{id}/enrollment-confirmation-pdf` dùng `[Authorize(Roles = "Admin,ManagementStaff")]`.
+- Nếu cần dùng phạm vi `department/branch` cho `ManagementStaff`, BE cần bổ sung filter branch trong handler/controller sau. Hiện tại endpoint PDF chưa enforce điều này.
 
-## 2. Permission matrix
+## 2. Ma trận quyền
 
 | API | Parent | Admin | ManagementStaff | AccountantStaff | Teacher | Student |
 | --- | --- | --- | --- | --- | --- | --- |
-| `GET /api/parent/overview` | `view own` | Khong phai flow chinh | Khong phai flow chinh | Khong phai flow chinh | No | No |
+| `GET /api/parent/overview` | `view own` | Không phải flow chính | Không phải flow chính | Không phải flow chính | No | No |
 | `POST /api/registrations/{id}/enrollment-confirmation-pdf` | No | `generate/regenerate all` | `generate/regenerate all` | No | No | No |
 
-## 3. Danh sach API
+## 3. Danh sách API
 
 ### 3.1. `GET /api/parent/overview`
 
-Muc dich:
+Mục đích:
 
-- Tra dashboard tong hop cho parent theo hoc sinh da chon.
-- FE dung de hien:
-  - ten chuong trinh/goi hoc
-  - tong so buoi, da hoc, con lai
-  - tong cong no chuan tu BE
-  - han dong gan nhat va so ngay con lai/qua han
+- Trả dashboard tổng hợp cho parent theo học sinh đã chọn.
+- FE dùng để hiển thị:
+  - tên chương trình/gói học
+  - tổng số buổi, đã học, còn lại
+  - tổng công nợ chuẩn từ BE
+  - hạn đóng gần nhất và số ngày còn lại/quá hạn
 
-Thay doi moi:
+Thay đổi mới:
 
-- Them `programName`
-- Them `packageName`
-- Them `totalSessions`
-- Them `usedSessions`
-- Them `remainingSessions`
-- Them `outstandingAmount`
-- Them `nextDueDate`
-- Them `daysUntilDue`
-- `tuitionDue` cu duoc map ve cung gia tri voi `outstandingAmount` de FE cu khong bi lech.
+- Thêm `programName`
+- Thêm `packageName`
+- Thêm `totalSessions`
+- Thêm `usedSessions`
+- Thêm `remainingSessions`
+- Thêm `outstandingAmount`
+- Thêm `nextDueDate`
+- Thêm `daysUntilDue`
+- `tuitionDue` cũ được map về cùng giá trị với `outstandingAmount` để FE cũ không bị lệch.
 
-Quyen:
+Quyền:
 
 - Authenticated user.
-- User phai co parent profile active.
-- Hoc sinh phai linked voi parent profile hien tai.
+- User phải có parent profile active.
+- Học sinh phải linked với parent profile hiện tại.
 
-Pham vi du lieu:
+Phạm vi dữ liệu:
 
-- `own`: chi tra du lieu cua hoc sinh selected trong token hoac `studentProfileId` query.
-- Neu parent truyen `studentProfileId` khong linked voi minh, API tra loi `404`.
+- `own`: chỉ trả dữ liệu của học sinh selected trong token hoặc `studentProfileId` query.
+- Nếu parent truyền `studentProfileId` không linked với mình, API trả lỗi `404`.
 
 Params:
 
-| Field | Type | Required | Mo ta |
+| Field | Type | Required | Mô tả |
 | --- | --- | --- | --- |
-| `studentProfileId` | `Guid?` | No | Hoc sinh can xem. Neu khong truyen, BE dung `studentId` trong token. |
-| `classId` | `Guid?` | No | Loc theo lop active cua hoc sinh. Dong thoi dung de chon registration/class lien quan neu hop le. |
-| `sessionId` | `Guid?` | No | Loc upcoming session theo session cu the. |
-| `fromDate` | `DateTime?` | No | Ngay bat dau cho cac thong ke theo khoang thoi gian. Mac dinh `now - 1 month`. |
-| `toDate` | `DateTime?` | No | Ngay ket thuc cho cac thong ke theo khoang thoi gian. Mac dinh `now + 1 month`. |
+| `studentProfileId` | `Guid?` | No | Học sinh cần xem. Nếu không truyền, BE dùng `studentId` trong token. |
+| `classId` | `Guid?` | No | Lọc theo lớp active của học sinh. Đồng thời dùng để chọn registration/class liên quan nếu hợp lệ. |
+| `sessionId` | `Guid?` | No | Lọc upcoming session theo session cụ thể. |
+| `fromDate` | `DateTime?` | No | Ngày bắt đầu cho các thống kê theo khoảng thời gian. Mặc định `now - 1 month`. |
+| `toDate` | `DateTime?` | No | Ngày kết thúc cho các thống kê theo khoảng thời gian. Mặc định `now + 1 month`. |
 
-Business logic moi:
+Business logic mới:
 
-- So buoi khong suy tu lich hoc hay attendance.
-- BE lay `totalSessions`, `usedSessions`, `remainingSessions` tu `Registration`.
-- Registration hien hanh duoc chon theo cac status:
+- Số buổi không suy từ lịch học hay attendance.
+- BE lấy `totalSessions`, `usedSessions`, `remainingSessions` từ `Registration`.
+- Registration hiện hành được chọn theo các status:
   - `Studying`
   - `ClassAssigned`
   - `Paused`
-- Neu co nhieu registration hop le, BE uu tien `Studying`, sau do registration co `ActualStartDate`, `ExpectedStartDate`, `RegistrationDate` moi nhat.
-- `outstandingAmount` tinh tu invoice status `Pending` va `Overdue`, tru di tong payment da ghi nhan tren invoice.
-- `nextDueDate` chi lay tu invoice con no thuc su sau khi tru payment.
-- `daysUntilDue = nextDueDate - today` theo ngay Viet Nam. Gia tri am nghia la da qua han.
+- Nếu có nhiều registration hợp lệ, BE ưu tiên `Studying`, sau đó registration có `ActualStartDate`, `ExpectedStartDate`, `RegistrationDate` mới nhất.
+- `outstandingAmount` tính từ invoice status `Pending` và `Overdue`, trừ đi tổng payment đã ghi nhận trên invoice.
+- `nextDueDate` chỉ lấy từ invoice còn nợ thực sự sau khi trừ payment.
+- `daysUntilDue = nextDueDate - today` theo ngày Việt Nam. Giá trị âm nghĩa là đã quá hạn.
 
-Response success:
+Response thành công:
 
 HTTP `200 OK`
 
@@ -146,11 +146,11 @@ HTTP `200 OK`
 }
 ```
 
-Response error:
+Response lỗi:
 
 HTTP `401 Unauthorized`
 
-- Token thieu hoac khong hop le.
+- Token thiếu hoặc không hợp lệ.
 
 HTTP `404 Not Found`
 
@@ -183,30 +183,30 @@ HTTP `404 Not Found`
 
 Validation rule:
 
-- `studentProfileId` neu truyen phai la GUID hop le.
-- `classId` neu truyen phai la GUID hop le.
-- `sessionId` neu truyen phai la GUID hop le.
-- `fromDate` va `toDate` phai parse duoc thanh `DateTime`.
-- Parent chi duoc xem hoc sinh linked voi parent profile hien tai.
+- `studentProfileId` nếu truyền phải là GUID hợp lệ.
+- `classId` nếu truyền phải là GUID hợp lệ.
+- `sessionId` nếu truyền phải là GUID hợp lệ.
+- `fromDate` và `toDate` phải parse được thành `DateTime`.
+- Parent chỉ được xem học sinh linked với parent profile hiện tại.
 
 ### 3.2. `POST /api/registrations/{id}/enrollment-confirmation-pdf`
 
-Muc dich:
+Mục đích:
 
-- Xuat phieu xac nhan nhap hoc PDF cho registration da duoc xep lop.
-- FE dung `pdfUrl` de hien link tai/xem phieu.
-- Neu PDF da ton tai va `regenerate = false`, BE tra lai file cu, khong tao lai.
-- Neu `regenerate = true`, BE tao lai PDF va cap nhat `ClassEnrollment.EnrollmentConfirmationPdfUrl`.
+- Xuất phiếu xác nhận nhập học PDF cho registration đã được xếp lớp.
+- FE dùng `pdfUrl` để hiển thị link tải/xem phiếu.
+- Nếu PDF đã tồn tại và `regenerate = false`, BE trả lại file cũ, không tạo lại.
+- Nếu `regenerate = true`, BE tạo lại PDF và cập nhật `ClassEnrollment.EnrollmentConfirmationPdfUrl`.
 
-Quyen:
+Quyền:
 
 - `Admin`
 - `ManagementStaff`
 
-Pham vi du lieu:
+Phạm vi dữ liệu:
 
-- `all` theo code hien tai.
-- Chua enforce branch/department scope trong endpoint nay.
+- `all` theo code hiện tại.
+- Chưa enforce branch/department scope trong endpoint này.
 
 Endpoint:
 
@@ -216,35 +216,35 @@ POST /api/registrations/{id}/enrollment-confirmation-pdf?track=primary&regenerat
 
 Params:
 
-| Field | Type | Required | Default | Mo ta |
+| Field | Type | Required | Default | Mô tả |
 | --- | --- | --- | --- | --- |
 | `id` | `Guid` | Yes | N/A | Registration ID. |
-| `track` | `string` | No | `primary` | Track can xuat PDF. Gia tri hop le theo helper hien tai: `primary`, `secondary`. Gia tri khac se fallback ve `primary`. |
-| `regenerate` | `bool` | No | `false` | `false`: dung PDF cu neu da co. `true`: tao lai PDF. |
+| `track` | `string` | No | `primary` | Track cần xuất PDF. Giá trị hợp lệ theo helper hiện tại: `primary`, `secondary`. Giá trị khác sẽ fallback về `primary`. |
+| `regenerate` | `bool` | No | `false` | `false`: dùng PDF cũ nếu đã có. `true`: tạo lại PDF. |
 
 Body:
 
-- Khong co request body.
+- Không có request body.
 
 Business logic:
 
-- BE tim registration theo `{id}`.
+- BE tìm registration theo `{id}`.
 - BE normalize `track`:
   - `secondary` -> `RegistrationTrackType.Secondary`
-  - cac gia tri khac -> `RegistrationTrackType.Primary`
-- BE tim active enrollment theo:
+  - các giá trị khác -> `RegistrationTrackType.Primary`
+- BE tìm active enrollment theo:
   - `RegistrationId == id`
   - `Track == trackType`
   - `Status == EnrollmentStatus.Active`
-- Neu enrollment da co `EnrollmentConfirmationPdfUrl` va `regenerate = false`, BE tra response voi `reusedExistingPdf = true`.
-- Neu can tao moi:
-  - lay thong tin hoc sinh, phu huynh, chi nhanh, lop, chuong trinh, goi hoc
-  - lay ngay hoc dau tien tu `StudentSessionAssignments` status `Assigned`
-  - generate PDF bang `IEnrollmentConfirmationPdfGenerator`
-  - luu `EnrollmentConfirmationPdfUrl`, `EnrollmentConfirmationPdfGeneratedAt`, `EnrollmentConfirmationPdfGeneratedBy`
-  - tra URL download qua `IFileStorageService.GetDownloadUrl`
+- Nếu enrollment đã có `EnrollmentConfirmationPdfUrl` và `regenerate = false`, BE trả response với `reusedExistingPdf = true`.
+- Nếu cần tạo mới:
+  - lấy thông tin học sinh, phụ huynh, chi nhánh, lớp, chương trình, gói học
+  - lấy ngày học đầu tiên từ `StudentSessionAssignments` status `Assigned`
+  - generate PDF bằng `IEnrollmentConfirmationPdfGenerator`
+  - lưu `EnrollmentConfirmationPdfUrl`, `EnrollmentConfirmationPdfGeneratedAt`, `EnrollmentConfirmationPdfGeneratedBy`
+  - trả URL download qua `IFileStorageService.GetDownloadUrl`
 
-Response success:
+Response thành công:
 
 HTTP `200 OK`
 
@@ -271,7 +271,7 @@ HTTP `200 OK`
 }
 ```
 
-Response success khi dung lai PDF cu:
+Response thành công khi dùng lại PDF cũ:
 
 ```json
 {
@@ -296,19 +296,19 @@ Response success khi dung lai PDF cu:
 }
 ```
 
-Response error:
+Response lỗi:
 
 HTTP `401 Unauthorized`
 
-- Token thieu hoac khong hop le.
+- Token thiếu hoặc không hợp lệ.
 
 HTTP `403 Forbidden`
 
-- User khong co role `Admin` hoac `ManagementStaff`.
+- User không có role `Admin` hoặc `ManagementStaff`.
 
 HTTP `404 Not Found`
 
-Registration khong ton tai:
+Registration không tồn tại:
 
 ```json
 {
@@ -319,7 +319,7 @@ Registration khong ton tai:
 }
 ```
 
-Khong co active enrollment cho registration/track:
+Không có active enrollment cho registration/track:
 
 ```json
 {
@@ -332,7 +332,7 @@ Khong co active enrollment cho registration/track:
 
 HTTP `500 Internal Server Error`
 
-Loi generate PDF/file storage:
+Lỗi generate PDF/file storage:
 
 ```json
 {
@@ -345,29 +345,29 @@ Loi generate PDF/file storage:
 
 Validation rule:
 
-- `id` phai la GUID hop le.
-- `track` nen gui `primary` hoac `secondary`.
-- Neu FE gui `track` khac `secondary`, BE hien tai fallback ve `primary`, khong tra validation error.
-- `regenerate` phai parse duoc thanh boolean.
-- Registration phai ton tai.
-- Registration phai co active enrollment dung track.
-- Enrollment phai active; enrollment `Paused` hoac `Dropped` khong duoc xuat PDF theo endpoint hien tai.
+- `id` phải là GUID hợp lệ.
+- `track` nên gửi `primary` hoặc `secondary`.
+- Nếu FE gửi `track` khác `secondary`, BE hiện tại fallback về `primary`, không trả validation error.
+- `regenerate` phải parse được thành boolean.
+- Registration phải tồn tại.
+- Registration phải có active enrollment đúng track.
+- Enrollment phải active; enrollment `Paused` hoặc `Dropped` không được xuất PDF theo endpoint hiện tại.
 
-## 4. Status definition
+## 4. Định nghĩa status
 
 ### 4.1. `RegistrationStatus`
 
-| Status | Y nghia |
+| Status | Ý nghĩa |
 | --- | --- |
-| `New` | Registration moi tao, chua xep lop. |
-| `WaitingForClass` | Dang cho xep lop hoac con track chua co lop. |
-| `ClassAssigned` | Da xep lop nhung entry type khong phai vao hoc ngay, vi du `Makeup` hoac `Retake`. |
-| `Studying` | Da xep lop va dang hoc. |
-| `Paused` | Registration dang bao luu/tam dung. |
-| `Completed` | Hoan thanh goi hoc/khoa hoc. |
-| `Cancelled` | Da huy registration. |
+| `New` | Registration mới tạo, chưa xếp lớp. |
+| `WaitingForClass` | Đang chờ xếp lớp hoặc còn track chưa có lớp. |
+| `ClassAssigned` | Đã xếp lớp nhưng entry type không phải vào học ngay, ví dụ `Makeup` hoặc `Retake`. |
+| `Studying` | Đã xếp lớp và đang học. |
+| `Paused` | Registration đang bảo lưu/tạm dừng. |
+| `Completed` | Hoàn thành gói học/khóa học. |
+| `Cancelled` | Đã hủy registration. |
 
-Luong chuyen trang thai chinh:
+Luồng chuyển trạng thái chính:
 
 ```text
 New
@@ -384,25 +384,25 @@ Studying
   -> Studying
 ```
 
-Luu y theo code hien tai:
+Lưu ý theo code hiện tại:
 
-- `AssignClass` dung entry type de resolve status:
+- `AssignClass` dùng entry type để resolve status:
   - `Immediate` -> `Studying`
   - `Makeup` -> `ClassAssigned`
   - `Retake` -> `ClassAssigned`
   - `Wait` -> `WaitingForClass`
-- `MarkAttendance` co the set `Completed` khi `RemainingSessions == 0`.
-- `CancelRegistration` set registration ve `Cancelled` va drop active enrollment lien quan.
+- `MarkAttendance` có thể set `Completed` khi `RemainingSessions == 0`.
+- `CancelRegistration` set registration về `Cancelled` và drop active enrollment liên quan.
 
 ### 4.2. `EnrollmentStatus`
 
-| Status | Y nghia |
+| Status | Ý nghĩa |
 | --- | --- |
-| `Active` | Hoc vien dang active trong lop. |
-| `Paused` | Enrollment dang tam dung/bao luu. |
-| `Dropped` | Hoc vien da roi lop/drop enrollment. |
+| `Active` | Học viên đang active trong lớp. |
+| `Paused` | Enrollment đang tạm dừng/bảo lưu. |
+| `Dropped` | Học viên đã rời lớp/drop enrollment. |
 
-Luong chuyen trang thai chinh:
+Luồng chuyển trạng thái chính:
 
 ```text
 Active -> Paused -> Active
@@ -410,52 +410,52 @@ Active -> Dropped
 Paused -> Dropped
 ```
 
-Rang buoc voi PDF:
+Ràng buộc với PDF:
 
-- API enrollment confirmation PDF chi chap nhan enrollment `Active`.
+- API enrollment confirmation PDF chỉ chấp nhận enrollment `Active`.
 
 ### 4.3. `InvoiceStatus`
 
-| Status | Y nghia |
+| Status | Ý nghĩa |
 | --- | --- |
-| `Pending` | Hoa don dang cho thanh toan. |
-| `Paid` | Hoa don da thanh toan. |
-| `Overdue` | Hoa don da qua han. |
-| `Cancelled` | Hoa don da huy. |
+| `Pending` | Hóa đơn đang chờ thanh toán. |
+| `Paid` | Hóa đơn đã thanh toán. |
+| `Overdue` | Hóa đơn đã quá hạn. |
+| `Cancelled` | Hóa đơn đã hủy. |
 
-Lien quan `GET /api/parent/overview`:
+Liên quan `GET /api/parent/overview`:
 
-- `outstandingAmount` chi tinh invoice `Pending` va `Overdue`.
-- `Paid` va `Cancelled` khong tinh vao cong no.
-- Invoice `Pending/Overdue` nhung da du payment thi khong tinh vao `nextDueDate`.
+- `outstandingAmount` chỉ tính invoice `Pending` và `Overdue`.
+- `Paid` và `Cancelled` không tính vào công nợ.
+- Invoice `Pending/Overdue` nhưng đã đủ payment thì không tính vào `nextDueDate`.
 
 ### 4.4. `RegistrationTrackType`
 
-| API value | Domain value | Y nghia |
+| API value | Domain value | Ý nghĩa |
 | --- | --- | --- |
-| `primary` | `Primary` | Track chuong trinh chinh. |
-| `secondary` | `Secondary` | Track chuong trinh phu/secondary program. |
+| `primary` | `Primary` | Track chương trình chính. |
+| `secondary` | `Secondary` | Track chương trình phụ/secondary program. |
 
-## 5. Cac truong hop tra loi loi
+## 5. Các trường hợp trả lỗi
 
 | API | Case | HTTP | Code/Title |
 | --- | --- | --- | --- |
-| `GET /api/parent/overview` | Chua login/token sai | `401` | Standard auth error |
-| `GET /api/parent/overview` | User khong co parent profile active | `404` | `ParentProfile` |
-| `GET /api/parent/overview` | Khong co selected student | `404` | `StudentId` |
-| `GET /api/parent/overview` | Student khong linked voi parent | `404` | `Student` |
-| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Chua login/token sai | `401` | Standard auth error |
-| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Khong co role `Admin,ManagementStaff` | `403` | Standard authorization error |
-| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Registration khong ton tai | `404` | `Registration.NotFound` |
-| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Khong co active enrollment theo track | `404` | `Registration.EnrollmentNotFound` |
-| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Loi generate PDF/file storage | `500` | `Server failure` |
+| `GET /api/parent/overview` | Chưa login/token sai | `401` | Standard auth error |
+| `GET /api/parent/overview` | User không có parent profile active | `404` | `ParentProfile` |
+| `GET /api/parent/overview` | Không có selected student | `404` | `StudentId` |
+| `GET /api/parent/overview` | Student không linked với parent | `404` | `Student` |
+| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Chưa login/token sai | `401` | Standard auth error |
+| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Không có role `Admin,ManagementStaff` | `403` | Standard authorization error |
+| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Registration không tồn tại | `404` | `Registration.NotFound` |
+| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Không có active enrollment theo track | `404` | `Registration.EnrollmentNotFound` |
+| `POST /api/registrations/{id}/enrollment-confirmation-pdf` | Lỗi generate PDF/file storage | `500` | `Server failure` |
 
-## 6. Ghi chu cho FE
+## 6. Ghi chú cho FE
 
-- FE khong can tu tinh `remainingSessions` tu attendance nua; dung truc tiep `data.remainingSessions`.
-- FE nen dung `data.outstandingAmount` cho tong no; `data.tuitionDue` chi la alias/backward compatibility.
-- FE nen dung `data.nextDueDate` va `data.daysUntilDue` thay vi tu doan invoice nao la ky dong chinh.
-- Neu `daysUntilDue < 0`, co the hien thi qua han.
-- Neu `nextDueDate = null`, hien tai khong co invoice con no co due date.
-- Khi goi PDF, neu FE muon ep tao lai file moi thi truyen `regenerate=true`.
-- Neu registration co secondary track, FE can truyen `track=secondary` de xuat dung phieu cua enrollment secondary.
+- FE không cần tự tính `remainingSessions` từ attendance nữa; dùng trực tiếp `data.remainingSessions`.
+- FE nên dùng `data.outstandingAmount` cho tổng nợ; `data.tuitionDue` chỉ là alias/backward compatibility.
+- FE nên dùng `data.nextDueDate` và `data.daysUntilDue` thay vì tự đoán invoice nào là kỳ đóng chính.
+- Nếu `daysUntilDue < 0`, có thể hiển thị quá hạn.
+- Nếu `nextDueDate = null`, hiện tại không có invoice còn nợ có due date.
+- Khi gọi PDF, nếu FE muốn ép tạo lại file mới thì truyền `regenerate=true`.
+- Nếu registration có secondary track, FE cần truyền `track=secondary` để xuất đúng phiếu của enrollment secondary.
