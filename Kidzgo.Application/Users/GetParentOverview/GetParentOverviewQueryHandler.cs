@@ -110,18 +110,29 @@ public sealed class GetParentOverviewQueryHandler(
         };
 
         // Student Profiles
-        var studentProfiles = await context.Profiles
+        var studentProfilesRaw = await context.Profiles
             .AsNoTracking()
             .Where(p => studentProfileIds.Contains(p.Id))
-            .Select(p => new StudentProfileDto
+            .Select(p => new
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
-                Level = p.StudentLevel != null ? int.Parse(p.StudentLevel.CurrentLevel) : null,
+                LevelText = p.StudentLevel != null ? p.StudentLevel.CurrentLevel : null,
                 TotalStars = p.StarTransactions.Sum(st => st.Amount),
                 Xp = p.StudentLevel != null ? p.StudentLevel.CurrentXp : 0
             })
             .ToListAsync(cancellationToken);
+
+        var studentProfiles = studentProfilesRaw
+            .Select(p => new StudentProfileDto
+            {
+                Id = p.Id,
+                DisplayName = p.DisplayName,
+                Level = TryParseLevel(p.LevelText),
+                TotalStars = p.TotalStars,
+                Xp = p.Xp
+            })
+            .ToList();
 
         // Classes
         var classes = await context.ClassEnrollments
@@ -452,6 +463,20 @@ public sealed class GetParentOverviewQueryHandler(
             DaysUntilDue = daysUntilDue,
             UnreadNotifications = unreadNotifications
         };
+}
+
+    private static int? TryParseLevel(string? levelText)
+    {
+        if (string.IsNullOrWhiteSpace(levelText))
+        {
+            return null;
+        }
+
+        var digits = new string(levelText.Where(char.IsDigit).ToArray());
+
+        return int.TryParse(digits, out var level)
+            ? level
+            : null;
     }
 }
 
