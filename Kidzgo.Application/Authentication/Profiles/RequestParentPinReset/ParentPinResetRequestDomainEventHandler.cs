@@ -52,8 +52,10 @@ public sealed class ParentPinResetRequestDomainEventHandler(
         };
 
         // Xóa các token cũ chưa dùng của profile này
+        DateTime now = VietnamTime.UtcNow();
+
         var oldTokens = await context.ParentPinResetTokens
-            .Where(t => t.ProfileId == profile.Id && !t.IsUsed)
+            .Where(t => t.ProfileId == profile.Id && t.UsedAt == null && t.ExpiresAt > now)
             .ToListAsync(cancellationToken);
 
         if (oldTokens.Any())
