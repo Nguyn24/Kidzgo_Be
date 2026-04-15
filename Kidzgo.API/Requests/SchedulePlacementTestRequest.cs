@@ -17,7 +17,6 @@ public sealed class SchedulePlacementTestRequest
     public int? DurationMinutes { get; set; }
     [Required]
     public Guid? RoomId { get; set; }
-    public string? Room { get; set; }
     [Required]
     public Guid? InvigilatorUserId { get; set; }
 }

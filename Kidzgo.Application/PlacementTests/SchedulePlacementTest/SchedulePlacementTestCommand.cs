@@ -9,7 +9,6 @@ public sealed class SchedulePlacementTestCommand : ICommand<SchedulePlacementTes
     public DateTime ScheduledAt { get; init; }
     public int? DurationMinutes { get; init; }
     public Guid? RoomId { get; init; }
-    public string? Room { get; init; }
     public Guid? InvigilatorUserId { get; init; }
 }
 

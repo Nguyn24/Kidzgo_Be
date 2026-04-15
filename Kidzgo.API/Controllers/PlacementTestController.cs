@@ -46,7 +46,6 @@ public class PlacementTestController : ControllerBase
             ScheduledAt = request.ScheduledAt,
             DurationMinutes = request.DurationMinutes,
             RoomId = request.RoomId,
-            Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId
         };
 
@@ -168,7 +167,6 @@ public class PlacementTestController : ControllerBase
             ScheduledAt = request.ScheduledAt,
             DurationMinutes = request.DurationMinutes,
             RoomId = request.RoomId,
-            Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId,
             StudentProfileId = request.StudentProfileId,
             ClassId = request.ClassId
@@ -333,7 +331,6 @@ public class PlacementTestController : ControllerBase
             ScheduledAt = request.ScheduledAt,
             DurationMinutes = request.DurationMinutes,
             RoomId = request.RoomId,
-            Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId,
             Note = request.Note
         };

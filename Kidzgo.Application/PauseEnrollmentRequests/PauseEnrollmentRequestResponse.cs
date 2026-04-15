@@ -18,5 +18,9 @@ public sealed class PauseEnrollmentRequestResponse
     public string? OutcomeNote { get; set; }
     public Guid? OutcomeBy { get; set; }
     public DateTime? OutcomeAt { get; set; }
+    public Guid? ReassignedClassId { get; set; }
+    public Guid? ReassignedEnrollmentId { get; set; }
+    public Guid? OutcomeCompletedBy { get; set; }
+    public DateTime? OutcomeCompletedAt { get; set; }
     public List<PauseEnrollmentClassDto> Classes { get; set; } = new();
 }

@@ -21,10 +21,17 @@ public class PauseEnrollmentRequest : Entity
     public string? OutcomeNote { get; set; }
     public Guid? OutcomeBy { get; set; }
     public DateTime? OutcomeAt { get; set; }
+    public Guid? ReassignedClassId { get; set; }
+    public Guid? ReassignedEnrollmentId { get; set; }
+    public Guid? OutcomeCompletedBy { get; set; }
+    public DateTime? OutcomeCompletedAt { get; set; }
 
     public Profile StudentProfile { get; set; } = null!;
     public Class? Class { get; set; }
+    public Class? ReassignedClass { get; set; }
+    public ClassEnrollment? ReassignedEnrollment { get; set; }
     public User? ApprovedByUser { get; set; }
     public User? CancelledByUser { get; set; }
     public User? OutcomeByUser { get; set; }
+    public User? OutcomeCompletedByUser { get; set; }
 }

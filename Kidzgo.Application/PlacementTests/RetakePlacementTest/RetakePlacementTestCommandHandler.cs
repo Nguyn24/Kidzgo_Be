@@ -189,7 +189,7 @@ public sealed class RetakePlacementTestCommandHandler(
             DurationMinutes = duration,
             Status = PlacementTestStatus.Scheduled,
             RoomId = command.RoomId,
-            Room = string.IsNullOrWhiteSpace(command.Room) ? roomName : command.Room.Trim(),
+            Room = roomName,
             InvigilatorUserId = command.InvigilatorUserId,
             OriginalPlacementTestId = command.OriginalPlacementTestId,
             ResultScore = null,

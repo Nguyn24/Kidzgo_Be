@@ -28,5 +28,6 @@ public class ClassEnrollment : Entity
     public Profile StudentProfile { get; set; } = null!;
     public TuitionPlan? TuitionPlan { get; set; }
     public Registration? Registration { get; set; }
+    public ICollection<ClassEnrollmentScheduleSegment> ScheduleSegments { get; set; } = new List<ClassEnrollmentScheduleSegment>();
     public ICollection<StudentSessionAssignment> StudentSessionAssignments { get; set; } = new List<StudentSessionAssignment>();
 }

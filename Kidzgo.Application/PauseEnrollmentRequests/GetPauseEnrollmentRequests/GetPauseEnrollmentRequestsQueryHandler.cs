@@ -87,7 +87,11 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
                 r.Outcome,
                 r.OutcomeNote,
                 r.OutcomeBy,
-                r.OutcomeAt
+                r.OutcomeAt,
+                r.ReassignedClassId,
+                r.ReassignedEnrollmentId,
+                r.OutcomeCompletedBy,
+                r.OutcomeCompletedAt
             })
             .ToListAsync(cancellationToken);
 
@@ -207,6 +211,10 @@ public sealed class GetPauseEnrollmentRequestsQueryHandler(
                 OutcomeNote = r.OutcomeNote,
                 OutcomeBy = r.OutcomeBy,
                 OutcomeAt = r.OutcomeAt,
+                ReassignedClassId = r.ReassignedClassId,
+                ReassignedEnrollmentId = r.ReassignedEnrollmentId,
+                OutcomeCompletedBy = r.OutcomeCompletedBy,
+                OutcomeCompletedAt = r.OutcomeCompletedAt,
                 Classes = classLookup.TryGetValue(r.Id, out var classes) ? classes : new List<PauseEnrollmentClassDto>()
             })
             .ToList();

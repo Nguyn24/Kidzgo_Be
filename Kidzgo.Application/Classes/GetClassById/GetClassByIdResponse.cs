@@ -33,8 +33,17 @@ public sealed class GetClassByIdResponse
     public int StudentCount => CurrentEnrollmentCount;
     public int TotalSessions { get; init; }
     public int CompletedSessions { get; init; }
+    public List<ClassScheduleSegmentDto> ScheduleSegments { get; init; } = new();
     public decimal ProgressPercent => TotalSessions <= 0
         ? 0
         : Math.Round((decimal)CompletedSessions * 100 / TotalSessions, 2);
+}
+
+public sealed class ClassScheduleSegmentDto
+{
+    public Guid Id { get; init; }
+    public DateOnly EffectiveFrom { get; init; }
+    public DateOnly? EffectiveTo { get; init; }
+    public string SchedulePattern { get; init; } = null!;
 }
 

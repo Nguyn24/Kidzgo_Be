@@ -176,12 +176,7 @@ public sealed class UpdatePlacementTestCommandHandler(
             placementTest.ScheduledAt = effectiveScheduledAt;
         }
 
-        // Update Room if provided
-        if (command.Room is not null)
-        {
-            placementTest.Room = string.IsNullOrWhiteSpace(command.Room) ? null : command.Room.Trim();
-        }
-        else if (command.RoomId.HasValue)
+        if (command.RoomId.HasValue)
         {
             placementTest.Room = roomName;
         }

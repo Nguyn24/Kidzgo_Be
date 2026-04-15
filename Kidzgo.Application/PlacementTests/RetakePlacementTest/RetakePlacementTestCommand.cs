@@ -39,7 +39,6 @@ public sealed class RetakePlacementTestCommand : ICommand<RetakePlacementTestRes
     /// Phong thi
     /// </summary>
     public Guid? RoomId { get; init; }
-    public string? Room { get; init; }
 
     /// <summary>
     /// Nguoi coi thi

@@ -80,6 +80,85 @@ public sealed class StudentSessionAssignmentService(
         return Result.Success();
     }
 
+    public async Task<Result> ValidateSelectionPatternForPeriodAsync(
+        Class classEntity,
+        string? sessionSelectionPattern,
+        DateOnly effectiveFrom,
+        DateOnly? effectiveTo,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionSelectionPattern))
+        {
+            return Result.Success();
+        }
+
+        var validationStartDate = effectiveFrom > classEntity.StartDate
+            ? effectiveFrom
+            : classEntity.StartDate;
+        var validationEndDate = effectiveTo
+            ?? classEntity.EndDate
+            ?? validationStartDate.AddMonths(3);
+
+        if (validationEndDate < validationStartDate)
+        {
+            return Result.Failure(Error.Validation(
+                "Enrollment.ScheduleSegmentInvalidEffectiveDate",
+                "Schedule segment effective range is invalid."));
+        }
+
+        var selectionResult = patternParser.ParseAndGenerateOccurrences(
+            sessionSelectionPattern,
+            validationStartDate,
+            validationEndDate);
+
+        if (selectionResult.IsFailure)
+        {
+            return Result.Failure(Error.Validation(
+                "Enrollment.SessionSelectionPatternInvalid",
+                selectionResult.Error.Description));
+        }
+
+        if (selectionResult.Value.Count == 0)
+        {
+            return Result.Failure(Error.Validation(
+                "Enrollment.SessionSelectionPatternEmpty",
+                "Session selection pattern does not match any session slot in the validation range."));
+        }
+
+        var classOccurrencesResult = await GetClassScheduleOccurrencesForPeriodAsync(
+            classEntity,
+            validationStartDate,
+            validationEndDate,
+            cancellationToken);
+
+        if (classOccurrencesResult.IsFailure)
+        {
+            return Result.Failure(classOccurrencesResult.Error);
+        }
+
+        if (classOccurrencesResult.Value.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        var classOccurrences = classOccurrencesResult.Value
+            .Select(ToMinuteKey)
+            .ToHashSet();
+
+        var isSubset = selectionResult.Value
+            .Select(ToMinuteKey)
+            .All(classOccurrences.Contains);
+
+        if (!isSubset)
+        {
+            return Result.Failure(Error.Validation(
+                "Enrollment.SessionSelectionPatternMismatch",
+                "Session selection pattern must be a subset of the class schedule pattern."));
+        }
+
+        return Result.Success();
+    }
+
     public async Task SyncAssignmentsForEnrollmentAsync(
         ClassEnrollment enrollment,
         CancellationToken cancellationToken)
@@ -93,6 +172,7 @@ public sealed class StudentSessionAssignmentService(
             .Where(a => a.ClassEnrollmentId == enrollment.Id)
             .ToListAsync(cancellationToken);
         var pauseLookup = await GetPauseLookupAsync(new[] { enrollment.Id }, cancellationToken);
+        var scheduleSegmentLookup = await GetEnrollmentScheduleSegmentLookupAsync(new[] { enrollment.Id }, cancellationToken);
 
         var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
         var now = VietnamTime.UtcNow();
@@ -100,11 +180,15 @@ public sealed class StudentSessionAssignmentService(
         foreach (var session in sessions)
         {
             var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
+            var sessionSelectionPattern = ResolveSessionSelectionPattern(
+                enrollment,
+                sessionDate,
+                scheduleSegmentLookup);
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
                 sessionDate >= sessionDateFrom &&
                 !EnrollmentPauseWindowHelper.IsPausedOn(enrollment.Id, sessionDate, pauseLookup) &&
-                MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
+                MatchesSelectionPattern(session, sessionSelectionPattern);
 
             assignmentsBySessionId.TryGetValue(session.Id, out var assignment);
 
@@ -168,13 +252,19 @@ public sealed class StudentSessionAssignmentService(
             .ToListAsync(cancellationToken);
 
         var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
+        var scheduleSegmentLookup = await GetEnrollmentScheduleSegmentLookupAsync(new[] { enrollment.Id }, cancellationToken);
         var now = VietnamTime.UtcNow();
 
         foreach (var session in sessions)
         {
+            var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
+            var sessionSelectionPattern = ResolveSessionSelectionPattern(
+                enrollment,
+                sessionDate,
+                scheduleSegmentLookup);
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
-                MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
+                MatchesSelectionPattern(session, sessionSelectionPattern);
 
             assignmentsBySessionId.TryGetValue(session.Id, out var assignment);
 
@@ -223,6 +313,9 @@ public sealed class StudentSessionAssignmentService(
         var pauseLookup = await GetPauseLookupAsync(
             activeEnrollments.Select(e => e.Id),
             cancellationToken);
+        var scheduleSegmentLookup = await GetEnrollmentScheduleSegmentLookupAsync(
+            activeEnrollments.Select(e => e.Id),
+            cancellationToken);
 
         var existingAssignments = await context.StudentSessionAssignments
             .Where(a => a.SessionId == session.Id)
@@ -238,7 +331,9 @@ public sealed class StudentSessionAssignmentService(
                 session.Status != SessionStatus.Cancelled &&
                 sessionDate >= enrollment.EnrollDate &&
                 !EnrollmentPauseWindowHelper.IsPausedOn(enrollment.Id, sessionDate, pauseLookup) &&
-                MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
+                MatchesSelectionPattern(
+                    session,
+                    ResolveSessionSelectionPattern(enrollment, sessionDate, scheduleSegmentLookup));
 
             assignmentsByEnrollmentId.TryGetValue(enrollment.Id, out var assignment);
 
@@ -420,9 +515,15 @@ public sealed class StudentSessionAssignmentService(
                 && e.Status == EnrollmentStatus.Active
                 && e.EnrollDate <= sessionDate)
             .ToListAsync(cancellationToken);
+        var scheduleSegmentLookup = await GetEnrollmentScheduleSegmentLookupAsync(
+            activeEnrollments.Select(e => e.Id),
+            cancellationToken);
 
         return activeEnrollments
-            .Where(e => !EnrollmentPauseWindowHelper.IsPausedOn(e.Id, sessionDate, pauseLookup))
+            .Where(e => !EnrollmentPauseWindowHelper.IsPausedOn(e.Id, sessionDate, pauseLookup) &&
+                MatchesSelectionPattern(
+                    new Session { PlannedDatetime = sessionInfo.PlannedDatetime },
+                    ResolveSessionSelectionPattern(e, sessionDate, scheduleSegmentLookup)))
             .Select(e => new RegularSessionParticipant(
                 e.StudentProfileId,
                 e.Id,
@@ -456,6 +557,120 @@ public sealed class StudentSessionAssignmentService(
             .ToListAsync(cancellationToken);
 
         return EnrollmentPauseWindowHelper.BuildLookup(pauseWindows);
+    }
+
+    private async Task<Result<List<DateTime>>> GetClassScheduleOccurrencesForPeriodAsync(
+        Class classEntity,
+        DateOnly validationStartDate,
+        DateOnly validationEndDate,
+        CancellationToken cancellationToken)
+    {
+        var scheduleSegments = await context.ClassScheduleSegments
+            .AsNoTracking()
+            .Where(segment => segment.ClassId == classEntity.Id)
+            .OrderBy(segment => segment.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        if (scheduleSegments.Count == 0)
+        {
+            if (string.IsNullOrWhiteSpace(classEntity.SchedulePattern))
+            {
+                return Result.Success(new List<DateTime>());
+            }
+
+            var classResult = patternParser.ParseAndGenerateOccurrences(
+                classEntity.SchedulePattern,
+                validationStartDate,
+                validationEndDate);
+
+            if (classResult.IsFailure)
+            {
+                return Result.Failure<List<DateTime>>(Error.Validation(
+                    "Enrollment.ClassSchedulePatternInvalid",
+                    classResult.Error.Description));
+            }
+
+            return Result.Success(classResult.Value);
+        }
+
+        var occurrences = new List<DateTime>();
+        foreach (var segment in scheduleSegments)
+        {
+            if (segment.EffectiveFrom > validationEndDate ||
+                (segment.EffectiveTo.HasValue && segment.EffectiveTo.Value < validationStartDate))
+            {
+                continue;
+            }
+
+            var segmentStart = segment.EffectiveFrom > validationStartDate
+                ? segment.EffectiveFrom
+                : validationStartDate;
+            var segmentEnd = segment.EffectiveTo.HasValue && segment.EffectiveTo.Value < validationEndDate
+                ? segment.EffectiveTo.Value
+                : validationEndDate;
+
+            var classResult = patternParser.ParseAndGenerateOccurrences(
+                segment.SchedulePattern,
+                segmentStart,
+                segmentEnd);
+
+            if (classResult.IsFailure)
+            {
+                return Result.Failure<List<DateTime>>(Error.Validation(
+                    "Enrollment.ClassSchedulePatternInvalid",
+                    classResult.Error.Description));
+            }
+
+            occurrences.AddRange(classResult.Value);
+        }
+
+        return Result.Success(occurrences);
+    }
+
+    private async Task<Dictionary<Guid, List<ClassEnrollmentScheduleSegment>>> GetEnrollmentScheduleSegmentLookupAsync(
+        IEnumerable<Guid> enrollmentIds,
+        CancellationToken cancellationToken)
+    {
+        var enrollmentIdList = enrollmentIds
+            .Distinct()
+            .ToList();
+
+        if (enrollmentIdList.Count == 0)
+        {
+            return new Dictionary<Guid, List<ClassEnrollmentScheduleSegment>>();
+        }
+
+        var segments = await context.ClassEnrollmentScheduleSegments
+            .AsNoTracking()
+            .Where(segment => enrollmentIdList.Contains(segment.ClassEnrollmentId))
+            .OrderBy(segment => segment.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        return segments
+            .GroupBy(segment => segment.ClassEnrollmentId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.ToList());
+    }
+
+    private static string? ResolveSessionSelectionPattern(
+        ClassEnrollment enrollment,
+        DateOnly sessionDate,
+        IReadOnlyDictionary<Guid, List<ClassEnrollmentScheduleSegment>> scheduleSegmentLookup)
+    {
+        if (!scheduleSegmentLookup.TryGetValue(enrollment.Id, out var segments) ||
+            segments.Count == 0)
+        {
+            return enrollment.SessionSelectionPattern;
+        }
+
+        var matchingSegment = segments
+            .Where(segment => segment.EffectiveFrom <= sessionDate &&
+                (!segment.EffectiveTo.HasValue || sessionDate <= segment.EffectiveTo.Value))
+            .OrderByDescending(segment => segment.EffectiveFrom)
+            .FirstOrDefault();
+
+        return matchingSegment?.SessionSelectionPattern ?? enrollment.SessionSelectionPattern;
     }
 
     private bool MatchesSelectionPattern(Session session, string? sessionSelectionPattern)

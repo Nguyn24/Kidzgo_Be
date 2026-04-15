@@ -6,6 +6,7 @@ using Kidzgo.Application.PauseEnrollmentRequests.CancelPauseEnrollmentRequest;
 using Kidzgo.Application.PauseEnrollmentRequests.CreatePauseEnrollmentRequest;
 using Kidzgo.Application.PauseEnrollmentRequests.GetPauseEnrollmentRequestById;
 using Kidzgo.Application.PauseEnrollmentRequests.GetPauseEnrollmentRequests;
+using Kidzgo.Application.PauseEnrollmentRequests.ReassignEquivalentClass;
 using Kidzgo.Application.PauseEnrollmentRequests.RejectPauseEnrollmentRequest;
 using Kidzgo.Application.PauseEnrollmentRequests.UpdatePauseEnrollmentOutcome;
 using Kidzgo.Domain.Classes;
@@ -129,6 +130,27 @@ public class PauseEnrollmentRequestController : ControllerBase
             Id = id,
             Outcome = request.Outcome,
             OutcomeNote = request.OutcomeNote
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("{id:guid}/reassign-equivalent-class")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> ReassignEquivalentClass(
+        Guid id,
+        [FromBody] ReassignEquivalentClassRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReassignEquivalentClassCommand
+        {
+            PauseEnrollmentRequestId = id,
+            RegistrationId = request.RegistrationId,
+            NewClassId = request.NewClassId,
+            Track = request.Track,
+            SessionSelectionPattern = request.SessionSelectionPattern,
+            EffectiveDate = request.EffectiveDate
         };
 
         var result = await _mediator.Send(command, cancellationToken);
