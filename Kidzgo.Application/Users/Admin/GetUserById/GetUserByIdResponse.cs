@@ -10,6 +10,7 @@ public sealed class GetUserByIdResponse
     public string? PhoneNumber { get; set; }
     public string Email { get; set; } = null!;
     public string Role { get; set; } = null!;
+    public string? AvatarUrl { get; set; }
     public string? TeacherCompensationType { get; set; }
     public Guid? BranchId { get; set; }
     public string? BranchCode { get; set; }
@@ -33,6 +34,7 @@ public sealed class UserProfilePresenceDto
     public Guid Id { get; set; }
     public string ProfileType { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
+    public string? AvatarUrl { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public DateTime? LastSeenAt { get; set; }

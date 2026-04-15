@@ -1,7 +1,6 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
-using Kidzgo.Application.Classes;
 using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
@@ -15,8 +14,7 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
     IDbContext context,
     IUserContext userContext,
     ITemplateRenderer templateRenderer,
-    StudentSessionAssignmentService studentSessionAssignmentService,
-    StudentEnrollmentScheduleConflictService studentEnrollmentScheduleConflictService)
+    StudentSessionAssignmentService studentSessionAssignmentService)
     : ICommandHandler<UpdatePauseEnrollmentOutcomeCommand>
 {
     public async Task<Result> Handle(UpdatePauseEnrollmentOutcomeCommand request, CancellationToken cancellationToken)
@@ -34,13 +32,9 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
             return Result.Failure(PauseEnrollmentRequestErrors.OutcomeNotAllowed);
         }
 
-        if (request.Outcome == PauseEnrollmentOutcome.ContinueSameClass)
+        if (request.Outcome == PauseEnrollmentOutcome.ReassignEquivalentClass)
         {
-            var reactivateResult = await ReactivatePausedEnrollmentsAsync(pauseRequest, cancellationToken);
-            if (reactivateResult.IsFailure)
-            {
-                return reactivateResult;
-            }
+            await CancelAssignmentsAfterPauseAsync(pauseRequest, studentSessionAssignmentService, cancellationToken);
         }
 
         pauseRequest.Outcome = request.Outcome;
@@ -62,139 +56,69 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
             request.OutcomeNote,
             cancellationToken);
 
+        if (request.Outcome == PauseEnrollmentOutcome.ReassignEquivalentClass)
+        {
+            await PauseEnrollmentRequestNotificationHelper.NotifyStaffFollowUpAsync(
+                context,
+                templateRenderer,
+                pauseRequest.StudentProfileId,
+                pauseRequest.Id,
+                pauseRequest.PauseFrom,
+                pauseRequest.PauseTo,
+                PauseEnrollmentRequestNotificationHelper.StaffFollowUpType.ReassignEquivalentClass,
+                request.OutcomeNote,
+                cancellationToken);
+        }
+        else if (request.Outcome == PauseEnrollmentOutcome.ContinueWithTutoring)
+        {
+            await PauseEnrollmentRequestNotificationHelper.NotifyStaffFollowUpAsync(
+                context,
+                templateRenderer,
+                pauseRequest.StudentProfileId,
+                pauseRequest.Id,
+                pauseRequest.PauseFrom,
+                pauseRequest.PauseTo,
+                PauseEnrollmentRequestNotificationHelper.StaffFollowUpType.ContinueWithTutoring,
+                request.OutcomeNote,
+                cancellationToken);
+        }
+
         return Result.Success();
     }
 
-    private async Task<Result> ReactivatePausedEnrollmentsAsync(
+    private async Task CancelAssignmentsAfterPauseAsync(
         PauseEnrollmentRequest pauseRequest,
+        StudentSessionAssignmentService studentSessionAssignmentService,
         CancellationToken cancellationToken)
     {
         var enrollmentIds = await context.PauseEnrollmentRequestHistories
-            .Where(h => h.PauseEnrollmentRequestId == pauseRequest.Id &&
-                        h.EnrollmentId.HasValue &&
-                        h.NewStatus == EnrollmentStatus.Paused)
-            .Select(h => h.EnrollmentId!.Value)
+            .Where(history => history.PauseEnrollmentRequestId == pauseRequest.Id &&
+                              history.EnrollmentId.HasValue &&
+                              history.NewStatus == EnrollmentStatus.Paused)
+            .Select(history => history.EnrollmentId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         if (enrollmentIds.Count == 0)
         {
-            return Result.Success();
+            return;
         }
 
-        var enrollments = await context.ClassEnrollments
-            .Include(e => e.Class)
-            .Where(e => enrollmentIds.Contains(e.Id))
-            .ToListAsync(cancellationToken);
-
-        if (enrollments.Any(e => e.Status == EnrollmentStatus.Dropped))
-        {
-            return Result.Failure(EnrollmentErrors.CannotReactivateDropped);
-        }
-
-        var now = VietnamTime.UtcNow();
-        var today = VietnamTime.ToVietnamDateOnly(now);
         var effectiveFrom = pauseRequest.PauseTo.AddDays(1);
+        var today = VietnamTime.ToVietnamDateOnly(VietnamTime.UtcNow());
         if (today > effectiveFrom)
         {
             effectiveFrom = today;
         }
 
-        var pausedEnrollments = enrollments
-            .Where(e => e.Status == EnrollmentStatus.Paused)
-            .ToList();
-        var pendingReactivatedSlots = new List<StudentBookedSlot>();
+        var effectiveFromUtc = VietnamTime.TreatAsVietnamLocal(effectiveFrom.ToDateTime(TimeOnly.MinValue));
 
-        var reactivationCountsByClass = pausedEnrollments
-            .GroupBy(e => e.ClassId)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        foreach (var classId in reactivationCountsByClass.Keys)
+        foreach (var enrollmentId in enrollmentIds)
         {
-            var classEntity = enrollments
-                .First(e => e.ClassId == classId)
-                .Class;
-
-            var currentEnrollmentCount = await context.ClassEnrollments
-                .CountAsync(ce => ce.ClassId == classId && ce.Status == EnrollmentStatus.Active, cancellationToken);
-
-            ClassCapacityStatusHelper.SyncAvailabilityStatus(classEntity, currentEnrollmentCount, now);
-
-            if (classEntity.Status != ClassStatus.Active &&
-                classEntity.Status != ClassStatus.Planned &&
-                classEntity.Status != ClassStatus.Recruiting)
-            {
-                return Result.Failure(EnrollmentErrors.ClassNotAvailable);
-            }
-
-            if (currentEnrollmentCount + reactivationCountsByClass[classId] > classEntity.Capacity)
-            {
-                return Result.Failure(EnrollmentErrors.ClassFull);
-            }
-        }
-
-        foreach (var enrollment in pausedEnrollments)
-        {
-            var assignmentStartDate = effectiveFrom > enrollment.EnrollDate
-                ? effectiveFrom
-                : enrollment.EnrollDate;
-
-            var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
-                enrollment.StudentProfileId,
-                enrollment.ClassId,
-                assignmentStartDate,
-                enrollment.SessionSelectionPattern,
-                cancellationToken,
-                additionalBookedSlots: pendingReactivatedSlots,
-                excludeEnrollmentId: enrollment.Id);
-            if (conflictResult.IsFailure)
-            {
-                return conflictResult;
-            }
-
-            var candidateSlots = await studentEnrollmentScheduleConflictService.GetCandidateSlotsAsync(
-                enrollment.ClassId,
-                assignmentStartDate,
-                enrollment.SessionSelectionPattern,
+            await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+                enrollmentId,
+                effectiveFromUtc,
                 cancellationToken);
-            pendingReactivatedSlots.AddRange(candidateSlots);
-
-            enrollment.Status = EnrollmentStatus.Active;
-            enrollment.UpdatedAt = now;
-            await studentSessionAssignmentService.RestoreAssignmentsForEnrollmentAsync(
-                enrollment,
-                effectiveFrom,
-                cancellationToken);
-
-            context.PauseEnrollmentRequestHistories.Add(new PauseEnrollmentRequestHistory
-            {
-                Id = Guid.NewGuid(),
-                PauseEnrollmentRequestId = pauseRequest.Id,
-                StudentProfileId = enrollment.StudentProfileId,
-                ClassId = enrollment.ClassId,
-                EnrollmentId = enrollment.Id,
-                PreviousStatus = EnrollmentStatus.Paused,
-                NewStatus = EnrollmentStatus.Active,
-                PauseFrom = pauseRequest.PauseFrom,
-                PauseTo = pauseRequest.PauseTo,
-                ChangedAt = now,
-                ChangedBy = userContext.UserId
-            });
         }
-
-        foreach (var classId in reactivationCountsByClass.Keys)
-        {
-            var classEntity = enrollments
-                .First(e => e.ClassId == classId)
-                .Class;
-            var currentEnrollmentCount = await context.ClassEnrollments
-                .CountAsync(ce => ce.ClassId == classId && ce.Status == EnrollmentStatus.Active, cancellationToken);
-            ClassCapacityStatusHelper.SyncAvailabilityStatus(
-                classEntity,
-                currentEnrollmentCount + reactivationCountsByClass[classId],
-                now);
-        }
-
-        return Result.Success();
     }
 }

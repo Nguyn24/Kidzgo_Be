@@ -158,6 +158,29 @@ public static class DependencyInjection
                         .RepeatForever());
                 }
             });
+
+            // Register ResumePausedEnrollmentsJob
+            var resumePausedEnrollmentsJobKey = new JobKey(nameof(ResumePausedEnrollmentsJob));
+            var resumePausedEnrollmentsCron = configuration["Quartz:Schedules:ResumePausedEnrollmentsJob"];
+
+            q.AddJob<ResumePausedEnrollmentsJob>(opts => opts.WithIdentity(resumePausedEnrollmentsJobKey));
+
+            q.AddTrigger(opts =>
+            {
+                opts.ForJob(resumePausedEnrollmentsJobKey)
+                    .WithIdentity($"{nameof(ResumePausedEnrollmentsJob)}.trigger");
+
+                if (!string.IsNullOrWhiteSpace(resumePausedEnrollmentsCron))
+                {
+                    opts.WithCronSchedule(resumePausedEnrollmentsCron, x => x.WithMisfireHandlingInstructionDoNothing());
+                }
+                else
+                {
+                    opts.WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(5)
+                        .RepeatForever());
+                }
+            });
         });
 
         services.AddQuartzHostedService(options =>

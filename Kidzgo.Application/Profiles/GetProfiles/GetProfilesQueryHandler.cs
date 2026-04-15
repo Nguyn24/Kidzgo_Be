@@ -36,6 +36,7 @@ public sealed class GetProfilesQueryHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
+                AvatarUrl = p.AvatarUrl ?? p.User.AvatarUrl,
                 Name = p.Name,
                 Gender = p.Gender?.ToString(),
                 DateOfBirth = p.DateOfBirth,

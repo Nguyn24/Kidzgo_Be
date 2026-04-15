@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Notifications.Events;
+using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PauseEnrollmentRequests.Notifications;
@@ -17,12 +18,20 @@ internal static class PauseEnrollmentRequestNotificationHelper
     private const string ApprovedZaloCode = "PAUSE_ENROLLMENT_APPROVED_ZALO";
     private const string RejectedZaloCode = "PAUSE_ENROLLMENT_REJECTED_ZALO";
     private const string OutcomeZaloCode = "PAUSE_ENROLLMENT_OUTCOME_ZALO";
+    private const string StaffReassignInAppCode = "PAUSE_ENROLLMENT_STAFF_REASSIGN_INAPP";
+    private const string StaffTutoringInAppCode = "PAUSE_ENROLLMENT_STAFF_TUTORING_INAPP";
 
     internal enum NotificationType
     {
         Approved,
         Rejected,
         OutcomeUpdated
+    }
+
+    internal enum StaffFollowUpType
+    {
+        ReassignEquivalentClass,
+        ContinueWithTutoring
     }
 
     public static async Task NotifyAsync(
@@ -76,14 +85,14 @@ internal static class PauseEnrollmentRequestNotificationHelper
         };
 
         var parentUserIds = await context.ParentStudentLinks
-            .Where(l => l.StudentProfileId == studentProfileId && l.ParentProfile.UserId != default(Guid))
-            .Select(l => l.ParentProfile.UserId)
+            .Where(link => link.StudentProfileId == studentProfileId && link.ParentProfile.UserId != default(Guid))
+            .Select(link => link.ParentProfile.UserId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var studentUserId = await context.Profiles
-            .Where(p => p.Id == studentProfileId)
-            .Select(p => p.UserId)
+            .Where(profile => profile.Id == studentProfileId)
+            .Select(profile => profile.UserId)
             .FirstOrDefaultAsync(cancellationToken);
 
         var recipientUserIds = new HashSet<Guid>(parentUserIds);
@@ -201,6 +210,104 @@ internal static class PauseEnrollmentRequestNotificationHelper
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public static async Task NotifyStaffFollowUpAsync(
+        IDbContext context,
+        ITemplateRenderer templateRenderer,
+        Guid studentProfileId,
+        Guid requestId,
+        DateOnly pauseFrom,
+        DateOnly pauseTo,
+        StaffFollowUpType type,
+        string? outcomeNote,
+        CancellationToken cancellationToken)
+    {
+        var studentName = await context.Profiles
+            .Where(profile => profile.Id == studentProfileId)
+            .Select(profile => profile.DisplayName)
+            .FirstOrDefaultAsync(cancellationToken) ?? "Học sinh";
+
+        var branchIds = await context.PauseEnrollmentRequestHistories
+            .Where(history => history.PauseEnrollmentRequestId == requestId)
+            .Select(history => history.Class.BranchId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var staffUsers = await context.Users
+            .Where(user => user.IsActive && !user.IsDeleted &&
+                           (user.Role == UserRole.Admin ||
+                            (user.Role == UserRole.ManagementStaff &&
+                             user.BranchId.HasValue &&
+                             branchIds.Contains(user.BranchId.Value))))
+            .Select(user => new { user.Id, user.BranchId, Role = user.Role.ToString() })
+            .ToListAsync(cancellationToken);
+
+        if (staffUsers.Count == 0)
+        {
+            return;
+        }
+
+        var placeholders = new Dictionary<string, string>
+        {
+            ["student_name"] = studentName,
+            ["pause_from"] = pauseFrom.ToString("dd/MM/yyyy"),
+            ["pause_to"] = pauseTo.ToString("dd/MM/yyyy"),
+            ["outcome_note"] = outcomeNote ?? string.Empty
+        };
+
+        var (templateCode, fallbackTitle, fallbackContent, priority) = type switch
+        {
+            StaffFollowUpType.ReassignEquivalentClass => (
+                StaffReassignInAppCode,
+                "Cần xếp lớp mới cho học sinh bảo lưu",
+                string.IsNullOrWhiteSpace(outcomeNote)
+                    ? $"Học sinh {studentName} có outcome bảo lưu ReassignEquivalentClass cho giai đoạn {pauseFrom:dd/MM/yyyy} - {pauseTo:dd/MM/yyyy}. Vui lòng kiểm tra và xếp lớp khác thủ công."
+                    : $"Học sinh {studentName} có outcome bảo lưu ReassignEquivalentClass cho giai đoạn {pauseFrom:dd/MM/yyyy} - {pauseTo:dd/MM/yyyy}. Ghi chú: {outcomeNote}. Vui lòng kiểm tra và xếp lớp khác thủ công.",
+                "high"),
+            _ => (
+                StaffTutoringInAppCode,
+                "Cần tư vấn gói học kèm sau bảo lưu",
+                string.IsNullOrWhiteSpace(outcomeNote)
+                    ? $"Học sinh {studentName} có outcome bảo lưu ContinueWithTutoring cho giai đoạn {pauseFrom:dd/MM/yyyy} - {pauseTo:dd/MM/yyyy}. Vui lòng tư vấn chọn gói và khóa học kèm thêm."
+                    : $"Học sinh {studentName} có outcome bảo lưu ContinueWithTutoring cho giai đoạn {pauseFrom:dd/MM/yyyy} - {pauseTo:dd/MM/yyyy}. Ghi chú: {outcomeNote}. Vui lòng tư vấn chọn gói và khóa học kèm thêm.",
+                "normal")
+        };
+
+        var template = await GetTemplateAsync(context, templateCode, NotificationChannel.InApp, cancellationToken);
+        var title = template is null
+            ? fallbackTitle
+            : templateRenderer.Render(template.Title, placeholders);
+        var content = template is null
+            ? fallbackContent
+            : templateRenderer.Render(template.Content ?? string.Empty, placeholders);
+
+        var now = VietnamTime.UtcNow();
+        var notifications = staffUsers
+            .Select(staff => new Notification
+            {
+                Id = Guid.NewGuid(),
+                RecipientUserId = staff.Id,
+                RecipientProfileId = studentProfileId,
+                Channel = NotificationChannel.InApp,
+                Title = title,
+                Content = content,
+                Deeplink = $"/pause-enrollment-requests/{requestId}",
+                NotificationTemplateId = template?.Id,
+                Status = NotificationStatus.Pending,
+                CreatedAt = now,
+                TargetRole = staff.Role,
+                Kind = "pause_enrollment_follow_up",
+                Priority = priority,
+                SenderRole = "System",
+                SenderName = "System",
+                ScopeBranchId = staff.BranchId,
+                ScopeStudentProfileId = studentProfileId
+            })
+            .ToList();
+
+        context.Notifications.AddRange(notifications);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     private static Task<NotificationTemplate?> GetTemplateAsync(
         IDbContext context,
         string code,
@@ -208,7 +315,7 @@ internal static class PauseEnrollmentRequestNotificationHelper
         CancellationToken cancellationToken)
     {
         return context.NotificationTemplates
-            .Where(t => t.Code == code && t.Channel == channel && t.IsActive && !t.IsDeleted)
+            .Where(template => template.Code == code && template.Channel == channel && template.IsActive && !template.IsDeleted)
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

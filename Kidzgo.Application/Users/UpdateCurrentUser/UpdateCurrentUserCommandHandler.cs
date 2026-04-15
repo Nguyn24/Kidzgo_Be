@@ -19,6 +19,7 @@ public sealed class UpdateCurrentUserCommandHandler(
         CancellationToken cancellationToken)
     {
         var currentUserId = userContext.UserId;
+        var now = VietnamTime.UtcNow();
 
         var user = await context.Users
             .Include(u => u.Profiles.Where(p => !p.IsDeleted && p.IsActive))
@@ -80,26 +81,19 @@ public sealed class UpdateCurrentUserCommandHandler(
             user.AvatarUrl = command.AvatarUrl;
         }
 
-        // Update profiles if provided
         if (command.Profiles != null && command.Profiles.Any())
         {
-            foreach (var profileUpdate in command.Profiles)
+            if (user.Role == UserRole.Parent)
             {
-                var profile = user.Profiles.FirstOrDefault(p => p.Id == profileUpdate.Id);
-                
-                if (profile != null)
-                {
-                    // Only update DisplayName if provided, otherwise keep existing value
-                    if (!string.IsNullOrWhiteSpace(profileUpdate.DisplayName))
-                    {
-                        profile.DisplayName = profileUpdate.DisplayName;
-                        profile.UpdatedAt = VietnamTime.UtcNow();
-                    }
-                }
+                await ApplyParentProfileUpdatesAsync(user, command.Profiles, now, cancellationToken);
+            }
+            else
+            {
+                ApplyOwnedProfileUpdates(user.Profiles, command.Profiles, now);
             }
         }
 
-        user.UpdatedAt = VietnamTime.UtcNow();
+        user.UpdatedAt = now;
         await context.SaveChangesAsync(cancellationToken);
 
         // Reload user with profiles to return updated data
@@ -130,19 +124,104 @@ public sealed class UpdateCurrentUserCommandHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
+                AvatarUrl = p.AvatarUrl ?? user.AvatarUrl,
                 ProfileType = p.ProfileType.ToString(),
                 LastLoginAt = p.ProfileType == ProfileType.Parent ? user.LastLoginAt : p.LastLoginAt,
                 LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
                 IsOnline = UserPresenceHelper.IsOnline(
                     p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
-                    VietnamTime.UtcNow()),
+                    now),
                 OfflineDurationSeconds = UserPresenceHelper.GetOfflineDurationSeconds(
                     p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
-                    VietnamTime.UtcNow())
+                    now)
             }).ToList()
         };
 
         return Result.Success(response);
+    }
+
+    private void ApplyOwnedProfileUpdates(
+        IEnumerable<Profile> profiles,
+        IEnumerable<UpdateProfileDto> profileUpdates,
+        DateTime now)
+    {
+        foreach (var profileUpdate in profileUpdates)
+        {
+            var profile = profiles.FirstOrDefault(p => p.Id == profileUpdate.Id);
+            ApplyProfileUpdate(profile, profileUpdate, now);
+        }
+    }
+
+    private async Task ApplyParentProfileUpdatesAsync(
+        User user,
+        IReadOnlyCollection<UpdateProfileDto> profileUpdates,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var parentProfile = user.Profiles.FirstOrDefault(p => p.ProfileType == ProfileType.Parent);
+        var selectedStudentProfile = await ResolveSelectedStudentProfileAsync(user, cancellationToken);
+
+        var parentProfileUpdate = parentProfile is null
+            ? null
+            : profileUpdates.FirstOrDefault(update => update.Id == parentProfile.Id);
+
+        ApplyProfileUpdate(parentProfile, parentProfileUpdate, now);
+
+        if (selectedStudentProfile is null)
+        {
+            return;
+        }
+
+        var selectedStudentUpdate = profileUpdates.FirstOrDefault(update => update.Id == selectedStudentProfile.Id);
+
+        if (selectedStudentUpdate is null)
+        {
+            selectedStudentUpdate = parentProfile is null
+                ? profileUpdates.FirstOrDefault()
+                : profileUpdates.FirstOrDefault(update => update.Id != parentProfile.Id);
+        }
+
+        ApplyProfileUpdate(selectedStudentProfile, selectedStudentUpdate, now);
+    }
+
+    private async Task<Profile?> ResolveSelectedStudentProfileAsync(User user, CancellationToken cancellationToken)
+    {
+        if (!userContext.StudentId.HasValue)
+        {
+            return null;
+        }
+
+        var selectedStudentId = userContext.StudentId.Value;
+
+        var ownedProfile = user.Profiles.FirstOrDefault(
+            profile => profile.Id == selectedStudentId && profile.ProfileType == ProfileType.Student);
+
+        if (ownedProfile is not null)
+        {
+            return ownedProfile;
+        }
+
+        return await context.ParentStudentLinks
+            .Where(link => link.StudentProfileId == selectedStudentId &&
+                           !link.ParentProfile.IsDeleted &&
+                           link.ParentProfile.UserId == user.Id &&
+                           !link.StudentProfile.IsDeleted)
+            .Select(link => link.StudentProfile)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static void ApplyProfileUpdate(Profile? profile, UpdateProfileDto? profileUpdate, DateTime now)
+    {
+        if (profile is null || profileUpdate is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(profileUpdate.DisplayName))
+        {
+            profile.DisplayName = profileUpdate.DisplayName;
+            profile.UpdatedAt = now;
+        }
     }
 }
 
