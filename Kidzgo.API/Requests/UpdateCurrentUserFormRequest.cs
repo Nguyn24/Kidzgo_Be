@@ -8,6 +8,7 @@ public sealed class UpdateCurrentUserFormRequest
     public string? Email { get; init; }
     public string? PhoneNumber { get; init; }
     public string? AvatarUrl { get; init; }
+    public Guid? TargetProfileId { get; init; }
     public IFormFile? Avatar { get; init; }
     public List<UpdateCurrentUserProfileFormRequest>? Profiles { get; init; }
 }

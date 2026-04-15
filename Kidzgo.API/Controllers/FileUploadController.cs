@@ -78,6 +78,7 @@ public class FileUploadController : ControllerBase
     [RequestSizeLimit(5_242_880)]
     public async Task<IResult> UploadAvatar(
         IFormFile file,
+        [FromQuery] Guid? targetProfileId = null,
         CancellationToken cancellationToken = default)
     {
         if (file == null || file.Length == 0)
@@ -96,6 +97,7 @@ public class FileUploadController : ControllerBase
             ContentType = file.ContentType,
             UpdateUserAvatar = true,
             UpdateProfileAvatar = true,
+            TargetProfileId = targetProfileId,
             FileStream = file.OpenReadStream()
         };
 

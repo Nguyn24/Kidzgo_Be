@@ -48,6 +48,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                 {
                     Id = p.Id,
                     DisplayName = p.DisplayName,
+                    AvatarUrl = p.AvatarUrl ?? user.AvatarUrl,
                     ProfileType = p.ProfileType.ToString(),
                     LastLoginAt = p.ProfileType == ProfileType.Parent ? user.LastLoginAt : p.LastLoginAt,
                     LastSeenAt = p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
@@ -58,7 +59,7 @@ namespace Kidzgo.Application.Users.GetCurrentUser
                         p.ProfileType == ProfileType.Parent ? user.LastSeenAt : p.LastSeenAt,
                         now)
                 }).ToList(),
-                SelectedProfileId = null, // TODO: Get from claim or session if needed
+                SelectedProfileId = userContext.StudentId,
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 LastSeenAt = user.LastSeenAt,
