@@ -136,15 +136,25 @@ public sealed class SessionParticipantService(
             .AsNoTracking()
             .Where(ce => ce.StudentProfileId == studentProfileId
                 && ce.Status == Domain.Classes.EnrollmentStatus.Active)
-            .GroupBy(ce => ce.ClassId)
-            .Select(g => new
+            .Select(ce => new
             {
-                ClassId = g.Key,
-                EnrollDates = g.Select(ce => ce.EnrollDate).ToList()
+                ce.Id,
+                ce.ClassId,
+                ce.EnrollDate
             })
             .ToListAsync(cancellationToken);
 
-        var enrollDateLookup = activeEnrollDatesByClass.ToDictionary(x => x.ClassId, x => x.EnrollDates);
+        var pauseLookup = EnrollmentPauseWindowHelper.BuildLookup(
+            await context.PauseEnrollmentRequestHistories
+                .AsNoTracking()
+                .Where(history => history.EnrollmentId.HasValue
+                    && activeEnrollDatesByClass.Select(ce => ce.Id).Contains(history.EnrollmentId.Value)
+                    && history.NewStatus == Domain.Classes.EnrollmentStatus.Paused)
+                .Select(history => new EnrollmentPauseWindow(
+                    history.EnrollmentId!.Value,
+                    history.PauseFrom,
+                    history.PauseTo))
+                .ToListAsync(cancellationToken));
 
         var legacySessions = await context.Sessions
             .AsNoTracking()
@@ -180,17 +190,22 @@ public sealed class SessionParticipantService(
             .ToListAsync(cancellationToken);
 
         var filteredLegacySessions = legacySessions
-            .Where(s =>
-                enrollDateLookup.TryGetValue(s.ClassId, out var enrollDates) &&
-                enrollDates.Any(enrollDate => enrollDate <= VietnamTime.ToVietnamDateOnly(s.Start)))
-            .Select(s => new StudentBookedSlot(
-                s.Start,
-                s.End,
-                null,
-                s.ClassId,
-                s.Code,
-                s.Title,
-                false));
+            .SelectMany(session => activeEnrollDatesByClass
+                .Where(enrollment =>
+                    enrollment.ClassId == session.ClassId &&
+                    enrollment.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.Start) &&
+                    !EnrollmentPauseWindowHelper.IsPausedOn(
+                        enrollment.Id,
+                        VietnamTime.ToVietnamDateOnly(session.Start),
+                        pauseLookup))
+                .Select(_ => new StudentBookedSlot(
+                    session.Start,
+                    session.End,
+                    null,
+                    session.ClassId,
+                    session.Code,
+                    session.Title,
+                    false)));
 
         return regularAssignments
             .Concat(filteredLegacySessions)

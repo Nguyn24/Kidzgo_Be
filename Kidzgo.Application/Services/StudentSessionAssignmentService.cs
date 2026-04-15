@@ -92,6 +92,7 @@ public sealed class StudentSessionAssignmentService(
         var existingAssignments = await context.StudentSessionAssignments
             .Where(a => a.ClassEnrollmentId == enrollment.Id)
             .ToListAsync(cancellationToken);
+        var pauseLookup = await GetPauseLookupAsync(new[] { enrollment.Id }, cancellationToken);
 
         var assignmentsBySessionId = existingAssignments.ToDictionary(a => a.SessionId);
         var now = VietnamTime.UtcNow();
@@ -102,6 +103,7 @@ public sealed class StudentSessionAssignmentService(
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
                 sessionDate >= sessionDateFrom &&
+                !EnrollmentPauseWindowHelper.IsPausedOn(enrollment.Id, sessionDate, pauseLookup) &&
                 MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
 
             assignmentsBySessionId.TryGetValue(session.Id, out var assignment);
@@ -214,9 +216,13 @@ public sealed class StudentSessionAssignmentService(
         Session session,
         CancellationToken cancellationToken)
     {
+        var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
         var activeEnrollments = await context.ClassEnrollments
             .Where(e => e.ClassId == session.ClassId && e.Status == EnrollmentStatus.Active)
             .ToListAsync(cancellationToken);
+        var pauseLookup = await GetPauseLookupAsync(
+            activeEnrollments.Select(e => e.Id),
+            cancellationToken);
 
         var existingAssignments = await context.StudentSessionAssignments
             .Where(a => a.SessionId == session.Id)
@@ -228,10 +234,10 @@ public sealed class StudentSessionAssignmentService(
 
         foreach (var enrollment in activeEnrollments)
         {
-            var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
             var shouldBeAssigned =
                 session.Status != SessionStatus.Cancelled &&
                 sessionDate >= enrollment.EnrollDate &&
+                !EnrollmentPauseWindowHelper.IsPausedOn(enrollment.Id, sessionDate, pauseLookup) &&
                 MatchesSelectionPattern(session, enrollment.SessionSelectionPattern);
 
             assignmentsByEnrollmentId.TryGetValue(enrollment.Id, out var assignment);
@@ -398,18 +404,58 @@ public sealed class StudentSessionAssignmentService(
         }
 
         var sessionDate = VietnamTime.ToVietnamDateOnly(sessionInfo.PlannedDatetime);
+        var pauseLookup = await GetPauseLookupAsync(
+            await context.ClassEnrollments
+                .AsNoTracking()
+                .Where(e => e.ClassId == sessionInfo.ClassId
+                    && e.Status == EnrollmentStatus.Active
+                    && e.EnrollDate <= sessionDate)
+                .Select(e => e.Id)
+                .ToListAsync(cancellationToken),
+            cancellationToken);
 
-        return await context.ClassEnrollments
+        var activeEnrollments = await context.ClassEnrollments
             .AsNoTracking()
             .Where(e => e.ClassId == sessionInfo.ClassId
                 && e.Status == EnrollmentStatus.Active
                 && e.EnrollDate <= sessionDate)
+            .ToListAsync(cancellationToken);
+
+        return activeEnrollments
+            .Where(e => !EnrollmentPauseWindowHelper.IsPausedOn(e.Id, sessionDate, pauseLookup))
             .Select(e => new RegularSessionParticipant(
                 e.StudentProfileId,
                 e.Id,
                 e.RegistrationId,
                 e.Track))
+            .ToList();
+    }
+
+    private async Task<Dictionary<Guid, List<EnrollmentPauseWindow>>> GetPauseLookupAsync(
+        IEnumerable<Guid> enrollmentIds,
+        CancellationToken cancellationToken)
+    {
+        var enrollmentIdList = enrollmentIds
+            .Distinct()
+            .ToList();
+
+        if (enrollmentIdList.Count == 0)
+        {
+            return new Dictionary<Guid, List<EnrollmentPauseWindow>>();
+        }
+
+        var pauseWindows = await context.PauseEnrollmentRequestHistories
+            .AsNoTracking()
+            .Where(history => history.EnrollmentId.HasValue
+                && enrollmentIdList.Contains(history.EnrollmentId.Value)
+                && history.NewStatus == EnrollmentStatus.Paused)
+            .Select(history => new EnrollmentPauseWindow(
+                history.EnrollmentId!.Value,
+                history.PauseFrom,
+                history.PauseTo))
             .ToListAsync(cancellationToken);
+
+        return EnrollmentPauseWindowHelper.BuildLookup(pauseWindows);
     }
 
     private bool MatchesSelectionPattern(Session session, string? sessionSelectionPattern)

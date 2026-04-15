@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Services;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Classes;
@@ -176,6 +177,9 @@ public sealed class GetStudentTimetableQueryHandler(
             .Select(ce => ce.ClassId)
             .Distinct()
             .ToList();
+        var legacyPauseLookup = await BuildPauseLookupAsync(
+            legacyEnrollments.Select(ce => ce.Id),
+            cancellationToken);
 
         var legacySessions = new List<Session>();
         if (legacyClassIds.Count > 0)
@@ -202,7 +206,11 @@ public sealed class GetStudentTimetableQueryHandler(
             .SelectMany(session => legacyEnrollments
                 .Where(enrollment =>
                     enrollment.ClassId == session.ClassId &&
-                    enrollment.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.PlannedDatetime))
+                    enrollment.EnrollDate <= VietnamTime.ToVietnamDateOnly(session.PlannedDatetime) &&
+                    !EnrollmentPauseWindowHelper.IsPausedOn(
+                        enrollment.Id,
+                        VietnamTime.ToVietnamDateOnly(session.PlannedDatetime),
+                        legacyPauseLookup))
                 .Select(enrollment => new
                 {
                     enrollment.StudentProfileId,
@@ -383,6 +391,33 @@ public sealed class GetStudentTimetableQueryHandler(
         {
             Sessions = sessions
         };
+    }
+
+    private async Task<Dictionary<Guid, List<EnrollmentPauseWindow>>> BuildPauseLookupAsync(
+        IEnumerable<Guid> enrollmentIds,
+        CancellationToken cancellationToken)
+    {
+        var enrollmentIdList = enrollmentIds
+            .Distinct()
+            .ToList();
+
+        if (enrollmentIdList.Count == 0)
+        {
+            return new Dictionary<Guid, List<EnrollmentPauseWindow>>();
+        }
+
+        var pauseWindows = await context.PauseEnrollmentRequestHistories
+            .AsNoTracking()
+            .Where(history => history.EnrollmentId.HasValue
+                && enrollmentIdList.Contains(history.EnrollmentId.Value)
+                && history.NewStatus == EnrollmentStatus.Paused)
+            .Select(history => new EnrollmentPauseWindow(
+                history.EnrollmentId!.Value,
+                history.PauseFrom,
+                history.PauseTo))
+            .ToListAsync(cancellationToken);
+
+        return EnrollmentPauseWindowHelper.BuildLookup(pauseWindows);
     }
 
     private static (DateTime? FromUtc, DateTime? ToUtc) NormalizeDateRange(GetStudentTimetableQuery query)

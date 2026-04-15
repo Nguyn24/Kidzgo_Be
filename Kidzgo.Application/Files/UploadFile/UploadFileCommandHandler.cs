@@ -171,12 +171,24 @@ public sealed class UploadFileCommandHandler(
 
         if (targetProfileId.HasValue)
         {
-            return await context.Profiles
+            var ownedProfile = await context.Profiles
                 .FirstOrDefaultAsync(
                     p => p.Id == targetProfileId.Value &&
                          p.UserId == userId &&
                          !p.IsDeleted,
                     cancellationToken);
+
+            if (ownedProfile is not null)
+            {
+                return ownedProfile;
+            }
+
+            return await context.ParentStudentLinks
+                .Where(link => link.StudentProfileId == targetProfileId.Value &&
+                               !link.ParentProfile.IsDeleted &&
+                               link.ParentProfile.UserId == userId)
+                .Select(link => link.StudentProfile)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         return await context.Profiles
@@ -195,11 +207,10 @@ public sealed class UploadFileCommandHandler(
 
         if (targetProfile is null)
         {
-            return false;
+            return true;
         }
 
-        return targetProfile.ProfileType != ProfileType.Parent &&
-               targetProfile.ProfileType != ProfileType.Student;
+        return targetProfile.ProfileType == ProfileType.Parent;
     }
 
     private static string DetectResourceType(string extension)

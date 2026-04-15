@@ -24,6 +24,7 @@ public sealed class GetProfileByIdQueryHandler(IDbContext context)
                 UserEmail = p.User.Email,
                 ProfileType = p.ProfileType.ToString(),
                 DisplayName = p.DisplayName,
+                AvatarUrl = p.AvatarUrl ?? p.User.AvatarUrl,
                 Name = p.Name,
                 Gender = p.Gender != null ? p.Gender.ToString() : null,
                 DateOfBirth = p.DateOfBirth,

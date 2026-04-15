@@ -66,6 +66,7 @@ public class UserController : ControllerBase
                 ContentType = request.Avatar.ContentType,
                 UpdateUserAvatar = true,
                 UpdateProfileAvatar = true,
+                TargetProfileId = request.TargetProfileId,
                 FileStream = avatarStream
             }, cancellationToken);
 

@@ -28,6 +28,7 @@ public sealed class GetProfilesQueryHandler(
             {
                 Id = p.Id,
                 DisplayName = p.DisplayName,
+                AvatarUrl = p.AvatarUrl ?? p.User.AvatarUrl,
                 ProfileType = p.ProfileType.ToString(),
                 LastLoginAt = p.ProfileType == ProfileType.Parent ? p.User.LastLoginAt : p.LastLoginAt,
                 LastSeenAt = p.ProfileType == ProfileType.Parent ? p.User.LastSeenAt : p.LastSeenAt,
