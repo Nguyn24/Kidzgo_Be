@@ -14,7 +14,11 @@ public sealed class SchedulePlacementTestRequest
     public Guid? LeadChildId { get; set; }
     [Required]
     public DateTime ScheduledAt { get; set; }
+    public int? DurationMinutes { get; set; }
+    [Required]
+    public Guid? RoomId { get; set; }
     public string? Room { get; set; }
+    [Required]
     public Guid? InvigilatorUserId { get; set; }
 }
 

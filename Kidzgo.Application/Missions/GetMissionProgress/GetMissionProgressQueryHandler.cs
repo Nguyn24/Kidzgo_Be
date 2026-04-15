@@ -1,6 +1,8 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification;
 using Kidzgo.Domain.Gamification.Errors;
@@ -9,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Missions.GetMissionProgress;
 
 public sealed class GetMissionProgressQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetMissionProgressQuery, GetMissionProgressResponse>
 {
     public async Task<Result<GetMissionProgressResponse>> Handle(
@@ -24,6 +27,17 @@ public sealed class GetMissionProgressQueryHandler(
         {
             return Result.Failure<GetMissionProgressResponse>(
                 MissionErrors.NotFound(query.MissionId));
+        }
+
+        var access = await TeacherMissionTargetGuard.EnsureActorCanReadMissionAsync(
+            context,
+            userContext.UserId,
+            mission.Id,
+            cancellationToken);
+
+        if (access.IsFailure)
+        {
+            return Result.Failure<GetMissionProgressResponse>(access.Error);
         }
 
         // Get progress records

@@ -55,6 +55,7 @@ public sealed class GetPlacementTestsQueryHandler(
             .Include(pt => pt.LeadChild)
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
+            .Include(pt => pt.PlacementRoom)
             .Include(pt => pt.InvigilatorUser)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
@@ -70,7 +71,10 @@ public sealed class GetPlacementTestsQueryHandler(
                 ClassId = pt.ClassId,
                 ClassName = pt.Class != null ? pt.Class.Title : null,
                 ScheduledAt = pt.ScheduledAt,
+                DurationMinutes = pt.DurationMinutes,
                 Status = pt.Status.ToString(),
+                RoomId = pt.RoomId,
+                RoomName = pt.PlacementRoom != null ? pt.PlacementRoom.Name : null,
                 Room = pt.Room,
                 InvigilatorUserId = pt.InvigilatorUserId,
                 InvigilatorName = pt.InvigilatorUser != null ? pt.InvigilatorUser.Name : null,

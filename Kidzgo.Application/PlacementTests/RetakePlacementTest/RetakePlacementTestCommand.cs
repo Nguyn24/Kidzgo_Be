@@ -33,10 +33,12 @@ public sealed class RetakePlacementTestCommand : ICommand<RetakePlacementTestRes
     /// Thoi gian thi lai
     /// </summary>
     public DateTime? ScheduledAt { get; init; }
+    public int? DurationMinutes { get; init; }
 
     /// <summary>
     /// Phong thi
     /// </summary>
+    public Guid? RoomId { get; init; }
     public string? Room { get; init; }
 
     /// <summary>

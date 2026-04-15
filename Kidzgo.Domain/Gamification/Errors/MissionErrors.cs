@@ -40,6 +40,10 @@ public static class MissionErrors
         "Mission.TeacherCannotTargetSomeStudents",
         $"Teacher cannot target {count} student(s) outside classes they teach.");
 
+    public static readonly Error TeacherCannotViewMission = Error.Validation(
+        "Mission.TeacherCannotViewMission",
+        "Teacher can only view missions for classes they teach.");
+
     public static readonly Error MissionInUse = Error.Conflict(
         "Mission.MissionInUse",
         "Cannot delete mission that has progress records");

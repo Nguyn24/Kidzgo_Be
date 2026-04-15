@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PlacementTests;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -81,17 +82,80 @@ public sealed class RetakePlacementTestCommandHandler(
                 RegistrationErrors.BranchNotFound(command.BranchId));
         }
 
-        if (command.InvigilatorUserId.HasValue)
+        var duration = PlacementTestScheduleAvailability.NormalizeDuration(command.DurationMinutes);
+        if (duration <= 0)
         {
-            var invigilatorExists = await context.Users
-                .AnyAsync(u => u.Id == command.InvigilatorUserId.Value, cancellationToken);
+            return Result.Failure<RetakePlacementTestResponse>(PlacementTestErrors.InvalidDuration);
+        }
 
-            if (!invigilatorExists)
+        var scheduledAtUtc = command.ScheduledAt.HasValue
+            ? VietnamTime.NormalizeToUtc(command.ScheduledAt.Value)
+            : (DateTime?)null;
+
+        if (scheduledAtUtc.HasValue)
+        {
+            if (!command.InvigilatorUserId.HasValue)
             {
-                return Result.Failure<RetakePlacementTestResponse>(
-                    PlacementTestErrors.InvigilatorNotFound(command.InvigilatorUserId.Value));
+                return Result.Failure<RetakePlacementTestResponse>(PlacementTestErrors.InvigilatorRequired);
+            }
+
+            if (!command.RoomId.HasValue)
+            {
+                return Result.Failure<RetakePlacementTestResponse>(PlacementTestErrors.RoomRequired);
+            }
+
+            var availability = await PlacementTestScheduleAvailability.EnsureScheduleAvailableAsync(
+                context,
+                command.InvigilatorUserId.Value,
+                command.RoomId.Value,
+                scheduledAtUtc.Value,
+                duration,
+                excludePlacementTestId: null,
+                branchId: command.BranchId,
+                cancellationToken);
+
+            if (availability.IsFailure)
+            {
+                return Result.Failure<RetakePlacementTestResponse>(availability.Error);
             }
         }
+        else
+        {
+            if (command.InvigilatorUserId.HasValue)
+            {
+                var assignable = await PlacementTestScheduleAvailability.EnsureInvigilatorAssignableAsync(
+                    context,
+                    command.InvigilatorUserId.Value,
+                    cancellationToken);
+
+                if (assignable.IsFailure)
+                {
+                    return Result.Failure<RetakePlacementTestResponse>(assignable.Error);
+                }
+            }
+
+            if (command.RoomId.HasValue)
+            {
+                var assignable = await PlacementTestScheduleAvailability.EnsureRoomAssignableAsync(
+                    context,
+                    command.RoomId.Value,
+                    command.BranchId,
+                    cancellationToken);
+
+                if (assignable.IsFailure)
+                {
+                    return Result.Failure<RetakePlacementTestResponse>(assignable.Error);
+                }
+            }
+        }
+
+        var roomName = command.RoomId.HasValue
+            ? await context.Classrooms
+                .AsNoTracking()
+                .Where(r => r.Id == command.RoomId.Value)
+                .Select(r => r.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
         var newProgram = await context.Programs
             .FirstOrDefaultAsync(p => p.Id == command.NewProgramId && p.IsActive && !p.IsDeleted, cancellationToken);
@@ -121,9 +185,11 @@ public sealed class RetakePlacementTestCommandHandler(
             LeadChildId = originalPlacementTest.LeadChildId,
             StudentProfileId = command.StudentProfileId,
             ClassId = null,
-            ScheduledAt = command.ScheduledAt,
+            ScheduledAt = scheduledAtUtc,
+            DurationMinutes = duration,
             Status = PlacementTestStatus.Scheduled,
-            Room = command.Room,
+            RoomId = command.RoomId,
+            Room = string.IsNullOrWhiteSpace(command.Room) ? roomName : command.Room.Trim(),
             InvigilatorUserId = command.InvigilatorUserId,
             OriginalPlacementTestId = command.OriginalPlacementTestId,
             ResultScore = null,
@@ -170,6 +236,9 @@ public sealed class RetakePlacementTestCommandHandler(
             OriginalRemainingSessions = originalRemainingSessions,
             PlacementTestStatus = newPlacementTest.Status.ToString(),
             ScheduledAt = newPlacementTest.ScheduledAt,
+            DurationMinutes = newPlacementTest.DurationMinutes,
+            RoomId = newPlacementTest.RoomId,
+            RoomName = roomName,
             Room = newPlacementTest.Room,
             InvigilatorUserId = newPlacementTest.InvigilatorUserId,
             CreatedAt = now

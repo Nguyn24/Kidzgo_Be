@@ -3,6 +3,7 @@ using Kidzgo.API.Requests;
 using Kidzgo.Application.PlacementTests.AddPlacementTestNote;
 using Kidzgo.Application.PlacementTests.CancelPlacementTest;
 using Kidzgo.Application.PlacementTests.ConvertLeadToEnrolled;
+using Kidzgo.Application.PlacementTests.GetAvailableInvigilators;
 using Kidzgo.Application.PlacementTests.GetPlacementTestById;
 using Kidzgo.Application.PlacementTests.GetPlacementTests;
 using Kidzgo.Application.PlacementTests.MarkPlacementTestNoShow;
@@ -43,6 +44,8 @@ public class PlacementTestController : ControllerBase
             LeadId = request.LeadId,
             LeadChildId = request.LeadChildId,
             ScheduledAt = request.ScheduledAt,
+            DurationMinutes = request.DurationMinutes,
+            RoomId = request.RoomId,
             Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId
         };
@@ -82,6 +85,61 @@ public class PlacementTestController : ControllerBase
         return result.MatchOk();
     }
 
+    [HttpGet("availability")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetPlacementTestAvailability(
+        [FromQuery] DateTime scheduledAt,
+        [FromQuery] int? durationMinutes,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? excludePlacementTestId,
+        [FromQuery] bool includeUnavailable = false,
+        CancellationToken cancellationToken = default)
+        => await GetAvailabilityCore(
+            scheduledAt,
+            durationMinutes,
+            branchId,
+            excludePlacementTestId,
+            includeUnavailable,
+            cancellationToken);
+
+    [HttpGet("available-invigilators")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetAvailableInvigilators(
+        [FromQuery] DateTime scheduledAt,
+        [FromQuery] int? durationMinutes,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? excludePlacementTestId,
+        [FromQuery] bool includeUnavailable = false,
+        CancellationToken cancellationToken = default)
+        => await GetAvailabilityCore(
+            scheduledAt,
+            durationMinutes,
+            branchId,
+            excludePlacementTestId,
+            includeUnavailable,
+            cancellationToken);
+
+    private async Task<IResult> GetAvailabilityCore(
+        DateTime scheduledAt,
+        int? durationMinutes,
+        Guid? branchId,
+        Guid? excludePlacementTestId,
+        bool includeUnavailable,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAvailableInvigilatorsQuery
+        {
+            ScheduledAt = scheduledAt,
+            DurationMinutes = durationMinutes,
+            BranchId = branchId,
+            ExcludePlacementTestId = excludePlacementTestId,
+            IncludeUnavailable = includeUnavailable
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin,ManagementStaff,AccountantStaff")]
     public async Task<IResult> GetPlacementTestById(
@@ -108,6 +166,8 @@ public class PlacementTestController : ControllerBase
         {
             PlacementTestId = id,
             ScheduledAt = request.ScheduledAt,
+            DurationMinutes = request.DurationMinutes,
+            RoomId = request.RoomId,
             Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId,
             StudentProfileId = request.StudentProfileId,
@@ -271,6 +331,8 @@ public class PlacementTestController : ControllerBase
             NewTuitionPlanId = request.NewTuitionPlanId,
             BranchId = request.BranchId,
             ScheduledAt = request.ScheduledAt,
+            DurationMinutes = request.DurationMinutes,
+            RoomId = request.RoomId,
             Room = request.Room,
             InvigilatorUserId = request.InvigilatorUserId,
             Note = request.Note

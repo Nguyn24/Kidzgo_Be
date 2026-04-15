@@ -1,13 +1,16 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Missions.GetMissions;
 
 public sealed class GetMissionsQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetMissionsQuery, GetMissionsResponse>
 {
     public async Task<Result<GetMissionsResponse>> Handle(
@@ -18,6 +21,12 @@ public sealed class GetMissionsQueryHandler(
             .Include(m => m.TargetClass)
             .Include(m => m.CreatedByUser)
             .AsQueryable();
+
+        missionsQuery = await TeacherMissionTargetGuard.FilterReadableMissionsForActorAsync(
+            context,
+            userContext.UserId,
+            missionsQuery,
+            cancellationToken);
 
         // Filter by scope
         if (query.Scope.HasValue)
