@@ -32,6 +32,11 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
             return Result.Failure(PauseEnrollmentRequestErrors.OutcomeNotAllowed);
         }
 
+        if (pauseRequest.OutcomeCompletedAt.HasValue)
+        {
+            return Result.Failure(PauseEnrollmentRequestErrors.OutcomeAlreadyCompleted);
+        }
+
         if (request.Outcome == PauseEnrollmentOutcome.ReassignEquivalentClass)
         {
             await CancelAssignmentsAfterPauseAsync(pauseRequest, studentSessionAssignmentService, cancellationToken);

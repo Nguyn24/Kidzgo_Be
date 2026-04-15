@@ -186,6 +186,20 @@ public sealed class AssignClassCommandHandler(
             };
 
             context.ClassEnrollments.Add(enrollment);
+            var targetProgram = isSecondaryTrack ? registration.SecondaryProgram : registration.Program;
+            if (targetProgram.IsSupplementary)
+            {
+                context.ClassEnrollmentScheduleSegments.Add(new ClassEnrollmentScheduleSegment
+                {
+                    Id = Guid.NewGuid(),
+                    ClassEnrollmentId = enrollment.Id,
+                    EffectiveFrom = enrollment.EnrollDate,
+                    SessionSelectionPattern = enrollment.SessionSelectionPattern,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+            }
+
             await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
 
             // Add warning for mid-course entry

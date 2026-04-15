@@ -53,6 +53,14 @@ public class PauseEnrollmentRequestConfiguration : IEntityTypeConfiguration<Paus
 
         builder.Property(x => x.OutcomeAt);
 
+        builder.Property(x => x.ReassignedClassId);
+
+        builder.Property(x => x.ReassignedEnrollmentId);
+
+        builder.Property(x => x.OutcomeCompletedBy);
+
+        builder.Property(x => x.OutcomeCompletedAt);
+
         builder.HasOne(x => x.StudentProfile)
             .WithMany()
             .HasForeignKey(x => x.StudentProfileId)
@@ -62,6 +70,16 @@ public class PauseEnrollmentRequestConfiguration : IEntityTypeConfiguration<Paus
             .WithMany()
             .HasForeignKey(x => x.ClassId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.ReassignedClass)
+            .WithMany()
+            .HasForeignKey(x => x.ReassignedClassId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.ReassignedEnrollment)
+            .WithMany()
+            .HasForeignKey(x => x.ReassignedEnrollmentId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(x => x.ApprovedByUser)
             .WithMany()
@@ -76,6 +94,11 @@ public class PauseEnrollmentRequestConfiguration : IEntityTypeConfiguration<Paus
         builder.HasOne(x => x.OutcomeByUser)
             .WithMany()
             .HasForeignKey(x => x.OutcomeBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.OutcomeCompletedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.OutcomeCompletedBy)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

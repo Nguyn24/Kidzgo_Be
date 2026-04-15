@@ -1,5 +1,7 @@
+using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Missions.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Gamification.Errors;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kidzgo.Application.Missions.GetMissionById;
 
 public sealed class GetMissionByIdQueryHandler(
-    IDbContext context
+    IDbContext context,
+    IUserContext userContext
 ) : IQueryHandler<GetMissionByIdQuery, GetMissionByIdResponse>
 {
     public async Task<Result<GetMissionByIdResponse>> Handle(
@@ -23,6 +26,17 @@ public sealed class GetMissionByIdQueryHandler(
         {
             return Result.Failure<GetMissionByIdResponse>(
                 MissionErrors.NotFound(query.Id));
+        }
+
+        var access = await TeacherMissionTargetGuard.EnsureActorCanReadMissionAsync(
+            context,
+            userContext.UserId,
+            mission.Id,
+            cancellationToken);
+
+        if (access.IsFailure)
+        {
+            return Result.Failure<GetMissionByIdResponse>(access.Error);
         }
 
         return new GetMissionByIdResponse

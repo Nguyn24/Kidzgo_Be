@@ -10,6 +10,43 @@ namespace Kidzgo.Application.Missions.Shared;
 
 internal static class TeacherMissionTargetGuard
 {
+    public static async Task<IQueryable<Mission>> FilterReadableMissionsForActorAsync(
+        IDbContext context,
+        Guid actorUserId,
+        IQueryable<Mission> missionsQuery,
+        CancellationToken cancellationToken)
+    {
+        var actorRole = await GetActorRoleAsync(context, actorUserId, cancellationToken);
+
+        return actorRole == UserRole.Teacher
+            ? ApplyTeacherReadableMissionFilter(context, actorUserId, missionsQuery)
+            : missionsQuery;
+    }
+
+    public static async Task<Result> EnsureActorCanReadMissionAsync(
+        IDbContext context,
+        Guid actorUserId,
+        Guid missionId,
+        CancellationToken cancellationToken)
+    {
+        var actorRole = await GetActorRoleAsync(context, actorUserId, cancellationToken);
+
+        if (actorRole != UserRole.Teacher)
+        {
+            return Result.Success();
+        }
+
+        var canRead = await ApplyTeacherReadableMissionFilter(
+                context,
+                actorUserId,
+                context.Missions.AsNoTracking().Where(m => m.Id == missionId))
+            .AnyAsync(cancellationToken);
+
+        return canRead
+            ? Result.Success()
+            : Result.Failure(MissionErrors.TeacherCannotViewMission);
+    }
+
     public static async Task<Result> EnsureActorCanManageTargetsAsync(
         IDbContext context,
         Guid actorUserId,
@@ -19,11 +56,7 @@ internal static class TeacherMissionTargetGuard
         List<Guid>? targetGroup,
         CancellationToken cancellationToken)
     {
-        var actorRole = await context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == actorUserId)
-            .Select(u => (UserRole?)u.Role)
-            .FirstOrDefaultAsync(cancellationToken);
+        var actorRole = await GetActorRoleAsync(context, actorUserId, cancellationToken);
 
         if (actorRole != UserRole.Teacher)
         {
@@ -85,5 +118,45 @@ internal static class TeacherMissionTargetGuard
             default:
                 return Result.Success();
         }
+    }
+
+    private static Task<UserRole?> GetActorRoleAsync(
+        IDbContext context,
+        Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        return context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == actorUserId)
+            .Select(u => (UserRole?)u.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static IQueryable<Mission> ApplyTeacherReadableMissionFilter(
+        IDbContext context,
+        Guid teacherUserId,
+        IQueryable<Mission> missionsQuery)
+    {
+        var taughtClassIds = context.Classes
+            .AsNoTracking()
+            .Where(c => c.MainTeacherId == teacherUserId || c.AssistantTeacherId == teacherUserId)
+            .Select(c => c.Id);
+
+        var taughtStudentIds = context.ClassEnrollments
+            .AsNoTracking()
+            .Where(e => e.Status == EnrollmentStatus.Active && taughtClassIds.Contains(e.ClassId))
+            .Select(e => e.StudentProfileId)
+            .Distinct();
+
+        return missionsQuery.Where(m =>
+            (m.Scope == MissionScope.Class &&
+             m.TargetClassId.HasValue &&
+             taughtClassIds.Contains(m.TargetClassId.Value)) ||
+            (m.Scope == MissionScope.Student &&
+             m.TargetStudentId.HasValue &&
+             taughtStudentIds.Contains(m.TargetStudentId.Value)) ||
+            (m.Scope == MissionScope.Group &&
+             m.MissionProgresses.Any() &&
+             m.MissionProgresses.All(mp => taughtStudentIds.Contains(mp.StudentProfileId))));
     }
 }

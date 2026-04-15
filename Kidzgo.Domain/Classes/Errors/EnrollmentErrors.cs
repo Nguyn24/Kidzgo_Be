@@ -64,6 +64,22 @@ public static class EnrollmentErrors
         "Enrollment.AlreadyDropped",
         "Enrollment is already dropped");
 
+    public static readonly Error SupplementaryProgramRequired = Error.Validation(
+        "Enrollment.SupplementaryProgramRequired",
+        "Schedule segments are only supported for supplementary programs");
+
+    public static Error InvalidScheduleSegmentEffectiveDate(string message) => Error.Validation(
+        "Enrollment.ScheduleSegmentInvalidEffectiveDate",
+        message);
+
+    public static Error ScheduleSegmentAlreadyExists(DateOnly effectiveFrom) => Error.Conflict(
+        "Enrollment.ScheduleSegmentAlreadyExists",
+        $"An enrollment schedule segment already starts on {effectiveFrom:dd/MM/yyyy}");
+
+    public static Error FutureScheduleSegmentExists(DateOnly effectiveFrom) => Error.Conflict(
+        "Enrollment.FutureScheduleSegmentExists",
+        $"Cannot add an enrollment schedule segment from {effectiveFrom:dd/MM/yyyy} because a future schedule segment already exists");
+
     private static string BuildStudentScheduleConflictMessage(
         string? classCode,
         string? classTitle,

@@ -48,6 +48,22 @@ public static class ClassErrors
         "Class.InvalidStatusTransition",
         "Cannot change status from Closed to Planned");
 
+    public static readonly Error SupplementaryProgramRequired = Error.Validation(
+        "Class.SupplementaryProgramRequired",
+        "Schedule segments are only supported for supplementary programs");
+
+    public static Error InvalidScheduleSegmentEffectiveDate(string message) => Error.Validation(
+        "Class.ScheduleSegmentInvalidEffectiveDate",
+        message);
+
+    public static Error ScheduleSegmentAlreadyExists(DateOnly effectiveFrom) => Error.Conflict(
+        "Class.ScheduleSegmentAlreadyExists",
+        $"A class schedule segment already starts on {effectiveFrom:dd/MM/yyyy}");
+
+    public static Error FutureScheduleSegmentExists(DateOnly effectiveFrom) => Error.Conflict(
+        "Class.FutureScheduleSegmentExists",
+        $"Cannot add a class schedule segment from {effectiveFrom:dd/MM/yyyy} because a future schedule segment already exists");
+
     // Session conflict errors
     public static Error RoomConflict(string classCode, string classTitle, DateTime conflictDatetime) => Error.Conflict(
         "Class.RoomConflict",

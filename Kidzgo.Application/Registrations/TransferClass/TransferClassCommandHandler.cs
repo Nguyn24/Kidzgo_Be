@@ -26,6 +26,8 @@ public sealed class TransferClassCommandHandler(
         var isSecondaryTrack = track == RegistrationTrackHelper.SecondaryTrack;
 
         var registration = await context.Registrations
+            .Include(r => r.Program)
+            .Include(r => r.SecondaryProgram)
             .Include(r => r.Class)
             .Include(r => r.SecondaryClass)
             .FirstOrDefaultAsync(r => r.Id == command.RegistrationId, cancellationToken);
@@ -158,6 +160,20 @@ public sealed class TransferClassCommandHandler(
         };
 
         context.ClassEnrollments.Add(newEnrollment);
+        var targetProgram = isSecondaryTrack ? registration.SecondaryProgram : registration.Program;
+        if (targetProgram?.IsSupplementary == true)
+        {
+            context.ClassEnrollmentScheduleSegments.Add(new ClassEnrollmentScheduleSegment
+            {
+                Id = Guid.NewGuid(),
+                ClassEnrollmentId = newEnrollment.Id,
+                EffectiveFrom = newEnrollment.EnrollDate,
+                SessionSelectionPattern = newEnrollment.SessionSelectionPattern,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
         await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(newEnrollment, cancellationToken);
         if (oldClass != null)
         {

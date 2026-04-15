@@ -1,6 +1,7 @@
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Users;
 using Kidzgo.Domain.Classes;
+using Kidzgo.Domain.Schools;
 using DomainProgram = Kidzgo.Domain.Programs.Program;
 
 namespace Kidzgo.Domain.CRM;
@@ -13,7 +14,9 @@ public class PlacementTest : Entity
     public Guid? StudentProfileId { get; set; }
     public Guid? ClassId { get; set; }
     public DateTime? ScheduledAt { get; set; }
+    public int DurationMinutes { get; set; } = 60;
     public PlacementTestStatus Status { get; set; }
+    public Guid? RoomId { get; set; }
     public string? Room { get; set; }
     public Guid? InvigilatorUserId { get; set; }
     public Guid? OriginalPlacementTestId { get; set; }
@@ -36,6 +39,7 @@ public class PlacementTest : Entity
     public LeadChild? LeadChild { get; set; }
     public Profile? StudentProfile { get; set; }
     public Class? Class { get; set; }
+    public Classroom? PlacementRoom { get; set; }
     public User? InvigilatorUser { get; set; }
     public PlacementTest? OriginalPlacementTest { get; set; }
     public DomainProgram? ProgramRecommendationProgram { get; set; }

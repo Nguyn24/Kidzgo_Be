@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PlacementTests;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
@@ -63,31 +64,121 @@ public sealed class UpdatePlacementTestCommandHandler(
             placementTest.ClassId = command.ClassId.Value;
         }
 
-        // Validate Invigilator if provided
-        if (command.InvigilatorUserId.HasValue)
-        {
-            var invigilator = await context.Users
-                .FirstOrDefaultAsync(u => u.Id == command.InvigilatorUserId.Value, cancellationToken);
+        var effectiveInvigilatorUserId = command.InvigilatorUserId ?? placementTest.InvigilatorUserId;
+        var effectiveRoomId = command.RoomId ?? placementTest.RoomId;
+        var effectiveDuration = command.DurationMinutes ?? placementTest.DurationMinutes;
+        var effectiveScheduledAt = command.ScheduledAt.HasValue
+            ? VietnamTime.NormalizeToUtc(command.ScheduledAt.Value)
+            : placementTest.ScheduledAt;
 
-            if (invigilator is null)
+        if (effectiveDuration <= 0)
+        {
+            return Result.Failure<UpdatePlacementTestResponse>(PlacementTestErrors.InvalidDuration);
+        }
+
+        var scheduleFieldsChanged = command.ScheduledAt.HasValue ||
+                                    command.DurationMinutes.HasValue ||
+                                    command.RoomId.HasValue ||
+                                    command.InvigilatorUserId.HasValue;
+
+        if (scheduleFieldsChanged && effectiveScheduledAt.HasValue)
+        {
+            if (!effectiveInvigilatorUserId.HasValue)
             {
-                return Result.Failure<UpdatePlacementTestResponse>(
-                    PlacementTestErrors.InvigilatorNotFound(command.InvigilatorUserId));
+                return Result.Failure<UpdatePlacementTestResponse>(PlacementTestErrors.InvigilatorRequired);
             }
 
+            if (!effectiveRoomId.HasValue)
+            {
+                return Result.Failure<UpdatePlacementTestResponse>(PlacementTestErrors.RoomRequired);
+            }
+
+            var branchId = placementTest.LeadId.HasValue
+                ? await context.Leads
+                    .AsNoTracking()
+                    .Where(l => l.Id == placementTest.LeadId.Value)
+                    .Select(l => l.BranchPreference)
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var availability = await PlacementTestScheduleAvailability.EnsureScheduleAvailableAsync(
+                context,
+                effectiveInvigilatorUserId.Value,
+                effectiveRoomId.Value,
+                effectiveScheduledAt.Value,
+                effectiveDuration,
+                placementTest.Id,
+                branchId,
+                cancellationToken);
+
+            if (availability.IsFailure)
+            {
+                return Result.Failure<UpdatePlacementTestResponse>(availability.Error);
+            }
+        }
+        else
+        {
+            if (command.InvigilatorUserId.HasValue)
+            {
+                var assignable = await PlacementTestScheduleAvailability.EnsureInvigilatorAssignableAsync(
+                    context,
+                    command.InvigilatorUserId.Value,
+                    cancellationToken);
+
+                if (assignable.IsFailure)
+                {
+                    return Result.Failure<UpdatePlacementTestResponse>(assignable.Error);
+                }
+            }
+
+            if (command.RoomId.HasValue)
+            {
+                var assignable = await PlacementTestScheduleAvailability.EnsureRoomAssignableAsync(
+                    context,
+                    command.RoomId.Value,
+                    branchId: null,
+                    cancellationToken);
+
+                if (assignable.IsFailure)
+                {
+                    return Result.Failure<UpdatePlacementTestResponse>(assignable.Error);
+                }
+            }
+        }
+
+        if (command.InvigilatorUserId.HasValue)
+        {
             placementTest.InvigilatorUserId = command.InvigilatorUserId.Value;
         }
 
-        // Update ScheduledAt if provided
-        if (command.ScheduledAt.HasValue)
+        if (command.DurationMinutes.HasValue)
         {
-            placementTest.ScheduledAt = VietnamTime.NormalizeToUtc(command.ScheduledAt.Value);
+            placementTest.DurationMinutes = effectiveDuration;
         }
 
-        // Update Room if provided
-        if (command.Room is not null)
+        string? roomName = null;
+        if (effectiveRoomId.HasValue)
         {
-            placementTest.Room = string.IsNullOrWhiteSpace(command.Room) ? null : command.Room.Trim();
+            roomName = await context.Classrooms
+                .AsNoTracking()
+                .Where(r => r.Id == effectiveRoomId.Value)
+                .Select(r => r.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (command.RoomId.HasValue)
+        {
+            placementTest.RoomId = command.RoomId.Value;
+        }
+
+        if (command.ScheduledAt.HasValue)
+        {
+            placementTest.ScheduledAt = effectiveScheduledAt;
+        }
+
+        if (command.RoomId.HasValue)
+        {
+            placementTest.Room = roomName;
         }
 
         placementTest.UpdatedAt = VietnamTime.UtcNow();
@@ -100,7 +191,10 @@ public sealed class UpdatePlacementTestCommandHandler(
             StudentProfileId = placementTest.StudentProfileId,
             ClassId = placementTest.ClassId,
             ScheduledAt = placementTest.ScheduledAt,
+            DurationMinutes = placementTest.DurationMinutes,
             Status = placementTest.Status.ToString(),
+            RoomId = placementTest.RoomId,
+            RoomName = roomName,
             Room = placementTest.Room,
             InvigilatorUserId = placementTest.InvigilatorUserId,
             UpdatedAt = placementTest.UpdatedAt

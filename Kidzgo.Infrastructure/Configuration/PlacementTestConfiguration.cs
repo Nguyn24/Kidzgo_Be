@@ -21,10 +21,16 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
 
         builder.Property(x => x.ScheduledAt);
 
+        builder.Property(x => x.DurationMinutes)
+            .HasDefaultValue(60)
+            .IsRequired();
+
         builder.Property(x => x.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
+
+        builder.Property(x => x.RoomId);
 
         builder.Property(x => x.Room)
             .HasMaxLength(100);
@@ -85,6 +91,11 @@ public class PlacementTestConfiguration : IEntityTypeConfiguration<PlacementTest
         builder.HasOne(x => x.Class)
             .WithMany(x => x.PlacementTests)
             .HasForeignKey(x => x.ClassId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.PlacementRoom)
+            .WithMany()
+            .HasForeignKey(x => x.RoomId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.InvigilatorUser)

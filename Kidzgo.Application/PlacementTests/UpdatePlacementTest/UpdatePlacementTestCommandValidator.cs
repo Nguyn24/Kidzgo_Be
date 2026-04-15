@@ -14,6 +14,11 @@ public sealed class UpdatePlacementTestCommandValidator : AbstractValidator<Upda
             .GreaterThanOrEqualTo(VietnamTime.UtcNow())
             .WithMessage("ScheduledAt cannot be in the past")
             .When(command => command.ScheduledAt.HasValue);
+
+        RuleFor(command => command.DurationMinutes)
+            .GreaterThan(0)
+            .When(command => command.DurationMinutes.HasValue)
+            .WithMessage("DurationMinutes must be greater than 0");
     }
 }
 

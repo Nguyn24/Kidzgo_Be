@@ -250,6 +250,11 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DurationMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(60);
+
                     b.Property<Guid?>("InvigilatorUserId")
                         .HasColumnType("uuid");
 
@@ -284,6 +289,9 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<string>("Room")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ScheduledAt")
                         .HasColumnType("timestamp with time zone");
@@ -325,6 +333,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("OriginalPlacementTestId");
 
                     b.HasIndex("ProgramRecommendationId");
+
+                    b.HasIndex("RoomId");
 
                     b.HasIndex("SecondaryProgramRecommendationId");
 
@@ -472,6 +482,73 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.ToTable("ClassEnrollments", "public");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Classes.ClassEnrollmentScheduleSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClassEnrollmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<string>("SessionSelectionPattern")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassEnrollmentId", "EffectiveFrom")
+                        .IsUnique();
+
+                    b.ToTable("ClassEnrollmentScheduleSegments", "public");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Classes.ClassScheduleSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<string>("SchedulePattern")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId", "EffectiveFrom")
+                        .IsUnique();
+
+                    b.ToTable("ClassScheduleSegments", "public");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -503,6 +580,12 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Property<Guid?>("OutcomeBy")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("OutcomeCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OutcomeCompletedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("OutcomeNote")
                         .HasColumnType("text");
 
@@ -514,6 +597,12 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Property<string>("Reason")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("ReassignedClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReassignedEnrollmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("timestamp with time zone");
@@ -535,6 +624,12 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.HasIndex("ClassId");
 
                     b.HasIndex("OutcomeBy");
+
+                    b.HasIndex("OutcomeCompletedBy");
+
+                    b.HasIndex("ReassignedClassId");
+
+                    b.HasIndex("ReassignedEnrollmentId");
 
                     b.HasIndex("StudentProfileId");
 
@@ -2129,7 +2224,7 @@ namespace Kidzgo.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("c1f73d87-8d4c-45c2-bf8f-3d79e2f4b6a1"),
-                            Body = "<div style=\"margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#1f2937;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"background:#f4f7fb;padding:24px 12px;\">\n    <tr>\n      <td align=\"center\">\n        <table role=\"presentation\" width=\"640\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08);\">\n          <tr>\n            <td style=\"padding:0;background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);\">\n              <div style=\"padding:28px 30px 24px 30px;color:#ffffff;\">\n                <p style=\"margin:0 0 8px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;\">KidzGo Learning Center</p>\n                <h1 style=\"margin:0;font-size:28px;line-height:1.3;font-weight:700;\">Đặt lại PIN phụ huynh</h1>\n                <p style=\"margin:10px 0 0 0;font-size:15px;line-height:1.6;opacity:.95;\">\n                  Xin chào {{user_name}}, chúng tôi đã nhận được yêu cầu đặt lại PIN cho hồ sơ {{profile_name}}.\n                </p>\n              </div>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:26px 30px 12px 30px;\">\n              <p style=\"margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#475569;\">\n                Để tiếp tục, vui lòng bấm vào nút bên dưới. Liên kết này chỉ có hiệu lực trong 1 giờ.\n              </p>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:8px 30px 28px 30px;\">\n              <a href=\"{{reset_link}}\" style=\"display:inline-block;background:#ea580c;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;\">Đặt lại PIN</a>\n              <p style=\"margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#64748b;\">\n                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc liên hệ bộ phận hỗ trợ của KidzGo.\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</div>",
+                            Body = "<div style=\"margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#1f2937;\">\r\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"background:#f4f7fb;padding:24px 12px;\">\r\n    <tr>\r\n      <td align=\"center\">\r\n        <table role=\"presentation\" width=\"640\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08);\">\r\n          <tr>\r\n            <td style=\"padding:0;background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);\">\r\n              <div style=\"padding:28px 30px 24px 30px;color:#ffffff;\">\r\n                <p style=\"margin:0 0 8px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;\">KidzGo Learning Center</p>\r\n                <h1 style=\"margin:0;font-size:28px;line-height:1.3;font-weight:700;\">Đặt lại PIN phụ huynh</h1>\r\n                <p style=\"margin:10px 0 0 0;font-size:15px;line-height:1.6;opacity:.95;\">\r\n                  Xin chào {{user_name}}, chúng tôi đã nhận được yêu cầu đặt lại PIN cho hồ sơ {{profile_name}}.\r\n                </p>\r\n              </div>\r\n            </td>\r\n          </tr>\r\n          <tr>\r\n            <td style=\"padding:26px 30px 12px 30px;\">\r\n              <p style=\"margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#475569;\">\r\n                Để tiếp tục, vui lòng bấm vào nút bên dưới. Liên kết này chỉ có hiệu lực trong 1 giờ.\r\n              </p>\r\n            </td>\r\n          </tr>\r\n          <tr>\r\n            <td style=\"padding:8px 30px 28px 30px;\">\r\n              <a href=\"{{reset_link}}\" style=\"display:inline-block;background:#ea580c;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px;\">Đặt lại PIN</a>\r\n              <p style=\"margin:14px 0 0 0;font-size:12px;line-height:1.6;color:#64748b;\">\r\n                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc liên hệ bộ phận hỗ trợ của KidzGo.\r\n              </p>\r\n            </td>\r\n          </tr>\r\n        </table>\r\n      </td>\r\n    </tr>\r\n  </table>\r\n</div>",
                             Code = "PARENT_PIN_RESET",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -4740,6 +4835,11 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasForeignKey("ProgramRecommendationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Kidzgo.Domain.Schools.Classroom", "PlacementRoom")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kidzgo.Domain.Programs.Program", "SecondaryProgramRecommendationProgram")
                         .WithMany("SecondaryPlacementTestRecommendations")
                         .HasForeignKey("SecondaryProgramRecommendationId")
@@ -4759,6 +4859,8 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("LeadChild");
 
                     b.Navigation("OriginalPlacementTest");
+
+                    b.Navigation("PlacementRoom");
 
                     b.Navigation("ProgramRecommendationProgram");
 
@@ -4840,6 +4942,28 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("TuitionPlan");
                 });
 
+            modelBuilder.Entity("Kidzgo.Domain.Classes.ClassEnrollmentScheduleSegment", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Classes.ClassEnrollment", "ClassEnrollment")
+                        .WithMany("ScheduleSegments")
+                        .HasForeignKey("ClassEnrollmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassEnrollment");
+                });
+
+            modelBuilder.Entity("Kidzgo.Domain.Classes.ClassScheduleSegment", b =>
+                {
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "Class")
+                        .WithMany("ScheduleSegments")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+                });
+
             modelBuilder.Entity("Kidzgo.Domain.Classes.PauseEnrollmentRequest", b =>
                 {
                     b.HasOne("Kidzgo.Domain.Users.User", "ApprovedByUser")
@@ -4862,6 +4986,21 @@ namespace Kidzgo.Infrastructure.Migrations
                         .HasForeignKey("OutcomeBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Kidzgo.Domain.Users.User", "OutcomeCompletedByUser")
+                        .WithMany()
+                        .HasForeignKey("OutcomeCompletedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Classes.Class", "ReassignedClass")
+                        .WithMany()
+                        .HasForeignKey("ReassignedClassId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kidzgo.Domain.Classes.ClassEnrollment", "ReassignedEnrollment")
+                        .WithMany()
+                        .HasForeignKey("ReassignedEnrollmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Kidzgo.Domain.Users.Profile", "StudentProfile")
                         .WithMany()
                         .HasForeignKey("StudentProfileId")
@@ -4875,6 +5014,12 @@ namespace Kidzgo.Infrastructure.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("OutcomeByUser");
+
+                    b.Navigation("OutcomeCompletedByUser");
+
+                    b.Navigation("ReassignedClass");
+
+                    b.Navigation("ReassignedEnrollment");
 
                     b.Navigation("StudentProfile");
                 });
@@ -6391,6 +6536,8 @@ namespace Kidzgo.Infrastructure.Migrations
 
                     b.Navigation("PlacementTests");
 
+                    b.Navigation("ScheduleSegments");
+
                     b.Navigation("Sessions");
 
                     b.Navigation("TargetMissions");
@@ -6400,6 +6547,8 @@ namespace Kidzgo.Infrastructure.Migrations
 
             modelBuilder.Entity("Kidzgo.Domain.Classes.ClassEnrollment", b =>
                 {
+                    b.Navigation("ScheduleSegments");
+
                     b.Navigation("StudentSessionAssignments");
                 });
 

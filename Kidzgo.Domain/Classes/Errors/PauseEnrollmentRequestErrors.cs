@@ -51,4 +51,24 @@ public static class PauseEnrollmentRequestErrors
     public static readonly Error OutcomeNotAllowed = Error.Conflict(
         "PauseEnrollmentRequest.OutcomeNotAllowed",
         "Outcome can only be set for approved requests");
+
+    public static readonly Error OutcomeAlreadyCompleted = Error.Conflict(
+        "PauseEnrollmentRequest.OutcomeAlreadyCompleted",
+        "Pause enrollment outcome has already been completed");
+
+    public static readonly Error OutcomeMustBeReassignEquivalentClass = Error.Validation(
+        "PauseEnrollmentRequest.OutcomeMustBeReassignEquivalentClass",
+        "Pause enrollment outcome must be ReassignEquivalentClass before reassigning class");
+
+    public static readonly Error NoPausedEnrollmentToReassign = Error.Conflict(
+        "PauseEnrollmentRequest.NoPausedEnrollmentToReassign",
+        "No paused enrollment from this pause request can be reassigned");
+
+    public static Error EffectiveDateBeforePauseEnd(DateOnly pauseTo) => Error.Validation(
+        "PauseEnrollmentRequest.EffectiveDateBeforePauseEnd",
+        $"Effective date must be after pause end date '{pauseTo}'");
+
+    public static readonly Error RegistrationStudentMismatch = Error.Validation(
+        "PauseEnrollmentRequest.RegistrationStudentMismatch",
+        "Registration does not belong to the paused student");
 }

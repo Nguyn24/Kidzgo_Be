@@ -25,6 +25,38 @@ public static class PlacementTestErrors
         "PlacementTest.InvigilatorNotFound",
         $"The invigilator user with the Id = '{userId}' was not found");
 
+    public static Error InvigilatorInvalidRole(Guid? userId) => Error.Validation(
+        "PlacementTest.InvigilatorInvalidRole",
+        $"The user with Id = '{userId}' cannot be assigned as placement test invigilator");
+
+    public static Error InvigilatorUnavailable(Guid? userId) => Error.Validation(
+        "PlacementTest.InvigilatorUnavailable",
+        $"The invigilator user with Id = '{userId}' is not available at the selected time");
+
+    public static readonly Error InvigilatorRequired = Error.Validation(
+        "PlacementTest.InvigilatorRequired",
+        "InvigilatorUserId is required for a scheduled placement test");
+
+    public static readonly Error RoomRequired = Error.Validation(
+        "PlacementTest.RoomRequired",
+        "RoomId is required for a scheduled placement test");
+
+    public static Error RoomNotFound(Guid? roomId) => Error.NotFound(
+        "PlacementTest.RoomNotFound",
+        $"The active room with Id = '{roomId}' was not found");
+
+    public static Error RoomBranchMismatch(Guid? roomId, Guid? branchId) => Error.Validation(
+        "PlacementTest.RoomBranchMismatch",
+        $"The room with Id = '{roomId}' does not belong to branch Id = '{branchId}'");
+
+    public static Error RoomUnavailable(Guid? roomId) => Error.Validation(
+        "PlacementTest.RoomUnavailable",
+        $"The room with Id = '{roomId}' is not available at the selected time");
+
+    public static readonly Error InvalidDuration = Error.Validation(
+        "PlacementTest.InvalidDuration",
+        "DurationMinutes must be greater than 0");
+
     public static readonly Error InvalidStatusTransition = Error.Validation(
         "PlacementTest.InvalidStatusTransition",
         "Invalid status transition. Cannot change from current status to target status");

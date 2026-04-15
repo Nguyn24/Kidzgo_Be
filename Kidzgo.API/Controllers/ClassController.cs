@@ -1,6 +1,7 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Classes.AddClassScheduleSegment;
 using Kidzgo.Application.Classes.AssignTeacher;
 using Kidzgo.Application.Classes.ChangeClassStatus;
 using Kidzgo.Application.Classes.CheckClassCapacity;
@@ -114,6 +115,27 @@ public class ClassController : ControllerBase
         };
 
         var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("{id:guid}/schedule-segments")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> AddScheduleSegment(
+        Guid id,
+        [FromBody] AddClassScheduleSegmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AddClassScheduleSegmentCommand
+        {
+            ClassId = id,
+            EffectiveFrom = request.EffectiveFrom,
+            EffectiveTo = request.EffectiveTo,
+            SchedulePattern = request.SchedulePattern,
+            GenerateSessions = request.GenerateSessions,
+            OnlyFutureSessions = request.OnlyFutureSessions
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
 

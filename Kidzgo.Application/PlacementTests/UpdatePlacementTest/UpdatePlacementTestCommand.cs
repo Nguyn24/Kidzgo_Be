@@ -6,7 +6,8 @@ public sealed class UpdatePlacementTestCommand : ICommand<UpdatePlacementTestRes
 {
     public Guid PlacementTestId { get; init; }
     public DateTime? ScheduledAt { get; init; }
-    public string? Room { get; init; }
+    public int? DurationMinutes { get; init; }
+    public Guid? RoomId { get; init; }
     public Guid? InvigilatorUserId { get; init; }
     public Guid? StudentProfileId { get; init; }
     public Guid? ClassId { get; init; }

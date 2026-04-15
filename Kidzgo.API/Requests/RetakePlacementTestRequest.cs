@@ -7,7 +7,8 @@ public sealed class RetakePlacementTestRequest
     public Guid NewTuitionPlanId { get; set; }
     public Guid BranchId { get; set; }
     public DateTime? ScheduledAt { get; set; }
-    public string? Room { get; set; }
+    public int? DurationMinutes { get; set; }
+    public Guid? RoomId { get; set; }
     public Guid? InvigilatorUserId { get; set; }
     public string? Note { get; set; }
 }

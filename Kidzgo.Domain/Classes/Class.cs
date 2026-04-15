@@ -40,6 +40,7 @@ public class Class : Entity
     public User? MainTeacher { get; set; }
     public User? AssistantTeacher { get; set; }
     public ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
+    public ICollection<ClassScheduleSegment> ScheduleSegments { get; set; } = new List<ClassScheduleSegment>();
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
     public ICollection<LessonPlan> LessonPlans { get; set; } = new List<LessonPlan>();
     public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();

@@ -16,6 +16,19 @@ public sealed class RegistrationActualStudyScheduleDto
     public List<string> StudyDayCodes { get; init; } = new();
     public List<string> StudyDays { get; init; } = new();
     public string? StudyDaySummary { get; init; }
+    public List<RegistrationActualStudyScheduleSegmentDto> ScheduleSegments { get; init; } = new();
+}
+
+public sealed class RegistrationActualStudyScheduleSegmentDto
+{
+    public Guid Id { get; init; }
+    public DateOnly EffectiveFrom { get; init; }
+    public DateOnly? EffectiveTo { get; init; }
+    public string? SessionSelectionPattern { get; init; }
+    public string? EffectiveSchedulePattern { get; init; }
+    public List<string> StudyDayCodes { get; init; } = new();
+    public List<string> StudyDays { get; init; } = new();
+    public string? StudyDaySummary { get; init; }
 }
 
 internal static class RegistrationActualStudyScheduleMapper
@@ -82,6 +95,35 @@ internal static class RegistrationActualStudyScheduleMapper
             UsesClassDefaultSchedule = usesClassDefaultSchedule,
             ClassSchedulePattern = classEntity.SchedulePattern,
             SessionSelectionPattern = enrollment.SessionSelectionPattern,
+            EffectiveSchedulePattern = effectiveSchedulePattern,
+            StudyDayCodes = studyDayCodes,
+            StudyDays = studyDays,
+            StudyDaySummary = studyDays.Count > 0 ? string.Join(", ", studyDays) : null,
+            ScheduleSegments = enrollment.ScheduleSegments
+                .OrderBy(segment => segment.EffectiveFrom)
+                .Select(segment => MapSegment(segment, classEntity.SchedulePattern))
+                .ToList()
+        };
+    }
+
+    private static RegistrationActualStudyScheduleSegmentDto MapSegment(
+        ClassEnrollmentScheduleSegment segment,
+        string? classSchedulePattern)
+    {
+        var effectiveSchedulePattern = string.IsNullOrWhiteSpace(segment.SessionSelectionPattern)
+            ? classSchedulePattern
+            : segment.SessionSelectionPattern;
+        var studyDayCodes = ExtractOrderedDayCodes(effectiveSchedulePattern);
+        var studyDays = studyDayCodes
+            .Select(code => DayLabels.TryGetValue(code, out var label) ? label : code)
+            .ToList();
+
+        return new RegistrationActualStudyScheduleSegmentDto
+        {
+            Id = segment.Id,
+            EffectiveFrom = segment.EffectiveFrom,
+            EffectiveTo = segment.EffectiveTo,
+            SessionSelectionPattern = segment.SessionSelectionPattern,
             EffectiveSchedulePattern = effectiveSchedulePattern,
             StudyDayCodes = studyDayCodes,
             StudyDays = studyDays,
