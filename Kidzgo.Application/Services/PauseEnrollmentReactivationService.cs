@@ -195,6 +195,6 @@ public sealed class PauseEnrollmentReactivationService(
 
     private static bool RequiresAutomaticReactivation(PauseEnrollmentOutcome? outcome)
     {
-        return outcome is PauseEnrollmentOutcome.ContinueSameClass or PauseEnrollmentOutcome.ContinueWithTutoring;
+        return outcome is PauseEnrollmentOutcome.ContinueSameClass;
     }
 }

@@ -17,7 +17,8 @@ public sealed class MarkAttendanceCommandHandler(
     IDbContext context,
     IUserContext userContext,
     IGamificationService gamificationService,
-    SessionParticipantService sessionParticipantService)
+    SessionParticipantService sessionParticipantService,
+    RegistrationSessionConsumptionService registrationSessionConsumptionService)
     : ICommandHandler<MarkAttendanceCommand, MarkAttendanceResponse>
 {
     public async Task<Result<MarkAttendanceResponse>> Handle(MarkAttendanceCommand command, CancellationToken cancellationToken)
@@ -54,8 +55,8 @@ public sealed class MarkAttendanceCommandHandler(
                 .FirstOrDefaultAsync(a => a.SessionId == command.SessionId && a.StudentProfileId == item.StudentProfileId,
                     cancellationToken);
 
-            var hadExistingAttendance = attendance is not null;
             var previousStatus = attendance?.AttendanceStatus;
+            var previousAbsenceType = attendance?.AbsenceType;
             var shouldTrackClassAttendanceMission = previousStatus != item.AttendanceStatus;
 
             if (attendance is null)
@@ -74,12 +75,12 @@ public sealed class MarkAttendanceCommandHandler(
                 attendance.Note = item.Note;
             }
 
-            attendance.AttendanceStatus = item.AttendanceStatus;
+            var newAbsenceType = default(AbsenceType?);
 
             if (item.AttendanceStatus == AttendanceStatus.Absent)
             {
                 var absenceType = await ResolveAbsenceType(item.StudentProfileId, session, cancellationToken);
-                attendance.AbsenceType = absenceType;
+                newAbsenceType = absenceType;
 
                 if (absenceType == AbsenceType.WithNotice24H)
                 {
@@ -105,17 +106,19 @@ public sealed class MarkAttendanceCommandHandler(
                     }
                 }
             }
-            else if (item.AttendanceStatus == AttendanceStatus.Present)
+
+            attendance.AttendanceStatus = item.AttendanceStatus;
+            attendance.AbsenceType = newAbsenceType;
+
+            if (!participant.IsMakeup)
             {
-                if (!participant.IsMakeup && (!hadExistingAttendance || previousStatus != AttendanceStatus.Present))
-                {
-                    await UpdateRegistrationSessionsAsync(participant.RegistrationId, cancellationToken);
-                }
-                attendance.AbsenceType = null;
-            }
-            else
-            {
-                attendance.AbsenceType = null;
+                await registrationSessionConsumptionService.ApplyAttendanceTransitionAsync(
+                    participant.RegistrationId,
+                    previousStatus,
+                    previousAbsenceType,
+                    attendance.AttendanceStatus,
+                    attendance.AbsenceType,
+                    cancellationToken);
             }
 
             attendance.MarkedBy = userContext.UserId;
@@ -155,72 +158,6 @@ public sealed class MarkAttendanceCommandHandler(
             Results = results
         });
     }
-
-    private async Task UpdateRegistrationSessionsAsync(Guid? registrationId, CancellationToken cancellationToken)
-    {
-        if (!registrationId.HasValue)
-        {
-            return;
-        }
-
-        var registration = await context.Registrations
-            .FirstOrDefaultAsync(r => r.Id == registrationId.Value, cancellationToken);
-
-        if (registration != null && registration.RemainingSessions > 0)
-        {
-            registration.UsedSessions++;
-            registration.RemainingSessions--;
-            registration.UpdatedAt = VietnamTime.UtcNow();
-
-            // Auto complete registration when all sessions are used
-            if (registration.RemainingSessions == 0)
-            {
-                registration.Status = RegistrationStatus.Completed;
-                registration.UpdatedAt = VietnamTime.UtcNow();
-            }
-
-            // Check if all students in class have completed their sessions
-            if (registration.ClassId.HasValue)
-            {
-                await CheckAndUpdateClassCompletionAsync(registration.ClassId.Value, cancellationToken);
-            }
-
-            if (registration.SecondaryClassId.HasValue)
-            {
-                await CheckAndUpdateClassCompletionAsync(registration.SecondaryClassId.Value, cancellationToken);
-            }
-        }
-    }
-
-    private async Task CheckAndUpdateClassCompletionAsync(Guid classId, CancellationToken cancellationToken)
-    {
-        var classEntity = await context.Classes
-            .Include(c => c.ClassEnrollments)
-            .FirstOrDefaultAsync(c => c.Id == classId, cancellationToken);
-
-        if (classEntity == null) return;
-
-        // Get all active registrations for this class
-        var activeRegistrations = await context.Registrations
-            .Where(r => (r.ClassId == classId || r.SecondaryClassId == classId)
-                && r.Status == RegistrationStatus.Studying)
-            .ToListAsync(cancellationToken);
-
-        // If no active registrations, check if class should be completed
-        if (activeRegistrations.Count == 0)
-        {
-            // Check if there are any active enrollments
-            var activeEnrollments = classEntity.ClassEnrollments
-                .Count(ce => ce.Status == EnrollmentStatus.Active);
-
-            if (activeEnrollments == 0 && classEntity.Status == ClassStatus.Active)
-            {
-                classEntity.Status = ClassStatus.Completed;
-                classEntity.UpdatedAt = VietnamTime.UtcNow();
-            }
-        }
-    }
-
     private async Task<AbsenceType> ResolveAbsenceType(Guid studentProfileId, Session session, CancellationToken cancellationToken)
     {
         var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
