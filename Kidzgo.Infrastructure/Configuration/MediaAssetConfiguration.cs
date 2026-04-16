@@ -70,6 +70,9 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
 
         builder.Property(x => x.ApprovedAt);
 
+        builder.Property(x => x.RejectReason)
+            .HasMaxLength(1000);
+
         builder.Property(x => x.IsPublished)
             .IsRequired();
 

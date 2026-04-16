@@ -7,6 +7,7 @@ using Kidzgo.Application.Media.GetMedia;
 using Kidzgo.Application.Media.GetMediaById;
 using Kidzgo.Application.Media.PublishMedia;
 using Kidzgo.Application.Media.RejectMedia;
+using Kidzgo.Application.Media.ResubmitMedia;
 using Kidzgo.Application.Media.UpdateMedia;
 using Kidzgo.Domain.Media;
 using MediatR;
@@ -159,9 +160,21 @@ public class MediaController : ControllerBase
     [Authorize(Roles = "ManagementStaff,Admin")]
     public async Task<IResult> RejectMedia(
         Guid id,
+        [FromBody] RejectMediaRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new RejectMediaCommand(id);
+        var command = new RejectMediaCommand(id, request.Reason);
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    [HttpPost("{id:guid}/resubmit")]
+    [Authorize(Roles = "Teacher,ManagementStaff,Admin")]
+    public async Task<IResult> ResubmitMedia(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ResubmitMediaCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }

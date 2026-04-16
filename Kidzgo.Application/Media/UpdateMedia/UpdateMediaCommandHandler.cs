@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Common;
+using Kidzgo.Domain.Media;
 using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,6 +53,15 @@ public sealed class UpdateMediaCommandHandler(
             media.Visibility = command.Visibility.Value;
         }
 
+        if (media.ApprovalStatus == ApprovalStatus.Rejected)
+        {
+            media.ApprovalStatus = ApprovalStatus.Pending;
+            media.ApprovedById = null;
+            media.ApprovedAt = null;
+            media.RejectReason = null;
+            media.IsPublished = false;
+        }
+
         media.UpdatedAt = VietnamTime.UtcNow();
         await context.SaveChangesAsync(cancellationToken);
 
@@ -64,6 +74,8 @@ public sealed class UpdateMediaCommandHandler(
             ContentType = media.ContentType,
             Caption = media.Caption,
             Visibility = media.Visibility,
+            ApprovalStatus = media.ApprovalStatus,
+            RejectReason = media.RejectReason,
             UpdatedAt = media.UpdatedAt
         };
     }

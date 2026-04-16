@@ -49,6 +49,7 @@ public sealed class GetMediaByIdQueryHandler(
             StudentProfileId = media.StudentProfileId,
             StudentName = media.StudentProfile?.DisplayName,
             MonthTag = media.MonthTag,
+            OwnershipScope = media.OwnershipScope,
             Type = media.Type,
             ContentType = media.ContentType,
             Url = media.Url,
@@ -58,6 +59,7 @@ public sealed class GetMediaByIdQueryHandler(
             ApprovedById = media.ApprovedById,
             ApprovedByName = media.ApprovedByUser?.Name,
             ApprovedAt = media.ApprovedAt,
+            RejectReason = media.RejectReason,
             IsPublished = media.IsPublished,
             CreatedAt = media.CreatedAt,
             UpdatedAt = media.UpdatedAt

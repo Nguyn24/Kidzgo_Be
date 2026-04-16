@@ -5,49 +5,46 @@ using Kidzgo.Domain.Media;
 using Kidzgo.Domain.Media.Errors;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kidzgo.Application.Media.RejectMedia;
+namespace Kidzgo.Application.Media.ResubmitMedia;
 
-public sealed class RejectMediaCommandHandler(
+public sealed class ResubmitMediaCommandHandler(
     IDbContext context
-) : ICommandHandler<RejectMediaCommand, RejectMediaResponse>
+) : ICommandHandler<ResubmitMediaCommand, ResubmitMediaResponse>
 {
-    public async Task<Result<RejectMediaResponse>> Handle(RejectMediaCommand command, CancellationToken cancellationToken)
+    public async Task<Result<ResubmitMediaResponse>> Handle(
+        ResubmitMediaCommand command,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(command.Reason))
-        {
-            return Result.Failure<RejectMediaResponse>(MediaErrors.RejectReasonRequired);
-        }
-
         var media = await context.MediaAssets
             .FirstOrDefaultAsync(m => m.Id == command.Id && !m.IsDeleted, cancellationToken);
 
         if (media is null)
         {
-            return Result.Failure<RejectMediaResponse>(
+            return Result.Failure<ResubmitMediaResponse>(
                 MediaErrors.NotFound(command.Id));
         }
 
-        if (media.ApprovalStatus == ApprovalStatus.Rejected)
+        if (media.ApprovalStatus != ApprovalStatus.Rejected)
         {
-            return Result.Failure<RejectMediaResponse>(
-                MediaErrors.AlreadyRejected);
+            return Result.Failure<ResubmitMediaResponse>(
+                MediaErrors.NotRejected);
         }
 
-        media.ApprovalStatus = ApprovalStatus.Rejected;
-        media.RejectReason = command.Reason.Trim();
+        media.ApprovalStatus = ApprovalStatus.Pending;
         media.ApprovedById = null;
         media.ApprovedAt = null;
+        media.RejectReason = null;
         media.IsPublished = false;
         media.UpdatedAt = VietnamTime.UtcNow();
+
         await context.SaveChangesAsync(cancellationToken);
 
-        return new RejectMediaResponse
+        return new ResubmitMediaResponse
         {
             Id = media.Id,
             ApprovalStatus = media.ApprovalStatus,
-            RejectReason = media.RejectReason,
+            IsPublished = media.IsPublished,
             UpdatedAt = media.UpdatedAt
         };
     }
 }
-

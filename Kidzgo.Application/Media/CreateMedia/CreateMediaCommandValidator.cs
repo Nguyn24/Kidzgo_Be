@@ -1,4 +1,5 @@
 using FluentValidation;
+using Kidzgo.Domain.Media;
 
 namespace Kidzgo.Application.Media.CreateMedia;
 
@@ -28,6 +29,17 @@ public sealed class CreateMediaCommandValidator : AbstractValidator<CreateMediaC
 
         RuleFor(x => x.Visibility)
             .IsInEnum().WithMessage("Visibility must be a valid Visibility type");
+
+        RuleFor(x => x.OwnershipScope)
+            .IsInEnum().WithMessage("OwnershipScope must be a valid MediaOwnershipScope");
+
+        RuleFor(x => x.StudentProfileId)
+            .NotEmpty().WithMessage("StudentProfileId is required for personal media")
+            .When(x => x.OwnershipScope == MediaOwnershipScope.Personal);
+
+        RuleFor(x => x.ClassId)
+            .NotEmpty().WithMessage("ClassId is required for class media")
+            .When(x => x.OwnershipScope == MediaOwnershipScope.Class);
     }
 }
 

@@ -14,6 +14,7 @@ public sealed record MediaDto
     public Guid? StudentProfileId { get; init; }
     public string? StudentName { get; init; }
     public string? MonthTag { get; init; }
+    public MediaOwnershipScope OwnershipScope { get; init; }
     public MediaType Type { get; init; }
     public MediaContentType ContentType { get; init; }
     public string Url { get; init; } = null!;
@@ -23,6 +24,7 @@ public sealed record MediaDto
     public Guid? ApprovedById { get; init; }
     public string? ApprovedByName { get; init; }
     public DateTime? ApprovedAt { get; init; }
+    public string? RejectReason { get; init; }
     public bool IsPublished { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }

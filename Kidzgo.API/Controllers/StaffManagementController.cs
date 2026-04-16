@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Infrastructure;
+using Kidzgo.API.Requests;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Media.ApproveMedia;
 using Kidzgo.Application.Media.RejectMedia;
@@ -88,9 +89,12 @@ public class StaffManagementController : ControllerBase
     }
 
     [HttpPost("media/{id:guid}/reject")]
-    public async Task<IResult> RejectStaffManagementMedia(Guid id, CancellationToken cancellationToken)
+    public async Task<IResult> RejectStaffManagementMedia(
+        Guid id,
+        [FromBody] RejectMediaRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new RejectMediaCommand(id), cancellationToken);
+        var result = await _mediator.Send(new RejectMediaCommand(id, request.Reason), cancellationToken);
         return result.MatchOk();
     }
 

@@ -11,6 +11,8 @@ public sealed record UpdateMediaResponse
     public MediaContentType ContentType { get; init; }
     public string? Caption { get; init; }
     public Visibility Visibility { get; init; }
+    public ApprovalStatus ApprovalStatus { get; init; }
+    public string? RejectReason { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
 
