@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.ReportRequests.Shared;
+using Kidzgo.Application.SessionReports;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -19,6 +20,7 @@ public sealed class ApproveSessionReportCommandHandler(
         CancellationToken cancellationToken)
     {
         var sessionReport = await context.SessionReports
+            .Include(sr => sr.Session)
             .Include(sr => sr.StudentProfile)
             .Include(sr => sr.TeacherUser)
             .FirstOrDefaultAsync(sr => sr.Id == command.SessionReportId, cancellationToken);
@@ -38,11 +40,18 @@ public sealed class ApproveSessionReportCommandHandler(
                     "approve"));
         }
 
+        var now = VietnamTime.UtcNow();
+        var sessionEndedCheck = SessionReportScheduleGuard.EnsureSessionHasEnded(sessionReport.Session, now);
+        if (sessionEndedCheck.IsFailure)
+        {
+            return Result.Failure<ApproveSessionReportResponse>(sessionEndedCheck.Error);
+        }
+
         // Update status to Approved
         sessionReport.Status = ReportStatus.Approved;
         sessionReport.ReviewedByUserId = userContext.UserId;
-        sessionReport.ReviewedAt = VietnamTime.UtcNow();
-        sessionReport.UpdatedAt = VietnamTime.UtcNow();
+        sessionReport.ReviewedAt = now;
+        sessionReport.UpdatedAt = now;
 
         await ReportRequestWorkflow.MarkSessionRequestReviewedAsync(
             context,

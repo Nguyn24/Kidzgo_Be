@@ -4,7 +4,9 @@ public sealed class GenerateEnrollmentConfirmationPdfResponse
 {
     public Guid RegistrationId { get; init; }
     public Guid EnrollmentId { get; init; }
+    public Guid? PdfRecordId { get; init; }
     public string Track { get; init; } = null!;
+    public string FormType { get; init; } = null!;
     public string PdfUrl { get; init; } = null!;
     public DateTime PdfGeneratedAt { get; init; }
     public bool ReusedExistingPdf { get; init; }

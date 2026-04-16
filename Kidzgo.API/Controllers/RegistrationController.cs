@@ -174,9 +174,10 @@ public class RegistrationController : ControllerBase
         Guid id,
         [FromQuery] string track = "primary",
         [FromQuery] bool regenerate = false,
+        [FromQuery] string formType = "auto",
         CancellationToken cancellationToken = default)
     {
-        var command = new GenerateEnrollmentConfirmationPdfCommand(id, track, regenerate);
+        var command = new GenerateEnrollmentConfirmationPdfCommand(id, track, regenerate, formType);
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
