@@ -14,6 +14,7 @@ public sealed record CreateMediaResponse
     public Guid? StudentProfileId { get; init; }
     public string? StudentName { get; init; }
     public string? MonthTag { get; init; }
+    public MediaOwnershipScope OwnershipScope { get; init; }
     public MediaType Type { get; init; }
     public MediaContentType ContentType { get; init; }
     public string Url { get; init; } = null!;

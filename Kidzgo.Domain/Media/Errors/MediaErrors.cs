@@ -28,6 +28,14 @@ public static class MediaErrors
         "Media.NotApproved",
         "Media must be approved before publishing");
 
+    public static readonly Error RejectReasonRequired = Error.Validation(
+        "Media.RejectReasonRequired",
+        "Reject reason is required");
+
+    public static readonly Error NotRejected = Error.Conflict(
+        "Media.NotRejected",
+        "Media must be rejected before resubmitting");
+
     public static readonly Error BranchNotFound = Error.NotFound(
         "Media.BranchNotFound",
         "Branch not found or inactive");

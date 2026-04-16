@@ -26,6 +26,7 @@ public class MediaAsset : Entity
     public ApprovalStatus ApprovalStatus { get; set; }
     public Guid? ApprovedById { get; set; }
     public DateTime? ApprovedAt { get; set; }
+    public string? RejectReason { get; set; }
     public bool IsPublished { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }

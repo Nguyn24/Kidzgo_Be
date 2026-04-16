@@ -25,6 +25,7 @@ public static class MediaReadAccessHelper
         IQueryable<MediaAsset> query,
         IDbContext context,
         IUserContext userContext,
+        Guid? requestedClassId,
         Guid? requestedStudentProfileId,
         CancellationToken cancellationToken)
     {
@@ -56,17 +57,40 @@ public static class MediaReadAccessHelper
             return query.Where(_ => false);
         }
 
+        query = query.Where(media =>
+            media.ApprovalStatus == ApprovalStatus.Approved &&
+            media.IsPublished);
+
+        query = role == UserRole.Student
+            ? query.Where(media => media.Visibility != Visibility.PublicParent)
+            : query;
+
         var activeClassIds = context.ClassEnrollments
             .Where(enrollment =>
                 enrollment.StudentProfileId == studentProfileId.Value &&
                 enrollment.Status == EnrollmentStatus.Active)
             .Select(enrollment => enrollment.ClassId);
 
-        return query.Where(media =>
-            media.StudentProfileId == studentProfileId.Value ||
-            (media.ClassId.HasValue &&
-             activeClassIds.Contains(media.ClassId.Value) &&
-             media.OwnershipScope == MediaOwnershipScope.Class));
+        var personalMedia = query.Where(media =>
+            media.OwnershipScope == MediaOwnershipScope.Personal &&
+            media.StudentProfileId == studentProfileId.Value);
+
+        var classMedia = query.Where(media =>
+            media.OwnershipScope == MediaOwnershipScope.Class &&
+            media.ClassId.HasValue &&
+            activeClassIds.Contains(media.ClassId.Value));
+
+        if (requestedClassId.HasValue)
+        {
+            return classMedia.Where(media => media.ClassId == requestedClassId.Value);
+        }
+
+        if (requestedStudentProfileId.HasValue)
+        {
+            return personalMedia.Where(media => media.StudentProfileId == requestedStudentProfileId.Value);
+        }
+
+        return personalMedia.Union(classMedia);
     }
 
     public static async Task<bool> CanReadAsync(
@@ -94,7 +118,17 @@ public static class MediaReadAccessHelper
                 return false;
             }
 
-            if (media.StudentProfileId.HasValue)
+            if (media.ApprovalStatus != ApprovalStatus.Approved || !media.IsPublished)
+            {
+                return false;
+            }
+
+            if (!CanRoleReadVisibility(UserRole.Parent, media.Visibility))
+            {
+                return false;
+            }
+
+            if (media.OwnershipScope == MediaOwnershipScope.Personal && media.StudentProfileId.HasValue)
             {
                 return await context.ParentStudentLinks
                     .AsNoTracking()
@@ -133,7 +167,15 @@ public static class MediaReadAccessHelper
             return false;
         }
 
-        if (media.StudentProfileId == studentProfileId.Value)
+        if (media.ApprovalStatus != ApprovalStatus.Approved ||
+            !media.IsPublished ||
+            !CanRoleReadVisibility(UserRole.Student, media.Visibility))
+        {
+            return false;
+        }
+
+        if (media.OwnershipScope == MediaOwnershipScope.Personal &&
+            media.StudentProfileId == studentProfileId.Value)
         {
             return true;
         }
@@ -149,6 +191,16 @@ public static class MediaReadAccessHelper
         }
 
         return false;
+    }
+
+    private static bool CanRoleReadVisibility(UserRole role, Visibility visibility)
+    {
+        if (role == UserRole.Parent)
+        {
+            return true;
+        }
+
+        return visibility is Visibility.ClassOnly or Visibility.Personal;
     }
 
     public static async Task<Guid?> ResolveAccessibleStudentProfileIdAsync(

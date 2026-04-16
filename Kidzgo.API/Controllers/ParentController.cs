@@ -207,6 +207,7 @@ public class ParentController : ControllerBase
             mediaQuery,
             _context,
             _userContext,
+            classId,
             studentProfileId,
             cancellationToken);
 
