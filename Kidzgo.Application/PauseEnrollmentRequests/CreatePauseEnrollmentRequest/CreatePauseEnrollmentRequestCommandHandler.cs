@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.PauseEnrollmentRequests;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Classes.Errors;
 using Kidzgo.Domain.Common;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PauseEnrollmentRequests.CreatePauseEnrollmentRequest;
 
-public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext context)
+public sealed class CreatePauseEnrollmentRequestCommandHandler(
+    IDbContext context,
+    PauseEnrollmentEligibleClassResolver eligibleClassResolver)
     : ICommandHandler<CreatePauseEnrollmentRequestCommand, CreatePauseEnrollmentRequestResponse>
 {
     public async Task<Result<CreatePauseEnrollmentRequestResponse>> Handle(
@@ -35,20 +38,11 @@ public sealed class CreatePauseEnrollmentRequestCommandHandler(IDbContext contex
                 PauseEnrollmentRequestErrors.NoEnrollmentsInRange);
         }
 
-        var activeClassIds = activeEnrollments
-            .Select(e => e.ClassId)
-            .Distinct()
-            .ToList();
-        var pauseFromUtc = VietnamTime.TreatAsVietnamLocal(command.PauseFrom.ToDateTime(TimeOnly.MinValue));
-        var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(command.PauseTo.ToDateTime(TimeOnly.MinValue)));
-
-        var classIdsInRange = await context.Sessions
-            .Where(s => activeClassIds.Contains(s.ClassId)
-                        && s.PlannedDatetime >= pauseFromUtc
-                        && s.PlannedDatetime <= pauseToUtc)
-            .Select(s => s.ClassId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
+        var classIdsInRange = await eligibleClassResolver.GetEligibleClassIdsAsync(
+            command.StudentProfileId,
+            command.PauseFrom,
+            command.PauseTo,
+            cancellationToken);
 
         if (classIdsInRange.Count == 0)
         {

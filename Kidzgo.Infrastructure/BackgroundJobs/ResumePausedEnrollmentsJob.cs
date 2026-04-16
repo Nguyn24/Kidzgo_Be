@@ -25,8 +25,7 @@ public sealed class ResumePausedEnrollmentsJob(
         var duePauseRequestIds = await db.PauseEnrollmentRequests
             .AsNoTracking()
             .Where(request => request.Status == PauseEnrollmentRequestStatus.Approved
-                && (request.Outcome == PauseEnrollmentOutcome.ContinueSameClass ||
-                    request.Outcome == PauseEnrollmentOutcome.ContinueWithTutoring)
+                && request.Outcome == PauseEnrollmentOutcome.ContinueSameClass
                 && request.OutcomeAt.HasValue
                 && request.PauseTo < today
                 && !db.PauseEnrollmentRequestHistories.Any(history =>

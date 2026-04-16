@@ -15,7 +15,8 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
     IDbContext context,
     IUserContext userContext,
     ITemplateRenderer templateRenderer,
-    StudentSessionAssignmentService studentSessionAssignmentService)
+    StudentSessionAssignmentService studentSessionAssignmentService,
+    PauseEnrollmentEligibleClassResolver eligibleClassResolver)
     : ICommandHandler<ApprovePauseEnrollmentRequestCommand>
 {
     public async Task<Result> Handle(ApprovePauseEnrollmentRequestCommand request, CancellationToken cancellationToken)
@@ -71,20 +72,15 @@ public sealed class ApprovePauseEnrollmentRequestCommandHandler(
         pauseRequest.ApprovedAt = now;
         pauseRequest.ApprovedBy = userContext.UserId;
 
-        var activeClassIds = activeEnrollments
-            .Select(e => e.ClassId)
-            .Distinct()
-            .ToList();
         var pauseFromUtc = VietnamTime.TreatAsVietnamLocal(pauseRequest.PauseFrom.ToDateTime(TimeOnly.MinValue));
-        var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(VietnamTime.TreatAsVietnamLocal(pauseRequest.PauseTo.ToDateTime(TimeOnly.MinValue)));
+        var pauseToUtc = VietnamTime.EndOfVietnamDayUtc(
+            VietnamTime.TreatAsVietnamLocal(pauseRequest.PauseTo.ToDateTime(TimeOnly.MinValue)));
 
-        var classIdsInRange = await context.Sessions
-            .Where(s => activeClassIds.Contains(s.ClassId)
-                        && s.PlannedDatetime >= pauseFromUtc
-                        && s.PlannedDatetime <= pauseToUtc)
-            .Select(s => s.ClassId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
+        var classIdsInRange = await eligibleClassResolver.GetEligibleClassIdsAsync(
+            pauseRequest.StudentProfileId,
+            pauseRequest.PauseFrom,
+            pauseRequest.PauseTo,
+            cancellationToken);
 
         if (pauseRequest.ClassId.HasValue && !classIdsInRange.Contains(pauseRequest.ClassId.Value))
         {
