@@ -71,4 +71,8 @@ public static class RegistrationErrors
     public static Error NotPaused() => Error.Validation(
         "Registration.NotPaused",
         "Registration is not paused");
+
+    public static Error InvalidEnrollmentConfirmationPdfFormType(string? formType) => Error.Validation(
+        "Registration.InvalidEnrollmentConfirmationPdfFormType",
+        $"Invalid enrollment confirmation PDF form type: {formType}. Allowed values are auto, new, newStudent, continuing, continuingStudent.");
 }

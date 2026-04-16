@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.SessionReports;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -37,9 +38,16 @@ public sealed class UpdateSessionReportCommandHandler(
                 SessionReportErrors.InvalidStatusForOperation(sessionReport.Status, "edit"));
         }
 
+        var now = VietnamTime.UtcNow();
+        var sessionEndedCheck = SessionReportScheduleGuard.EnsureSessionHasEnded(sessionReport.Session, now);
+        if (sessionEndedCheck.IsFailure)
+        {
+            return Result.Failure<UpdateSessionReportResponse>(sessionEndedCheck.Error);
+        }
+
         // Update feedback
         sessionReport.Feedback = command.Feedback;
-        sessionReport.UpdatedAt = VietnamTime.UtcNow();
+        sessionReport.UpdatedAt = now;
 
         // If report was Rejected, change status back to Draft so teacher can resubmit
         if (sessionReport.Status == ReportStatus.Rejected)

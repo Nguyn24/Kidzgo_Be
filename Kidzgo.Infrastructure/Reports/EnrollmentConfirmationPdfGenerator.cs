@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using Kidzgo.Application.Abstraction.Reports;
 using Kidzgo.Application.Abstraction.Storage;
+using Kidzgo.Domain.Registrations;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 
@@ -47,78 +48,218 @@ public sealed class EnrollmentConfirmationPdfGenerator(
     }
 
     private static string BuildHtml(EnrollmentConfirmationPdfDocument document)
-    {
-        var issuedAt = VietnamTime.ToVietnamDateTime(document.GeneratedAt).ToString("dd/MM/yyyy HH:mm", ViCulture);
-        var firstStudyDate = document.FirstStudyDate ?? document.EnrollDate;
-        var studyDaySummary = string.IsNullOrWhiteSpace(document.StudyDaySummary)
-            ? "Theo lich lop"
-            : document.StudyDaySummary;
-        var parentInfo = string.IsNullOrWhiteSpace(document.ParentName)
-            ? "Chua cap nhat"
-            : document.ParentName;
+        => document.FormType == EnrollmentConfirmationPdfFormType.ContinuingStudent
+            ? BuildContinuingStudentHtml(document)
+            : BuildNewStudentHtml(document);
 
-        if (!string.IsNullOrWhiteSpace(document.ParentPhoneNumber))
-        {
-            parentInfo += $" - {document.ParentPhoneNumber}";
-        }
+    private static string BuildNewStudentHtml(EnrollmentConfirmationPdfDocument document)
+    {
+        var studyDaySummary = DisplayText(document.StudyDaySummary, "Theo lịch lớp");
 
         return $$"""
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8">
-    <title>Phieu xac nhan nhap hoc</title>
+    <title>Phiếu thu học phí</title>
+    {{CommonStyle()}}
+</head>
+<body>
+    <main class="page">
+        {{Header(document)}}
+
+        <h1>PHIẾU THU HỌC PHÍ</h1>
+
+        <section class="section">
+            <div class="section-title">1. Thông tin</div>
+            <table>
+                <tr><th>Họ tên học viên</th><td>{{H(document.StudentName)}}</td></tr>
+                <tr><th>SĐT phụ huynh</th><td>{{H(DisplayText(document.ParentPhoneNumber))}}</td></tr>
+                <tr><th>Phụ huynh</th><td>{{H(DisplayText(document.ParentName))}}</td></tr>
+                <tr><th>Ngày sinh</th><td>{{H(DisplayDate(document.StudentDateOfBirth))}}</td></tr>
+                <tr><th>Lớp đăng ký</th><td>{{H($"{document.ClassCode} - {document.ClassTitle}")}}</td></tr>
+                <tr><th>Trình độ / khóa học</th><td>{{H($"{document.ProgramName} ({document.ProgramCode})")}}</td></tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-title">2. Thông tin khóa học</div>
+            <table>
+                <tr><th>Thời lượng khóa</th><td>{{H(document.CourseDurationText)}}</td></tr>
+                <tr><th>Lịch học</th><td>{{H(studyDaySummary)}}</td></tr>
+                <tr><th>Ngày bắt đầu</th><td>{{H(DisplayDate(document.FirstStudyDate ?? document.EnrollDate))}}</td></tr>
+                <tr><th>Ngày kết thúc dự kiến</th><td>{{H(DisplayDate(document.ExpectedEndDate))}}</td></tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-title">3. Học phí</div>
+            <table>
+                <tr><th>Gói học</th><td>{{H(document.TuitionPlanName)}}</td></tr>
+                <tr><th>Học phí khóa</th><td class="amount">{{H(FormatAmount(document.TuitionAmount, document.Currency))}}</td></tr>
+                <tr><th>Ưu đãi (nếu có)</th><td>{{H(FormatAmount(document.DiscountAmount, document.Currency))}}</td></tr>
+                <tr><th>Tài liệu</th><td>...</td></tr>
+                <tr><th>Tổng thanh toán</th><td class="amount">...</td></tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-title">4. Chính sách áp dụng</div>
+            <ul class="policy-list">
+                <li>Không áp dụng hoàn phí.</li>
+                <li>Các buổi con nghỉ phụ huynh báo trước cô 24h trước khi buổi học bắt đầu sẽ được sắp xếp học bù.</li>
+                <li>Không áp dụng học bù đối với trường hợp nghỉ không báo trước.</li>
+                <li>Trung tâm sẽ sắp xếp lớp học bù phù hợp.</li>
+                <li>Chính sách bảo lưu: tối đa 01 lần, trong vòng 03 tháng.</li>
+            </ul>
+        </section>
+
+        {{PaymentSection(document)}}
+        {{Signature(document)}}
+        {{Footer(document)}}
+    </main>
+</body>
+</html>
+""";
+    }
+
+    private static string BuildContinuingStudentHtml(EnrollmentConfirmationPdfDocument document)
+    {
+        var reconciliation = document.Reconciliation ?? new EnrollmentReconciliationPdfSection
+        {
+            Note = "Chưa có dữ liệu đối soát khóa trước."
+        };
+        var previousClass = string.IsNullOrWhiteSpace(reconciliation.PreviousClassCode)
+            ? DisplayText(reconciliation.PreviousClassTitle)
+            : $"{reconciliation.PreviousClassCode} - {DisplayText(reconciliation.PreviousClassTitle)}";
+        var studyDaySummary = DisplayText(document.StudyDaySummary, "Theo lịch lớp");
+
+        return $$"""
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Phiếu đối soát và thu học phí</title>
+    {{CommonStyle()}}
+</head>
+<body>
+    <main class="page">
+        {{Header(document)}}
+
+        <h1>PHIẾU ĐỐI SOÁT VÀ THU HỌC PHÍ</h1>
+
+        <section class="section">
+            <table>
+                <tr><th>Họ tên học viên</th><td>{{H(document.StudentName)}}</td></tr>
+                <tr><th>Lớp đăng ký tiếp</th><td>{{H($"{document.ClassCode} - {document.ClassTitle}")}}</td></tr>
+                <tr><th>Giáo viên phụ trách</th><td>{{H(DisplayText(document.TeacherName))}}</td></tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-title">Bước 1: Đối soát học phí khóa hiện tại</div>
+            <table>
+                <tr><th>Lớp / khóa hiện tại</th><td>{{H(previousClass)}}</td></tr>
+                <tr><th>Chương trình</th><td>{{H(DisplayText(reconciliation.PreviousProgramName))}}</td></tr>
+                <tr><th>Giáo viên phụ trách</th><td>{{H(DisplayText(reconciliation.PreviousTeacherName))}}</td></tr>
+                <tr><th>Thời gian khóa học</th><td>{{H($"{DisplayDate(reconciliation.CourseStartDate)} - {DisplayDate(reconciliation.CourseEndDate)}")}}</td></tr>
+                <tr><th>Tổng số buổi theo khóa</th><td>{{H(DisplayNumber(reconciliation.TotalSessions))}} buổi</td></tr>
+                <tr><th>Số buổi đã xếp lịch</th><td>{{H(DisplayNumber(reconciliation.AssignedSessionCount))}} buổi</td></tr>
+                <tr><th>Số buổi nghỉ có phép</th><td>{{reconciliation.ExcusedAbsenceCount}} buổi</td></tr>
+                <tr><th>Chi tiết ngày nghỉ có phép / Lễ Tết</th><td>{{H(DisplayText(reconciliation.ExcusedAbsenceDetails, "Không có"))}}</td></tr>
+                <tr><th>Số buổi nghỉ không phép</th><td>{{reconciliation.UnexcusedAbsenceCount}} buổi</td></tr>
+                <tr><th>Chi tiết ngày nghỉ không phép</th><td>{{H(DisplayText(reconciliation.UnexcusedAbsenceDetails, "Không có"))}}</td></tr>
+                <tr><th>Số buổi đã được sắp xếp học bù</th><td>{{reconciliation.MakeupScheduledCount}} buổi</td></tr>
+                <tr><th>Chi tiết ngày học bù</th><td>{{H(DisplayText(reconciliation.MakeupScheduledDetails, "Không có"))}}</td></tr>
+                <tr><th>Kết luận</th><td>Sau khi đối soát và học bù, khóa học kết thúc vào ngày: {{H(DisplayDate(reconciliation.ReconciledEndDate))}}</td></tr>
+            </table>
+            <div class="note">{{H(DisplayText(reconciliation.Note))}}</div>
+        </section>
+
+        <section class="section">
+            <div class="section-title">Bước 2: Thu học phí khóa tiếp theo / xử lý phát sinh</div>
+            <div class="sub-title">Trường hợp 1: Tiếp tục đăng ký học</div>
+            <table>
+                <tr><th>Thời lượng khóa</th><td>{{H(document.CourseDurationText)}}</td></tr>
+                <tr><th>Lịch học</th><td>{{H(studyDaySummary)}}</td></tr>
+                <tr><th>Ngày bắt đầu</th><td>{{H(DisplayDate(document.FirstStudyDate ?? document.EnrollDate))}}</td></tr>
+                <tr><th>Ngày kết thúc dự kiến</th><td>{{H(DisplayDate(document.ExpectedEndDate))}}</td></tr>
+                <tr><th>Học phí gốc</th><td class="amount">{{H(FormatAmount(document.TuitionAmount, document.Currency))}}</td></tr>
+                <tr><th>Ưu đãi (nếu có)</th><td>{{H(FormatAmount(document.DiscountAmount, document.Currency))}}</td></tr>
+                <tr><th>Tài liệu</th><td>...</td></tr>
+                <tr><th>Tổng thanh toán</th><td class="amount">...</td></tr>
+                <tr><th>Ghi chú</th><td>Học phí chưa bao gồm tài liệu nếu trung tâm có thu riêng.</td></tr>
+            </table>
+            <div class="case-note">
+                <strong>Trường hợp 2:</strong> Nếu ngừng học và chưa thanh toán các buổi phát sinh, trung tâm sẽ đối soát số buổi phát sinh và đơn giá theo hồ sơ thực tế.
+            </div>
+            <div class="case-note">
+                <strong>Trường hợp 3:</strong> Nếu bảo lưu khóa học, số buổi bảo lưu và thời hạn bảo lưu áp dụng theo chính sách hiện hành của trung tâm.
+            </div>
+        </section>
+
+        {{PaymentSection(document)}}
+        {{Signature(document)}}
+        {{Footer(document)}}
+    </main>
+</body>
+</html>
+""";
+    }
+
+    private static string CommonStyle()
+    {
+        return """
     <style>
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 28px;
+            padding: 26px;
             color: #1f2933;
-            font-family: Arial, sans-serif;
+            font-family: Arial, "Helvetica Neue", sans-serif;
             font-size: 13px;
             line-height: 1.5;
         }
         .page {
             border: 1px solid #c9d4df;
-            padding: 28px;
+            padding: 26px;
             min-height: 1040px;
         }
         .header {
             border-bottom: 3px solid #0f766e;
-            padding-bottom: 18px;
-            margin-bottom: 22px;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
         }
         .brand {
             font-size: 20px;
             font-weight: 700;
             color: #0f766e;
-            letter-spacing: .4px;
         }
         .branch {
             margin-top: 6px;
             color: #52616f;
         }
         h1 {
-            margin: 28px 0 8px;
+            margin: 24px 0 18px;
             text-align: center;
             color: #111827;
-            font-size: 24px;
-            letter-spacing: .4px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #52616f;
-            margin-bottom: 26px;
+            font-size: 23px;
+            letter-spacing: .2px;
         }
         .section {
-            margin: 18px 0;
+            margin: 16px 0;
         }
         .section-title {
-            margin: 0 0 10px;
+            margin: 0 0 9px;
             color: #0f766e;
             font-size: 15px;
             font-weight: 700;
             text-transform: uppercase;
+        }
+        .sub-title {
+            margin: 10px 0 8px;
+            font-weight: 700;
+            color: #344054;
         }
         table {
             width: 100%;
@@ -126,24 +267,32 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         }
         th, td {
             border: 1px solid #d8e0e8;
-            padding: 10px 12px;
+            padding: 9px 11px;
             vertical-align: top;
         }
         th {
-            width: 32%;
+            width: 34%;
             background: #f3f7f8;
             text-align: left;
             color: #3b4a54;
             font-weight: 700;
         }
         .amount {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             color: #0f766e;
         }
-        .note {
-            margin-top: 18px;
-            padding: 12px 14px;
+        .policy-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .policy-list li {
+            margin: 5px 0;
+        }
+        .note,
+        .case-note {
+            margin-top: 12px;
+            padding: 10px 12px;
             border-left: 4px solid #0f766e;
             background: #f3f7f8;
             color: #3b4a54;
@@ -152,87 +301,80 @@ public sealed class EnrollmentConfirmationPdfGenerator(
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 36px;
-            margin-top: 54px;
+            margin-top: 46px;
             text-align: center;
         }
         .signature strong {
             display: block;
-            margin-bottom: 70px;
+            margin-bottom: 64px;
         }
         .footer {
-            margin-top: 36px;
+            margin-top: 32px;
             border-top: 1px solid #d8e0e8;
-            padding-top: 12px;
+            padding-top: 10px;
             color: #65727f;
             font-size: 12px;
         }
     </style>
-</head>
-<body>
-    <main class="page">
+""";
+    }
+
+    private static string Header(EnrollmentConfirmationPdfDocument document)
+    {
+        var branchInfo = DisplayText(document.BranchAddress, "Địa chỉ đang cập nhật");
+
+        if (!string.IsNullOrWhiteSpace(document.BranchPhoneNumber))
+        {
+            branchInfo += $" | {document.BranchPhoneNumber}";
+        }
+
+        return $$"""
         <section class="header">
             <div class="brand">{{H(document.BranchName)}}</div>
-            <div class="branch">
-                {{H(document.BranchAddress ?? "Dia chi dang cap nhat")}}
-                {{(!string.IsNullOrWhiteSpace(document.BranchPhoneNumber) ? " | " + H(document.BranchPhoneNumber) : "")}}
-            </div>
+            <div class="branch">{{H(branchInfo)}}</div>
         </section>
+""";
+    }
 
-        <h1>PHIEU XAC NHAN NHAP HOC</h1>
-        <div class="subtitle">Ma dang ky: {{H(document.RegistrationId.ToString())}}</div>
-
+    private static string PaymentSection(EnrollmentConfirmationPdfDocument document)
+    {
+        return $$"""
         <section class="section">
-            <div class="section-title">Thong tin hoc vien</div>
+            <div class="section-title">Thông tin thanh toán</div>
             <table>
-                <tr><th>Hoc vien</th><td>{{H(document.StudentName)}}</td></tr>
-                <tr><th>Phu huynh</th><td>{{H(parentInfo)}}</td></tr>
-                <tr><th>Ngay ghi danh vao lop</th><td>{{DisplayDate(document.EnrollDate)}}</td></tr>
-                <tr><th>Ngay vao hoc du kien</th><td>{{DisplayDate(firstStudyDate)}}</td></tr>
+                <tr><th>Hình thức</th><td>{{H(DisplayText(document.PaymentMethod, "Tiền mặt / Chuyển khoản"))}}</td></tr>
+                <tr><th>Chủ tài khoản</th><td>{{H(DisplayText(document.PaymentAccountName, "....."))}}</td></tr>
+                <tr><th>Số tài khoản</th><td>{{H(DisplayText(document.PaymentAccountNumber, "....."))}}</td></tr>
+                <tr><th>Ngân hàng</th><td>{{H(DisplayText(document.PaymentBankName, "....."))}}</td></tr>
+                <tr><th>Nội dung chuyển khoản</th><td>{{H(DisplayText(document.PaymentTransferContent, $"{document.StudentName} - {document.ClassCode}"))}}</td></tr>
             </table>
         </section>
+""";
+    }
 
-        <section class="section">
-            <div class="section-title">Thong tin lop hoc</div>
-            <table>
-                <tr><th>Khoa / chuong trinh</th><td>{{H(document.ProgramName)}} ({{H(document.ProgramCode)}})</td></tr>
-                <tr><th>Lop</th><td>{{H(document.ClassCode)}} - {{H(document.ClassTitle)}}</td></tr>
-                <tr><th>Ca hoc</th><td>{{H(studyDaySummary)}}</td></tr>
-                <tr><th>Track</th><td>{{H(document.Track)}}</td></tr>
-                <tr><th>Hinh thuc vao lop</th><td>{{H(document.EntryType)}}</td></tr>
-            </table>
-        </section>
-
-        <section class="section">
-            <div class="section-title">Thong tin hoc phi</div>
-            <table>
-                <tr><th>Goi hoc</th><td>{{H(document.TuitionPlanName)}}</td></tr>
-                <tr><th>So buoi</th><td>{{document.TotalSessions:N0}}</td></tr>
-                <tr><th>Don gia / buoi</th><td>{{H(FormatAmount(document.UnitPriceSession, document.Currency))}}</td></tr>
-                <tr><th>Hoc phi</th><td><span class="amount">{{H(FormatAmount(document.TuitionAmount, document.Currency))}}</span></td></tr>
-            </table>
-        </section>
-
-        <div class="note">
-            Phieu nay xac nhan hoc vien da duoc ghi danh vao lop tai trung tam.
-            Thong tin hoc phi duoc lay theo goi hoc tai thoi diem xuat phieu.
-        </div>
-
+    private static string Signature(EnrollmentConfirmationPdfDocument document)
+    {
+        return $$"""
         <section class="signature">
             <div>
-                <strong>Dai dien trung tam</strong>
+                <strong>Đại diện trung tâm</strong>
                 {{H(document.IssuedByName ?? string.Empty)}}
             </div>
             <div>
-                <strong>Phu huynh hoc vien</strong>
+                <strong>Phụ huynh học viên</strong>
             </div>
         </section>
+""";
+    }
 
+    private static string Footer(EnrollmentConfirmationPdfDocument document)
+    {
+        var issuedAt = VietnamTime.ToVietnamDateTime(document.GeneratedAt).ToString("dd/MM/yyyy HH:mm", ViCulture);
+
+        return $$"""
         <section class="footer">
-            Ngay xuat phieu: {{H(issuedAt)}} | Ma enrollment: {{H(document.EnrollmentId.ToString())}}
+            Ngày xuất phiếu: {{H(issuedAt)}} | Mã đăng ký: {{H(document.RegistrationId.ToString())}} | Mã enrollment: {{H(document.EnrollmentId.ToString())}}
         </section>
-    </main>
-</body>
-</html>
 """;
     }
 
@@ -308,9 +450,12 @@ public sealed class EnrollmentConfirmationPdfGenerator(
 
     private static string BuildFileName(EnrollmentConfirmationPdfDocument document)
     {
+        var formType = document.FormType == EnrollmentConfirmationPdfFormType.ContinuingStudent
+            ? "continuing"
+            : "new";
         var safeStudentName = Slugify(document.StudentName);
         var date = document.EnrollDate.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-        return $"enrollment-confirmation-{safeStudentName}-{date}-{document.EnrollmentId:N}.pdf";
+        return $"enrollment-confirmation-{formType}-{safeStudentName}-{date}-{document.EnrollmentId:N}.pdf";
     }
 
     private static string Slugify(string value)
@@ -328,6 +473,15 @@ public sealed class EnrollmentConfirmationPdfGenerator(
 
     private static string DisplayDate(DateOnly value)
         => value.ToString("dd/MM/yyyy", ViCulture);
+
+    private static string DisplayDate(DateOnly? value)
+        => value.HasValue ? DisplayDate(value.Value) : "Chưa cập nhật";
+
+    private static string DisplayNumber(int value)
+        => value > 0 ? value.ToString("N0", ViCulture) : "0";
+
+    private static string DisplayText(string? value, string fallback = "Chưa cập nhật")
+        => string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     private static string FormatAmount(decimal amount, string currency)
         => $"{amount.ToString("N0", ViCulture)} {currency}";

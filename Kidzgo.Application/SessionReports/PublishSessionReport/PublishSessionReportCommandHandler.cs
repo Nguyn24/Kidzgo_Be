@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.SessionReports;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Notifications;
 using Kidzgo.Domain.Reports;
@@ -38,6 +39,11 @@ public sealed class PublishSessionReportCommandHandler(
         }
 
         var now = VietnamTime.UtcNow();
+        var sessionEndedCheck = SessionReportScheduleGuard.EnsureSessionHasEnded(sessionReport.Session, now);
+        if (sessionEndedCheck.IsFailure)
+        {
+            return Result.Failure<PublishSessionReportResponse>(sessionEndedCheck.Error);
+        }
 
         // Update status to Published
         sessionReport.Status = ReportStatus.Published;

@@ -126,6 +126,7 @@ public sealed class ApplicationDbContext(
 
     // Registrations
     public DbSet<Registration> Registrations => Set<Registration>();
+    public DbSet<EnrollmentConfirmationPdf> EnrollmentConfirmationPdfs => Set<EnrollmentConfirmationPdf>();
 
     // Reports
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
