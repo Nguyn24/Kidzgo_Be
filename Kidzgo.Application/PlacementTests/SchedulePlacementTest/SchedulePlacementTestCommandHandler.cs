@@ -1,18 +1,16 @@
-using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PlacementTests;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
-using Kidzgo.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.PlacementTests.SchedulePlacementTest;
 
 public sealed class SchedulePlacementTestCommandHandler(
-    IDbContext context,
-    IUserContext userContext
+    IDbContext context
 ) : ICommandHandler<SchedulePlacementTestCommand, SchedulePlacementTestResponse>
 {
     public async Task<Result<SchedulePlacementTestResponse>> Handle(
@@ -83,18 +81,42 @@ public sealed class SchedulePlacementTestCommandHandler(
                 Domain.Common.Error.Validation("LeadId", "Either LeadId or LeadChildId must be provided"));
         }
 
-        // Validate Invigilator if provided
-        if (command.InvigilatorUserId.HasValue)
+        var duration = PlacementTestScheduleAvailability.NormalizeDuration(command.DurationMinutes);
+        if (duration <= 0)
         {
-            var invigilator = await context.Users
-                .FirstOrDefaultAsync(u => u.Id == command.InvigilatorUserId.Value, cancellationToken);
-
-            if (invigilator is null)
-            {
-                return Result.Failure<SchedulePlacementTestResponse>(
-                    PlacementTestErrors.InvigilatorNotFound(command.InvigilatorUserId));
-            }
+            return Result.Failure<SchedulePlacementTestResponse>(PlacementTestErrors.InvalidDuration);
         }
+
+        if (!command.InvigilatorUserId.HasValue)
+        {
+            return Result.Failure<SchedulePlacementTestResponse>(PlacementTestErrors.InvigilatorRequired);
+        }
+
+        if (!command.RoomId.HasValue)
+        {
+            return Result.Failure<SchedulePlacementTestResponse>(PlacementTestErrors.RoomRequired);
+        }
+
+        var availability = await PlacementTestScheduleAvailability.EnsureScheduleAvailableAsync(
+            context,
+            command.InvigilatorUserId.Value,
+            command.RoomId.Value,
+            command.ScheduledAt,
+            duration,
+            excludePlacementTestId: null,
+            branchId: lead.BranchPreference,
+            cancellationToken);
+
+        if (availability.IsFailure)
+        {
+            return Result.Failure<SchedulePlacementTestResponse>(availability.Error);
+        }
+
+        var roomName = await context.Classrooms
+            .AsNoTracking()
+            .Where(r => r.Id == command.RoomId.Value)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(cancellationToken);
 
         DateTime scheduledAtUtc = VietnamTime.NormalizeToUtc(command.ScheduledAt);
         var now = VietnamTime.UtcNow();
@@ -104,8 +126,10 @@ public sealed class SchedulePlacementTestCommandHandler(
             LeadId = lead.Id,
             LeadChildId = leadChild.Id,
             ScheduledAt = scheduledAtUtc,
+            DurationMinutes = duration,
             Status = PlacementTestStatus.Scheduled,
-            Room = command.Room?.Trim(),
+            RoomId = command.RoomId.Value,
+            Room = roomName,
             InvigilatorUserId = command.InvigilatorUserId,
             CreatedAt = now,
             UpdatedAt = now
@@ -135,7 +159,10 @@ public sealed class SchedulePlacementTestCommandHandler(
             LeadId = placementTest.LeadId,
             LeadChildId = placementTest.LeadChildId,
             ScheduledAt = placementTest.ScheduledAt,
+            DurationMinutes = placementTest.DurationMinutes,
             Status = placementTest.Status.ToString(),
+            RoomId = placementTest.RoomId,
+            RoomName = roomName,
             Room = placementTest.Room,
             InvigilatorUserId = placementTest.InvigilatorUserId,
             CreatedAt = placementTest.CreatedAt

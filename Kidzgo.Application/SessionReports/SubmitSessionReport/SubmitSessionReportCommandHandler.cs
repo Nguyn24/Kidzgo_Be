@@ -2,6 +2,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.ReportRequests.Shared;
+using Kidzgo.Application.SessionReports;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
 using Kidzgo.Domain.Reports.Errors;
@@ -40,10 +41,17 @@ public sealed class SubmitSessionReportCommandHandler(
                     "submit"));
         }
 
+        var now = VietnamTime.UtcNow();
+        var sessionEndedCheck = SessionReportScheduleGuard.EnsureSessionHasEnded(sessionReport.Session, now);
+        if (sessionEndedCheck.IsFailure)
+        {
+            return Result.Failure<SubmitSessionReportResponse>(sessionEndedCheck.Error);
+        }
+
         // Update status to Review
         sessionReport.Status = ReportStatus.Review;
         sessionReport.SubmittedByUserId = userContext.UserId;
-        sessionReport.UpdatedAt = VietnamTime.UtcNow();
+        sessionReport.UpdatedAt = now;
 
         await ReportRequestWorkflow.MarkMatchingSessionRequestSubmittedAsync(
             context,

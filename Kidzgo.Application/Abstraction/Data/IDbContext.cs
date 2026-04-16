@@ -40,6 +40,8 @@ public interface IDbContext
     // Classes
     DbSet<Class> Classes { get; }
     DbSet<ClassEnrollment> ClassEnrollments { get; }
+    DbSet<ClassScheduleSegment> ClassScheduleSegments { get; }
+    DbSet<ClassEnrollmentScheduleSegment> ClassEnrollmentScheduleSegments { get; }
     DbSet<PauseEnrollmentRequest> PauseEnrollmentRequests { get; }
     DbSet<PauseEnrollmentRequestHistory> PauseEnrollmentRequestHistories { get; }
 
@@ -117,6 +119,7 @@ public interface IDbContext
 
     // Registrations
     DbSet<Registration> Registrations { get; }
+    DbSet<EnrollmentConfirmationPdf> EnrollmentConfirmationPdfs { get; }
 
     // Reports
     DbSet<MonthlyReportJob> MonthlyReportJobs { get; }

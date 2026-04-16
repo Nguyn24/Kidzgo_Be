@@ -41,36 +41,51 @@ public sealed class SessionGenerationService
             return Result.Failure<int>(SessionErrors.InvalidClassStatus);
         }
 
-        if (string.IsNullOrWhiteSpace(classEntity.SchedulePattern))
-        {
-            return Result.Failure<int>(SessionErrors.MissingSchedulePattern(classEntity.Id));
-        }
-
         if (!classEntity.EndDate.HasValue)
         {
             return Result.Failure<int>(SessionErrors.MissingClassEndDate(classEntity.Id));
         }
 
-        var parseResult = _patternParser.ParseAndGenerateOccurrences(
-            classEntity.SchedulePattern,
-            classEntity.StartDate,
-            classEntity.EndDate);
-
-        if (parseResult.IsFailure)
+        var scheduleWindowsResult = await GetScheduleGenerationWindowsAsync(
+            classEntity,
+            classEntity.EndDate.Value,
+            cancellationToken);
+        if (scheduleWindowsResult.IsFailure)
         {
-            return Result.Failure<int>(parseResult.Error);
+            return Result.Failure<int>(scheduleWindowsResult.Error);
         }
 
-        var occurrences = parseResult.Value;
-        if (occurrences.Count == 0)
+        if (scheduleWindowsResult.Value.Count == 0)
         {
             return Result.Success(0);
         }
 
-        var durationMinutes = _patternParser.ParseDuration(classEntity.SchedulePattern) ?? 90;
-        if (durationMinutes <= 0)
+        var occurrenceCandidates = new List<ScheduleOccurrenceCandidate>();
+        foreach (var window in scheduleWindowsResult.Value)
         {
-            return Result.Failure<int>(SessionErrors.InvalidDuration(durationMinutes));
+            var durationMinutes = _patternParser.ParseDuration(window.SchedulePattern) ?? 90;
+            if (durationMinutes <= 0)
+            {
+                return Result.Failure<int>(SessionErrors.InvalidDuration(durationMinutes));
+            }
+
+            var parseResult = _patternParser.ParseAndGenerateOccurrences(
+                window.SchedulePattern,
+                window.EffectiveFrom,
+                window.EffectiveTo);
+
+            if (parseResult.IsFailure)
+            {
+                return Result.Failure<int>(parseResult.Error);
+            }
+
+            occurrenceCandidates.AddRange(parseResult.Value.Select(occurrence =>
+                new ScheduleOccurrenceCandidate(occurrence, durationMinutes)));
+        }
+
+        if (occurrenceCandidates.Count == 0)
+        {
+            return Result.Success(0);
         }
 
         var branchExists = await _context.Branches
@@ -125,8 +140,11 @@ public sealed class SessionGenerationService
         var now = VietnamTime.UtcNow();
         var sessionsToCreate = new List<Session>();
 
-        foreach (var occurrence in occurrences)
+        foreach (var candidate in occurrenceCandidates
+                     .OrderBy(candidate => candidate.PlannedDatetime)
+                     .DistinctBy(candidate => candidate.PlannedDatetime))
         {
+            var occurrence = candidate.PlannedDatetime;
             if (onlyFutureSessions && occurrence < now)
             {
                 continue;
@@ -143,7 +161,7 @@ public sealed class SessionGenerationService
             var conflictResult = await _conflictChecker.CheckConflictsAsync(
                 Guid.Empty,
                 occurrence,
-                durationMinutes,
+                candidate.DurationMinutes,
                 roomId,
                 classEntity.MainTeacherId,
                 classEntity.AssistantTeacherId,
@@ -186,7 +204,7 @@ public sealed class SessionGenerationService
                 PlannedRoomId = roomId,
                 PlannedTeacherId = classEntity.MainTeacherId,
                 PlannedAssistantId = classEntity.AssistantTeacherId,
-                DurationMinutes = durationMinutes,
+                DurationMinutes = candidate.DurationMinutes,
                 ParticipationType = ParticipationType.Main,
                 Status = SessionStatus.Scheduled,
                 CreatedAt = now,
@@ -296,4 +314,68 @@ public sealed class SessionGenerationService
 
         return Result.Success(sessionsToCreate.Count);
     }
+
+    private async Task<Result<List<ScheduleGenerationWindow>>> GetScheduleGenerationWindowsAsync(
+        Class classEntity,
+        DateOnly classEndDate,
+        CancellationToken cancellationToken)
+    {
+        var scheduleSegments = await _context.ClassScheduleSegments
+            .AsNoTracking()
+            .Where(segment => segment.ClassId == classEntity.Id)
+            .OrderBy(segment => segment.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        if (scheduleSegments.Count == 0)
+        {
+            if (string.IsNullOrWhiteSpace(classEntity.SchedulePattern))
+            {
+                return Result.Failure<List<ScheduleGenerationWindow>>(
+                    SessionErrors.MissingSchedulePattern(classEntity.Id));
+            }
+
+            return Result.Success(new List<ScheduleGenerationWindow>
+            {
+                new(classEntity.StartDate, classEndDate, classEntity.SchedulePattern)
+            });
+        }
+
+        var windows = new List<ScheduleGenerationWindow>();
+        foreach (var segment in scheduleSegments)
+        {
+            if (segment.EffectiveFrom > classEndDate ||
+                (segment.EffectiveTo.HasValue && segment.EffectiveTo.Value < classEntity.StartDate))
+            {
+                continue;
+            }
+
+            var effectiveFrom = segment.EffectiveFrom > classEntity.StartDate
+                ? segment.EffectiveFrom
+                : classEntity.StartDate;
+            var effectiveTo = segment.EffectiveTo.HasValue && segment.EffectiveTo.Value < classEndDate
+                ? segment.EffectiveTo.Value
+                : classEndDate;
+
+            if (effectiveTo < effectiveFrom)
+            {
+                continue;
+            }
+
+            windows.Add(new ScheduleGenerationWindow(
+                effectiveFrom,
+                effectiveTo,
+                segment.SchedulePattern));
+        }
+
+        return Result.Success(windows);
+    }
+
+    private sealed record ScheduleGenerationWindow(
+        DateOnly EffectiveFrom,
+        DateOnly EffectiveTo,
+        string SchedulePattern);
+
+    private sealed record ScheduleOccurrenceCandidate(
+        DateTime PlannedDatetime,
+        int DurationMinutes);
 }

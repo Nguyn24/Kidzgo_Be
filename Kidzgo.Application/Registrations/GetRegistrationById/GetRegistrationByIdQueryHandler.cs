@@ -34,6 +34,7 @@ public sealed class GetRegistrationByIdQueryHandler(
             .AsNoTracking()
             .Include(e => e.Class)
                 .ThenInclude(c => c.Program)
+            .Include(e => e.ScheduleSegments)
             .Where(e => e.RegistrationId == registration.Id && e.Status == EnrollmentStatus.Active)
             .ToListAsync(cancellationToken);
 

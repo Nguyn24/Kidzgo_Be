@@ -20,6 +20,7 @@ public sealed class CreateEnrollmentCommandHandler(
         // Check if class exists and is active
         var classEntity = await context.Classes
             .Include(c => c.ClassEnrollments)
+            .Include(c => c.Program)
             .FirstOrDefaultAsync(c => c.Id == command.ClassId, cancellationToken);
 
         if (classEntity is null)
@@ -126,6 +127,19 @@ public sealed class CreateEnrollmentCommandHandler(
         };
 
         context.ClassEnrollments.Add(enrollment);
+        if (classEntity.Program.IsSupplementary)
+        {
+            context.ClassEnrollmentScheduleSegments.Add(new ClassEnrollmentScheduleSegment
+            {
+                Id = Guid.NewGuid(),
+                ClassEnrollmentId = enrollment.Id,
+                EffectiveFrom = enrollment.EnrollDate,
+                SessionSelectionPattern = enrollment.SessionSelectionPattern,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
         await studentSessionAssignmentService.SyncAssignmentsForEnrollmentAsync(enrollment, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 

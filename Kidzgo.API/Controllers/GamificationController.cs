@@ -1,4 +1,5 @@
 using Kidzgo.API.Extensions;
+using Kidzgo.API.Infrastructure;
 using Kidzgo.API.Requests;
 using Kidzgo.Application.Gamification.AddStars;
 using Kidzgo.Application.Gamification.AddXp;
@@ -27,6 +28,7 @@ using Kidzgo.Application.Gamification.GetGamificationSettings;
 using Kidzgo.Application.Gamification.UpdateGamificationSettings;
 using Kidzgo.Application.Gamification.RequestRewardRedemption;
 using Kidzgo.Application.Gamification.GetRewardRedemptions;
+using Kidzgo.Application.Gamification.ExportDeliveredRewardRedemptions;
 using Kidzgo.Application.Gamification.GetRewardRedemptionById;
 using Kidzgo.Application.Gamification.GetMyRewardRedemptions;
 using Kidzgo.Application.Gamification.ApproveRewardRedemption;
@@ -571,6 +573,33 @@ public class GamificationController : ControllerBase
 
         var result = await _mediator.Send(query, cancellationToken);
         return result.MatchOk();
+    }
+
+    /// <summary>
+    /// Export reward redemptions delivered in a month as Excel.
+    /// Includes both Delivered and Received records because received rewards were already delivered.
+    /// </summary>
+    [HttpGet("reward-redemptions/export-delivered")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> ExportDeliveredRewardRedemptions(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? itemId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ExportDeliveredRewardRedemptionsQuery
+        {
+            Year = year,
+            Month = month,
+            BranchId = branchId,
+            ItemId = itemId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.Match(
+            success => Results.File(success.Content, success.ContentType, success.FileName),
+            failure => CustomResults.Problem(failure));
     }
 
     /// <summary>

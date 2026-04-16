@@ -18,6 +18,7 @@ public sealed class GetClassByIdQueryHandler(
             .Include(c => c.Room)
             .Include(c => c.MainTeacher)
             .Include(c => c.AssistantTeacher)
+            .Include(c => c.ScheduleSegments)
             .FirstOrDefaultAsync(c => c.Id == query.Id, cancellationToken);
 
         if (classEntity is null)
@@ -58,6 +59,16 @@ public sealed class GetClassByIdQueryHandler(
                 .ToList(),
             TotalSessions = classEntity.Sessions.Count,
             CompletedSessions = classEntity.Sessions.Count(s => s.Status == Domain.Sessions.SessionStatus.Completed),
+            ScheduleSegments = classEntity.ScheduleSegments
+                .OrderBy(segment => segment.EffectiveFrom)
+                .Select(segment => new ClassScheduleSegmentDto
+                {
+                    Id = segment.Id,
+                    EffectiveFrom = segment.EffectiveFrom,
+                    EffectiveTo = segment.EffectiveTo,
+                    SchedulePattern = segment.SchedulePattern
+                })
+                .ToList(),
             CreatedAt = classEntity.CreatedAt,
             UpdatedAt = classEntity.UpdatedAt
         };

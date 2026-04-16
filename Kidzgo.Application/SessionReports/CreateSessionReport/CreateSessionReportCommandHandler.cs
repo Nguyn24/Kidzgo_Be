@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.SessionReports;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Reports;
@@ -32,6 +33,13 @@ public sealed class CreateSessionReportCommandHandler(
         {
             return Result.Failure<CreateSessionReportResponse>(
                 SessionErrors.NotFound(command.SessionId));
+        }
+
+        var now = VietnamTime.UtcNow();
+        var sessionEndedCheck = SessionReportScheduleGuard.EnsureSessionHasEnded(session, now);
+        if (sessionEndedCheck.IsFailure)
+        {
+            return Result.Failure<CreateSessionReportResponse>(sessionEndedCheck.Error);
         }
 
         // Verify student profile exists
@@ -82,8 +90,6 @@ public sealed class CreateSessionReportCommandHandler(
         {
             return Result.Failure<CreateSessionReportResponse>(SessionReportErrors.AlreadyExists);
         }
-
-        var now = VietnamTime.UtcNow();
 
         var sessionReport = new SessionReport
         {

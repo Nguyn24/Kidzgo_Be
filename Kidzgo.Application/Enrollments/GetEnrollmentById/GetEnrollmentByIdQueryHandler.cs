@@ -19,6 +19,7 @@ public sealed class GetEnrollmentByIdQueryHandler(
                 .ThenInclude(c => c.Branch)
             .Include(e => e.StudentProfile)
             .Include(e => e.TuitionPlan)
+            .Include(e => e.ScheduleSegments)
             .FirstOrDefaultAsync(e => e.Id == query.Id, cancellationToken);
 
         if (enrollment is null)
@@ -43,6 +44,17 @@ public sealed class GetEnrollmentByIdQueryHandler(
             Status = enrollment.Status.ToString(),
             TuitionPlanId = enrollment.TuitionPlanId,
             TuitionPlanName = enrollment.TuitionPlan?.Name,
+            SessionSelectionPattern = enrollment.SessionSelectionPattern,
+            ScheduleSegments = enrollment.ScheduleSegments
+                .OrderBy(segment => segment.EffectiveFrom)
+                .Select(segment => new EnrollmentScheduleSegmentDto
+                {
+                    Id = segment.Id,
+                    EffectiveFrom = segment.EffectiveFrom,
+                    EffectiveTo = segment.EffectiveTo,
+                    SessionSelectionPattern = segment.SessionSelectionPattern
+                })
+                .ToList(),
             CreatedAt = enrollment.CreatedAt,
             UpdatedAt = enrollment.UpdatedAt
         };

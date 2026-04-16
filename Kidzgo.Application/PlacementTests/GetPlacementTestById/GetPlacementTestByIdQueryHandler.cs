@@ -21,6 +21,7 @@ public sealed class GetPlacementTestByIdQueryHandler(
             .Include(pt => pt.LeadChild)
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
+            .Include(pt => pt.PlacementRoom)
             .Include(pt => pt.InvigilatorUser)
             .Include(pt => pt.ProgramRecommendationProgram)
             .Include(pt => pt.SecondaryProgramRecommendationProgram)
@@ -44,7 +45,10 @@ public sealed class GetPlacementTestByIdQueryHandler(
             ClassId = placementTest.ClassId,
             ClassName = placementTest.Class?.Title,
             ScheduledAt = placementTest.ScheduledAt,
+            DurationMinutes = placementTest.DurationMinutes,
             Status = placementTest.Status.ToString(),
+            RoomId = placementTest.RoomId,
+            RoomName = placementTest.PlacementRoom?.Name,
             Room = placementTest.Room,
             InvigilatorUserId = placementTest.InvigilatorUserId,
             InvigilatorName = placementTest.InvigilatorUser?.Name,

@@ -1,5 +1,6 @@
 using Kidzgo.API.Extensions;
 using Kidzgo.API.Requests;
+using Kidzgo.Application.Enrollments.AddEnrollmentScheduleSegment;
 using Kidzgo.Application.Enrollments.AssignTuitionPlan;
 using Kidzgo.Application.Enrollments.CreateEnrollment;
 using Kidzgo.Application.Enrollments.DropEnrollment;
@@ -48,7 +49,28 @@ public class EnrollmentController : ControllerBase
         return result.MatchCreated(e => $"/api/enrollments/{e.Id}");
     }
 
-    /// UC-068: Xem danh sách học sinh trong Class
+    /// Add a dated schedule segment for a supplementary enrollment.
+    [HttpPost("{id:guid}/schedule-segments")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> AddScheduleSegment(
+        Guid id,
+        [FromBody] AddEnrollmentScheduleSegmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AddEnrollmentScheduleSegmentCommand
+        {
+            EnrollmentId = id,
+            EffectiveFrom = request.EffectiveFrom,
+            EffectiveTo = request.EffectiveTo,
+            SessionSelectionPattern = request.SessionSelectionPattern,
+            ClearSessionSelectionPattern = request.ClearSessionSelectionPattern
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// UC-068: Xem danh sach hoc sinh trong Class
     /// <param name="classId">Filter by class ID</param>
     /// <param name="studentProfileId">Filter by student profile ID</param>
     /// <param name="status">Enrollment status: Active, Paused, or Dropped</param>

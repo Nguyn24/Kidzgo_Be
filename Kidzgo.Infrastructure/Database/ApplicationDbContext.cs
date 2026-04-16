@@ -48,6 +48,8 @@ public sealed class ApplicationDbContext(
     // Classes
     public DbSet<Class> Classes => Set<Class>();
     public DbSet<ClassEnrollment> ClassEnrollments => Set<ClassEnrollment>();
+    public DbSet<ClassScheduleSegment> ClassScheduleSegments => Set<ClassScheduleSegment>();
+    public DbSet<ClassEnrollmentScheduleSegment> ClassEnrollmentScheduleSegments => Set<ClassEnrollmentScheduleSegment>();
     public DbSet<PauseEnrollmentRequest> PauseEnrollmentRequests => Set<PauseEnrollmentRequest>();
     public DbSet<PauseEnrollmentRequestHistory> PauseEnrollmentRequestHistories => Set<PauseEnrollmentRequestHistory>();
 
@@ -124,6 +126,7 @@ public sealed class ApplicationDbContext(
 
     // Registrations
     public DbSet<Registration> Registrations => Set<Registration>();
+    public DbSet<EnrollmentConfirmationPdf> EnrollmentConfirmationPdfs => Set<EnrollmentConfirmationPdf>();
 
     // Reports
     public DbSet<MonthlyReportJob> MonthlyReportJobs => Set<MonthlyReportJob>();
