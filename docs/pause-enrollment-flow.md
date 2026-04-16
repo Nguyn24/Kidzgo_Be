@@ -8,7 +8,8 @@ Tai lieu nay mo ta chi tiet flow bao luu (pause enrollment) de FE tich hop.
 - Khi duoc APPROVED, he thong tu dong tam dung cac ghi danh ACTIVE co buoi hoc nam trong khoang bao luu.
 - Ket qua sau bao luu:
   - `ContinueSameClass`: he thong tu dong re-activate lai enrollment cu va restore assignment tu sau `pauseTo`.
-  - `ReassignEquivalentClass` / `ContinueWithTutoring`: chi ghi nhan outcome, khong tu dong chuyen lop/thu hoc phi.
+  - `ReassignEquivalentClass`: he thong khong tu dong xep lop moi. Enrollment cu bi drop tu `pauseFrom` tro di, assignment lop cu tu `pauseFrom` den tuong lai bi huy, staff phai them hoc sinh vao lop khac thu cong.
+  - `ContinueWithTutoring`: chi ghi nhan outcome va huy assignment lop thuong tu sau `pauseTo`, staff phai tu van/goi hoc rieng thu cong.
 
 ## Dinh dang ngay
 - `PauseFrom`/`PauseTo` dung `DateOnly` theo format `YYYY-MM-DD`.

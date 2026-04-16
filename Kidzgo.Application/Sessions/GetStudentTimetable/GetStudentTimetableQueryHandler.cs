@@ -142,9 +142,21 @@ public sealed class GetStudentTimetableQueryHandler(
                 a.SessionId,
                 a.ClassEnrollmentId,
                 a.RegistrationId,
-                a.Track
+                a.Track,
+                a.Session.PlannedDatetime
             })
             .ToListAsync(cancellationToken);
+
+        var regularPauseLookup = await BuildPauseLookupAsync(
+            regularAssignments.Select(a => a.ClassEnrollmentId),
+            cancellationToken);
+
+        regularAssignments = regularAssignments
+            .Where(a => !EnrollmentPauseWindowHelper.IsPausedOn(
+                a.ClassEnrollmentId,
+                VietnamTime.ToVietnamDateOnly(a.PlannedDatetime),
+                regularPauseLookup))
+            .ToList();
 
         var studentActiveEnrollmentsQuery = context.ClassEnrollments
             .AsNoTracking()

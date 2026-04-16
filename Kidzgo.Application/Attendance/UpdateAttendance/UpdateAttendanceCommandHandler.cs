@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Services;
 using Kidzgo.Application.Missions.Shared;
+using Kidzgo.Application.Services;
 using Kidzgo.Domain.Audit;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Sessions;
@@ -15,7 +16,9 @@ namespace Kidzgo.Application.Attendance.UpdateAttendance;
 public sealed class UpdateAttendanceCommandHandler(
     IDbContext context,
     IUserContext userContext,
-    IGamificationService gamificationService)
+    IGamificationService gamificationService,
+    SessionParticipantService sessionParticipantService,
+    RegistrationSessionConsumptionService registrationSessionConsumptionService)
     : ICommandHandler<UpdateAttendanceCommand, UpdateAttendanceResponse>
 {
     public async Task<Result<UpdateAttendanceResponse>> Handle(UpdateAttendanceCommand request, CancellationToken cancellationToken)
@@ -51,18 +54,39 @@ public sealed class UpdateAttendanceCommandHandler(
 
         // Store old values for audit log
         var oldStatus = attendance.AttendanceStatus;
+        var oldAbsenceType = attendance.AbsenceType;
         var oldNote = attendance.Note;
         var shouldTrackClassAttendanceMission = oldStatus != request.AttendanceStatus;
 
+        var participants = await sessionParticipantService.GetParticipantsAsync(request.SessionId, cancellationToken);
+        var participant = participants.FirstOrDefault(p => p.StudentProfileId == request.StudentProfileId);
+        var isMakeupParticipant = participant.StudentProfileId != Guid.Empty && participant.IsMakeup;
+        var registrationId = participant.StudentProfileId != Guid.Empty
+            ? participant.RegistrationId
+            : null;
+
+        var newAbsenceType = request.AttendanceStatus == AttendanceStatus.Absent
+            ? await ResolveAbsenceType(request.StudentProfileId, attendance.Session, cancellationToken)
+            : (AbsenceType?)null;
+
         // Update attendance
         attendance.AttendanceStatus = request.AttendanceStatus;
-        attendance.AbsenceType = request.AttendanceStatus == AttendanceStatus.Absent
-            ? AbsenceType.NoNotice
-            : null;
+        attendance.AbsenceType = newAbsenceType;
 
         if (request.Note is not null)
         {
             attendance.Note = request.Note;
+        }
+
+        if (!isMakeupParticipant)
+        {
+            await registrationSessionConsumptionService.ApplyAttendanceTransitionAsync(
+                registrationId,
+                oldStatus,
+                oldAbsenceType,
+                attendance.AttendanceStatus,
+                attendance.AbsenceType,
+                cancellationToken);
         }
 
         // Create audit log
@@ -102,6 +126,34 @@ public sealed class UpdateAttendanceCommandHandler(
             Note = attendance.Note,
             UpdatedAt = attendance.MarkedAt
         };
+    }
+
+    private async Task<AbsenceType> ResolveAbsenceType(Guid studentProfileId, Session session, CancellationToken cancellationToken)
+    {
+        var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
+        var leave = await context.LeaveRequests
+            .Where(l => l.StudentProfileId == studentProfileId
+                        && (l.SessionId == session.Id ||
+                            (l.SessionDate <= sessionDate
+                             && (l.EndDate == null || l.EndDate >= sessionDate)))
+                        && l.Status == LeaveRequestStatus.Approved)
+            .OrderByDescending(l => l.RequestedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (leave is not null)
+        {
+            if (leave.NoticeHours.GetValueOrDefault() >= 24)
+            {
+                return AbsenceType.WithNotice24H;
+            }
+
+            if (leave.NoticeHours.GetValueOrDefault() >= 0)
+            {
+                return AbsenceType.Under24H;
+            }
+        }
+
+        return AbsenceType.NoNotice;
     }
 }
 

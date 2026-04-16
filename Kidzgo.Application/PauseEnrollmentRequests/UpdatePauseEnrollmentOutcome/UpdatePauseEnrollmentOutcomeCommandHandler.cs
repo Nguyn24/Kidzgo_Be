@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Authentication;
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.Classes;
 using Kidzgo.Application.PauseEnrollmentRequests.Notifications;
 using Kidzgo.Application.Services;
 using Kidzgo.Domain.Classes;
@@ -33,6 +34,13 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
         }
 
         if (request.Outcome == PauseEnrollmentOutcome.ReassignEquivalentClass)
+        {
+            await DropEnrollmentsFromPauseAsync(
+                pauseRequest,
+                studentSessionAssignmentService,
+                cancellationToken);
+        }
+        else if (request.Outcome == PauseEnrollmentOutcome.ContinueWithTutoring)
         {
             await CancelAssignmentsAfterPauseAsync(pauseRequest, studentSessionAssignmentService, cancellationToken);
         }
@@ -84,6 +92,87 @@ public sealed class UpdatePauseEnrollmentOutcomeCommandHandler(
         }
 
         return Result.Success();
+    }
+
+    private async Task DropEnrollmentsFromPauseAsync(
+        PauseEnrollmentRequest pauseRequest,
+        StudentSessionAssignmentService studentSessionAssignmentService,
+        CancellationToken cancellationToken)
+    {
+        var enrollmentIds = await context.PauseEnrollmentRequestHistories
+            .Where(history => history.PauseEnrollmentRequestId == pauseRequest.Id &&
+                              history.EnrollmentId.HasValue &&
+                              history.NewStatus == EnrollmentStatus.Paused)
+            .Select(history => history.EnrollmentId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (enrollmentIds.Count == 0)
+        {
+            return;
+        }
+
+        var enrollments = await context.ClassEnrollments
+            .Where(enrollment => enrollmentIds.Contains(enrollment.Id))
+            .ToListAsync(cancellationToken);
+
+        if (enrollments.Count == 0)
+        {
+            return;
+        }
+
+        var now = VietnamTime.UtcNow();
+        var today = VietnamTime.ToVietnamDateOnly(now);
+        var effectiveFrom = pauseRequest.PauseFrom;
+        if (today > effectiveFrom)
+        {
+            effectiveFrom = today;
+        }
+
+        var effectiveFromUtc = VietnamTime.TreatAsVietnamLocal(effectiveFrom.ToDateTime(TimeOnly.MinValue));
+        var affectedClassIds = new HashSet<Guid>();
+
+        foreach (var enrollment in enrollments)
+        {
+            await studentSessionAssignmentService.CancelFutureAssignmentsForEnrollmentAsync(
+                enrollment.Id,
+                effectiveFromUtc,
+                cancellationToken);
+
+            if (enrollment.Status == EnrollmentStatus.Dropped)
+            {
+                continue;
+            }
+
+            var previousStatus = enrollment.Status;
+            enrollment.Status = EnrollmentStatus.Dropped;
+            enrollment.UpdatedAt = now;
+            affectedClassIds.Add(enrollment.ClassId);
+
+            context.PauseEnrollmentRequestHistories.Add(new PauseEnrollmentRequestHistory
+            {
+                Id = Guid.NewGuid(),
+                PauseEnrollmentRequestId = pauseRequest.Id,
+                StudentProfileId = enrollment.StudentProfileId,
+                ClassId = enrollment.ClassId,
+                EnrollmentId = enrollment.Id,
+                PreviousStatus = previousStatus,
+                NewStatus = EnrollmentStatus.Dropped,
+                PauseFrom = pauseRequest.PauseFrom,
+                PauseTo = pauseRequest.PauseTo,
+                ChangedAt = now,
+                ChangedBy = userContext.UserId
+            });
+        }
+
+        foreach (var classId in affectedClassIds)
+        {
+            await ClassCapacityStatusHelper.SyncAvailabilityStatusAsync(
+                context,
+                classId,
+                now,
+                cancellationToken);
+        }
     }
 
     private async Task CancelAssignmentsAfterPauseAsync(
