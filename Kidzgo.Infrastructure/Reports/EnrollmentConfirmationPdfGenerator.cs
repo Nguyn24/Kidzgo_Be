@@ -97,9 +97,9 @@ public sealed class EnrollmentConfirmationPdfGenerator(
             <table>
                 <tr><th>Gói học</th><td>{{H(document.TuitionPlanName)}}</td></tr>
                 <tr><th>Học phí khóa</th><td class="amount">{{H(FormatAmount(document.TuitionAmount, document.Currency))}}</td></tr>
-                <tr><th>Ưu đãi (nếu có)</th><td>{{H(FormatAmount(document.DiscountAmount, document.Currency))}}</td></tr>
-                <tr><th>Tài liệu</th><td>...</td></tr>
-                <tr><th>Tổng thanh toán</th><td class="amount">...</td></tr>
+                <tr><th>Ưu đãi (nếu có)</th><td>.....</td></tr>
+                <tr><th>Tài liệu</th><td>.....</td></tr>
+                <tr><th>Tổng thanh toán</th><td class="amount">.....</td></tr>
             </table>
         </section>
 
@@ -185,9 +185,9 @@ public sealed class EnrollmentConfirmationPdfGenerator(
                 <tr><th>Ngày bắt đầu</th><td>{{H(DisplayDate(document.FirstStudyDate ?? document.EnrollDate))}}</td></tr>
                 <tr><th>Ngày kết thúc dự kiến</th><td>{{H(DisplayDate(document.ExpectedEndDate))}}</td></tr>
                 <tr><th>Học phí gốc</th><td class="amount">{{H(FormatAmount(document.TuitionAmount, document.Currency))}}</td></tr>
-                <tr><th>Ưu đãi (nếu có)</th><td>{{H(FormatAmount(document.DiscountAmount, document.Currency))}}</td></tr>
-                <tr><th>Tài liệu</th><td>...</td></tr>
-                <tr><th>Tổng thanh toán</th><td class="amount">...</td></tr>
+                <tr><th>Ưu đãi (nếu có)</th><td>.....</td></tr>
+                <tr><th>Tài liệu</th><td>.....</td></tr>
+                <tr><th>Tổng thanh toán</th><td class="amount">.....</td></tr>
                 <tr><th>Ghi chú</th><td>Học phí chưa bao gồm tài liệu nếu trung tâm có thu riêng.</td></tr>
             </table>
             <div class="case-note">
