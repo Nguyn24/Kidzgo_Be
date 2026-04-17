@@ -675,25 +675,10 @@ public sealed class StudentSessionAssignmentService(
 
     private bool MatchesSelectionPattern(Session session, string? sessionSelectionPattern)
     {
-        if (string.IsNullOrWhiteSpace(sessionSelectionPattern))
-        {
-            return true;
-        }
-
-        var sessionDate = VietnamTime.ToVietnamDateOnly(session.PlannedDatetime);
-        var sessionLocalDateTime = VietnamTime.ToVietnamDateTime(session.PlannedDatetime);
-        var parseResult = patternParser.ParseAndGenerateOccurrences(
+        return ScheduleSelectionPatternMatcher.Matches(
+            session.PlannedDatetime,
             sessionSelectionPattern,
-            sessionDate,
-            sessionDate);
-
-        if (parseResult.IsFailure)
-        {
-            return false;
-        }
-
-        return parseResult.Value.Any(occurrence =>
-            Math.Abs((occurrence - sessionLocalDateTime).TotalMinutes) < 1);
+            patternParser);
     }
 
     private static long ToMinuteKey(DateTime value)

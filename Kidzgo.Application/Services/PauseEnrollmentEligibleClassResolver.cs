@@ -102,25 +102,10 @@ public sealed class PauseEnrollmentEligibleClassResolver(
 
     private bool MatchesSelectionPattern(DateTime sessionPlannedDatetime, string? sessionSelectionPattern)
     {
-        if (string.IsNullOrWhiteSpace(sessionSelectionPattern))
-        {
-            return true;
-        }
-
-        var sessionDate = VietnamTime.ToVietnamDateOnly(sessionPlannedDatetime);
-        var sessionLocalDateTime = VietnamTime.ToVietnamDateTime(sessionPlannedDatetime);
-        var parseResult = patternParser.ParseAndGenerateOccurrences(
+        return ScheduleSelectionPatternMatcher.Matches(
+            sessionPlannedDatetime,
             sessionSelectionPattern,
-            sessionDate,
-            sessionDate);
-
-        if (parseResult.IsFailure)
-        {
-            return false;
-        }
-
-        return parseResult.Value.Any(occurrence =>
-            Math.Abs((occurrence - sessionLocalDateTime).TotalMinutes) < 1);
+            patternParser);
     }
 
     private sealed record ActiveEnrollmentSnapshot(

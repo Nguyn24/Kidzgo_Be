@@ -106,25 +106,10 @@ public sealed class StudentEnrollmentScheduleConflictService(
 
     private bool MatchesSelectionPattern(DateTime sessionStartUtc, string? sessionSelectionPattern)
     {
-        if (string.IsNullOrWhiteSpace(sessionSelectionPattern))
-        {
-            return true;
-        }
-
-        var sessionDate = VietnamTime.ToVietnamDateOnly(sessionStartUtc);
-        var sessionLocalDateTime = VietnamTime.ToVietnamDateTime(sessionStartUtc);
-        var parseResult = patternParser.ParseAndGenerateOccurrences(
+        return ScheduleSelectionPatternMatcher.Matches(
+            sessionStartUtc,
             sessionSelectionPattern,
-            sessionDate,
-            sessionDate);
-
-        if (parseResult.IsFailure)
-        {
-            return false;
-        }
-
-        return parseResult.Value.Any(occurrence =>
-            Math.Abs((occurrence - sessionLocalDateTime).TotalMinutes) < 1);
+            patternParser);
     }
 
     private static bool ShouldExclude(
