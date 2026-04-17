@@ -103,6 +103,7 @@ public sealed class CreateMediaCommandHandler(
             StudentProfileId = mediaWithNav.StudentProfileId,
             StudentName = mediaWithNav.StudentProfile?.DisplayName,
             MonthTag = mediaWithNav.MonthTag,
+            OwnershipScope = mediaWithNav.OwnershipScope,
             Type = mediaWithNav.Type,
             ContentType = mediaWithNav.ContentType,
             Url = mediaWithNav.Url,

@@ -47,6 +47,7 @@ public sealed class GetMediaQueryHandler(
             mediaQuery,
             context,
             userContext,
+            query.ClassId,
             query.StudentProfileId,
             cancellationToken);
 
@@ -98,7 +99,8 @@ public sealed class GetMediaQueryHandler(
 
         // Apply pagination and ordering
         var media = await mediaQuery
-            .OrderByDescending(m => m.CreatedAt)
+            .OrderByDescending(m => m.MonthTag)
+            .ThenByDescending(m => m.CreatedAt)
             .ApplyPagination(query.PageNumber, query.PageSize)
             .Select(m => new MediaDto
             {
@@ -112,6 +114,7 @@ public sealed class GetMediaQueryHandler(
                 StudentProfileId = m.StudentProfileId,
                 StudentName = m.StudentProfile != null ? m.StudentProfile.DisplayName : null,
                 MonthTag = m.MonthTag,
+                OwnershipScope = m.OwnershipScope,
                 Type = m.Type,
                 ContentType = m.ContentType,
                 Url = m.Url,
@@ -121,6 +124,7 @@ public sealed class GetMediaQueryHandler(
                 ApprovedById = m.ApprovedById,
                 ApprovedByName = m.ApprovedByUser != null ? m.ApprovedByUser.Name : null,
                 ApprovedAt = m.ApprovedAt,
+                RejectReason = m.RejectReason,
                 IsPublished = m.IsPublished,
                 CreatedAt = m.CreatedAt,
                 UpdatedAt = m.UpdatedAt
