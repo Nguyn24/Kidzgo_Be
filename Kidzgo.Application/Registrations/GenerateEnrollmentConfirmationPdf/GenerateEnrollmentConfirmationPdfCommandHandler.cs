@@ -5,6 +5,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Reports;
 using Kidzgo.Application.Abstraction.Storage;
 using Kidzgo.Application.Registrations;
+using Kidzgo.Application.Registrations.Shared;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Programs;
@@ -136,6 +137,18 @@ public sealed class GenerateEnrollmentConfirmationPdfCommandHandler(
             .Map(new[] { enrollment })
             .FirstOrDefault();
         var totalPayment = tuitionPlan.TuitionAmount;
+        var paymentSetting = await GetPaymentSettingAsync(registration.BranchId, cancellationToken);
+        var paymentTransferContent = $"{registration.StudentProfile.DisplayName} - {enrollment.Class.Code}";
+        var paymentQrUrl = paymentSetting is null
+            ? null
+            : EnrollmentConfirmationPaymentQrBuilder.BuildVietQrUrl(
+                paymentSetting.BankBin,
+                paymentSetting.BankCode,
+                paymentSetting.AccountNumber,
+                paymentSetting.AccountName,
+                paymentTransferContent,
+                tuitionPlan.TuitionAmount,
+                paymentSetting.VietQrTemplate);
 
         var document = new EnrollmentConfirmationPdfDocument
         {
@@ -174,7 +187,13 @@ public sealed class GenerateEnrollmentConfirmationPdfCommandHandler(
             Reconciliation = formType == EnrollmentConfirmationPdfFormType.ContinuingStudent
                 ? await BuildContinuingReconciliationAsync(registration, enrollment, cancellationToken)
                 : null,
-            PaymentTransferContent = $"{registration.StudentProfile.DisplayName} - {enrollment.Class.Code}"
+            PaymentMethod = paymentSetting?.PaymentMethod ?? "Tiền mặt / Chuyển khoản",
+            PaymentAccountName = paymentSetting?.AccountName,
+            PaymentAccountNumber = paymentSetting?.AccountNumber,
+            PaymentBankName = paymentSetting?.BankName,
+            PaymentTransferContent = paymentTransferContent,
+            PaymentQrUrl = paymentQrUrl,
+            HeaderLogoUrl = paymentSetting?.LogoUrl
         };
 
         try
@@ -241,6 +260,27 @@ public sealed class GenerateEnrollmentConfirmationPdfCommandHandler(
                     "Registration.EnrollmentConfirmationPdfGenerationFailed",
                     $"Failed to generate enrollment confirmation PDF: {ex.Message}"));
         }
+    }
+
+    private async Task<EnrollmentConfirmationPaymentSetting?> GetPaymentSettingAsync(
+        Guid branchId,
+        CancellationToken cancellationToken)
+    {
+        var branchScopeKey = EnrollmentConfirmationPaymentSetting.BuildScopeKey(branchId);
+        var branchSetting = await context.EnrollmentConfirmationPaymentSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ScopeKey == branchScopeKey && x.IsActive, cancellationToken);
+
+        if (branchSetting is not null)
+        {
+            return branchSetting;
+        }
+
+        return await context.EnrollmentConfirmationPaymentSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.ScopeKey == EnrollmentConfirmationPaymentSetting.BuildScopeKey(null) && x.IsActive,
+                cancellationToken);
     }
 
     private async Task<FormTypeResolution> ResolveFormTypeAsync(

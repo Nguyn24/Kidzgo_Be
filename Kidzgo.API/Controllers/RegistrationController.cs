@@ -4,11 +4,13 @@ using Kidzgo.Application.Registrations.AssignClass;
 using Kidzgo.Application.Registrations.CancelRegistration;
 using Kidzgo.Application.Registrations.CreateRegistration;
 using Kidzgo.Application.Registrations.GenerateEnrollmentConfirmationPdf;
+using Kidzgo.Application.Registrations.GetEnrollmentConfirmationPaymentSetting;
 using Kidzgo.Application.Registrations.GetRegistrationById;
 using Kidzgo.Application.Registrations.GetRegistrations;
 using Kidzgo.Application.Registrations.GetWaitingList;
 using Kidzgo.Application.Registrations.SuggestClasses;
 using Kidzgo.Application.Registrations.TransferClass;
+using Kidzgo.Application.Registrations.UpdateEnrollmentConfirmationPaymentSetting;
 using Kidzgo.Application.Registrations.UpdateRegistration;
 using Kidzgo.Application.Registrations.UpgradeTuitionPlan;
 using MediatR;
@@ -179,6 +181,47 @@ public class RegistrationController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var command = new GenerateEnrollmentConfirmationPdfCommand(id, track, regenerate, formType);
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Xem cau hinh thong tin thanh toan dung tren phieu xac nhan nhap hoc
+    [HttpGet("enrollment-confirmation-payment-setting")]
+    [Authorize(Roles = "Admin,ManagementStaff")]
+    public async Task<IResult> GetEnrollmentConfirmationPaymentSetting(
+        [FromQuery] Guid? branchId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetEnrollmentConfirmationPaymentSettingQuery
+        {
+            BranchId = branchId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.MatchOk();
+    }
+
+    /// Admin cap nhat thong tin thanh toan va logo dung tren phieu xac nhan nhap hoc
+    [HttpPut("enrollment-confirmation-payment-setting")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IResult> UpdateEnrollmentConfirmationPaymentSetting(
+        [FromBody] EnrollmentConfirmationPaymentSettingRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateEnrollmentConfirmationPaymentSettingCommand
+        {
+            BranchId = request.BranchId,
+            PaymentMethod = request.PaymentMethod,
+            AccountName = request.AccountName,
+            AccountNumber = request.AccountNumber,
+            BankName = request.BankName,
+            BankCode = request.BankCode,
+            BankBin = request.BankBin,
+            VietQrTemplate = request.VietQrTemplate,
+            LogoUrl = request.LogoUrl,
+            IsActive = request.IsActive
+        };
+
         var result = await _mediator.Send(command, cancellationToken);
         return result.MatchOk();
     }
