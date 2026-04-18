@@ -14,6 +14,7 @@ public sealed class UpdatePlacementTestResultsResponse
     public string? SecondaryProgramRecommendationName { get; init; }
     public string? SecondaryProgramSkillFocus { get; init; }
     public string? AttachmentUrl { get; init; }
+    public IReadOnlyList<string> AttachmentUrls { get; init; } = Array.Empty<string>();
     public string Status { get; init; } = null!;
     public DateTime UpdatedAt { get; init; }
     public Guid? NewRegistrationId { get; init; }

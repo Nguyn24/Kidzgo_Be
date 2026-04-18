@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PlacementTests.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -106,10 +107,9 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
                     "Secondary program recommendation must be different from the primary program recommendation."));
         }
 
-        if (command.AttachmentUrl is not null)
+        if (command.AttachmentUrls is not null)
         {
-            placementTest.AttachmentUrl = string.IsNullOrWhiteSpace(command.AttachmentUrl)
-                ? null : command.AttachmentUrl.Trim();
+            placementTest.AttachmentUrl = PlacementTestAttachmentUrlHelper.Serialize(command.AttachmentUrls);
         }
 
         var now = VietnamTime.UtcNow();
@@ -174,6 +174,8 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
         placementTest.UpdatedAt = now;
         await context.SaveChangesAsync(cancellationToken);
 
+        var attachmentUrls = PlacementTestAttachmentUrlHelper.Parse(placementTest.AttachmentUrl);
+
         return new UpdatePlacementTestResultsResponse
         {
             Id = placementTest.Id,
@@ -187,7 +189,8 @@ public sealed class UpdatePlacementTestResultsCommandHandler(
             SecondaryProgramRecommendationId = placementTest.SecondaryProgramRecommendationId,
             SecondaryProgramRecommendationName = await GetProgramNameAsync(placementTest.SecondaryProgramRecommendationId, cancellationToken),
             SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
-            AttachmentUrl = placementTest.AttachmentUrl,
+            AttachmentUrl = attachmentUrls.FirstOrDefault(),
+            AttachmentUrls = attachmentUrls,
             Status = placementTest.Status.ToString(),
             UpdatedAt = placementTest.UpdatedAt,
             NewRegistrationId = newRegId

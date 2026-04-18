@@ -13,6 +13,6 @@ public sealed class UpdatePlacementTestResultsCommand : ICommand<UpdatePlacement
     public Guid? ProgramRecommendationId { get; init; }
     public Guid? SecondaryProgramRecommendationId { get; init; }
     public string? SecondaryProgramSkillFocus { get; init; }
-    public string? AttachmentUrl { get; init; }
+    public IReadOnlyCollection<string>? AttachmentUrls { get; init; }
 }
 

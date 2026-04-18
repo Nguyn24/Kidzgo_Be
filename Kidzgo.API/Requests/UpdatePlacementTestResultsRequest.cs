@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Kidzgo.API.Extensions;
+
 namespace Kidzgo.API.Requests;
 
 public sealed class UpdatePlacementTestResultsRequest
@@ -18,6 +21,11 @@ public sealed class UpdatePlacementTestResultsRequest
     public Guid? SecondaryProgramRecommendationId { get; set; }
 
     public string? SecondaryProgramSkillFocus { get; set; }
-    public string? AttachmentUrl { get; set; }
+
+    /// <summary>
+    /// Accepts a single URL string for backward compatibility or an array of URL strings.
+    /// </summary>
+    [JsonConverter(typeof(StringOrStringArrayJsonConverter))]
+    public List<string>? AttachmentUrl { get; set; }
 }
 

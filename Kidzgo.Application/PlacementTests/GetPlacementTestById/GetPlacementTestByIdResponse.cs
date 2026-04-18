@@ -32,6 +32,7 @@ public sealed class GetPlacementTestByIdResponse
     public string? SecondaryProgramSkillFocus { get; init; }
     public string? Notes { get; init; }
     public string? AttachmentUrl { get; init; }
+    public IReadOnlyList<string> AttachmentUrls { get; init; } = Array.Empty<string>();
     public bool IsAccountProfileCreated { get; init; }
     public bool IsConvertedToEnrolled { get; init; }
     public DateTime CreatedAt { get; init; }

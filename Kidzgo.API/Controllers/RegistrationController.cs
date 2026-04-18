@@ -160,6 +160,7 @@ public class RegistrationController : ControllerBase
             ClassId = request.ClassId,
             EntryType = request.EntryType,
             Track = request.Track,
+            FirstStudyDate = request.FirstStudyDate,
             SessionSelectionPattern = request.SessionSelectionPattern
         };
 

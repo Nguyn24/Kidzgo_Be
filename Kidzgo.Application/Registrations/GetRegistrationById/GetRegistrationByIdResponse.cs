@@ -33,7 +33,19 @@ public sealed class GetRegistrationByIdResponse
     public int RemainingSessions { get; init; }
     public Guid? OriginalRegistrationId { get; init; }
     public string? OperationType { get; init; }
+    public RegistrationFirstStudySessionDto? FirstStudySession { get; init; }
     public List<RegistrationActualStudyScheduleDto> ActualStudySchedules { get; init; } = new();
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+}
+
+public sealed class RegistrationFirstStudySessionDto
+{
+    public Guid SessionId { get; init; }
+    public Guid ClassEnrollmentId { get; init; }
+    public string Track { get; init; } = null!;
+    public Guid ClassId { get; init; }
+    public string ClassName { get; init; } = null!;
+    public DateTime PlannedDatetime { get; init; }
+    public DateOnly StudyDate { get; init; }
 }
