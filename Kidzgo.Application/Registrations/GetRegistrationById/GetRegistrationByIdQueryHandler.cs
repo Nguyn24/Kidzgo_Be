@@ -3,6 +3,7 @@ using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Domain.Classes;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.Registrations.Errors;
+using Kidzgo.Domain.Sessions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kidzgo.Application.Registrations.GetRegistrationById;
@@ -38,6 +39,36 @@ public sealed class GetRegistrationByIdQueryHandler(
             .Where(e => e.RegistrationId == registration.Id && e.Status == EnrollmentStatus.Active)
             .ToListAsync(cancellationToken);
 
+        var firstStudySessionRow = await context.StudentSessionAssignments
+            .AsNoTracking()
+            .Where(a => a.RegistrationId == registration.Id &&
+                        a.Status == StudentSessionAssignmentStatus.Assigned &&
+                        a.ClassEnrollment.Status == EnrollmentStatus.Active)
+            .OrderBy(a => a.Session.PlannedDatetime)
+            .Select(a => new
+            {
+                a.SessionId,
+                a.ClassEnrollmentId,
+                a.Track,
+                a.Session.ClassId,
+                ClassName = a.Session.Class.Title,
+                a.Session.PlannedDatetime
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var firstStudySession = firstStudySessionRow is null
+            ? null
+            : new RegistrationFirstStudySessionDto
+            {
+                SessionId = firstStudySessionRow.SessionId,
+                ClassEnrollmentId = firstStudySessionRow.ClassEnrollmentId,
+                Track = RegistrationTrackHelper.ToTrackName(firstStudySessionRow.Track),
+                ClassId = firstStudySessionRow.ClassId,
+                ClassName = firstStudySessionRow.ClassName,
+                PlannedDatetime = firstStudySessionRow.PlannedDatetime,
+                StudyDate = VietnamTime.ToVietnamDateOnly(firstStudySessionRow.PlannedDatetime)
+            };
+
         return new GetRegistrationByIdResponse
         {
             Id = registration.Id,
@@ -69,6 +100,7 @@ public sealed class GetRegistrationByIdQueryHandler(
             RemainingSessions = registration.RemainingSessions,
             OriginalRegistrationId = registration.OriginalRegistrationId,
             OperationType = registration.OperationType?.ToString(),
+            FirstStudySession = firstStudySession,
             ActualStudySchedules = RegistrationActualStudyScheduleMapper.Map(actualStudyEnrollments),
             CreatedAt = registration.CreatedAt,
             UpdatedAt = registration.UpdatedAt

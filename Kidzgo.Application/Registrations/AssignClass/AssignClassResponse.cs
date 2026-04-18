@@ -10,5 +10,7 @@ public sealed class AssignClassResponse
     public string Track { get; init; } = null!;
     public string EntryType { get; init; } = null!;
     public DateTime ClassAssignedDate { get; init; }
+    public DateOnly? FirstStudyDate { get; init; }
+    public DateTime? FirstStudySessionAt { get; init; }
     public string? WarningMessage { get; init; }
 }

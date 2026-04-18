@@ -21,6 +21,12 @@ public sealed class AssignClassRequest
     public string Track { get; set; } = "primary";
 
     /// <summary>
+    /// Optional first date the student will attend this class.
+    /// If provided, the date must match an available class session and assignments before this date are skipped.
+    /// </summary>
+    public DateOnly? FirstStudyDate { get; set; }
+
+    /// <summary>
     /// Optional subset of class schedule for this student, using RRULE format.
     /// If omitted, the student attends all sessions of the class.
     /// Examples:

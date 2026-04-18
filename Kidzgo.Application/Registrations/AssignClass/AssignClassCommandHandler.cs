@@ -73,6 +73,18 @@ public sealed class AssignClassCommandHandler(
         var isWait = entryType == EntryType.Wait;
         var classId = command.ClassId;
         var currentActiveEnrollmentCount = 0;
+        var today = VietnamTime.ToVietnamDateOnly(now);
+        var assignmentStartDate = command.FirstStudyDate ?? today;
+        DateTime? firstStudySessionAt = null;
+        DateOnly? resolvedFirstStudyDate = null;
+
+        if (isWait && command.FirstStudyDate.HasValue)
+        {
+            return Result.Failure<AssignClassResponse>(
+                Error.Validation(
+                    "Registration.FirstStudyDateNotAllowed",
+                    "FirstStudyDate can only be used when assigning a class."));
+        }
 
         if (!isWait && !classId.HasValue)
         {
@@ -105,6 +117,55 @@ public sealed class AssignClassCommandHandler(
             if (selectionPatternValidation.IsFailure)
             {
                 return Result.Failure<AssignClassResponse>(selectionPatternValidation.Error);
+            }
+
+            if (command.FirstStudyDate.HasValue)
+            {
+                if (command.FirstStudyDate.Value < today)
+                {
+                    return Result.Failure<AssignClassResponse>(
+                        Error.Validation(
+                            "Registration.FirstStudyDateInPast",
+                            "FirstStudyDate cannot be earlier than today."));
+                }
+
+                if (command.FirstStudyDate.Value < classEntity.StartDate)
+                {
+                    return Result.Failure<AssignClassResponse>(
+                        Error.Validation(
+                            "Registration.FirstStudyDateBeforeClassStart",
+                            "FirstStudyDate cannot be earlier than the class start date."));
+                }
+
+                if (classEntity.EndDate.HasValue &&
+                    command.FirstStudyDate.Value > classEntity.EndDate.Value)
+                {
+                    return Result.Failure<AssignClassResponse>(
+                        Error.Validation(
+                            "Registration.FirstStudyDateAfterClassEnd",
+                            "FirstStudyDate cannot be later than the class end date."));
+                }
+            }
+
+            var candidateSlots = await studentEnrollmentScheduleConflictService.GetCandidateSlotsAsync(
+                classEntity.Id,
+                assignmentStartDate,
+                command.SessionSelectionPattern,
+                cancellationToken);
+
+            if (candidateSlots.Count > 0)
+            {
+                firstStudySessionAt = candidateSlots[0].Start;
+                resolvedFirstStudyDate = VietnamTime.ToVietnamDateOnly(firstStudySessionAt.Value);
+            }
+
+            if (command.FirstStudyDate.HasValue &&
+                !candidateSlots.Any(slot => VietnamTime.ToVietnamDateOnly(slot.Start) == command.FirstStudyDate.Value))
+            {
+                return Result.Failure<AssignClassResponse>(
+                    Error.Validation(
+                        "Registration.FirstStudyDateNoSession",
+                        "FirstStudyDate must match an available class session for the selected class and schedule pattern."));
             }
         }
 
@@ -146,7 +207,7 @@ public sealed class AssignClassCommandHandler(
             var conflictResult = await studentEnrollmentScheduleConflictService.EnsureNoConflictsAsync(
                 registration.StudentProfileId,
                 classEntity.Id,
-                VietnamTime.ToVietnamDateOnly(now),
+                assignmentStartDate,
                 command.SessionSelectionPattern,
                 cancellationToken);
             if (conflictResult.IsFailure)
@@ -175,7 +236,7 @@ public sealed class AssignClassCommandHandler(
                 Id = Guid.NewGuid(),
                 ClassId = classEntity!.Id,
                 StudentProfileId = registration.StudentProfileId,
-                EnrollDate = VietnamTime.ToVietnamDateOnly(now),
+                EnrollDate = assignmentStartDate,
                 Status = EnrollmentStatus.Active,
                 TuitionPlanId = registration.TuitionPlanId,
                 RegistrationId = registration.Id,
@@ -187,7 +248,7 @@ public sealed class AssignClassCommandHandler(
 
             context.ClassEnrollments.Add(enrollment);
             var targetProgram = isSecondaryTrack ? registration.SecondaryProgram : registration.Program;
-            if (targetProgram.IsSupplementary)
+            if (targetProgram?.IsSupplementary == true)
             {
                 context.ClassEnrollmentScheduleSegments.Add(new ClassEnrollmentScheduleSegment
                 {
@@ -243,7 +304,8 @@ public sealed class AssignClassCommandHandler(
         registration.Status = RegistrationTrackHelper.ResolveStatus(registration);
         if (entryType == EntryType.Immediate && !registration.ActualStartDate.HasValue)
         {
-            registration.ActualStartDate = now;
+            registration.ActualStartDate = firstStudySessionAt
+                ?? VietnamTime.TreatAsVietnamLocal(assignmentStartDate.ToDateTime(TimeOnly.MinValue));
         }
 
         registration.UpdatedAt = now;
@@ -262,6 +324,8 @@ public sealed class AssignClassCommandHandler(
             ClassAssignedDate = isSecondaryTrack
                 ? registration.SecondaryClassAssignedDate ?? now
                 : registration.ClassAssignedDate ?? now,
+            FirstStudyDate = resolvedFirstStudyDate,
+            FirstStudySessionAt = firstStudySessionAt,
             WarningMessage = warningMessage
         };
     }

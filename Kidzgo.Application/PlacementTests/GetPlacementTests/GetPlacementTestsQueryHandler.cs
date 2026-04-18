@@ -1,6 +1,7 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
 using Kidzgo.Application.Abstraction.Query;
+using Kidzgo.Application.PlacementTests.Shared;
 using Kidzgo.Application.Time;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
@@ -50,60 +51,67 @@ public sealed class GetPlacementTestsQueryHandler(
 
         var totalCount = await placementTestsQuery.CountAsync(cancellationToken);
 
-        var placementTests = await placementTestsQuery
+        var placementTestEntities = await placementTestsQuery
             .Include(pt => pt.Lead)
             .Include(pt => pt.LeadChild)
             .Include(pt => pt.StudentProfile)
             .Include(pt => pt.Class)
             .Include(pt => pt.PlacementRoom)
             .Include(pt => pt.InvigilatorUser)
+            .Include(pt => pt.ProgramRecommendationProgram)
+            .Include(pt => pt.SecondaryProgramRecommendationProgram)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(pt => new PlacementTestDto
-            {
-                Id = pt.Id,
-                LeadId = pt.LeadId,
-                LeadChildId = pt.LeadChildId,
-                LeadContactName = pt.Lead != null ? pt.Lead.ContactName : null,
-                ChildName = pt.LeadChild != null ? pt.LeadChild.ChildName : null,
-                StudentProfileId = pt.StudentProfileId,
-                StudentName = pt.StudentProfile != null ? pt.StudentProfile.DisplayName : null,
-                ClassId = pt.ClassId,
-                ClassName = pt.Class != null ? pt.Class.Title : null,
-                ScheduledAt = pt.ScheduledAt,
-                DurationMinutes = pt.DurationMinutes,
-                Status = pt.Status.ToString(),
-                RoomId = pt.RoomId,
-                RoomName = pt.PlacementRoom != null ? pt.PlacementRoom.Name : null,
-                Room = pt.Room,
-                InvigilatorUserId = pt.InvigilatorUserId,
-                InvigilatorName = pt.InvigilatorUser != null ? pt.InvigilatorUser.Name : null,
-                ResultScore = pt.ResultScore,
-                ListeningScore = pt.ListeningScore,
-                SpeakingScore = pt.SpeakingScore,
-                ReadingScore = pt.ReadingScore,
-                WritingScore = pt.WritingScore,
-                LevelRecommendation = pt.LevelRecommendation,
-                ProgramRecommendationId = pt.ProgramRecommendationId,
-                ProgramRecommendationName = pt.ProgramRecommendationProgram != null
-                    ? pt.ProgramRecommendationProgram.Name
-                    : null,
-                SecondaryProgramRecommendationId = pt.SecondaryProgramRecommendationId,
-                SecondaryProgramRecommendationName = pt.SecondaryProgramRecommendationProgram != null
-                    ? pt.SecondaryProgramRecommendationProgram.Name
-                    : null,
-                SecondaryProgramSkillFocus = pt.SecondaryProgramSkillFocus,
-                Notes = pt.Notes,
-                AttachmentUrl = pt.AttachmentUrl,
-                IsAccountProfileCreated = pt.StudentProfileId.HasValue ||
-                                          (pt.LeadChild != null && pt.LeadChild.ConvertedStudentProfileId.HasValue),
-                IsConvertedToEnrolled = pt.LeadChildId.HasValue
-                    ? pt.LeadChild != null && pt.LeadChild.Status == LeadChildStatus.Enrolled
-                    : pt.Lead != null && pt.Lead.Status == LeadStatus.Enrolled,
-                CreatedAt = pt.CreatedAt,
-                UpdatedAt = pt.UpdatedAt
-            })
             .ToListAsync(cancellationToken);
+
+        var placementTests = placementTestEntities
+            .Select(pt =>
+            {
+                var attachmentUrls = PlacementTestAttachmentUrlHelper.Parse(pt.AttachmentUrl);
+
+                return new PlacementTestDto
+                {
+                    Id = pt.Id,
+                    LeadId = pt.LeadId,
+                    LeadChildId = pt.LeadChildId,
+                    LeadContactName = pt.Lead?.ContactName,
+                    ChildName = pt.LeadChild?.ChildName,
+                    StudentProfileId = pt.StudentProfileId,
+                    StudentName = pt.StudentProfile?.DisplayName,
+                    ClassId = pt.ClassId,
+                    ClassName = pt.Class?.Title,
+                    ScheduledAt = pt.ScheduledAt,
+                    DurationMinutes = pt.DurationMinutes,
+                    Status = pt.Status.ToString(),
+                    RoomId = pt.RoomId,
+                    RoomName = pt.PlacementRoom?.Name,
+                    Room = pt.Room,
+                    InvigilatorUserId = pt.InvigilatorUserId,
+                    InvigilatorName = pt.InvigilatorUser?.Name,
+                    ResultScore = pt.ResultScore,
+                    ListeningScore = pt.ListeningScore,
+                    SpeakingScore = pt.SpeakingScore,
+                    ReadingScore = pt.ReadingScore,
+                    WritingScore = pt.WritingScore,
+                    LevelRecommendation = pt.LevelRecommendation,
+                    ProgramRecommendationId = pt.ProgramRecommendationId,
+                    ProgramRecommendationName = pt.ProgramRecommendationProgram?.Name,
+                    SecondaryProgramRecommendationId = pt.SecondaryProgramRecommendationId,
+                    SecondaryProgramRecommendationName = pt.SecondaryProgramRecommendationProgram?.Name,
+                    SecondaryProgramSkillFocus = pt.SecondaryProgramSkillFocus,
+                    Notes = pt.Notes,
+                    AttachmentUrl = attachmentUrls.FirstOrDefault(),
+                    AttachmentUrls = attachmentUrls,
+                    IsAccountProfileCreated = pt.StudentProfileId.HasValue ||
+                                              pt.LeadChild?.ConvertedStudentProfileId.HasValue == true,
+                    IsConvertedToEnrolled = pt.LeadChildId.HasValue
+                        ? pt.LeadChild?.Status == LeadChildStatus.Enrolled
+                        : pt.Lead?.Status == LeadStatus.Enrolled,
+                    CreatedAt = pt.CreatedAt,
+                    UpdatedAt = pt.UpdatedAt
+                };
+            })
+            .ToList();
 
         return Result.Success(new GetPlacementTestsResponse
         {

@@ -25,6 +25,11 @@ public sealed class AssignClassCommand : ICommand<AssignClassResponse>
     public string Track { get; init; } = "primary";
 
     /// <summary>
+    /// Optional first date the student will attend this class.
+    /// </summary>
+    public DateOnly? FirstStudyDate { get; init; }
+
+    /// <summary>
     /// Optional RRULE subset of the class schedule pattern for this student.
     /// </summary>
     public string? SessionSelectionPattern { get; init; }

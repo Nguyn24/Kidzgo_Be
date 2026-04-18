@@ -1,5 +1,6 @@
 using Kidzgo.Application.Abstraction.Data;
 using Kidzgo.Application.Abstraction.Messaging;
+using Kidzgo.Application.PlacementTests.Shared;
 using Kidzgo.Domain.Common;
 using Kidzgo.Domain.CRM;
 using Kidzgo.Domain.CRM.Errors;
@@ -33,6 +34,8 @@ public sealed class GetPlacementTestByIdQueryHandler(
                 PlacementTestErrors.NotFound(query.PlacementTestId));
         }
 
+        var attachmentUrls = PlacementTestAttachmentUrlHelper.Parse(placementTest.AttachmentUrl);
+
         return new GetPlacementTestByIdResponse
         {
             Id = placementTest.Id,
@@ -64,7 +67,8 @@ public sealed class GetPlacementTestByIdQueryHandler(
             SecondaryProgramRecommendationName = placementTest.SecondaryProgramRecommendationProgram?.Name,
             SecondaryProgramSkillFocus = placementTest.SecondaryProgramSkillFocus,
             Notes = placementTest.Notes,
-            AttachmentUrl = placementTest.AttachmentUrl,
+            AttachmentUrl = attachmentUrls.FirstOrDefault(),
+            AttachmentUrls = attachmentUrls,
             IsAccountProfileCreated = placementTest.StudentProfileId.HasValue ||
                                       placementTest.LeadChild?.ConvertedStudentProfileId.HasValue == true,
             IsConvertedToEnrolled = placementTest.LeadChildId.HasValue

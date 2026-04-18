@@ -226,7 +226,7 @@ public class PlacementTestController : ControllerBase
             ProgramRecommendationId = request.ProgramRecommendationId,
             SecondaryProgramRecommendationId = request.SecondaryProgramRecommendationId,
             SecondaryProgramSkillFocus = request.SecondaryProgramSkillFocus,
-            AttachmentUrl = request.AttachmentUrl
+            AttachmentUrls = request.AttachmentUrl
         };
 
         var result = await _mediator.Send(command, cancellationToken);
