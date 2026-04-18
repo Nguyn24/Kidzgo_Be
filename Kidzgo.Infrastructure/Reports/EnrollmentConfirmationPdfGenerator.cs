@@ -221,19 +221,31 @@ public sealed class EnrollmentConfirmationPdfGenerator(
             line-height: 1.5;
         }
         .page {
-            border: 1px solid #c9d4df;
+            border: 1px solid #e0c7c7;
             padding: 26px;
             min-height: 1040px;
         }
         .header {
-            border-bottom: 3px solid #0f766e;
+            border-bottom: 3px solid #9f1d24;
             padding-bottom: 16px;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .header-main {
+            min-width: 0;
         }
         .brand {
             font-size: 20px;
             font-weight: 700;
-            color: #0f766e;
+            color: #9f1d24;
+        }
+        .header-logo {
+            max-width: 145px;
+            max-height: 82px;
+            object-fit: contain;
         }
         .branch {
             margin-top: 6px;
@@ -242,7 +254,7 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         h1 {
             margin: 24px 0 18px;
             text-align: center;
-            color: #111827;
+            color: #7f1d1d;
             font-size: 23px;
             letter-spacing: .2px;
         }
@@ -251,7 +263,7 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         }
         .section-title {
             margin: 0 0 9px;
-            color: #0f766e;
+            color: #9f1d24;
             font-size: 15px;
             font-weight: 700;
             text-transform: uppercase;
@@ -266,13 +278,13 @@ public sealed class EnrollmentConfirmationPdfGenerator(
             border-collapse: collapse;
         }
         th, td {
-            border: 1px solid #d8e0e8;
+            border: 1px solid #ead7d7;
             padding: 9px 11px;
             vertical-align: top;
         }
         th {
             width: 34%;
-            background: #f3f7f8;
+            background: #fff5f5;
             text-align: left;
             color: #3b4a54;
             font-weight: 700;
@@ -280,7 +292,7 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         .amount {
             font-size: 16px;
             font-weight: 700;
-            color: #0f766e;
+            color: #b91c1c;
         }
         .policy-list {
             margin: 0;
@@ -293,9 +305,32 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         .case-note {
             margin-top: 12px;
             padding: 10px 12px;
-            border-left: 4px solid #0f766e;
-            background: #f3f7f8;
+            border-left: 4px solid #9f1d24;
+            background: #fff5f5;
             color: #3b4a54;
+        }
+        .payment-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 150px;
+            gap: 14px;
+            align-items: start;
+        }
+        .payment-layout.no-qr {
+            display: block;
+        }
+        .payment-qr {
+            border: 1px solid #ead7d7;
+            padding: 10px;
+            text-align: center;
+            color: #52616f;
+            font-size: 11px;
+        }
+        .payment-qr img {
+            width: 128px;
+            height: 128px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 6px;
         }
         .signature {
             display: grid;
@@ -310,7 +345,7 @@ public sealed class EnrollmentConfirmationPdfGenerator(
         }
         .footer {
             margin-top: 32px;
-            border-top: 1px solid #d8e0e8;
+            border-top: 1px solid #ead7d7;
             padding-top: 10px;
             color: #65727f;
             font-size: 12px;
@@ -323,6 +358,10 @@ public sealed class EnrollmentConfirmationPdfGenerator(
     {
         var branchInfo = DisplayText(document.BranchAddress, "Địa chỉ đang cập nhật");
 
+        var logoHtml = string.IsNullOrWhiteSpace(document.HeaderLogoUrl)
+            ? string.Empty
+            : $"""<img class="header-logo" src="{H(document.HeaderLogoUrl)}" alt="Logo">""";
+
         if (!string.IsNullOrWhiteSpace(document.BranchPhoneNumber))
         {
             branchInfo += $" | {document.BranchPhoneNumber}";
@@ -330,17 +369,32 @@ public sealed class EnrollmentConfirmationPdfGenerator(
 
         return $$"""
         <section class="header">
-            <div class="brand">{{H(document.BranchName)}}</div>
-            <div class="branch">{{H(branchInfo)}}</div>
+            <div class="header-main">
+                <div class="brand">{{H(document.BranchName)}}</div>
+                <div class="branch">{{H(branchInfo)}}</div>
+            </div>
+            {{logoHtml}}
         </section>
 """;
     }
 
     private static string PaymentSection(EnrollmentConfirmationPdfDocument document)
     {
+        var hasQr = !string.IsNullOrWhiteSpace(document.PaymentQrUrl);
+        var layoutClass = hasQr ? "payment-layout" : "payment-layout no-qr";
+        var qrHtml = hasQr
+            ? $$"""
+            <div class="payment-qr">
+                <img src="{{H(document.PaymentQrUrl!)}}" alt="Payment QR">
+                <div>QR chuyen khoan</div>
+            </div>
+"""
+            : string.Empty;
+
         return $$"""
         <section class="section">
             <div class="section-title">Thông tin thanh toán</div>
+            <div class="{{layoutClass}}">
             <table>
                 <tr><th>Hình thức</th><td>{{H(DisplayText(document.PaymentMethod, "Tiền mặt / Chuyển khoản"))}}</td></tr>
                 <tr><th>Chủ tài khoản</th><td>{{H(DisplayText(document.PaymentAccountName, "....."))}}</td></tr>
@@ -348,6 +402,8 @@ public sealed class EnrollmentConfirmationPdfGenerator(
                 <tr><th>Ngân hàng</th><td>{{H(DisplayText(document.PaymentBankName, "....."))}}</td></tr>
                 <tr><th>Nội dung chuyển khoản</th><td>{{H(DisplayText(document.PaymentTransferContent, $"{document.StudentName} - {document.ClassCode}"))}}</td></tr>
             </table>
+            {{qrHtml}}
+            </div>
         </section>
 """;
     }

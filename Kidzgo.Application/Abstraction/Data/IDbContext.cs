@@ -120,6 +120,7 @@ public interface IDbContext
     // Registrations
     DbSet<Registration> Registrations { get; }
     DbSet<EnrollmentConfirmationPdf> EnrollmentConfirmationPdfs { get; }
+    DbSet<EnrollmentConfirmationPaymentSetting> EnrollmentConfirmationPaymentSettings { get; }
 
     // Reports
     DbSet<MonthlyReportJob> MonthlyReportJobs { get; }

@@ -49,6 +49,8 @@ public sealed class EnrollmentConfirmationPdfDocument
     public string? PaymentAccountNumber { get; init; }
     public string? PaymentBankName { get; init; }
     public string? PaymentTransferContent { get; init; }
+    public string? PaymentQrUrl { get; init; }
+    public string? HeaderLogoUrl { get; init; }
 }
 
 public sealed class EnrollmentReconciliationPdfSection
